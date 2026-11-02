@@ -180,12 +180,28 @@ function bestOf(exId,excl){let w=0,r=0;S.workouts.forEach(wo=>wo.items.forEach(i
 function checkPR(exId,s){if(isCardio(exId)||!(+s.w>0))return;const b=bestOf(exId);const has=S.workouts.some(w=>w.items.some(i=>i.exId===exId));if(!has)return;
  if(+s.w>b.w){s.pr=1;toast('🏆 Новый рекорд веса: '+s.w+' кг!')}else if(e1rm(+s.w,+s.r)>b.r+0.01){s.pr=1;toast('🏆 Новый рекорд 1ПМ: '+e1rm(+s.w,+s.r).toFixed(1)+' кг!')}}
 // ---------- Таймер
-let tEnd=0,tInt,actx;
-function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.value=.3;o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.15)})}catch(e){}}
-function startTimer(sec){try{actx=actx||new AudioContext();actx.resume()}catch(e){}tEnd=Date.now()+sec*1000;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,250);tt()}
-function tt(){const l=Math.round((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));if(l<=0){stopTimer();navigator.vibrate&&navigator.vibrate([300,150,300,150,300]);beep();toast('⏰ Отдых окончен — следующий подход!')}}
-function stopTimer(){clearInterval(tInt);$('#timer').classList.add('hidden')}
-document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;tt()});$('#tstop').onclick=stopTimer;
+let tEnd=0,tInt,actx,lastWarn=-1,unlocked=false;const AU={b3:new Audio('beep3.wav'),tk:new Audio('tick.wav')};Object.values(AU).forEach(a=>{a.preload='auto';a.setAttribute('playsinline','')});
+const soundOn=()=>S.sound!==false;
+function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume();const o=actx.createOscillator(),g=actx.createGain();g.gain.value=0;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.01)}catch(e){}
+ if(!unlocked){unlocked=true;Object.values(AU).forEach(a=>{a.muted=true;const p=a.play();p&&p.then(()=>{a.pause();a.currentTime=0;a.muted=false}).catch(()=>{a.muted=false;unlocked=false})})}}
+document.addEventListener('touchend',unlockAudio,{passive:true});document.addEventListener('click',unlockAudio);
+function tone(f,d,at,vol){const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+d);o.connect(g);g.connect(actx.destination);o.start(at);o.stop(at+d)}
+function playSig(kind){if(!soundOn())return;const a=kind==='end'?AU.b3:AU.tk;let ok=false;try{a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();ok=true;p&&p.catch(()=>webBeep(kind))}catch(e){}if(!ok)webBeep(kind)}
+function webBeep(kind){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();const t=actx.currentTime+.02;if(kind==='end')[0,.3,.6].forEach(d=>tone(1000,.22,t+d,.6));else tone(700,.12,t,.4)}catch(e){}}
+function endSignal(){playSig('end');navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
+function startTimer(sec){unlockAudio();tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
+function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
+ if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;if(!document.hidden)playSig('tick')}
+ if(l<=0){stopTimer();endSignal()}}
+function stopTimer(){clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
+document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;S.tEnd=tEnd;save();lastWarn=-1;tt()});$('#tstop').onclick=stopTimer;
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(actx&&actx.state!=='running')actx.resume();if(tEnd)tt();wake()});
+// восстановление таймера после перезагрузки
+setTimeout(()=>{if(S.tEnd&&S.active){tEnd=S.tEnd;if(tEnd>Date.now()){$('#timer').classList.remove('hidden');tInt=setInterval(tt,200)}else{S.tEnd=0;save();toast('⏰ Отдых окончен')}}},0);
+// Не гасить экран во время тренировки
+let wl=null;async function wake(){try{if(S.active&&S.wake!==false&&'wakeLock'in navigator&&!wl&&!document.hidden){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>wl=null)}if((!S.active||S.wake===false)&&wl){wl.release();wl=null}}catch(e){}}
+setInterval(wake,3000);
+
 // ---------- Программа
 function program(){$('#title').textContent='Программа';
  app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
@@ -249,11 +265,17 @@ function showW(id){const w=S.workouts.find(x=>x.id===id),m=$('#modal');m.classLi
 // ---------- Ещё
 function more(){$('#title').textContent='Ещё';
  app.innerHTML=`<button class="full card" id="sci" style="text-align:left">📚 Научная основа программ</button><button class="full card" id="lib" style="text-align:left">📖 Библиотека упражнений</button>
+ <div class="card"><b>Звук и экран</b>
+ <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
+ <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
+ <button class="full" id="tsnd" style="margin-top:10px">🔔 Проверить звук</button>
+ <p class="mut">iPhone: выключи беззвучный режим (переключатель сбоку) и не блокируй экран — иначе звук таймера может не прозвучать. Громкость — кнопками телефона.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button>`;
+ $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};$('#tsnd').onclick=()=>{unlockAudio();const o=S.sound;S.sound=true;playSig('end');S.sound=o;navigator.vibrate&&navigator.vibrate(300)};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){S=d;save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
