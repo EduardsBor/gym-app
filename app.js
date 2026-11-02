@@ -186,16 +186,27 @@ function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAud
  if(!unlocked){unlocked=true;Object.values(AU).forEach(a=>{a.muted=true;const p=a.play();p&&p.then(()=>{a.pause();a.currentTime=0;a.muted=false}).catch(()=>{a.muted=false;unlocked=false})})}}
 document.addEventListener('touchend',unlockAudio,{passive:true});document.addEventListener('click',unlockAudio);
 function tone(f,d,at,vol){const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+d);o.connect(g);g.connect(actx.destination);o.start(at);o.stop(at+d)}
-function playSig(kind){if(!soundOn())return;const a=kind==='end'?AU.b3:AU.tk;let ok=false;try{a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();ok=true;p&&p.catch(()=>webBeep(kind))}catch(e){}if(!ok)webBeep(kind)}
+function playSig(kind){if(!soundOn())return;setSession();const a=kind==='end'?AU.b3:AU.tk;let ok=false;try{a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();ok=true;p&&p.catch(()=>webBeep(kind))}catch(e){}if(!ok)webBeep(kind)}
 function webBeep(kind){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();const t=actx.currentTime+.02;if(kind==='end')[0,.3,.6].forEach(d=>tone(1000,.22,t+d,.6));else tone(700,.12,t,.4)}catch(e){}}
 function endSignal(){playSig('end');navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
-function startTimer(sec){unlockAudio();tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
+function startTimer(sec){armAudio(sec);unlockAudio();tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
 function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
- if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;if(!document.hidden)playSig('tick')}
- if(l<=0){stopTimer();endSignal()}}
-function stopTimer(){clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
-document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;S.tEnd=tEnd;save();lastWarn=-1;tt()});$('#tstop').onclick=stopTimer;
+ if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;if(!document.hidden&&!taCovers())playSig('tick')}
+ if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
+function stopTimer(keep){if(!keep){TA.pause();taEndAt=0}clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
+document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt()});$('#tstop').onclick=()=>stopTimer();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(actx&&actx.state!=='running')actx.resume();if(tEnd)tt();wake()});
+// iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
+const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};setSession();
+const TA=new Audio();TA.setAttribute('playsinline','');TA.preload='auto';TA.volume=1;let taURL=null,taEndAt=0;
+function wavFor(sec){const R=11025,tail=1.2,n=Math.ceil((sec+tail)*R),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+ const ws=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
+ const beep=(t,d,f,amp)=>{const s=Math.floor(t*R),e=Math.min(n,s+Math.floor(d*R));for(let i=Math.max(0,s);i<e;i++){const k=i-s,env=Math.min(1,k/60,(e-i)/60);v.setInt16(44+i*2,Math.round(amp*env*(Math.sin(2*Math.PI*f*k/R)>=0?1:-1)),true)}};
+ [3,2,1].forEach(k=>{if(sec-k>0.2)beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000));
+ return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
+function armAudio(sec){setSession();if(!soundOn()){TA.pause();return}if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec));TA.src=taURL;TA.currentTime=0;taEndAt=Date.now()+sec*1000;
+ const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
+const taCovers=()=>taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
 setTimeout(()=>{if(S.tEnd&&S.active){tEnd=S.tEnd;if(tEnd>Date.now()){$('#timer').classList.remove('hidden');tInt=setInterval(tt,200)}else{S.tEnd=0;save();toast('⏰ Отдых окончен')}}},0);
 // Не гасить экран во время тренировки
@@ -275,7 +286,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button>`;
- $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};$('#tsnd').onclick=()=>{unlockAudio();const o=S.sound;S.sound=true;playSig('end');S.sound=o;navigator.vibrate&&navigator.vibrate(300)};
+ $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};$('#tsnd').onclick=()=>{const o=S.sound;S.sound=true;armAudio(0);S.sound=o;unlockAudio();navigator.vibrate&&navigator.vibrate(300)};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){S=d;save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
