@@ -80,7 +80,7 @@ const CATALOG=[
 ['Бережно к коленям','Без глубоких приседов и выпадов.',{goal:'fit',level:'mid',days:3,len:45,place:'g',lim:['k']}]].map(([name,desc,a],i)=>({id:'c'+i,name,desc,a:{sex:'m',prio:[],lim:[],...a}}));
 
 let S=JSON.parse(localStorage.getItem('gym')||'null')||{custom:[],workouts:[],next:0};
-if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.workouts=S.workouts||[];S.v=2;
+if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.v=2;
 const save=()=>localStorage.setItem('gym',JSON.stringify(S));
 const allEx=()=>EX.concat(S.custom), exBy=id=>allEx().find(e=>e.id===id)||{name:'?',group:''};
 const isCardio=id=>exBy(id).group==='Кардио';
@@ -91,7 +91,7 @@ let view='today';
 function go(v){view=v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view))return quiz();
- if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();({today,program,progress,history,more,science,library,quiz,catalog}[view])()}
+ if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){quiz()}
 let Q=null,catF={};
@@ -166,7 +166,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  const tick=()=>{const e=$('#dur');if(e)e.textContent=fmtT(Math.floor((Date.now()-A.start)/1000))};tick();clearInterval(durInt);durInt=setInterval(tick,1000);
  app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;save()});
  app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.done.split(',').map(Number),it=A.items[i],s=it.sets[k];s.done=!s.done;
-  if(s.done){if(s.w==='')s.w=0;if(s.r==='')s.r=0;checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest)}save();workoutView()});
+  if(s.done){if(s.w==='')s.w=0;if(s.r==='')s.r=0;checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}else{delete s.pr;delete s.prInfo}save();workoutView()});
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
@@ -175,10 +175,26 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  $('#addex').onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;save();stopTimer();go('today')}};
  $('#fin').onclick=()=>{A.end=Date.now();A.items=A.items.filter(it=>it.sets.some(s=>s.done));A.items.forEach(it=>it.sets=it.sets.filter(s=>s.done));
-  if(!A.items.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;save();stopTimer();toast('Тренировка сохранена 💪');go('history')}}
-function bestOf(exId,excl){let w=0,r=0;S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>{if(s.done){w=Math.max(w,+s.w);r=Math.max(r,e1rm(+s.w,+s.r))}})}));return{w,r}}
-function checkPR(exId,s){if(isCardio(exId)||!(+s.w>0))return;const b=bestOf(exId);const has=S.workouts.some(w=>w.items.some(i=>i.exId===exId));if(!has)return;
- if(+s.w>b.w){s.pr=1;toast('🏆 Новый рекорд веса: '+s.w+' кг!')}else if(e1rm(+s.w,+s.r)>b.r+0.01){s.pr=1;toast('🏆 Новый рекорд 1ПМ: '+e1rm(+s.w,+s.r).toFixed(1)+' кг!')}}
+  if(!A.items.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;save();stopTimer();toast('Тренировка сохранена 💪');go('history');prSummary(A)}}
+function prSummary(A){const L=[];A.items.forEach(it=>it.sets.forEach(s=>s.pr&&s.prInfo&&L.push([exBy(it.exId).name,s.prInfo])));if(!L.length)return;const m=$('#modal');m.classList.remove('hidden');
+ m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">🏆 Рекорды тренировки: ${L.length}</h2>${L.map(([n,i])=>`<div class="li"><div class="grow"><b>${esc(n)}</b><br><span class="mut">${i.t}</span></div><span class="mut"><s>${i.o}</s></span>&nbsp;→&nbsp;<b class="pr">${i.n}</b></div>`).join('')}<p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="mc">Отлично!</button></div>`;$('#mc').onclick=()=>m.classList.add('hidden')}
+function priorSets(exId,skip){const L=[];S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>s.done&&L.push(s))}));
+ if(S.active)S.active.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>s.done&&s!==skip&&L.push(s))});return L}
+function bestOf(exId){let w=0,r=0;priorSets(exId).forEach(s=>{w=Math.max(w,+s.w);r=Math.max(r,e1rm(+s.w,+s.r))});return{w,r}}
+let pendingFan=false;
+function checkPR(exId,s){delete s.pr;delete s.prInfo;if(isCardio(exId)||!(+s.w>0)||!(+s.r>0))return;const L=priorSets(exId,s);if(!L.length)return;
+ const bw=Math.max(...L.map(x=>+x.w)),br=Math.max(...L.map(x=>e1rm(+x.w,+x.r))),same=L.filter(x=>+x.w===+s.w),bRep=same.length?Math.max(...same.map(x=>+x.r)):0;let info=null;
+ if(+s.w>bw)info={t:'Максимальный вес',o:bw+' кг',n:s.w+' кг'};else if(e1rm(+s.w,+s.r)>br+0.05)info={t:'Расчётный 1ПМ',o:br.toFixed(1)+' кг',n:e1rm(+s.w,+s.r).toFixed(1)+' кг'};
+ else if(same.length&&+s.r>bRep)info={t:'Повторы с весом '+s.w+' кг',o:bRep+' повт.',n:s.r+' повт.'};
+ if(info){s.pr=1;s.prInfo=info;pendingFan=true;celebrate(exBy(exId).name,info)}}
+const PHR=['Сила растёт — так держать!','Ты сильнее, чем вчера 💪','Прогресс налицо — продолжай!','Вот это результат! Гордись собой.','Каждый подход приближает к цели.','Рекорды любят упорных!','Отличная работа — тело отвечает на нагрузку.','Новая планка взята! Дальше — больше.'];
+function celebrate(name,info){const d=document.createElement('div');d.id='prov';d.innerHTML=`<canvas id="conf"></canvas><div class="prbox"><div style="font-size:64px">🏆</div><h2>Новый личный рекорд!</h2><h3>${esc(name)}</h3>
+ <div class="mut">${info.t}</div><div class="prcmp"><span class="mut"><s>${info.o}</s></span> → <b class="pr">${info.n}</b></div><p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="prok">Супер!</button></div>`;
+ document.body.append(d);d.querySelector('#prok').onclick=()=>d.remove();confetti(d.querySelector('#conf'))}
+function confetti(c){const W=c.width=innerWidth,H=c.height=innerHeight,x=c.getContext('2d'),cols=['#ff6b35','#ffc83d','#2ecc71','#3da5ff','#ff4d8d','#fff'];
+ const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H*.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:Math.random()*6.3,s:5+Math.random()*7,c:cols[Math.floor(Math.random()*6)]}));
+ let f=0;(function step(){if(!c.isConnected||f++>260)return;x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.r+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});requestAnimationFrame(step)})()}
+function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true)}
 // ---------- Таймер
 let tEnd=0,tInt,actx,lastWarn=-1,unlocked=false;const AU={b3:new Audio('beep3.wav'),tk:new Audio('tick.wav')};Object.values(AU).forEach(a=>{a.preload='auto';a.setAttribute('playsinline','')});
 const soundOn=()=>S.sound!==false;
@@ -199,12 +215,12 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(a
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
 const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};setSession();
 const TA=new Audio();TA.setAttribute('playsinline','');TA.preload='auto';TA.volume=1;let taURL=null,taEndAt=0;
-function wavFor(sec){const R=11025,tail=1.2,n=Math.ceil((sec+tail)*R),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+function wavFor(sec,fan,noEnd){const R=11025,tail=1.2,n=Math.ceil((Math.max(sec,fan?1:0)+tail)*R),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
  const ws=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
  const beep=(t,d,f,amp)=>{const s=Math.floor(t*R),e=Math.min(n,s+Math.floor(d*R));for(let i=Math.max(0,s);i<e;i++){const k=i-s,env=Math.min(1,k/60,(e-i)/60);v.setInt16(44+i*2,Math.round(amp*env*(Math.sin(2*Math.PI*f*k/R)>=0?1:-1)),true)}};
- [3,2,1].forEach(k=>{if(sec-k>0.2)beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000));
+ if(fan)[[523,0],[659,.13],[784,.26],[1047,.39],[784,.6],[1047,.72]].forEach(([f,t])=>beep(t,t>.5?.22:.12,f,24000));if(!noEnd){[3,2,1].forEach(k=>{if(sec-k>(fan?1.1:0.2))beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000))}
  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
-function armAudio(sec){setSession();if(!soundOn()){TA.pause();return}if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec));TA.src=taURL;TA.currentTime=0;taEndAt=Date.now()+sec*1000;
+function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;setSession();if(!soundOn()){TA.pause();return}if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec),fan,noEnd);TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
  const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
 const taCovers=()=>taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
@@ -273,6 +289,49 @@ function showW(id){const w=S.workouts.find(x=>x.id===id),m=$('#modal');m.classLi
  ${w.items.map(it=>`<div class="card"><b>${esc(exBy(it.exId).name)}</b><br>${it.sets.map(s=>`<span class="badge ${s.pr?'pr':''}">${s.pr?'🏆 ':''}${s.w} × ${s.r}</span>`).join('')}</div>`).join('')}
  ${w.notes?`<div class="card"><b>Заметки</b><br>${esc(w.notes)}</div>`:''}<button class="danger full" id="wdel">Удалить тренировку</button></div>`;
  $('#mc').onclick=()=>m.classList.add('hidden');$('#wdel').onclick=()=>{if(confirm('Удалить?')){S.workouts=S.workouts.filter(x=>x.id!==id);save();m.classList.add('hidden');history()}}}
+// ---------- Тело
+const BM=[['weight','Вес','кг'],['fat','Жир','%'],['neck','Шея','см'],['chest','Грудь','см'],['waist','Талия','см'],['belly','Живот','см'],['hips','Бёдра (таз)','см'],['biceps','Бицепс','см'],['thigh','Бедро','см'],['calf','Икра','см']];
+const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{const r=indexedDB.open('moyzal',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+ const tx=(m,f)=>open().then(db=>new Promise((res,rej)=>{const t=db.transaction('photos',m),st=t.objectStore('photos'),q=f(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)}));
+ return{get:k=>tx('readonly',s=>s.get(k)),put:(k,v)=>tx('readwrite',s=>s.put(v,k)),del:k=>tx('readwrite',s=>s.delete(k)),all:()=>tx('readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o})}})();
+function compress(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',.72))};img.onerror=rej;img.src=URL.createObjectURL(file)})}
+let bM='weight',bR=0,cmpA=null,cmpB=null;
+const fmtD=d=>new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'2-digit'});
+const sgn=(v,u)=>(v>0?'+':'')+(Math.round(v*10)/10)+' '+u;
+function body(){$('#title').textContent='Тело';const E=S.body.slice().sort((a,b)=>a.date.localeCompare(b.date));
+ const m=BM.find(x=>x[0]===bM),from=bR?Date.now()-bR*864e5:0,pts=E.filter(e=>e[bM]!==''&&e[bM]!=null&&new Date(e.date)>=from).map(e=>[new Date(e.date).getTime(),+e[bM]]);
+ const all=E.filter(e=>e[bM]!==''&&e[bM]!=null),last=all[all.length-1],first=all[0],prev=all[all.length-2];
+ const lw=E.filter(e=>+e.weight>0).pop(),bmi=S.height&&lw?(+lw.weight/((S.height/100)**2)):0;
+ const bmiT=bmi?(bmi<18.5?'ниже нормы':bmi<25?'норма':bmi<30?'избыточный вес':'ожирение'):'';
+ const ph=E.filter(e=>e.photos&&e.photos.length);if(!ph.some(e=>e.id===cmpA))cmpA=null;if(!ph.some(e=>e.id===cmpB)||(cmpA&&cmpA===cmpB&&ph.length>1))cmpB=ph.length?ph[ph.length-1].id:null;if(!cmpA&&ph.length)cmpA=ph[0].id;
+ app.innerHTML=`<button class="pri full" id="badd">+ Новый замер</button>
+ <div class="card"><div class="chips sm2">${BM.map(([k,l])=>`<button class="opt chip ${bM===k?'sel':''}" data-bm="${k}">${l}</button>`).join('')}</div>
+ <div class="chips sm2">${[[30,'1 мес'],[90,'3 мес'],[180,'6 мес'],[365,'1 год'],[0,'Всё']].map(([d,l])=>`<button class="opt chip ${bR===d?'sel':''}" data-br="${d}">${l}</button>`).join('')}</div>
+ ${pts.length?'<canvas id="bch"></canvas>':'<p class="mut">Нет данных по этому показателю за период.</p>'}
+ ${last?`<div class="grid2" style="margin-top:10px"><div><div class="mut">Сейчас</div><b style="font-size:22px">${last[bM]} ${m[2]}</b></div><div><div class="mut">От первого (${fmtD(first.date)})</div><b>${sgn(last[bM]-first[bM],m[2])}</b><br><span class="mut">от прошлого: ${prev?sgn(last[bM]-prev[bM],m[2]):'—'}</span></div></div>`:''}</div>
+ <div class="card"><div class="row"><span class="grow">Рост</span><input type="number" id="hgt" inputmode="numeric" placeholder="см" value="${S.height||''}" style="width:100px"></div>${bmi?`<p>ИМТ: <b>${bmi.toFixed(1)}</b> <span class="mut">(${bmiT}; ВОЗ: 18,5–24,9 — норма. Для людей с большой мышечной массой ИМТ может завышать)</span></p>`:'<p class="mut">Укажи рост — посчитаем ИМТ.</p>'}</div>
+ ${ph.length>=1?`<h2>Сравнение фото</h2><div class="card"><div class="grid2"><select id="ca">${ph.map(e=>`<option value="${e.id}" ${e.id===(cmpA||ph[0].id)?'selected':''}>${fmtD(e.date)}</option>`).join('')}</select><select id="cb">${ph.map(e=>`<option value="${e.id}" ${e.id===(cmpB||ph[ph.length-1].id)?'selected':''}>${fmtD(e.date)}</option>`).join('')}</select></div><div class="photos" style="margin-top:8px"><img id="ia" alt=""><img id="ib" alt=""></div></div>`:''}
+ <h2>Замеры (${E.length})</h2>${E.slice().reverse().map(e=>`<div class="card"><div class="row"><b class="grow">${fmtD(e.date)}</b><button class="sm" data-be="${e.id}">✎</button></div>
+ <div>${BM.filter(([k])=>e[k]!==''&&e[k]!=null).map(([k,l,u])=>`<span class="badge">${l}: ${e[k]} ${u}</span>`).join('')}</div>${e.note?`<div class="mut">${esc(e.note)}</div>`:''}${e.photos&&e.photos.length?`<div class="thumbs" data-th="${e.id}"></div>`:''}</div>`).join('')||'<p class="mut">Добавь первый замер — вес, обхваты и фото, чтобы видеть, как меняется тело.</p>'}`;
+ $('#badd').onclick=()=>bodyForm();app.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{bM=b.dataset.bm;body()});app.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{bR=+b.dataset.br;body()});
+ app.querySelectorAll('[data-be]').forEach(b=>b.onclick=()=>bodyForm(S.body.find(e=>e.id===b.dataset.be)));
+ $('#hgt').onchange=e=>{S.height=+e.target.value||0;save();body()};if(pts.length)chart($('#bch'),pts);
+ app.querySelectorAll('[data-th]').forEach(async d=>{const e=S.body.find(x=>x.id===d.dataset.th);for(const k of e.photos){const u=await idb.get(k);if(u){const i=new Image();i.src=u;d.append(i)}}});
+ if(ph.length){const show=async()=>{cmpA=$('#ca').value;cmpB=$('#cb').value;for(const[sel,img]of[[cmpA,'#ia'],[cmpB,'#ib']]){const e=S.body.find(x=>x.id===sel);$(img).src=(e&&await idb.get(e.photos[0]))||''}};$('#ca').onchange=show;$('#cb').onchange=show;show()}}
+function bodyForm(e){const isNew=!e;e=e||{id:'b'+Date.now(),date:new Date().toISOString().slice(0,10),photos:[]};const newPh=[],delPh=[];const m=$('#modal');m.classList.remove('hidden');
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">${isNew?'Новый замер':'Изменить замер'}</h2><button id="mc">✕</button></div>
+ <label class="mut">Дата<input type="date" id="bd" value="${e.date}"></label><div class="grid2" style="margin-top:8px">${BM.map(([k,l,u])=>`<label>${l}, ${u}<input type="number" inputmode="decimal" step="0.1" data-bf="${k}" value="${e[k]??''}"></label>`).join('')}</div>
+ <label class="mut">Заметка<textarea id="bn" rows="2">${esc(e.note||'')}</textarea></label>
+ <div class="thumbs" id="bph" style="margin:8px 0"></div><label class="btn full" style="display:flex;align-items:center;justify-content:center">📷 Добавить фото<input type="file" id="bfile" accept="image/*" multiple hidden></label>
+ <p class="mut" style="font-size:12px">Фото хранятся только на этом телефоне (сжатые).</p>
+ <button class="pri full" id="bsave">Сохранить</button>${isNew?'':'<button class="danger full" id="bdel" style="margin-top:8px">Удалить замер</button>'}</div>`;
+ const drawPh=async()=>{const d=$('#bph');d.innerHTML='';for(const k of e.photos.filter(k=>!delPh.includes(k)).concat(newPh.map(x=>x[0]))){const u=(newPh.find(x=>x[0]===k)||[])[1]||await idb.get(k);const i=new Image();i.src=u;i.title='Нажми, чтобы удалить';i.onclick=()=>{if(!confirm('Удалить фото?'))return;const j=newPh.findIndex(x=>x[0]===k);if(j>=0)newPh.splice(j,1);else delPh.push(k);drawPh()};d.append(i)}};drawPh();
+ $('#bfile').onchange=async ev=>{for(const f of ev.target.files){try{newPh.push(['p'+Date.now()+Math.random().toString(36).slice(2,6),await compress(f)])}catch(_){alert('Не удалось открыть фото')}}drawPh()};
+ $('#mc').onclick=()=>m.classList.add('hidden');
+ $('#bsave').onclick=async()=>{e.date=$('#bd').value||e.date;m.querySelectorAll('[data-bf]').forEach(i=>e[i.dataset.bf]=i.value===''?'':+i.value);e.note=$('#bn').value.trim();
+  for(const[k,u]of newPh)await idb.put(k,u);for(const k of delPh)await idb.del(k);e.photos=e.photos.filter(k=>!delPh.includes(k)).concat(newPh.map(x=>x[0]));
+  if(isNew)S.body.push(e);save();m.classList.add('hidden');toast('Замер сохранён');body()};
+ if($('#bdel'))$('#bdel').onclick=async()=>{if(!confirm('Удалить замер вместе с фото?'))return;for(const k of e.photos)await idb.del(k);S.body=S.body.filter(x=>x.id!==e.id);save();m.classList.add('hidden');body()}}
 // ---------- Ещё
 function more(){$('#title').textContent='Ещё';
  app.innerHTML=`<button class="full card" id="sci" style="text-align:left">📚 Научная основа программ</button><button class="full card" id="lib" style="text-align:left">📖 Библиотека упражнений</button>
@@ -283,12 +342,12 @@ function more(){$('#title').textContent='Ещё';
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
- <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
+ <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button>`;
  $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
- $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
- $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){S=d;save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
+ $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+ $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
  $('#reset').onclick=()=>{if(confirm('Удалить ВСЕ данные?')&&confirm('Точно?')){localStorage.removeItem('gym');location.reload()}}}
 function library(){$('#title').textContent='Упражнения';
  app.innerHTML=`<div class="card"><b>Своё упражнение</b><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button></div>
