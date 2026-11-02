@@ -198,9 +198,7 @@ function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true
 // ---------- Таймер
 let tEnd=0,tInt,actx,lastWarn=-1,unlocked=false;const AU={b3:new Audio('beep3.wav'),tk:new Audio('tick.wav')};Object.values(AU).forEach(a=>{a.preload='auto';a.setAttribute('playsinline','')});
 const soundOn=()=>S.sound!==false;
-function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume();const o=actx.createOscillator(),g=actx.createGain();g.gain.value=0;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.01)}catch(e){}
- if(!unlocked){unlocked=true;Object.values(AU).forEach(a=>{a.muted=true;const p=a.play();p&&p.then(()=>{a.pause();a.currentTime=0;a.muted=false}).catch(()=>{a.muted=false;unlocked=false})})}}
-document.addEventListener('touchend',unlockAudio,{passive:true});document.addEventListener('click',unlockAudio);
+function unlockAudio(){/* только тишина: Web Audio без звука, файлы с сигналами не трогаем */try{if(actx&&actx.state!=='running')actx.resume()}catch(e){}}
 function tone(f,d,at,vol){const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+d);o.connect(g);g.connect(actx.destination);o.start(at);o.stop(at+d)}
 function playSig(kind){if(!soundOn())return;setSession();const a=kind==='end'?AU.b3:AU.tk;let ok=false;try{a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();ok=true;p&&p.catch(()=>webBeep(kind))}catch(e){}if(!ok)webBeep(kind)}
 function webBeep(kind){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();const t=actx.currentTime+.02;if(kind==='end')[0,.3,.6].forEach(d=>tone(1000,.22,t+d,.6));else tone(700,.12,t,.4)}catch(e){}}
