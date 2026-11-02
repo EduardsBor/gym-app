@@ -196,31 +196,27 @@ function confetti(c){const W=c.width=innerWidth,H=c.height=innerHeight,x=c.getCo
  let f=0;(function step(){if(!c.isConnected||f++>260)return;x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.r+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});requestAnimationFrame(step)})()}
 function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true)}
 // ---------- Таймер
-let tEnd=0,tInt,actx,lastWarn=-1,unlocked=false;const AU={b3:new Audio('beep3.wav'),tk:new Audio('tick.wav')};Object.values(AU).forEach(a=>{a.preload='auto';a.setAttribute('playsinline','')});
+let tEnd=0,tInt,lastWarn=-1;
 const soundOn=()=>S.sound!==false;
-function unlockAudio(){/* только тишина: Web Audio без звука, файлы с сигналами не трогаем */try{if(actx&&actx.state!=='running')actx.resume()}catch(e){}}
-function tone(f,d,at,vol){const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+d);o.connect(g);g.connect(actx.destination);o.start(at);o.stop(at+d)}
-function playSig(kind){if(!soundOn())return;setSession();const a=kind==='end'?AU.b3:AU.tk;let ok=false;try{a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();ok=true;p&&p.catch(()=>webBeep(kind))}catch(e){}if(!ok)webBeep(kind)}
-function webBeep(kind){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();const t=actx.currentTime+.02;if(kind==='end')[0,.3,.6].forEach(d=>tone(1000,.22,t+d,.6));else tone(700,.12,t,.4)}catch(e){}}
-function endSignal(){playSig('end');navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
-function startTimer(sec){armAudio(sec);unlockAudio();tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
+function endSignal(){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
+function startTimer(sec){armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
 function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
- if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;if(!document.hidden&&!taCovers())playSig('tick')}
+ if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
-function stopTimer(keep){if(!keep){TA.pause();taEndAt=0}clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
+function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
 document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt()});$('#tstop').onclick=()=>stopTimer();
-document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(actx&&actx.state!=='running')actx.resume();if(tEnd)tt();wake()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
-const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};setSession();
-const TA=new Audio();TA.setAttribute('playsinline','');TA.preload='auto';TA.volume=1;let taURL=null,taEndAt=0;
+const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};
+let TA=null;const getTA=()=>{if(!TA){TA=new Audio();TA.setAttribute('playsinline','');TA.volume=1}return TA};let taURL=null,taEndAt=0;
 function wavFor(sec,fan,noEnd){const R=11025,tail=1.2,n=Math.ceil((Math.max(sec,fan?1:0)+tail)*R),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
  const ws=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
  const beep=(t,d,f,amp)=>{const s=Math.floor(t*R),e=Math.min(n,s+Math.floor(d*R));for(let i=Math.max(0,s);i<e;i++){const k=i-s,env=Math.min(1,k/60,(e-i)/60);v.setInt16(44+i*2,Math.round(amp*env*(Math.sin(2*Math.PI*f*k/R)>=0?1:-1)),true)}};
  if(fan)[[523,0],[659,.13],[784,.26],[1047,.39],[784,.6],[1047,.72]].forEach(([f,t])=>beep(t,t>.5?.22:.12,f,24000));if(!noEnd){[3,2,1].forEach(k=>{if(sec-k>(fan?1.1:0.2))beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000))}
  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
-function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;setSession();if(!soundOn()){TA.pause();return}if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec),fan,noEnd);TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
+function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;setSession();if(!soundOn()){TA&&TA.pause();return}getTA();if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec),fan,noEnd);TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
  const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
-const taCovers=()=>taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
+const taCovers=()=>TA&&taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
 setTimeout(()=>{if(S.tEnd&&S.active){tEnd=S.tEnd;if(tEnd>Date.now()){$('#timer').classList.remove('hidden');tInt=setInterval(tt,200)}else{S.tEnd=0;save();toast('⏰ Отдых окончен')}}},0);
 // Не гасить экран во время тренировки
@@ -380,7 +376,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button>`;
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 10</p>`;
  $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
@@ -416,5 +412,5 @@ function science(fromOb){$('#title').textContent='Научная основа';c
  <p class="mut">Это общие рекомендации для здоровых взрослых, а не медицинская консультация.</p><button class="full" id="back" style="margin-bottom:16px">← Назад</button>`;
  app.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>{window._sg=b.dataset.sg;science(fromOb)});
  $('#back').onclick=()=>{window._sg=null;if(!S.goal)onboarding();else go('more')}}
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+if('serviceWorker'in navigator){const had=!!navigator.serviceWorker.controller;let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{})}
 go(S.goal?'today':'today');
