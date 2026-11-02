@@ -9,20 +9,78 @@ const EX=[['bp','Жим штанги лёжа','Грудь'],['dbp','Жим га
 ['cgb','Жим узким хватом','Трицепс'],['tpd','Разгибание на блоке','Трицепс'],['skull','Французский жим','Трицепс'],['ote','Разгибание из-за головы','Трицепс'],
 ['pl','Планка','Пресс'],['cru','Скручивания','Пресс'],['hlr','Подъём ног в висе','Пресс'],['abw','Ролик для пресса','Пресс'],['rt','Русский твист','Пресс'],
 ['tm','Беговая дорожка','Кардио'],['bike','Велотренажёр','Кардио'],['ell','Эллипс','Кардио'],['rowm','Гребной тренажёр','Кардио'],['stair','Степпер','Кардио']].map(([id,name,group])=>({id,name,group}));
-const GOALS={mass:'Масса',str:'Сила',loss:'Похудение'};
-// Шаблоны сплитов: c = базовое (многосуставное), a = изолирующее
-const SPLITS={
-2:[['Фулбоди A',[['sq','c'],['bp','c'],['row','c'],['ohp','c'],['rdl','c'],['lr','a'],['bc','a'],['tpd','a']]],['Фулбоди B',[['dl','c'],['ibp','c'],['lat','c'],['lp','c'],['dsp','c'],['lc','a'],['hc','a'],['hlr','a']]]],
-3:[['Фулбоди A',[['sq','c'],['bp','c'],['row','c'],['lr','a'],['bc','a'],['cru','a']]],['Фулбоди B',[['dl','c'],['ohp','c'],['lat','c'],['idb','c'],['lc','a'],['tpd','a']]],['Фулбоди C',[['lp','c'],['dbp','c'],['cr','c'],['rdl','c'],['fp','a'],['hc','a'],['calf','a']]]],
-4:[['Верх A',[['bp','c'],['row','c'],['ohp','c'],['lat','c'],['bc','a'],['tpd','a']]],['Низ A',[['sq','c'],['rdl','c'],['lp','c'],['lc','a'],['calf','a'],['pl','a']]],['Верх B',[['ibp','c'],['pull','c'],['dsp','c'],['cr','c'],['lr','a'],['hc','a'],['skull','a']]],['Низ B',[['dl','c'],['bss','c'],['ht','c'],['le','a'],['calf','a'],['hlr','a']]]],
-5:[['Жим (грудь, плечи, трицепс)',[['bp','c'],['ohp','c'],['idb','c'],['lr','a'],['tpd','a']]],['Тяга (спина, бицепс)',[['dl','c'],['pull','c'],['cr','c'],['fp','a'],['bc','a']]],['Ноги',[['sq','c'],['rdl','c'],['lp','c'],['lc','a'],['calf','a']]],['Верх',[['dbp','c'],['row','c'],['dsp','c'],['lat','c'],['hc','a'],['skull','a']]],['Низ',[['fsq','c'],['ht','c'],['bss','c'],['le','a'],['hlr','a']]]]};
-// Параметры по цели (см. «Научная основа»)
-const PRM={str:{c:[5,3,5,180],a:[3,6,10,120]},mass:{c:[4,6,10,150],a:[3,10,15,90]},loss:{c:[3,10,15,90],a:[3,12,15,60]}};
-function buildProgram(goal,days){const p=PRM[goal];return SPLITS[days].map(([name,list])=>{
- let items=list.map(([exId,t])=>{const [sets,min,max,rest]=p[t];return{exId,sets:(days<=2&&goal!=='loss'&&t==='c')?sets:sets,min,max,rest}});
- if(goal==='loss')items.push({exId:['tm','bike','ell','rowm','stair'][Math.floor(Math.random()*5)],sets:1,min:20,max:30,rest:0});
- return{name,items}})}
+const GOALS={mass:'Масса',str:'Сила',loss:'Похудение / рельеф',fit:'Общая форма'};
+// Доп. упражнения (дом / свой вес / безопасные альтернативы)
+[['bwsq','Приседания с весом тела','Ноги'],['step','Зашагивания на скамью','Ноги'],['dbrdl','Румынская тяга с гантелями','Ноги'],['inv','Австралийские подтягивания','Спина'],['chin','Подтягивания обратным хватом','Бицепс'],['ppu','Пайк-отжимания','Плечи'],['bd','Обратные отжимания от скамьи','Трицепс'],['dpu','Узкие отжимания','Трицепс'],['mch','Жим в тренажёре сидя','Грудь'],['dbug','Мёртвый жук','Пресс'],['bdog','Птица-собака','Пресс'],['yr','Y-подъёмы рук лёжа','Плечи'],['nlc','Скандинавские сгибания ног','Ноги'],['sglb','Ягодичный мост на одной ноге','Ноги'],['bpl','Боковая планка','Пресс'],['jump','Прыжки / джампинг-джек','Кардио'],['wlk','Быстрая ходьба','Кардио']].forEach(([id,name,group])=>EX.push({id,name,group}));
+// оборудование: g=зал, d=дом с гантелями, b=свой вес(+турник); риски: s=спина, k=колени, p=плечи
+const META={bp:'g|p',dbp:'gd|',ibp:'g|p',idb:'gd|',fly:'gd|p',cc:'g|',dip:'gb|p',pu:'gdb|',mch:'g|',dl:'g|s',inv:'gdb|',pull:'gdb|',lat:'g|',row:'g|s',dbr:'gd|',cr:'g|',hyp:'g|s',shr:'gd|',
+sq:'g|sk',fsq:'g|k',lp:'g|k',rdl:'g|s',dbrdl:'gd|s',lun:'gd|k',bss:'gd|k',le:'g|k',lc:'g|',ht:'gdb|',calf:'gdb|',gsq:'gd|k',bwsq:'b|k',step:'gdb|',
+ohp:'g|sp',dsp:'gd|p',lr:'gd|',rfly:'gd|',fp:'g|',ur:'g|p',ppu:'b|p',bc:'g|',dbc:'gd|',hc:'gd|',pc:'g|',chin:'gdb|',cgb:'g|p',tpd:'g|',skull:'gd|p',ote:'gd|p',bd:'db|p',dpu:'gdb|',
+pl:'gdb|',cru:'gdb|',hlr:'gb|',abw:'gd|s',rt:'gdb|',dbug:'gdb|',bdog:'gdb|',tm:'g|',bike:'g|',ell:'g|',rowm:'g|',stair:'g|',yr:'gdb|',nlc:'gdb|k',sglb:'gdb|',bpl:'gdb|',jump:'db|k',wlk:'gdb|'};
+const okEx=(id,a)=>{const m=META[id];if(!m)return true;const[eq,r]=m.split('|');return eq.includes(a.place)&&!(a.lim||[]).some(l=>r.includes(l))};
+const SLOT={SQ:[['sq','lp','gsq','bss','fsq','bwsq','step'],['ht','step','lc']],HINGE:[['rdl','dl','dbrdl','ht','hyp'],['ht','lc','bdog']],HPUSH:[['bp','dbp','mch','pu'],['mch','pu']],IPUSH:[['idb','ibp','pu','dip'],['mch','pu']],
+VPUSH:[['ohp','dsp','ppu'],['lr']],HPULL:[['row','cr','dbr','inv'],['cr','inv']],VPULL:[['pull','lat','chin','inv'],['lat','inv']],LUNGE:[['bss','lun','step','lp'],['ht','lc']],LEGISO:[['lc','le','ht','sglb','nlc'],['ht','sglb']],CALF:[['calf'],['sglb']],
+SIDE:[['lr','yr','ppu'],['yr']],REAR:[['fp','rfly','yr'],['rfly','yr']],BI:[['bc','dbc','hc','chin','inv'],['hc']],TRI:[['tpd','ote','skull','dpu','bd'],['tpd','dpu']],CORE:[['pl','hlr','cru','dbug','bdog','bpl','abw'],['dbug','bdog']],CHEST2:[['fly','cc','dbp','pu'],['cc','pu']]};
+const SLOTG={SQ:'Ноги',HINGE:'Ноги',LUNGE:'Ноги',LEGISO:'Ноги',CALF:'Ноги',HPUSH:'Грудь',IPUSH:'Грудь',CHEST2:'Грудь',VPUSH:'Плечи',SIDE:'Плечи',REAR:'Плечи',HPULL:'Спина',VPULL:'Спина',BI:'Бицепс',TRI:'Трицепс',CORE:'Пресс'};
+const PRIO_SLOT={'Грудь':'CHEST2','Спина':'HPULL','Ноги':'LUNGE','Ягодицы':'LEGISO','Плечи':'SIDE','Бицепс':'BI','Трицепс':'TRI','Пресс':'CORE'};
+const T={FA:['Фулбоди A','SQ HPUSH HPULL VPUSH LEGISO* BI* TRI* CORE*'],FB:['Фулбоди B','HINGE IPUSH VPULL LUNGE SIDE* REAR* CALF* CORE*'],FC:['Фулбоди C','SQ HPUSH VPULL HINGE SIDE* BI* TRI*'],
+U1:['Верх A','HPUSH HPULL VPUSH VPULL SIDE* BI* TRI*'],L1:['Низ A','SQ HINGE LUNGE LEGISO* CALF* CORE*'],U2:['Верх B','IPUSH VPULL HPULL CHEST2* REAR* BI* TRI*'],L2:['Низ B','HINGE LUNGE SQ LEGISO* CALF* CORE*'],
+PU:['Жим (грудь, плечи, трицепс)','HPUSH VPUSH IPUSH SIDE* TRI* CHEST2*'],PL:['Тяга (спина, бицепс)','VPULL HPULL HPULL REAR* BI* BI*'],LG:['Ноги','SQ HINGE LUNGE LEGISO* CALF* CORE*']};
+const SPLITS={2:['FA','FB'],3:['FA','FB','FC'],4:['U1','L1','U2','L2'],5:['PU','PL','LG','U1','L1'],6:['PU','PL','LG','PU','PL','LG']};
+const SPLITNAME={2:'Фулбоди 2×',3:'Фулбоди 3×',4:'Верх / Низ',5:'Жим / Тяга / Ноги + Верх / Низ',6:'Жим / Тяга / Ноги ×2'};
+// [подходы: новичок, средний, опытный], повторы от, до, отдых (с)
+const PRM={str:{c:[[3,4,5],3,6,180],a:[[2,3,3],6,10,120]},mass:{c:[[3,3,4],6,10,150],a:[[2,3,3],10,15,90]},loss:{c:[[2,3,3],10,15,90],a:[[2,3,3],12,15,60]},fit:{c:[[2,3,3],8,12,90],a:[[2,2,3],10,15,60]}};
+const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Зал',d:'Дом с гантелями',b:'Свой вес'};
+const LIMN={s:'спина',k:'колени',p:'плечи'};
+const eqOk=(id,a)=>(META[id]||'gdb|').split('|')[0].includes(a.place);
+const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest)+90;
+function pickFor(slot,a,used,off){const[c,safe]=SLOT[slot];let L=c.filter(id=>okEx(id,a)&&!used.has(id));let swapped=false;
+ if(!L.length){L=safe.filter(id=>okEx(id,a)&&!used.has(id));swapped=c.some(id=>eqOk(id,a))}
+ if(!L.length)return null;const id=L[off%L.length];return{id,swapped:swapped||(c[0]!==id&&(a.lim||[]).length&&c.filter(x=>!used.has(x)&&eqOk(x,a))[0]!==id)}}
+function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a};const P=PRM[a.goal],lv=LV[a.level],seen={},notes=[];let swaps=new Set();
+ const days=(a.place!=='g'&&a.days>=5?(a.days==5?['U1','L1','U2','L2','FA']:['U1','L1','U2','L2','U1','L2']):SPLITS[a.days]).map(code=>{const[name,slots]=T[code];seen[code]=(seen[code]||0)+1;const off=seen[code]-1,used=new Set();
+  let items=[];slots.split(' ').forEach(s=>{const acc=s.endsWith('*'),slot=s.replace('*','');const r=pickFor(slot,a,used,off);if(!r)return;used.add(r.id);if(r.swapped)swaps.add(exBy(r.id).name);
+   const p=P[acc?'a':'c'];let sets=p[0][lv];if(a.prio.some(g=>SLOTG[slot]===g||(g==='Ягодицы'&&slot==='HINGE')))sets++;items.push({exId:r.id,sets,min:p[1],max:p[2],rest:p[3],acc,slot})});
+  // доп. упражнение для приоритетных групп
+  a.prio.forEach(g=>{const slot=PRIO_SLOT[g];if(items.some(i=>SLOTG[i.slot]===g||(g==='Ягодицы'&&i.slot==='HINGE'))){const r=pickFor(slot,a,used,off+1);if(r){used.add(r.id);const p=P.a;items.push({exId:r.id,sets:p[0][lv]+1,min:p[1],max:p[2],rest:p[3],acc:true,slot,prio:true})}}});
+  // подгонка под длительность (−8 мин разминка)
+  const budget=a.len*60-480,cardioMin=(a.goal==='loss'?20:a.goal==='fit'?15:0)*60,tot=()=>items.reduce((s,i)=>s+itemTime(i),0)+cardioMin;
+  while(tot()>budget){const j=items.map((x,k)=>x.acc&&!x.prio?k:-1).filter(k=>k>=0).pop();if(j!==undefined){items.splice(j,1);continue}
+   const big=items.filter(x=>x.sets>2);if(big.length){big.forEach(x=>x.sets--);continue}const j2=items.map((x,k)=>x.prio?k:-1).filter(k=>k>=0).pop();if(j2!==undefined){items.splice(j2,1);continue}if(items.length>3){items.pop();continue}break}
+  if(cardioMin){const c=['tm','bike','ell','rowm','stair','jump','wlk'].filter(id=>okEx(id,a));const left=Math.max(10,Math.min(30,Math.floor((budget-tot()+cardioMin)/60)));items.push({exId:c[off%c.length]||'wlk',sets:1,min:Math.max(10,left-10),max:left,rest:0})}
+  return{name,items:items.map(({exId,sets,min,max,rest})=>({exId,sets,min,max,rest}))}});
+ return{days,why:whyOf(a,days,[...swaps])}}
+function weekVol(days){const v={};days.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return v}
+function whyOf(a,days,swaps){const v=weekVol(days),P=PRM[a.goal],w=[];
+ w.push([`Сплит «${a.place!=='g'&&a.days>=5?'Верх / Низ'+(a.days==5?' + Фулбоди':' ×1,5'):SPLITNAME[a.days]}»: каждая крупная группа мышц тренируется ~${a.days>=6?2:a.days>=4?2:a.days} раз(а) в неделю — 2 раза в неделю дают больший рост, чем 1.`,['f','gf']]);
+ w.push([`Повторы ${P.c[1]}–${P.c[2]} в базовых и ${P.a[1]}–${P.a[2]} в изолирующих, отдых ${P.c[3]/60} мин / ${P.a[3]} с: `+({str:'сила лучше растёт при весах >80% 1ПМ и длинном отдыхе.',mass:'мышцы растут в широком диапазоне повторов при работе близко к отказу; длинный отдых в базе даёт больше прогресса.',loss:'силовые сохраняют мышцы при дефиците калорий, короткий отдых экономит время.',fit:'умеренные веса и 8–15 повторов — рекомендация ACSM для здоровья и общей силы.'}[a.goal]),a.goal==='str'?['l','a','r']:a.goal==='mass'?['l','r']:a.goal==='loss'?['d','a']:['a','w']]);
+ w.push([`Объём в неделю (подходов): ${Object.entries(v).map(([g,n])=>g+' '+n).join(', ')}. `+(a.level==='nov'?'Для новичка — умеренный объём (меньше подходов): прогресс идёт и при малом объёме, важнее освоить технику.':'Для роста мышц ориентир — ~10+ подходов на группу в неделю; больше подходов — больше результат (дозозависимо).'),a.level==='nov'?['a','v']:['v','rv']]);
+ if(a.prio.length)w.push([`Приоритет: ${a.prio.join(', ')} — +1 подход и доп. упражнение, т.к. больший недельный объём даёт больший рост этих мышц.`,['v']]);
+ if(a.goal==='loss'||a.goal==='fit')w.push([`Кардио в конце тренировки + дополнительная активность: ориентир ВОЗ — 150–300 мин умеренной нагрузки в неделю${a.goal==='loss'?'; для снижения веса ACSM советует >150, лучше 225–420 мин':''}.`,a.goal==='loss'?['w','d']:['w']]);
+ w.push([`Длительность ~${a.len} мин: число упражнений и подходов подогнано под это время (8 мин — разминка).`,[]]);
+ if(a.lim.length)w.push([`Ограничения (${a.lim.map(l=>LIMN[l]).join(', ')}): рискованные упражнения заменены на более щадящие${swaps.length?' ('+swaps.slice(0,5).join(', ')+')':''}. При боли — проконсультируйся с врачом.`,[]]);
+ w.push([`Пол: ${a.sex==='f'?'женский':'мужской'} — в относительных величинах мужчины и женщины прибавляют в силе и мышцах сопоставимо, поэтому принципы программы одинаковые.`,['sx']]);
+ w.push(['Прогрессия: когда все подходы выполнены на верхней границе повторов — добавь 2,5–5% веса (приложение подскажет).',['a']]);return w}
+const CATALOG=[
+['Старт в зале','Для новичков: освоить базовые движения, 3 фулбоди в неделю.',{goal:'fit',level:'nov',days:3,len:60,place:'g'}],
+['Масса: Верх / Низ','Классика для набора массы: каждая мышца 2 раза в неделю.',{goal:'mass',level:'mid',days:4,len:60,place:'g'}],
+['Масса: Жим / Тяга / Ноги ×2','Высокий объём для опытных, 6 дней.',{goal:'mass',level:'adv',days:6,len:75,place:'g'}],
+['Масса за 3 дня','Фулбоди для тех, у кого мало времени.',{goal:'mass',level:'mid',days:3,len:60,place:'g'}],
+['Сила: базовая тройка','Присед, жим, становая — тяжёлые веса, длинный отдых.',{goal:'str',level:'mid',days:3,len:75,place:'g'}],
+['Сила: Верх / Низ','4 дня, больше объёма на базовые движения.',{goal:'str',level:'adv',days:4,len:90,place:'g'}],
+['Рельеф 4×','Силовые 10–15 повторов + кардио для сжигания жира.',{goal:'loss',level:'mid',days:4,len:60,place:'g'}],
+['Похудение: экспресс 30 мин','Коротко и интенсивно, 3 раза в неделю.',{goal:'loss',level:'nov',days:3,len:30,place:'g'}],
+['Дом с гантелями','Масса дома: только гантели и скамья.',{goal:'mass',level:'mid',days:4,len:60,place:'d'}],
+['Свой вес','Без оборудования (нужен турник), 3 дня.',{goal:'fit',level:'nov',days:3,len:45,place:'b'}],
+['Широкая спина','Приоритет спины: доп. объём на тяги.',{goal:'mass',level:'mid',days:4,len:75,place:'g',prio:['Спина']}],
+['Объёмные руки','Приоритет бицепса и трицепса.',{goal:'mass',level:'mid',days:5,len:60,place:'g',prio:['Бицепс','Трицепс']}],
+['Ягодицы и ноги','Приоритет низа тела.',{goal:'mass',level:'mid',days:4,len:60,place:'g',sex:'f',prio:['Ягодицы','Ноги']}],
+['Пресс и рельеф','Похудение с приоритетом пресса.',{goal:'loss',level:'mid',days:4,len:45,place:'g',prio:['Пресс']}],
+['Здоровая спина','Укрепление здоровья без осевой нагрузки на позвоночник.',{goal:'fit',level:'nov',days:2,len:45,place:'g',lim:['s']}],
+['Бережно к коленям','Без глубоких приседов и выпадов.',{goal:'fit',level:'mid',days:3,len:45,place:'g',lim:['k']}]].map(([name,desc,a],i)=>({id:'c'+i,name,desc,a:{sex:'m',prio:[],lim:[],...a}}));
+
 let S=JSON.parse(localStorage.getItem('gym')||'null')||{custom:[],workouts:[],next:0};
+if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.workouts=S.workouts||[];S.v=2;
 const save=()=>localStorage.setItem('gym',JSON.stringify(S));
 const allEx=()=>EX.concat(S.custom), exBy=id=>allEx().find(e=>e.id===id)||{name:'?',group:''};
 const isCardio=id=>exBy(id).group==='Кардио';
@@ -32,21 +90,55 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 let view='today';
 function go(v){view=v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal)return onboarding();
- if(S.active&&view==='today')return workoutView();({today,program,progress,history,more,science,library}[view])()}
-// ---------- Онбординг
-let ob={goal:'mass',days:3};
-function onboarding(){$('#title').textContent='Добро пожаловать';
- app.innerHTML=`<p class="mut">Выбери цель и сколько раз в неделю ты тренируешься. Программа составится автоматически на основе научных данных — потом её можно менять.</p>
- <h2>Цель</h2><div class="opts">${Object.entries({mass:['💪 Масса','Рост мышц: 6–15 повторов, 10–20 подходов на мышцу в неделю'],str:['🏋️ Сила','Тяжёлые веса: 3–6 повторов, отдых 3 мин'],loss:['🔥 Похудение','Силовые 10–15 повторов + кардио 20–30 мин']}).map(([k,[t,d]])=>`<button class="opt ${ob.goal===k?'sel':''}" data-g="${k}"><b>${t}</b><br><span class="mut">${d}</span></button>`).join('')}</div>
- <h2>Тренировок в неделю</h2><div class="opts c4">${[2,3,4,5].map(n=>`<button class="opt ${ob.days===n?'sel':''}" data-d="${n}" style="text-align:center"><b>${n}</b></button>`).join('')}</div>
- <p class="mut">${ob.days<=3?'Фулбоди — каждая мышца ~'+ob.days+' раза в неделю':ob.days==4?'Верх/Низ — каждая мышца 2 раза в неделю':'Жим/Тяга/Ноги + Верх/Низ — каждая мышца ~2 раза в неделю'}</p>
- <button class="pri full" id="obgo" style="margin-top:16px">Создать программу</button>
- <button class="full" style="margin-top:8px" id="obsci">📚 Научная основа</button>`;
- app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{ob.goal=b.dataset.g;onboarding()});
- app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ob.days=+b.dataset.d;onboarding()});
- $('#obsci').onclick=()=>{S.goal=null;science(true)};
- $('#obgo').onclick=()=>{S.goal=ob.goal;S.days=ob.days;S.program=buildProgram(ob.goal,ob.days);S.next=0;save();go('today')}}
+function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view))return quiz();
+ if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();({today,program,progress,history,more,science,library,quiz,catalog}[view])()}
+let ob={goal:'mass'};
+function onboarding(){quiz()}
+let Q=null,catF={};
+const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" data-k="${k}" data-v="${v}">${label}</button>`;
+function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',prio:[],lim:[],...(S.prof||{})};
+ const grp=(t,k,opts,multi)=>`<h2>${t}</h2><div class="chips">${opts.map(([v,l])=>chip(k,v,l,multi?Q[k].includes(v):String(Q[k])===String(v))).join('')}</div>`;
+ app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
+ ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ Сила'],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
+ ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
+ ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${grp('Длительность тренировки','len',[30,45,60,75,90].map(n=>[n,n+' мин']))}
+ ${grp('Где тренируешься','place',[['g','🏢 Зал'],['d','🏠 Дом с гантелями'],['b','🤸 Свой вес']])}
+ ${grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
+ ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}
+ <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${S.program?'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>':''}`;
+ app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
+ $('#tocat').onclick=e=>{e.preventDefault();go('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+GOALS[Q.goal],desc:`${LVN[Q.level]} · ${PLN[Q.place]} · ${Q.days}×${Q.len} мин`,a:{...Q}},'quiz')};
+ if($('#qback'))$('#qback').onclick=()=>go('program')}
+let PV=null;
+function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
+function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
+ const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
+ app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div></div>
+ ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)}</h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span><span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
+ <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
+ <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
+ <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
+ app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;renderPreview()})});
+ $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
+ $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
+  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
+const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${t}</span>`).join('');
+function catalog(){$('#title').textContent='Готовые программы';const F=catF;
+ const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
+ const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
+ app.innerHTML=`${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN))}
+ <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card"><h3>${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
+ <div class="mut" style="font-size:13px">${generate(c.a).days.map(d=>esc(d.name)).join(' · ')}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
+ <button class="full" id="toq" style="margin-bottom:20px">🧩 Подобрать по анкете</button>`;
+ app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
+ app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(CATALOG.find(c=>c.id===b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
+function swapModal(cur,a,cb){const g=exBy(cur).group,m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
+ const L=allEx().filter(e=>e.group===g&&e.id!==cur),good=L.filter(e=>okEx(e.id,a)),other=L.filter(e=>!okEx(e.id,a));
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">Альтернативы (${g})</p>
+ ${good.map(e=>`<button class="full" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>`).join('')}
+ ${other.length?`<p class="mut">Другое оборудование или риск при ограничениях:</p>`+other.map(e=>`<button class="full" style="margin:3px 0;text-align:left;opacity:.6" data-p="${e.id}">${esc(e.name)}</button>`).join(''):''}</div>`;
+ $('#mc').onclick=()=>m.classList.add('hidden');m.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})}
+
 // ---------- Сегодня
 function lastSets(exId,beforeId){for(let i=S.workouts.length-1;i>=0;i--){const w=S.workouts[i];if(w.id===beforeId)continue;const it=w.items.find(x=>x.exId===exId);if(it&&it.sets.some(s=>s.done))return it.sets.filter(s=>s.done)}return null}
 function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))return'';
@@ -63,7 +155,7 @@ function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.n
 let durInt;
 function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok" id="fin">Завершить</button></div>
- ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3><button class="sm" data-rm="${i}">✕</button></div>
+ ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3><button class="sm" data-ws="${i}">⇄</button><button class="sm" data-rm="${i}">✕</button></div>
  <div class="mut">Цель: ${c?it.min+'–'+it.max+' мин':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest)}</div>
  <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':'Вес, кг'}</span><span>${c?'Минуты':'Повторы'}</span><span></span></div>
  ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${s.w}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${s.r}" data-i="${i}" data-k="${k}" data-f="r"><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">прошлый раз: ${l[k].w} × ${l[k].r}</div>`:''}</div>`).join('')}
@@ -78,6 +170,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
+ app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{it.exId=id;const l=lastSets(id,A.id);it.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:''}});save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;save();stopTimer();go('today')}};
@@ -95,21 +188,23 @@ function stopTimer(){clearInterval(tInt);$('#timer').classList.add('hidden')}
 document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;tt()});$('#tstop').onclick=stopTimer;
 // ---------- Программа
 function program(){$('#title').textContent='Программа';
- app.innerHTML=`<div class="card"><div class="mut">Цель: <b>${GOALS[S.goal]}</b> · ${S.days} трен./нед.</div><button class="full" style="margin-top:10px" id="chg">Сменить цель / частоту</button><button class="full" style="margin-top:8px" id="sci">📚 Научная основа программы</button></div>
+ app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
+ ${S.why?`<details class="card"><summary><b>Почему программа построена так</b></summary>${S.why.map(([t])=>`<p style="margin:6px 0">• ${t}</p>`).join('')}<p class="mut">Источники — в разделе «Научная основа».</p></details>`:''}
  ${S.program.map((d,di)=>`<div class="card"><div class="row"><input value="${esc(d.name)}" data-dn="${di}"></div>
  ${d.items.map((it,ii)=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:60%">${esc(exBy(it.exId).name)}</div>
- <button class="sm" data-up="${di},${ii}">↑</button><button class="sm" data-dn2="${di},${ii}">↓</button><button class="sm" data-x="${di},${ii}">✕</button>
+ <button class="sm" data-swp="${di},${ii}">⇄</button><button class="sm" data-up="${di},${ii}">↑</button><button class="sm" data-dn2="${di},${ii}">↓</button><button class="sm" data-x="${di},${ii}">✕</button>
  <div class="row full" style="width:100%;font-size:13px"><label class="grow">Подходы<input type="number" value="${it.sets}" data-e="${di},${ii},sets"></label><label class="grow">Повт. от<input type="number" value="${it.min}" data-e="${di},${ii},min"></label><label class="grow">до<input type="number" value="${it.max}" data-e="${di},${ii},max"></label><label class="grow">Отдых, с<input type="number" value="${it.rest}" data-e="${di},${ii},rest"></label></div></div>`).join('')}
  <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></div>`).join('')}
  <div class="card"><b>Подходов на группу мышц в неделю</b><div style="margin-top:6px">${volBadges()}</div><div class="mut" style="margin-top:6px">Ориентир для роста мышц: 10–20 подходов (Schoenfeld 2017).</div></div>`;
- $('#chg').onclick=()=>{ob={goal:S.goal,days:S.days};if(confirm('Создать новую программу? Текущие шаблоны дней заменятся (история сохранится).')){S.goal=null;save();render()}};
+ $('#chg').onclick=()=>{Q=null;go('quiz')};$('#cat').onclick=()=>go('catalog');
+ app.querySelectorAll('[data-swp]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.swp.split(',');const it=S.program[di].items[ii];swapModal(it.exId,S.prof,id=>{it.exId=id;save();program()})});
  $('#sci').onclick=()=>go('science');
  app.querySelectorAll('[data-dn]').forEach(i=>i.onchange=()=>{S.program[i.dataset.dn].name=i.value;save()});
  app.querySelectorAll('[data-e]').forEach(i=>i.onchange=()=>{const[d,k,f]=i.dataset.e.split(',');S.program[d].items[k][f]=+i.value;save();program()});
  const mv=(a,d)=>{const[di,ii]=a.split(',').map(Number),L=S.program[di].items,j=ii+d;if(j<0||j>=L.length)return;[L[ii],L[j]]=[L[j],L[ii]];save();program()};
  app.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(b.dataset.up,-1));app.querySelectorAll('[data-dn2]').forEach(b=>b.onclick=()=>mv(b.dataset.dn2,1));
  app.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.x.split(',');S.program[di].items.splice(ii,1);save();program()});
- app.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;S.program[b.dataset.ad].items.push({exId:id,sets:p[0],min:p[1],max:p[2],rest:p[3]});save();program()}))}
+ app.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;S.program[b.dataset.ad].items.push({exId:id,sets:p[0][1],min:p[1],max:p[2],rest:p[3]});save();program()}))}
 function volBadges(){const v={};S.program.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return Object.entries(v).map(([g,n])=>`<span class="badge">${g}: ${n}</span>`).join('')}
 function pickEx(cb){const m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><div class="row"><input id="q" placeholder="Поиск упражнения"><button id="mc">✕</button></div><div id="el"></div></div>`;
@@ -179,9 +274,11 @@ rv:'Ralston GW, Kilgore L, Wyatt FB, Baker JS (2017). The effect of weekly set v
 gf:'Grgic J, Schoenfeld BJ, Davies TB, et al. (2018). Effect of resistance training frequency on gains in muscular strength: A systematic review and meta-analysis. Sports Medicine, 48(5), 1207–1220.',
 p:'Morton RW, Murphy KT, McKellar SR, et al. (2018). A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults. British Journal of Sports Medicine, 52(6), 376–384.',
 d:'Donnelly JE, Blair SN, Jakicic JM, et al. (2009). ACSM Position Stand: Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Medicine & Science in Sports & Exercise, 41(2), 459–471.',
+sx:'Roberts BM, Nuckols G, Krieger JW (2020). Sex differences in resistance training: A systematic review and meta-analysis. Journal of Strength and Conditioning Research, 34(5), 1448–1460.',
 w:'Bull FC, Al-Ansari SS, Biddle S, et al. (2020). World Health Organization 2020 guidelines on physical activity and sedentary behaviour. British Journal of Sports Medicine, 54(24), 1451–1462.'};
 const SCI={mass:[['Объём','10–20 рабочих подходов на группу мышц в неделю: больше подходов — больше рост (дозозависимый эффект).',['v']],['Частота','Каждую мышцу тренируем ~2 раза в неделю — это даёт больший рост, чем 1 раз.',['f']],['Повторы и близость к отказу','Мышцы растут в широком диапазоне (≈6–30 повторов), если подход доведён близко к отказу (1–2 повтора в запасе). Практично: 6–10 в базовых, 10–15 в изолирующих.',['l']],['Отдых','2–3 мин между подходами в базовых упражнениях дают больше прогресса, чем 1 мин.',['r']],['Прогрессия (двойная)','Работай в диапазоне повторов; когда все подходы выполнены на верхней границе — увеличь вес на 2,5–5% и снова начинай с нижней. Приложение подсказывает это.',['a']],['Белок','≈1,6 г белка на кг веса тела в день — дальше дополнительной пользы почти нет.',['p']]],
 str:[['Интенсивность','Сила лучше всего растёт при тяжёлых весах: >80% от 1ПМ, примерно 1–6 повторов.',['l','a']],['Отдых','3–5 мин между тяжёлыми подходами в базовых упражнениях (у нас 3 мин по умолчанию).',['a','r']],['Объём','Несколько подходов (multi-set) дают больше силы, чем один подход.',['rv']],['Частота','При равном объёме частота не так важна, но 2–3 раза в неделю на движение — удобный способ набрать объём.',['gf']],['Прогрессия','Постепенно повышай нагрузку: при выполнении всех повторов — +2,5–5% к весу.',['a']]],
+fit:[['Силовые 2–3 раза в неделю','Для здоровья и общей формы: силовые на все крупные группы мышц 2–3 раза в неделю, 8–12 (до 15) повторов, новичкам — 1–3 подхода.',['a']],['Активность','ВОЗ: 150–300 мин умеренной активности в неделю + силовые минимум 2 дня.',['w']],['Мужчины и женщины','В относительных величинах прирост силы и мышц у мужчин и женщин сопоставим — принципы одинаковы.',['sx']],['Прогрессия','Плавно увеличивай нагрузку, когда выполняешь верхнюю границу повторов.',['a']]],
 loss:[['Силовые обязательно','Силовые тренировки при дефиците калорий помогают сохранить мышцы; поэтому программа сохраняет базовые упражнения (10–15 повторов, отдых 60–90 с).',['d','a']],['Кардио','ВОЗ: 150–300 мин умеренной или 75–150 мин интенсивной активности в неделю; для заметного снижения веса ACSM рекомендует >150 мин, а лучше 225–420 мин в неделю.',['w','d']],['Калории','Главный фактор похудения — дефицит калорий (питание). Одна только активность даёт умеренный эффект.',['d']],['Белок','Достаточно белка (≈1,6 г/кг) помогает удерживать мышечную массу.',['p']]]};
 function science(fromOb){$('#title').textContent='Научная основа';const g=S.goal||ob.goal;let cur=window._sg||g;
  const used=[...new Set(SCI[cur].flatMap(x=>x[2]))];

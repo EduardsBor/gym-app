@@ -29,3 +29,5 @@ nav button span{font-size:11px;color:var(--mut)}nav button.on span{color:var(--a
 .cal .has{background:var(--acc);color:#fff;font-weight:700;cursor:pointer}.cal .h{color:var(--mut);font-size:12px}
 .li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #262b36}
 canvas{width:100%;height:200px;background:var(--card2);border-radius:12px}.tabs{display:flex;gap:6px;margin:8px 0}.tabs button{flex:1}.tabs .on{background:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{padding:0 14px;min-height:44px;text-align:center}.chips.sm2{margin:6px 0}.chips.sm2 .chip{min-height:36px;font-size:14px;padding:0 10px}
+details summary{cursor:pointer;min-height:30px}
