@@ -114,7 +114,7 @@ function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderP
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div></div>
- ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)}</h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span><span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
+ ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)}</h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
@@ -135,8 +135,8 @@ function catalog(){$('#title').textContent='Готовые программы';c
 function swapModal(cur,a,cb){const g=exBy(cur).group,m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
  const L=allEx().filter(e=>e.group===g&&e.id!==cur),good=L.filter(e=>okEx(e.id,a)),other=L.filter(e=>!okEx(e.id,a));
  m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">Альтернативы (${g})</p>
- ${good.map(e=>`<button class="full" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>`).join('')}
- ${other.length?`<p class="mut">Другое оборудование или риск при ограничениях:</p>`+other.map(e=>`<button class="full" style="margin:3px 0;text-align:left;opacity:.6" data-p="${e.id}">${esc(e.name)}</button>`).join(''):''}</div>`;
+ ${good.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join('')}
+ ${other.length?`<p class="mut">Другое оборудование или риск при ограничениях:</p>`+other.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left;opacity:.6" data-p="${e.id}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}</div>`;
  $('#mc').onclick=()=>m.classList.add('hidden');m.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})}
 
 // ---------- Сегодня
@@ -146,7 +146,7 @@ function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))retur
 function today(){$('#title').textContent='Сегодня';const d=S.program[S.next%S.program.length];
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
  app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2>
- ${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div><span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}
+ ${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}
  <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button></div>
  <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${esc(p.name)}</button>`).join('')}`;
  $('#start').onclick=()=>startW(S.next%S.program.length);app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>startW(+b.dataset.i))}
@@ -155,7 +155,7 @@ function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.n
 let durInt;
 function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok" id="fin">Завершить</button></div>
- ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3><button class="sm" data-ws="${i}">⇄</button><button class="sm" data-rm="${i}">✕</button></div>
+ ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3>${techBtn(it.exId)}<button class="sm" data-ws="${i}">⇄</button><button class="sm" data-rm="${i}">✕</button></div>
  <div class="mut">Цель: ${c?it.min+'–'+it.max+' мин':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest)}</div>
  <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':'Вес, кг'}</span><span>${c?'Минуты':'Повторы'}</span><span></span></div>
  ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${s.w}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${s.r}" data-i="${i}" data-k="${k}" data-f="r"><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">прошлый раз: ${l[k].w} × ${l[k].r}</div>`:''}</div>`).join('')}
@@ -228,7 +228,7 @@ function program(){$('#title').textContent='Программа';
  app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
  ${S.why?`<details class="card"><summary><b>Почему программа построена так</b></summary>${S.why.map(([t])=>`<p style="margin:6px 0">• ${t}</p>`).join('')}<p class="mut">Источники — в разделе «Научная основа».</p></details>`:''}
  ${S.program.map((d,di)=>`<div class="card"><div class="row"><input value="${esc(d.name)}" data-dn="${di}"></div>
- ${d.items.map((it,ii)=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:60%">${esc(exBy(it.exId).name)}</div>
+ ${d.items.map((it,ii)=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:60%">${esc(exBy(it.exId).name)}</div>${techBtn(it.exId)}
  <button class="sm" data-swp="${di},${ii}">⇄</button><button class="sm" data-up="${di},${ii}">↑</button><button class="sm" data-dn2="${di},${ii}">↓</button><button class="sm" data-x="${di},${ii}">✕</button>
  <div class="row full" style="width:100%;font-size:13px"><label class="grow">Подходы<input type="number" value="${it.sets}" data-e="${di},${ii},sets"></label><label class="grow">Повт. от<input type="number" value="${it.min}" data-e="${di},${ii},min"></label><label class="grow">до<input type="number" value="${it.max}" data-e="${di},${ii},max"></label><label class="grow">Отдых, с<input type="number" value="${it.rest}" data-e="${di},${ii},rest"></label></div></div>`).join('')}
  <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></div>`).join('')}
@@ -245,7 +245,7 @@ function program(){$('#title').textContent='Программа';
 function volBadges(){const v={};S.program.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return Object.entries(v).map(([g,n])=>`<span class="badge">${g}: ${n}</span>`).join('')}
 function pickEx(cb){const m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><div class="row"><input id="q" placeholder="Поиск упражнения"><button id="mc">✕</button></div><div id="el"></div></div>`;
- const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&e.name.toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>`<button class="full" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>`).join(''):''}).join('');
+ const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&e.name.toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}).join('');
   $('#el').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})};
  $('#q').oninput=draw;$('#mc').onclick=()=>m.classList.add('hidden');draw()}
 // ---------- Прогресс
@@ -376,7 +376,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 10</p>`;
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 11</p>`;
  $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
