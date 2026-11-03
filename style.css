@@ -46,3 +46,4 @@ details summary{cursor:pointer;min-height:30px}
 #tech .sheet{background:var(--card);width:100%;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 14px calc(20px + env(safe-area-inset-bottom))}
 #tech ol,#tech ul{padding-left:20px;margin:6px 0 12px}#tech li{margin:4px 0;line-height:1.4}#tech h3{margin:12px 0 4px}
 .tbtn{min-width:34px}
+.set.pf input{color:var(--mut);font-style:italic}

@@ -151,26 +151,26 @@ let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(se
  <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${i===sel?'👁 ':''}${esc(p.name)}</button>`).join('')}`;
  $('#start').onclick=()=>startW(sel);const tb=$('#tback');if(tb)tb.onclick=()=>today();app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
 function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,notes:'',
- items:d.items.map(it=>{const l=lastSets(it.exId);return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:(isCardio(it.exId)?it.max:it.max),done:false}})}})};save();go('today')}
+ items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
 let durInt;
 function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok" id="fin">Завершить</button></div>
  ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3>${techBtn(it.exId)}<button class="sm" data-ws="${i}">⇄</button><button class="sm" data-rm="${i}">✕</button></div>
  <div class="mut">Цель: ${c?it.min+'–'+it.max+' мин':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest)}</div>
  <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':'Вес, кг'}</span><span>${c?'Минуты':'Повторы'}</span><span></span></div>
- ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${s.w}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${s.r}" data-i="${i}" data-k="${k}" data-f="r"><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">прошлый раз: ${l[k].w} × ${l[k].r}</div>`:''}</div>`).join('')}
+ ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''} ${s.pf&&!s.done?'pf':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${s.w}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${s.r}" data-i="${i}" data-k="${k}" data-f="r"><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">прошлый раз: ${l[k].w} × ${l[k].r}</div>`:''}</div>`).join('')}
  <div class="row"><button class="sm grow" data-add="${i}">+ подход</button><button class="sm grow" data-del="${i}">− подход</button></div></div>`}).join('')}
  <button class="full" id="addex">+ Добавить упражнение</button>
  <h2>Заметки</h2><textarea id="notes" rows="3" placeholder="Самочувствие, что получилось…">${esc(A.notes)}</textarea>
  <button class="danger full" id="cancel" style="margin:16px 0">Отменить тренировку</button>`;
  const tick=()=>{const e=$('#dur');if(e)e.textContent=fmtT(Math.floor((Date.now()-A.start)/1000))};tick();clearInterval(durInt);durInt=setInterval(tick,1000);
- app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;save()});
+ app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;if(s.pf){s.pf=false;inp.closest('.set').classList.remove('pf')}save()});
  app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.done.split(',').map(Number),it=A.items[i],s=it.sets[k];s.done=!s.done;
-  if(s.done){if(s.w==='')s.w=0;if(s.r==='')s.r=0;checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}else{delete s.pr;delete s.prInfo}save();workoutView()});
- app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});save();workoutView()});
+  if(s.done){s.pf=false;if(s.w==='')s.w=0;if(s.r==='')s.r=0;if(S.autoW!==false&&!isCardio(it.exId))it.sets.slice(k+1).forEach(n=>{if(!n.done&&(n.pf||n.w==='')){n.w=s.w;n.pf=true}});checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}else{delete s.pr;delete s.prInfo}save();workoutView()});
+ app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push(S.autoW!==false?{w:l.w,r:l.r,pf:l.w!=='',done:false}:{w:'',r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
- app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{it.exId=id;const l=lastSets(id,A.id);it.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:''}});save();workoutView()})});
+ app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{it.exId=id;const l=S.autoW!==false?lastSets(id,A.id):null;it.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p}});save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;save();stopTimer();go('today')}};
@@ -372,12 +372,13 @@ function more(){$('#title').textContent='Ещё';
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
  <p class="mut">iPhone: выключи беззвучный режим (переключатель сбоку) и не блокируй экран — иначе звук таймера может не прозвучать. Громкость — кнопками телефона.</p></div>
+ <div class="card"><b>Тренировка</b><label class="li"><span class="grow">🏋️ Подставлять последний вес</span><input type="checkbox" id="aw" style="width:28px;min-height:28px" ${S.autoW!==false?'checked':''}></label><p class="mut">Вес и повторы подставляются из прошлой тренировки с этим упражнением (серым). Можно изменить; ✓ сохраняет то, что видно.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 12</p>`;
- $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 13</p>`;
+ $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
