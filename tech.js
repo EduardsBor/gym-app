@@ -69,11 +69,10 @@ bpl:[['Ляг на бок, локоть под плечом.','Ноги вмес
 jump:[['Встань прямо, ноги вместе, руки вдоль тела.','Прыжком разведи ноги и подними руки над головой.','Прыжком вернись в исходное.','Приземляйся мягко на переднюю часть стопы.'],['Жёсткое приземление на пятки.','Колени внутрь.','Задержка дыхания.'],'При проблемах с коленями — шаги в стороны вместо прыжков.'],
 wlk:[['Иди в темпе, при котором дыхание учащено, но можно говорить.','Корпус прямой, плечи расслаблены.','Работай руками.','Шаг с пятки на носок.'],['Сутулость.','Слишком длинный шаг.','Неудобная обувь.'],'']
 };
-const ANIM=new Set('abw bc bd bike bp bpl bss bwsq calf cc cgb chin cr cru dbc dbp dbr dbrdl dbug dip dl dpu dsp e ell fly fp fsq gsq hc hlr ht hyp ibp idb inv jump lat lc lp lr lun mch nlc ohp ote pc pl pu pull rdl rfly row rowm rt sglb shr skull sq stair step tm tpd ur wlk'.split(' '));
 function techBtn(id){return TECH[id]?`<button class="sm tbtn" data-ti="${id}" aria-label="Техника">ⓘ</button>`:''}
 function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementById('tech');if(!m){m=document.createElement('div');m.id='tech';document.body.appendChild(m)}
  const e=exBy(id);m.className='';
- m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">${esc(e.name)}</h2><button id="tc">✕</button></div><p class="mut">${esc(e.group)}</p>${ANIM.has(id)?`<img class="anim" src="anim/${id}.webp" alt="Как выполнять: ${esc(e.name)}" decoding="async">`:''}
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">${esc(e.name)}</h2><button id="tc">✕</button></div><p class="mut">${esc(e.group)}</p>
  <h3>Как выполнять</h3><ol>${t[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
  <h3>Частые ошибки</h3><ul>${t[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
  ${t[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(t[2])}</p>`:''}
