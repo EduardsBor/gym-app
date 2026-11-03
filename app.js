@@ -225,7 +225,7 @@ setInterval(wake,3000);
 
 // ---------- Программа
 function program(){$('#title').textContent='Программа';
- app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
+ app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="plib">📚 Библиотека упражнений</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
  ${S.why?`<details class="card"><summary><b>Почему программа построена так</b></summary>${S.why.map(([t])=>`<p style="margin:6px 0">• ${t}</p>`).join('')}<p class="mut">Источники — в разделе «Научная основа».</p></details>`:''}
  ${S.program.map((d,di)=>`<div class="card"><div class="row"><input value="${esc(d.name)}" data-dn="${di}"></div>
  ${d.items.map((it,ii)=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:60%">${esc(exBy(it.exId).name)}</div>${techBtn(it.exId)}
@@ -233,7 +233,7 @@ function program(){$('#title').textContent='Программа';
  <div class="row full" style="width:100%;font-size:13px"><label class="grow">Подходы<input type="number" value="${it.sets}" data-e="${di},${ii},sets"></label><label class="grow">Повт. от<input type="number" value="${it.min}" data-e="${di},${ii},min"></label><label class="grow">до<input type="number" value="${it.max}" data-e="${di},${ii},max"></label><label class="grow">Отдых, с<input type="number" value="${it.rest}" data-e="${di},${ii},rest"></label></div></div>`).join('')}
  <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></div>`).join('')}
  <div class="card"><b>Подходов на группу мышц в неделю</b><div style="margin-top:6px">${volBadges()}</div><div class="mut" style="margin-top:6px">Ориентир для роста мышц: 10–20 подходов (Schoenfeld 2017).</div></div>`;
- $('#chg').onclick=()=>{Q=null;go('quiz')};$('#cat').onclick=()=>go('catalog');
+ $('#chg').onclick=()=>{Q=null;go('quiz')};$('#cat').onclick=()=>go('catalog');$('#plib').onclick=()=>go('library');
  app.querySelectorAll('[data-swp]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.swp.split(',');const it=S.program[di].items[ii];swapModal(it.exId,S.prof,id=>{it.exId=id;save();program()})});
  $('#sci').onclick=()=>go('science');
  app.querySelectorAll('[data-dn]').forEach(i=>i.onchange=()=>{S.program[i.dataset.dn].name=i.value;save()});
@@ -367,7 +367,7 @@ function guide(k){let d=$('#gd');if(!d){d=document.createElement('div');d.id='gd
  $('#gpic').onclick=()=>{const f=document.createElement('div');f.id='gfull';f.innerHTML=(g?g[2]():OVERVIEW());f.onclick=()=>f.remove();document.body.append(f)}}
 // ---------- Ещё
 function more(){$('#title').textContent='Ещё';
- app.innerHTML=`<button class="full card" id="sci" style="text-align:left">📚 Научная основа программ</button><button class="full card" id="lib" style="text-align:left">📖 Библиотека упражнений</button>
+ app.innerHTML=`<button class="full card libbig" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">68 упражнений: 3D-анимация, техника, твоя история</span></span><span class="mut">›</span></button><button class="full card" id="sci" style="text-align:left">🔬 Научная основа программ</button>
  <div class="card"><b>Звук и экран</b>
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
@@ -377,17 +377,13 @@ function more(){$('#title').textContent='Ещё';
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 16</p>`;
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 17</p>`;
  $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d.workouts)throw 0;if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
  $('#reset').onclick=()=>{if(confirm('Удалить ВСЕ данные?')&&confirm('Точно?')){localStorage.removeItem('gym');location.reload()}}}
-function library(){$('#title').textContent='Упражнения';
- app.innerHTML=`<div class="card"><b>Своё упражнение</b><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button></div>
- ${GROUPS.map(g=>`<h2>${g}</h2><div class="card">${allEx().filter(e=>e.group===g).map(e=>`<div class="li"><span class="grow">${esc(e.name)}</span>${e.id.startsWith('c_')?`<button class="sm" data-cx="${e.id}">✕</button>`:''}</div>`).join('')}</div>`).join('')}`;
- $('#cadd').onclick=()=>{const n=$('#cn').value.trim();if(!n)return;S.custom.push({id:'c_'+Date.now(),name:n,group:$('#cg').value});save();toast('Добавлено');library()};
- app.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>{S.custom=S.custom.filter(e=>e.id!==b.dataset.cx);save();library()})}
+function library(){libView()}
 // ---------- Научная основа
 const SRC={
 v:'Schoenfeld BJ, Ogborn D, Krieger JW (2017). Dose-response relationship between weekly resistance training volume and increases in muscle mass: A systematic review and meta-analysis. Journal of Sports Sciences, 35(11), 1073–1082.',
