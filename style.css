@@ -47,3 +47,5 @@ details summary{cursor:pointer;min-height:30px}
 #tech ol,#tech ul{padding-left:20px;margin:6px 0 12px}#tech li{margin:4px 0;line-height:1.4}#tech h3{margin:12px 0 4px}
 .tbtn{min-width:34px}
 .set.pf input{color:var(--mut);font-style:italic}
+
+#tech video.a3d{display:block;width:100%;max-height:50vh;object-fit:contain;background:#fff;border-radius:12px;margin:8px 0}
