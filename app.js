@@ -143,13 +143,13 @@ function swapModal(cur,a,cb){const g=exBy(cur).group,m=$('#modal');m.classList.r
 function lastSets(exId,beforeId){for(let i=S.workouts.length-1;i>=0;i--){const w=S.workouts[i];if(w.id===beforeId)continue;const it=w.items.find(x=>x.exId===exId);if(it&&it.sets.some(s=>s.done))return it.sets.filter(s=>s.done)}return null}
 function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))return'';
  if(l.length>=item.sets&&l.every(s=>s.r>=item.max))return`<div class="pr" style="font-size:13px">⬆ В прошлый раз все подходы на ${item.max}+ — добавь вес (+2,5 кг)</div>`;return''}
-function today(){$('#title').textContent='Сегодня';const d=S.program[S.next%S.program.length];
+let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d=S.program[sel],mins=Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+8);
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
- app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2>
+ app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
  ${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}
  <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button></div>
- <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${esc(p.name)}</button>`).join('')}`;
- $('#start').onclick=()=>startW(S.next%S.program.length);app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>startW(+b.dataset.i))}
+ <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${i===sel?'👁 ':''}${esc(p.name)}</button>`).join('')}`;
+ $('#start').onclick=()=>startW(sel);const tb=$('#tback');if(tb)tb.onclick=()=>today();app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
 function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,notes:'',
  items:d.items.map(it=>{const l=lastSets(it.exId);return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:(isCardio(it.exId)?it.max:it.max),done:false}})}})};save();go('today')}
 let durInt;
@@ -376,7 +376,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 11</p>`;
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 12</p>`;
  $('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
