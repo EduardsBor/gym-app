@@ -73,7 +73,7 @@ const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантеля�
 
 function libView(){$('#title').textContent='Библиотека';const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
  app.innerHTML=`<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
- <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}</div>
+ <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}${ch('g','Разминка','🔥 Разминка')}</div>
  <div class="lchips">${ch('p','','Везде')}${Object.entries(EQN).map(([k,v])=>ch('p',k,v)).join('')}</div>
  <div id="llist"></div>
  <details class="card"><summary><b>➕ Своё упражнение</b></summary><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button>
@@ -101,7 +101,7 @@ function exCard(id){const e=exBy(id),L=LIB[id],T=TECH[id],m0=(META[id]||'gdb|').
  ${inP?`<h3>В твоей программе</h3><div class="card">${inP}</div>`:''}
  <h3>📈 Моя история</h3><div class="card">${H.length?`${!cardio&&b.w?`<div class="li"><span class="grow mut">Рекорд веса</span><b class="pr">${b.w} кг</b></div><div class="li"><span class="grow mut">Расчётный 1ПМ</span><b>${Math.round(b.r)} кг</b></div>`:''}
  <div class="li"><span class="grow mut">Последняя тренировка</span><span>${fmtD(last.t)}</span></div><p style="margin:6px 0">${last.sets.map(s=>cardio?esc(s.r)+' мин':esc(s.w||0)+'×'+esc(s.r)).join(' · ')}</p><p class="mut" style="margin:0">Всего тренировок с упражнением: ${H.length}</p>${!cardio&&H.length>1&&H.some(h=>h.b>0)?spark(H.filter(h=>h.b>0)):''}`:'<p class="mut" style="margin:0">Пока нет выполненных подходов. Сделай упражнение на тренировке — здесь появятся рекорд и прогресс.</p>'}</div>
- ${S.active?`<button class="pri full" id="exadd">➕ Добавить в текущую тренировку</button>`:(S.program&&S.program.length?`<div class="card"><b>Добавить в программу</b><div class="row" style="margin-top:8px"><select id="exday" class="grow">${S.program.map((d,i)=>`<option value="${i}">${esc(d.name)}</option>`).join('')}</select><button class="pri" id="exadd">➕</button></div></div>`:'')}
+ ${e.group==='Разминка'?'':S.active?`<button class="pri full" id="exadd">➕ Добавить в текущую тренировку</button>`:(S.program&&S.program.length?`<div class="card"><b>Добавить в программу</b><div class="row" style="margin-top:8px"><select id="exday" class="grow">${S.program.map((d,i)=>`<option value="${i}">${esc(d.name)}</option>`).join('')}</select><button class="pri" id="exadd">➕</button></div></div>`:'')}
  ${T?`<h3>Как выполнять</h3><ol>${T[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol><h3>Частые ошибки</h3><ul>${T[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${T[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(T[2])}</p>`:''}`:''}
  <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM/NSCA). При боли прекрати упражнение.</p></div>`;
  m.className='';m.scrollTop=0;document.body.style.overflow='hidden';

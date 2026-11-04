@@ -4,7 +4,7 @@
 const FREE_EX=new Set(['bp','dbp','pu','sq','gsq','bwsq','lp','rdl','ht','dl','lat','pull','dbr','inv','ohp','lr','bc','tpd','pl','tm']);
 const FREE_CAT=new Set(['c0','c7','c9']);
 const isPrem=()=>!!(S.premium||S.ownerPremium);
-const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_');
+const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id).startsWith('w_');
 // ---- Migration: never lose access or data. Only adds new fields.
 (function(){let ch=false;const has=!!((S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.program);
  if(S.ownerPremium===undefined&&has){S.ownerPremium=true;ch=true}
@@ -76,7 +76,7 @@ function consentView(){$('#title').textContent='Согласие';app.innerHTML=
  $('#cs').onchange=e=>$('#csok').disabled=!e.target.checked;$('#csok').onclick=()=>{S.consentHealth={v:1,at:new Date().toISOString()};save();toast('Согласие сохранено');body()};$('#cspol').onclick=()=>legal('privacy','body')}
 const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('body');_bodyForm(e)};
 // ---- Technique sheet: 3D video only for unlocked exercises
-const _techModal=techModal;techModal=function(id){_techModal(id);if(exOk(id))return;const m=document.getElementById('tech'),v=m&&m.querySelector('video.a3d');if(v){v.pause();v.removeAttribute('src');v.load();v.outerHTML=`<div class="vlock" data-pw="3D-видео всех 68 упражнений доступны в Premium"><img src="anim3d/${id}.jpg" alt=""><span>🔒 3D-видео — Premium</span></div>`}};
+const _techModal=techModal;techModal=function(id){_techModal(id);if(exOk(id)||window._wf)return;const m=document.getElementById('tech'),v=m&&m.querySelector('video.a3d');if(v){v.pause();v.removeAttribute('src');v.load();v.outerHTML=`<div class="vlock" data-pw="3D-видео всех 68 упражнений доступны в Premium"><img src="anim3d/${id}.jpg" alt=""><span>🔒 3D-видео — Premium</span></div>`}};
 
 // ---- «Ещё»: language, premium, onboarding, privacy & data
 const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
@@ -93,7 +93,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 21';
+ ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 22';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');

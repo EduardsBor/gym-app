@@ -80,4 +80,4 @@ function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementBy
  <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM/NSCA). При боли прекрати упражнение.</p></div>`;
  const v=m.querySelector('video.a3d');if(v){v.muted=true;v.onerror=()=>v.remove();const p=v.play();if(p)p.catch(()=>{})}
  const close=()=>{m.className='hidden';const x=m.querySelector('video.a3d');if(x){x.pause();x.removeAttribute('src');x.load()}};m.querySelector('#tc').onclick=close;m.onclick=ev=>{if(ev.target===m)close()}}
-document.addEventListener('click',ev=>{const b=ev.target.closest('[data-ti]');if(b){ev.stopPropagation();ev.preventDefault();techModal(b.dataset.ti)}},true);
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-ti]');if(b){ev.stopPropagation();ev.preventDefault();window._wf=!!b.dataset.wf;techModal(b.dataset.ti)}},true);

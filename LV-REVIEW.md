@@ -70,3 +70,98 @@ v21 — warm-up block (`i18n/dict2.js`, end of file):
 - Разминка → Iesildīšanās
 - Готово → Gatavs
 - каждая крупная группа мышц тренируется → katra lielā muskuļu grupa tiek trenēta
+
+## v22 — разминочные упражнения (warm.js)
+
+### w_march — Ходьба на месте с высоким подниманием колен
+- Основные: Подвздошно-поясничные (сгибатели бедра), квадрицепс → **Gūžas saliecēji (iliopsoas), četrgalvainais**
+- Вспомогательные: Икры, пресс, ягодичные → **Ikri, vēdera prese, sēžas muskuļi**
+- Описание: Мягкое общее разогревание без ударной нагрузки на колени: повышает пульс и температуру мышц. В разминке — 3 минуты в лёгком темпе. → **Maiga vispārējā iesildīšanās bez trieciena slodzes ceļiem: paaugstina pulsu un muskuļu temperatūru. Iesildīšanā — 3 minūtes vieglā tempā.**
+- Шаги: Nostājies taisni, pēdas gūžu platumā, rokas saliektas elkoņos. / Pamīšus cel ceļus aptuveni līdz gūžu augstumam. / Kustini rokas soļu ritmā kā ejot. / Elpo vienmērīgi; temps viegls — vari runāt.
+- Ошибки: Saliekta stāja vai atliekšanās atpakaļ. / Smaga piezemēšanās uz papēža. / Pārāk ātrs temps pašā sākumā.
+- Безопасность: Ja sāp ceļš, cel to zemāk.
+
+### w_hip — Круги тазом
+- Основные: Мышцы тазобедренного сустава (ягодичные, сгибатели бедра) → **Gūžas locītavas muskuļi (sēžas, gūžas saliecēji)**
+- Вспомогательные: Мышцы поясницы, косые мышцы живота → **Muguras lejasdaļas muskuļi, slīpie vēdera muskuļi**
+- Описание: Подвижность тазобедренных суставов и поясницы перед работой на ноги. В разминке — 10 кругов в каждую сторону. → **Gūžu un muguras lejasdaļas kustīgums pirms kāju darba. Iesildīšanā — 10 apļi uz katru pusi.**
+- Шаги: Pēdas plecu platumā, ceļi nedaudz saliekti, rokas uz gurniem. / Pleci un krūtis paliek uz vietas, kustas tikai iegurnis. / Lēnām apli ar iegurni: uz sāniem, uz priekšu, uz otru pusi, atpakaļ. / Pakāpeniski palielini amplitūdu, tad maini virzienu.
+- Ошибки: Visa ķermeņa griešana iegurņa vietā. / Strauji, ātri apļi. / Taisni, «bloķēti» ceļi.
+- Безопасность: Ja sāp mugura, samazini amplitūdu.
+
+### w_legsw — Махи ногами
+- Основные: Сгибатели бедра, задняя поверхность бедра → **Gūžas saliecēji, augšstilba aizmugure**
+- Вспомогательные: Ягодичные, приводящие и отводящие мышцы бедра → **Sēžas muskuļi, augšstilba pievilcēji un atvilcēji**
+- Описание: Динамическая растяжка ног перед приседаниями, выпадами и тягами. В разминке — 10 махов вперёд-назад и 10 в стороны каждой ногой. → **Dinamiska kāju stiepšana pirms pietupieniem, izklupieniem un vilkmēm. Iesildīšanā — 10 vēzieni uz priekšu-atpakaļ un 10 uz sāniem ar katru kāju.**
+- Шаги: Nostājies ar sānu pret balstu un turies pie tā ar roku. / Ķermenis taisns, balsta kāja nedaudz saliekta. / Brīvi vēzē kāju uz priekšu-atpakaļ, tad uz sāniem sev priekšā. / Sāc ar mazu amplitūdu un pakāpeniski palielini; maini kāju.
+- Ошибки: Rāvieni un kājas mešana ar spēku. / Muguras saliekšana un ķermeņa noliekšana. / Pārāk liela amplitūda jau no pirmā vēziena.
+- Безопасность: Vēzē bez sāpēm; amplitūda — līdz vieglai stiepšanas sajūtai.
+
+### w_glb — Ягодичный мост лёжа
+- Основные: Большая ягодичная → **Lielais sēžas muskulis**
+- Вспомогательные: Задняя поверхность бедра, мышцы-разгибатели спины → **Augšstilba aizmugure, muguras iztaisnotāji**
+- Описание: Активирует ягодичные перед приседаниями и тягами. В разминке — 10 повторений. → **Aktivizē sēžas muskuļus pirms pietupieniem un vilkmēm. Iesildīšanā — 10 atkārtojumi.**
+- Шаги: Apgulies uz muguras, ceļi saliekti, pēdas uz grīdas gūžu platumā, rokas gar sāniem. / Sasprindzini vēdera presi un atspiedies ar papēžiem. / Izelpā cel iegurni, saspiežot sēžas muskuļus, līdz taisnai līnijai pleci–iegurnis–ceļi. / Paturi 1 s un vienmērīgi nolaid iegurni līdz grīdai.
+- Ошибки: Muguras lejasdaļas izliekšana augšā sēžas muskuļu darba vietā. / Atspiešanās uz purngaliem papēžu vietā. / Ceļi sakrīt uz iekšu.
+
+### w_gm — Наклоны «гуд-морнинг» без веса
+- Основные: Задняя поверхность бедра, ягодичные → **Augšstilba aizmugure, sēžas muskuļi**
+- Вспомогательные: Мышцы-разгибатели спины → **Muguras iztaisnotāji**
+- Описание: Учит движению «от таза» и разогревает заднюю цепь перед становой и румынской тягой. В разминке — 10 повторений. → **Māca kustību «no gurniem» un iesilda aizmugurējo ķēdi pirms becvilkmes un rumāņu vilkmes. Iesildīšanā — 10 atkārtojumi.**
+- Шаги: Pēdas gūžu platumā, ceļi nedaudz saliekti, rokas sakrustotas uz krūtīm vai aiz galvas. / Mugura taisna, skatiens uz priekšu-leju. / Virzi gurnus atpakaļ un noliec ķermeni ar taisnu muguru līdz vieglai augšstilba aizmugures stiepšanai. / Atgriezies sākuma stāvoklī, virzot gurnus uz priekšu.
+- Ошибки: Muguras saliekšana. / Pietupiens noliekšanās vietā (ceļi virzās uz priekšu). / Noliekšanās zemāk, nekā ļauj lokanība.
+- Безопасность: Ja sāp mugura, izpildi ar mazāku amplitūdu.
+
+### w_armc — Круги руками
+- Основные: Дельтовидные мышцы → **Deltveida muskuļi**
+- Вспомогательные: Вращательная манжета плеча, трапециевидные → **Rotatoru manšete, trapecveida muskuļi**
+- Описание: Разогревает плечевые суставы перед любой работой на верх тела. В разминке — 10 кругов вперёд и 10 назад. → **Iesilda plecu locītavas pirms jebkura ķermeņa augšdaļas darba. Iesildīšanā — 10 apļi uz priekšu un 10 atpakaļ.**
+- Шаги: Nostājies taisni, rokas izplestas uz sāniem plecu augstumā. / Sāc ar maziem apļiem ar taisnām rokām. / Pakāpeniski palielini apļus līdz pilnai amplitūdai. / Maini virzienu: tikpat apļu atpakaļ.
+- Ошибки: Strauji vēzieni ar maksimālu amplitūdu uzreiz. / Pleci pacelti pie ausīm. / Muguras lejasdaļas izliekšana.
+- Безопасность: Ja plecā klikšķis ar sāpēm — samazini apli.
+
+### w_dislo — Проводка палки или резинки за голову
+- Основные: Дельтовидные мышцы, вращательная манжета плеча → **Deltveida muskuļi, rotatoru manšete**
+- Вспомогательные: Большая грудная, широчайшие → **Lielais krūšu muskulis, platie muguras muskuļi**
+- Описание: Мобилизация плечевых суставов перед жимами. В разминке — 10 повторений. → **Plecu locītavu mobilizācija pirms spiešanas. Iesildīšanā — 10 atkārtojumi.**
+- Шаги: Satver nūju vai gumiju ar platu tvērienu sev priekšā uz taisnām rokām. / Sasprindzini vēdera presi, neizliec muguru. / Vienmērīgi pārvieto taisnās rokas pāri galvai un atpakaļ, cik ļauj kustīgums. / Tikpat vienmērīgi atgriez rokas uz priekšu.
+- Ошибки: Pārāk šaurs tvēriens — elkoņi saliecas. / Muguras izliekšana plecu darba vietā. / Rāvieni caur sāpēm.
+- Безопасность: Bez sāpēm plecos: ja ir diskomforts, paplašini tvērienu.
+
+### w_pa — Разведение рук со сведением лопаток
+- Основные: Задние дельты, ромбовидные мышцы → **Aizmugurējie deltveida, rombveida muskuļi**
+- Вспомогательные: Средняя часть трапециевидной, вращательная манжета плеча → **Trapecveida muskuļa vidusdaļa, rotatoru manšete**
+- Описание: Активирует мышцы, стабилизирующие лопатки, перед жимами и тягами; бережно к плечам. В разминке — 15 повторений. → **Aktivizē lāpstiņu stabilizētājus pirms spiešanas un vilkmēm; saudzīgi pret pleciem. Iesildīšanā — 15 atkārtojumi.**
+- Шаги: Nostājies taisni, taisnas rokas sev priekšā plecu augstumā (var ar vieglu gumiju). / Nolaid plecus prom no ausīm. / Izpleta rokas uz sāniem, savelkot lāpstiņas, līdz «T» stāvoklim. / Vienmērīgi atgriez rokas uz priekšu.
+- Ошибки: Pacelti pleci. / Roku saliekšana elkoņos. / Muguras izliekšana un ribu izvirzīšana.
+
+### w_scpu — Отжимания лопатками
+- Основные: Передняя зубчатая мышца → **Priekšējais zobainais muskulis**
+- Вспомогательные: Ромбовидные, трапециевидные → **Rombveida, trapecveida muskuļi**
+- Описание: Включает мышцы-стабилизаторы лопаток перед жимами и отжиманиями. В разминке — 10 повторений. → **Iesaista lāpstiņu stabilizētājus pirms spiešanas un atspiešanās. Iesildīšanā — 10 atkārtojumi.**
+- Шаги: Nostājies balstā uz taisnām rokām (var no ceļiem), ķermenis taisns. / Nesaliecot elkoņus, nolaid krūtis, savelkot lāpstiņas. / Atgrūdies no grīdas, izpletot lāpstiņas un nedaudz noapaļojot muguras augšdaļu. / Kustas tikai lāpstiņas — amplitūda dažus centimetrus.
+- Ошибки: Elkoņu saliekšana — sanāk parasta atspiešanās. / Iegurņa nokāršanās. / Nolaista galva.
+- Безопасность: Ja sāp plaukstu locītavas, balsties uz dūrēm vai no ceļiem.
+
+### w_catcow — Кошка-корова
+- Основные: Мышцы-разгибатели спины, мышцы пресса → **Muguras iztaisnotāji, vēdera preses muskuļi**
+- Вспомогательные: Ягодичные, мышцы плечевого пояса → **Sēžas muskuļi, plecu joslas muskuļi**
+- Описание: Мягкая мобилизация позвоночника перед тягами и упражнениями на спину. В разминке — 8 повторений. → **Maiga mugurkaula mobilizācija pirms vilkmēm un muguras vingrinājumiem. Iesildīšanā — 8 atkārtojumi.**
+- Шаги: Nostājies četrrāpus: plaukstas zem pleciem, ceļi zem gurniem. / Izelpā izliec muguru uz augšu, zodu pie krūtīm, iegurni pagriežot zem sevis. / Ieelpā vienmērīgi ieliecies: krūtis uz priekšu, skatiens uz priekšu, iegurnis uz augšu. / Kusties lēnām, elpošanas ritmā.
+- Ошибки: Strauja kustība. / Kustība tikai jostasvietā, nevis visā mugurā. / Svara pārnešana uz rokām.
+- Безопасность: Ja sāp mugura, strādā mazākā amplitūdā.
+
+### w_scpull — Подтягивания лопатками
+- Основные: Нижняя часть трапециевидной, широчайшие → **Trapecveida muskuļa apakšdaļa, platie muguras muskuļi**
+- Вспомогательные: Ромбовидные, мышцы предплечья → **Rombveida muskuļi, apakšdelma muskuļi**
+- Описание: Включает мышцы спины и стабилизирует плечи перед подтягиваниями и тягами. В разминке — 8 повторений. → **Iesaista muguras muskuļus un stabilizē plecus pirms pievilkšanās un vilkmēm. Iesildīšanā — 8 atkārtojumi.**
+- Шаги: Pakāries pie stieņa uz taisnām rokām, tvēriens nedaudz platāks par pleciem. / Nesaliecot elkoņus, nolaid plecus un savelc lāpstiņas — ķermenis pacelsies pāris centimetrus. / Paturi 1 s. / Vienmērīgi atgriezies pilnā karā.
+- Ошибки: Roku saliekšana — sākas parasta pievilkšanās. / Ķermeņa šūpošana. / Strauja «nomešanās» karā.
+- Безопасность: Ja sāp pleci, sāc ar kājām uz grīdas (daļējs kārs).
+
+### w_bandrow — Лёгкая тяга к поясу
+- Основные: Широчайшие, ромбовидные → **Platie muguras muskuļi, rombveida muskuļi**
+- Вспомогательные: Задние дельты, бицепс → **Aizmugurējie deltveida, bicepss**
+- Описание: Разогревает мышцы спины перед основными тягами. В разминке — 12 повторений с резинкой или малым весом блока. → **Iesilda muguras muskuļus pirms galvenajām vilkmēm. Iesildīšanā — 12 atkārtojumi ar gumiju vai nelielu trenažiera svaru.**
+- Шаги: Nostiprini gumiju krūšu vai vidukļa augstumā (vai satver trenažiera rokturi ar nelielu svaru). / Nostājies taisni, ceļi nedaudz saliekti, rokas izstieptas uz priekšu. / Velc rokturus pie vidukļa, savelkot lāpstiņas un virzot elkoņus gar ķermeni. / Vienmērīgi iztaisno rokas, nezaudējot stāju.
+- Ошибки: Rāvieni ar ķermeni atpakaļ. / Pacelti pleci. / Pārāk liela pretestība iesildīšanai.

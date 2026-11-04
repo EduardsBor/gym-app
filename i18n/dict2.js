@@ -60,7 +60,7 @@ const DICT2=[
 ['Удалить и уже сохранённые замеры и фото тела?','Also delete the saved measurements and body photos?','Dzēst arī saglabātos mērījumus un ķermeņa foto?'],
 ['Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?','Delete ALL data: workouts, program, measurements, photos and settings?','Dzēst VISUS datus: treniņus, programmu, mērījumus, foto un iestatījumus?'],
 ['Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?','This cannot be undone. You can download a copy first. Really delete everything permanently?','To nevar atsaukt. Vispirms var lejupielādēt kopiju. Tiešām neatgriezeniski dzēst visu?'],
-['Версия 21','Version 21','Versija 21'],
+['Версия 22','Version 22','Versija 22'],
 ['Латышский','Latvian','Latviešu'],['ч ·','h ·','st. ·'],['Сплит','Split','Splits'],
 ['Сколько времени готов тратить на тренировку?','How much time are you ready to spend per workout?','Cik daudz laika esi gatavs veltīt treniņam?'],
 ['Коротко: только базовые упражнения','Short: compound lifts only','Īsi: tikai pamatvingrinājumi'],['База + немного изоляции','Compounds + a little isolation','Pamatvingrinājumi + nedaudz izolējošo'],
