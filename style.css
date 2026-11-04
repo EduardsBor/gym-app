@@ -58,3 +58,5 @@ details summary{cursor:pointer;min-height:30px}
 #exc ol,#exc ul{padding-left:20px;margin:6px 0 12px}#exc li{margin:4px 0;line-height:1.4}#exc h3{margin:14px 0 6px}#exc .li{gap:10px}
 .spark{width:100%;height:70px;margin-top:8px}
 .libbig{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #ff6b3566}.libbig b{font-size:17px}
+
+.mleg{font-size:13px;line-height:1.45;margin:8px 2px 4px}.mleg>div{margin:2px 0}.md{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}.md.p{background:#ff6a00}.md.s{background:#ffd3b0}

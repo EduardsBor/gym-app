@@ -73,7 +73,7 @@ function techBtn(id){return TECH[id]?`<button class="sm tbtn" data-ti="${id}" ar
 function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementById('tech');if(!m){m=document.createElement('div');m.id='tech';document.body.appendChild(m)}
  const e=exBy(id);m.className='';
  m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">${esc(e.name)}</h2><button id="tc">✕</button></div><p class="mut">${esc(e.group)}</p>
- <video class="a3d" muted loop playsinline autoplay preload="none" disablepictureinpicture poster="anim3d/${id}.jpg" src="anim3d/${id}.mp4"></video>
+ <video class="a3d" muted loop playsinline autoplay preload="none" disablepictureinpicture poster="anim3d/${id}.jpg" src="anim3d/${id}.mp4"></video>${musLeg(id)}
  <h3>Как выполнять</h3><ol>${t[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
  <h3>Частые ошибки</h3><ul>${t[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
  ${t[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(t[2])}</p>`:''}
