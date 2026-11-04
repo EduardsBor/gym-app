@@ -121,7 +121,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
-  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
+  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save();if(!isPrem())paywall('Твоя программа готова и бесплатна. В Premium — все программы по целям, графики, 1ПМ и замеры тела.')}}}
 const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${t}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF;
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
@@ -245,7 +245,7 @@ function program(){$('#title').textContent='Программа';
 function volBadges(){const v={};S.program.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return Object.entries(v).map(([g,n])=>`<span class="badge">${g}: ${n}</span>`).join('')}
 function pickEx(cb){const m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><div class="row"><input id="q" placeholder="Поиск упражнения"><button id="mc">✕</button></div><div id="el"></div></div>`;
- const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&e.name.toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}).join('');
+ const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&tr(e.name).toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left" data-p="${e.id}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}).join('');
   $('#el').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})};
  $('#q').oninput=draw;$('#mc').onclick=()=>m.classList.add('hidden');draw()}
 // ---------- Прогресс
@@ -271,15 +271,15 @@ function chart(c,data){const dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientH
 let calM=new Date();calM.setDate(1);
 function history(){$('#title').textContent='История';const y=calM.getFullYear(),m=calM.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate();
  const byDay={};S.workouts.forEach(w=>{const d=new Date(w.start);if(d.getFullYear()===y&&d.getMonth()===m)(byDay[d.getDate()]=byDay[d.getDate()]||[]).push(w)});
- app.innerHTML=`<div class="card"><div class="row"><button class="sm" id="pm">‹</button><b class="grow" style="text-align:center">${calM.toLocaleDateString('ru-RU',{month:'long',year:'numeric'})}</b><button class="sm" id="nm">›</button></div>
+ app.innerHTML=`<div class="card"><div class="row"><button class="sm" id="pm">‹</button><b class="grow" style="text-align:center">${calM.toLocaleDateString(LOC,{month:'long',year:'numeric'})}</b><button class="sm" id="nm">›</button></div>
  <div class="cal" style="margin-top:10px">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="h">${d}</div>`).join('')}${'<div></div>'.repeat(first)}${Array.from({length:n},(_,i)=>`<div class="${byDay[i+1]?'has':''}" data-day="${i+1}">${i+1}</div>`).join('')}</div></div>
- <h2>Все тренировки (${S.workouts.length})</h2>${S.workouts.slice().reverse().map(w=>`<button class="full card" style="text-align:left;height:auto;padding:12px" data-w="${w.id}"><b>${esc(w.dayName)}</b><br><span class="mut">${new Date(w.start).toLocaleDateString('ru-RU',{day:'numeric',month:'long',weekday:'short'})} · ${fmtT(Math.round(((w.end||w.start)-w.start)/60000))} ч · ${w.items.length} упр.</span></button>`).join('')||'<p class="mut">Пока пусто.</p>'}`;
+ <h2>Все тренировки (${S.workouts.length})</h2>${S.workouts.slice().reverse().map(w=>`<button class="full card" style="text-align:left;height:auto;padding:12px" data-w="${w.id}"><b>${esc(w.dayName)}</b><br><span class="mut">${new Date(w.start).toLocaleDateString(LOC,{day:'numeric',month:'long',weekday:'short'})} · ${fmtT(Math.round(((w.end||w.start)-w.start)/60000))} ч · ${w.items.length} упр.</span></button>`).join('')||'<p class="mut">Пока пусто.</p>'}`;
  $('#pm').onclick=()=>{calM.setMonth(m-1);history()};$('#nm').onclick=()=>{calM.setMonth(m+1);history()};
  app.querySelectorAll('[data-day]').forEach(d=>byDay[d.dataset.day]&&(d.onclick=()=>showW(byDay[d.dataset.day][0].id)));
  app.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>showW(b.dataset.w))}
 function showW(id){const w=S.workouts.find(x=>x.id===id),m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">${esc(w.dayName)}</h2><button id="mc">✕</button></div>
- <p class="mut">${new Date(w.start).toLocaleString('ru-RU')} · длительность ${fmtT(Math.round(((w.end||w.start)-w.start)/60000))} ч</p>
+ <p class="mut">${new Date(w.start).toLocaleString(LOC)} · длительность ${fmtT(Math.round(((w.end||w.start)-w.start)/60000))} ч</p>
  ${w.items.map(it=>`<div class="card"><b>${esc(exBy(it.exId).name)}</b><br>${it.sets.map(s=>`<span class="badge ${s.pr?'pr':''}">${s.pr?'🏆 ':''}${s.w} × ${s.r}</span>`).join('')}</div>`).join('')}
  ${w.notes?`<div class="card"><b>Заметки</b><br>${esc(w.notes)}</div>`:''}<button class="danger full" id="wdel">Удалить тренировку</button></div>`;
  $('#mc').onclick=()=>m.classList.add('hidden');$('#wdel').onclick=()=>{if(confirm('Удалить?')){S.workouts=S.workouts.filter(x=>x.id!==id);save();m.classList.add('hidden');history()}}}
@@ -290,7 +290,7 @@ const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{const r=indexe
  return{get:k=>tx('readonly',s=>s.get(k)),put:(k,v)=>tx('readwrite',s=>s.put(v,k)),del:k=>tx('readwrite',s=>s.delete(k)),all:()=>tx('readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o})}})();
 function compress(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',.72))};img.onerror=rej;img.src=URL.createObjectURL(file)})}
 let bM='weight',bR=0,cmpA=null,cmpB=null;
-const fmtD=d=>new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'2-digit'});
+const fmtD=d=>new Date(d).toLocaleDateString(LOC,{day:'numeric',month:'short',year:'2-digit'});
 const sgn=(v,u)=>(v>0?'+':'')+(Math.round(v*10)/10)+' '+u;
 function body(){$('#title').textContent='Тело';const E=S.body.slice().sort((a,b)=>a.date.localeCompare(b.date));
  const m=BM.find(x=>x[0]===bM),from=bR?Date.now()-bR*864e5:0,pts=E.filter(e=>e[bM]!==''&&e[bM]!=null&&new Date(e.date)>=from).map(e=>[new Date(e.date).getTime(),+e[bM]]);
@@ -410,4 +410,4 @@ function science(fromOb){$('#title').textContent='Научная основа';c
  app.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>{window._sg=b.dataset.sg;science(fromOb)});
  $('#back').onclick=()=>{window._sg=null;if(!S.goal)onboarding();else go('more')}}
 if('serviceWorker'in navigator){const had=!!navigator.serviceWorker.controller;let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{})}
-go(S.goal?'today':'today');
+document.addEventListener('DOMContentLoaded',()=>go('today'));

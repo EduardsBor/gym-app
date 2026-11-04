@@ -1,0 +1,72 @@
+// DRAFT legal texts (RU/EN/LV). Describe the app as it is now: data only on the device, no accounts, no analytics.
+// Placeholders in [brackets] must be filled in. MUST be reviewed by a lawyer before publication. LV needs native review.
+const LEGAL={
+ru:{privacy:['Политика конфиденциальности','⚠️ ЧЕРНОВИК для проверки юристом. Поля в [скобках] нужно заполнить. Не является юридической консультацией.',
+`<div class="card legal"><p><b>Редакция от [дата]</b></p>
+<h3>1. Кто мы</h3><p>Приложение «Мой Зал» (далее — Приложение) предоставляет [Владелец], [адрес], e-mail: [контактный e-mail]. По вопросам данных пишите на этот адрес.</p>
+<h3>2. Какие данные обрабатываются</h3><ul><li>Тренировки: упражнения, веса, повторы, даты, заметки.</li><li>Настройки и анкета: цель, опыт, частота, место тренировок, язык.</li><li>Данные о теле (только с явного согласия): вес, обхваты, % жира, рост, фото.</li></ul>
+<h3>3. Где хранятся данные</h3><p>Все данные хранятся <b>только на вашем устройстве</b> — в хранилище браузера (localStorage и IndexedDB). У Приложения нет аккаунтов и серверов для ваших данных; мы их не получаем, не видим и никому не передаём.</p>
+<h3>4. Аналитика, реклама, трекеры</h3><p>Приложение не использует аналитику, рекламу, сторонние трекеры, cookies для отслеживания или внешние CDN. Файлы Приложения загружаются с хостинга [хостинг, например GitHub Pages], который может вести технические журналы запросов (IP-адрес) по своей политике.</p>
+<h3>5. Правовые основания (GDPR)</h3><ul><li>Данные о теле — данные о здоровье (ст. 9 GDPR): обрабатываются на основании вашего явного согласия (ст. 9(2)(a)). Согласие можно отозвать в «Ещё».</li><li>Остальные данные — для работы функций, которые вы используете (ст. 6(1)(b)).</li></ul>
+<h3>6. Сроки хранения</h3><p>Данные хранятся, пока вы их не удалите: кнопка «Удалить все данные» в «Ещё» или очистка данных сайта в браузере.</p>
+<h3>7. Ваши права</h3><p>Доступ и переносимость — «Скачать все мои данные (JSON)»; удаление — «Удалить все данные»; отзыв согласия — в «Ещё». Вы вправе подать жалобу в надзорный орган, в Латвии — Datu valsts inspekcija (www.dvi.gov.lv).</p>
+<h3>8. Платные функции</h3><p>Сейчас оплата не подключена (демо-экран). Если подписка появится, платежи будет обрабатывать [платёжный провайдер / магазин приложений]; эта политика будет обновлена до запуска.</p>
+<h3>9. Дети</h3><p>Приложение не предназначено для лиц младше [16] лет.</p>
+<h3>10. Изменения</h3><p>Об изменениях мы сообщим в Приложении. Актуальная редакция всегда доступна в разделе «Ещё».</p></div>`],
+terms:['Условия использования','⚠️ ЧЕРНОВИК для проверки юристом. Поля в [скобках] нужно заполнить.',
+`<div class="card legal"><p><b>Редакция от [дата]</b></p>
+<h3>1. Стороны</h3><p>Настоящие Условия регулируют использование приложения «Мой Зал», предоставляемого [Владелец] ([адрес], [e-mail]).</p>
+<h3>2. Не медицинская консультация</h3><p>Программы и подсказки носят информационный характер и не заменяют консультацию врача или тренера. Перед началом тренировок при заболеваниях, травмах или беременности проконсультируйтесь с врачом. Прекратите упражнение при боли или плохом самочувствии.</p>
+<h3>3. Ответственность пользователя</h3><p>Вы тренируетесь на свой риск, соблюдаете технику безопасности и используете исправный инвентарь.</p>
+<h3>4. Данные</h3><p>Ваши данные хранятся только на устройстве (см. Политику конфиденциальности). Вы сами отвечаете за резервные копии: очистка браузера или удаление Приложения стирает данные.</p>
+<h3>5. Бесплатная версия и Premium</h3><p>Часть функций бесплатна. Premium сейчас показан как демо, оплата не взимается. При запуске подписки здесь будут указаны цены, пробный период, автопродление, порядок отмены и право на отказ по законодательству ЕС.</p>
+<h3>6. Интеллектуальная собственность</h3><p>Приложение, тексты и анимации принадлежат [Владелец] или используются по лицензии. Научные источники цитируются со ссылками.</p>
+<h3>7. Ограничение ответственности</h3><p>Приложение предоставляется «как есть». В пределах, разрешённых законом, [Владелец] не отвечает за травмы и утрату данных, кроме случаев умысла или грубой неосторожности.</p>
+<h3>8. Право и споры</h3><p>Применяется право [Латвийской Республики]. Права потребителей по законодательству страны проживания сохраняются.</p>
+<h3>9. Контакты</h3><p>[e-mail]</p></div>`]},
+en:{privacy:['Privacy Policy','⚠️ DRAFT for lawyer review. Fields in [brackets] must be filled in. Not legal advice.',
+`<div class="card legal"><p><b>Version of [date]</b></p>
+<h3>1. Who we are</h3><p>The “Мой Зал / My Gym” app (the App) is provided by [Owner], [address], e-mail: [contact e-mail]. Contact this address with any data questions.</p>
+<h3>2. What data is processed</h3><ul><li>Workouts: exercises, weights, reps, dates, notes.</li><li>Settings and questionnaire: goal, experience, frequency, training place, language.</li><li>Body data (only with explicit consent): weight, measurements, body-fat %, height, photos.</li></ul>
+<h3>3. Where data is stored</h3><p>All data is stored <b>only on your device</b>, in browser storage (localStorage and IndexedDB). The App has no accounts and no servers for your data; we do not receive, see or share it.</p>
+<h3>4. Analytics, ads, trackers</h3><p>The App uses no analytics, ads, third-party trackers, tracking cookies or external CDNs. App files are served by [host, e.g. GitHub Pages], which may keep technical request logs (IP address) under its own policy.</p>
+<h3>5. Legal bases (GDPR)</h3><ul><li>Body data is health data (Art. 9 GDPR), processed on the basis of your explicit consent (Art. 9(2)(a)). You can withdraw consent under “More”.</li><li>Other data — to provide the features you use (Art. 6(1)(b)).</li></ul>
+<h3>6. Retention</h3><p>Data is kept until you delete it: “Delete all data” under “More”, or by clearing site data in your browser.</p>
+<h3>7. Your rights</h3><p>Access and portability — “Download all my data (JSON)”; erasure — “Delete all data”; withdrawing consent — under “More”. You may lodge a complaint with a supervisory authority; in Latvia — Datu valsts inspekcija (www.dvi.gov.lv).</p>
+<h3>8. Paid features</h3><p>Payments are not enabled yet (demo screen). If a subscription is launched, payments will be handled by [payment provider / app store]; this policy will be updated before launch.</p>
+<h3>9. Children</h3><p>The App is not intended for persons under [16].</p>
+<h3>10. Changes</h3><p>We will announce changes in the App. The current version is always available under “More”.</p></div>`],
+terms:['Terms of Use','⚠️ DRAFT for lawyer review. Fields in [brackets] must be filled in.',
+`<div class="card legal"><p><b>Version of [date]</b></p>
+<h3>1. Parties</h3><p>These Terms govern the use of the “Мой Зал / My Gym” app provided by [Owner] ([address], [e-mail]).</p>
+<h3>2. Not medical advice</h3><p>Programs and tips are for information only and do not replace advice from a doctor or coach. Consult a doctor before training if you have medical conditions, injuries or are pregnant. Stop an exercise if you feel pain or unwell.</p>
+<h3>3. Your responsibility</h3><p>You train at your own risk, follow safety rules and use equipment in good condition.</p>
+<h3>4. Data</h3><p>Your data is stored only on your device (see the Privacy Policy). You are responsible for backups: clearing the browser or removing the App erases the data.</p>
+<h3>5. Free version and Premium</h3><p>Some features are free. Premium is currently shown as a demo and no payment is taken. When a subscription launches, prices, the trial, auto-renewal, cancellation and the EU right of withdrawal will be stated here.</p>
+<h3>6. Intellectual property</h3><p>The App, texts and animations belong to [Owner] or are used under licence. Scientific sources are cited with references.</p>
+<h3>7. Limitation of liability</h3><p>The App is provided “as is”. To the extent permitted by law, [Owner] is not liable for injuries or data loss, except for intent or gross negligence.</p>
+<h3>8. Law and disputes</h3><p>The law of [the Republic of Latvia] applies. Consumer rights under the law of your country of residence are not affected.</p>
+<h3>9. Contact</h3><p>[e-mail]</p></div>`]},
+lv:{privacy:['Privātuma politika','⚠️ MELNRAKSTS juristam pārbaudei. Lauki [iekavās] jāaizpilda. Nav juridiska konsultācija. Latviešu tekstu jāpārbauda dzimtās valodas runātājam.',
+`<div class="card legal"><p><b>Redakcija no [datums]</b></p>
+<h3>1. Kas mēs esam</h3><p>Lietotni “Мой Зал / Mana zāle” (turpmāk — Lietotne) nodrošina [Īpašnieks], [adrese], e-pasts: [kontakta e-pasts]. Ar jautājumiem par datiem rakstiet uz šo adresi.</p>
+<h3>2. Kādi dati tiek apstrādāti</h3><ul><li>Treniņi: vingrinājumi, svari, atkārtojumi, datumi, piezīmes.</li><li>Iestatījumi un anketa: mērķis, pieredze, biežums, treniņu vieta, valoda.</li><li>Ķermeņa dati (tikai ar skaidru piekrišanu): svars, apkārtmēri, tauku %, augums, foto.</li></ul>
+<h3>3. Kur dati tiek glabāti</h3><p>Visi dati tiek glabāti <b>tikai jūsu ierīcē</b> — pārlūka krātuvē (localStorage un IndexedDB). Lietotnei nav kontu un serveru jūsu datiem; mēs tos nesaņemam, neredzam un nevienam nenododam.</p>
+<h3>4. Analītika, reklāma, izsekotāji</h3><p>Lietotne neizmanto analītiku, reklāmu, trešo pušu izsekotājus, izsekošanas sīkdatnes vai ārējos CDN. Lietotnes failus nodrošina [hostings, piem., GitHub Pages], kas var glabāt tehniskus pieprasījumu žurnālus (IP adresi) saskaņā ar savu politiku.</p>
+<h3>5. Tiesiskais pamats (VDAR)</h3><ul><li>Ķermeņa dati ir veselības dati (VDAR 9. pants), tos apstrādā, pamatojoties uz jūsu skaidru piekrišanu (9. panta 2. punkta a) apakšpunkts). Piekrišanu var atsaukt sadaļā “Vēl”.</li><li>Pārējie dati — jūsu izmantoto funkciju nodrošināšanai (6. panta 1. punkta b) apakšpunkts).</li></ul>
+<h3>6. Glabāšanas termiņš</h3><p>Dati tiek glabāti, līdz jūs tos izdzēšat: poga “Dzēst visus datus” sadaļā “Vēl” vai vietnes datu notīrīšana pārlūkā.</p>
+<h3>7. Jūsu tiesības</h3><p>Piekļuve un pārnesamība — “Lejupielādēt visus manus datus (JSON)”; dzēšana — “Dzēst visus datus”; piekrišanas atsaukšana — sadaļā “Vēl”. Jūs varat iesniegt sūdzību Datu valsts inspekcijā (www.dvi.gov.lv).</p>
+<h3>8. Maksas funkcijas</h3><p>Maksājumi pagaidām nav pieslēgti (demo ekrāns). Ja tiks ieviests abonements, maksājumus apstrādās [maksājumu pakalpojumu sniedzējs / lietotņu veikals]; šī politika tiks atjaunināta pirms palaišanas.</p>
+<h3>9. Bērni</h3><p>Lietotne nav paredzēta personām, kas jaunākas par [16] gadiem.</p>
+<h3>10. Izmaiņas</h3><p>Par izmaiņām paziņosim Lietotnē. Aktuālā redakcija vienmēr pieejama sadaļā “Vēl”.</p></div>`],
+terms:['Lietošanas noteikumi','⚠️ MELNRAKSTS juristam pārbaudei. Lauki [iekavās] jāaizpilda. Latviešu tekstu jāpārbauda dzimtās valodas runātājam.',
+`<div class="card legal"><p><b>Redakcija no [datums]</b></p>
+<h3>1. Puses</h3><p>Šie Noteikumi regulē lietotnes “Мой Зал / Mana zāle” lietošanu, ko nodrošina [Īpašnieks] ([adrese], [e-pasts]).</p>
+<h3>2. Nav medicīniska konsultācija</h3><p>Programmas un padomi ir informatīvi un neaizstāj ārsta vai trenera konsultāciju. Ja jums ir slimības, traumas vai esat grūtniece, pirms treniņiem konsultējieties ar ārstu. Pārtrauciet vingrinājumu, ja jūtat sāpes vai sliktu pašsajūtu.</p>
+<h3>3. Lietotāja atbildība</h3><p>Jūs trenējaties uz savu risku, ievērojat drošības noteikumus un izmantojat tehniski kārtīgu inventāru.</p>
+<h3>4. Dati</h3><p>Jūsu dati tiek glabāti tikai ierīcē (skatīt Privātuma politiku). Par rezerves kopijām atbildat jūs: pārlūka notīrīšana vai Lietotnes dzēšana izdzēš datus.</p>
+<h3>5. Bezmaksas versija un Premium</h3><p>Daļa funkciju ir bezmaksas. Premium pašlaik ir demo, maksa netiek iekasēta. Palaižot abonementu, šeit tiks norādītas cenas, izmēģinājuma periods, automātiskā atjaunošana, atcelšanas kārtība un atteikuma tiesības saskaņā ar ES tiesību aktiem.</p>
+<h3>6. Intelektuālais īpašums</h3><p>Lietotne, teksti un animācijas pieder [Īpašnieks] vai tiek izmantoti saskaņā ar licenci. Zinātniskie avoti tiek citēti ar atsaucēm.</p>
+<h3>7. Atbildības ierobežojums</h3><p>Lietotne tiek nodrošināta “kāda tā ir”. Likumā atļautajā apjomā [Īpašnieks] neatbild par traumām un datu zudumu, izņemot ļaunu nolūku vai rupju neuzmanību.</p>
+<h3>8. Piemērojamie tiesību akti</h3><p>Piemēro [Latvijas Republikas] tiesību aktus. Patērētāju tiesības saskaņā ar jūsu dzīvesvietas valsts tiesību aktiem netiek ierobežotas.</p>
+<h3>9. Kontakti</h3><p>[e-pasts]</p></div>`]}};
