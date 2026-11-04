@@ -60,5 +60,12 @@ const DICT2=[
 ['Удалить и уже сохранённые замеры и фото тела?','Also delete the saved measurements and body photos?','Dzēst arī saglabātos mērījumus un ķermeņa foto?'],
 ['Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?','Delete ALL data: workouts, program, measurements, photos and settings?','Dzēst VISUS datus: treniņus, programmu, mērījumus, foto un iestatījumus?'],
 ['Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?','This cannot be undone. You can download a copy first. Really delete everything permanently?','To nevar atsaukt. Vispirms var lejupielādēt kopiju. Tiešām neatgriezeniski dzēst visu?'],
-['Версия 19','Version 19','Versija 19'],
-['Латышский','Latvian','Latviešu'],['ч ·','h ·','st. ·'],['Сплит','Split','Splits'],['с','s','s']];
+['Версия 20','Version 20','Versija 20'],
+['Латышский','Latvian','Latviešu'],['ч ·','h ·','st. ·'],['Сплит','Split','Splits'],
+['Сколько времени готов тратить на тренировку?','How much time are you ready to spend per workout?','Cik daudz laika esi gatavs veltīt treniņam?'],
+['Коротко: только базовые упражнения','Short: compound lifts only','Īsi: tikai pamatvingrinājumi'],['База + немного изоляции','Compounds + a little isolation','Pamatvingrinājumi + nedaudz izolējošo'],
+['Полноценная тренировка','A full workout','Pilnvērtīgs treniņš'],['Максимум объёма','Maximum volume','Maksimāls apjoms'],
+['подходы × (≈40 с работы + отдых) + 5 мин разминки — число упражнений и подходов подогнано под это время, базовые упражнения стоят первыми, изоляция убирается первой.','sets × (≈40 s of work + rest) + 5 min warm-up — the number of exercises and sets is fitted to this time; compound lifts come first and isolation is dropped first.','pieejas × (≈40 s darba + atpūta) + 5 min iesildīšanās — vingrinājumu un pieeju skaits pielāgots šim laikam; pamatvingrinājumi ir pirmie, izolējošie tiek izņemti pirmie.'],
+['За тренировку объём урезан (','Per-session volume was trimmed (','Apjoms vienā treniņā samazināts ('],['подходов в неделю).','sets per week).','pieejas nedēļā).'],
+['Чем меньше минут, тем ниже недельный объём и, как правило, медленнее рост — при возможности выбери больше времени или больше тренировок в неделю.','Fewer minutes means lower weekly volume and usually slower progress — if you can, choose more time or more workouts per week.','Mazāk minūšu nozīmē mazāku nedēļas apjomu un parasti lēnāku progresu — ja iespējams, izvēlies vairāk laika vai vairāk treniņu nedēļā.'],
+['Длительность','Duration','Ilgums'],['с','s','s']];

@@ -30,24 +30,33 @@ const lockCard=(t,r)=>`<div class="card lock"><div style="font-size:34px">🔒</
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pw]');if(b){e.preventDefault();paywall(b.dataset.pw)}});
 
 // ---- Onboarding (first launch; skippable; re-runnable from «Ещё»)
-let OB={step:0,goal:'mass',level:'nov',days:3,place:'g'};
+let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
 const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса','Набрать мышцы'],['str','🏋️ Сила','Поднимать больше'],['loss','🔥 Похудение','Снизить жир, сохранить мышцы']]],
  ['level','Какой у тебя опыт?',[['nov','Новичок','Меньше 6 месяцев регулярных тренировок'],['mid','Средний','6 месяцев – 2 года'],['adv','Опытный','Больше 2 лет']]],
  ['days','Сколько тренировок в неделю?',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']]],
- ['place','Где тренируешься?',[['g','🏢 Зал','Тренажёры, штанга, гантели'],['d','🏠 Дом с гантелями','Гантели и скамья'],['b','🤸 Без инвентаря','Свой вес (желательно турник)']]]];
-function onb(){$('#title').textContent='Добро пожаловать';$('#nav').classList.add('hidden');const[k,q,opts]=OBS[OB.step];
+ ['place','Где тренируешься?',[['g','🏢 Зал','Тренажёры, штанга, гантели'],['d','🏠 Дом с гантелями','Гантели и скамья'],['b','🤸 Без инвентаря','Свой вес (желательно турник)']]],
+ ['len','Сколько времени готов тратить на тренировку?',[[30,'⏱ ~30 мин','Коротко: только базовые упражнения'],[45,'⏱ ~45 мин','База + немного изоляции'],[60,'⏱ ~60 мин','Полноценная тренировка'],[75,'⏱ 75+ мин','Максимум объёма']]]];
+// Recommended session length for the chosen frequency: weekly volume (Schoenfeld 2017) ÷ sessions, same duration formula as generate().
+function recLen(a){const P=PRM[a.goal]||PRM.mass,per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+sets*(40+rest)/60);
+ const opt=min>=68?75:[30,45,60].reduce((b,o)=>Math.abs(o-min)<Math.abs(b-min)?o:b);return{min,sets:Math.round(sets),opt,per,rest:Math.round(P.c[3]/60*10)/10}}
+function recHint(a){const r=recLen(a),o=r.opt>=75?'75+':'~'+r.opt,T={
+ ru:`<b>Рекомендация для ${a.days}× в неделю: ${o} мин</b> (расчёт ≈${r.min} мин). Для роста нужно ~${r.per} тяжёлых подходов на мышцу в неделю (ориентир 10–20) [1]. При ${a.days} тренировках это ~${r.sets} подходов за тренировку; ≈40 с работы + отдых ~${r.rest} мин в базовых [2] + 5 мин разминки. Меньше тренировок в неделю — дольше каждая.`,
+ en:`<b>Recommended for ${a.days}× per week: ${o} min</b> (calculated ≈${r.min} min). Growth needs ~${r.per} hard sets per muscle per week (target 10–20) [1]. With ${a.days} workouts that is ~${r.sets} sets per session; ≈40 s of work + ~${r.rest} min rest on compound lifts [2] + 5 min warm-up. Fewer sessions per week means longer ones.`,
+ lv:`<b>Ieteikums ${a.days}× nedēļā: ${o} min</b> (aprēķins ≈${r.min} min). Augšanai vajag ~${r.per} smagas pieejas uz muskuli nedēļā (mērķis 10–20) [1]. Ar ${a.days} treniņiem tas ir ~${r.sets} pieejas treniņā; ≈40 s darba + ~${r.rest} min atpūta pamatvingrinājumos [2] + 5 min iesildīšanās. Mazāk treniņu nedēļā — katrs ilgāks.`}[LANG];
+ return `<div class="card" data-noi18n style="font-size:14px">💡 ${T}<div class="mut" style="font-size:11px;margin-top:6px">[1] ${SRC.v}<br>[2] ${SRC.r}</div></div>`}
+function onb(){$('#title').textContent='Добро пожаловать';$('#nav').classList.add('hidden');const[k,q,opts]=OBS[OB.step];const RL=k==='len'?recLen(OB):null;if(RL&&!OB.lenTouched)OB.len=RL.opt;
  app.innerHTML=`<div class="obprog">${OBS.map((_,i)=>`<i class="${i<=OB.step?'on':''}"></i>`).join('')}</div><p class="mut">Шаг ${OB.step+1} из ${OBS.length}</p><h2>${q}</h2>
- <div class="${k==='days'?'opts c5':'opts'}">${opts.map(([v,l,s])=>`<button class="opt ${String(OB[k])===String(v)?'sel':''}" data-ob="${v}"><b>${l}</b>${s?`<br><span class="mut">${s}</span>`:''}</button>`).join('')}</div>
+ ${RL?recHint(OB):''}<div class="${k==='days'?'opts c5':k==='len'?'opts c4':'opts'}">${opts.map(([v,l,s])=>`<button class="opt ${String(OB[k])===String(v)?'sel':''}" data-ob="${v}"><b>${l}${RL&&RL.opt===v?' ★':''}</b>${s?`<br><span class="mut">${s}</span>`:''}</button>`).join('')}</div>
  <button class="pri full" id="obnext" style="margin-top:18px">${OB.step<OBS.length-1?'Далее':'Составить программу'}</button>
  <div class="row" style="margin:8px 0 20px">${OB.step?'<button class="grow" id="obback">← Назад</button>':''}<button class="grow" id="obskip">Пропустить</button></div>
  <p class="mut" style="font-size:12px">Программа строится по научным данным (раздел «Научная основа»). Ответы хранятся только на этом устройстве.</p>`;
- app.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{OB[k]=k==='days'?+b.dataset.ob:b.dataset.ob;onb()});
+ app.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{OB[k]=(k==='days'||k==='len')?+b.dataset.ob:b.dataset.ob;if(k==='len')OB.lenTouched=1;onb()});
  $('#obnext').onclick=()=>{if(OB.step<OBS.length-1){OB.step++;onb();scrollTo(0,0);return}
-  const a={goal:OB.goal,level:OB.level,days:OB.days,len:60,place:OB.place,sex:'m',prio:[],lim:[]};OB.step=0;
-  preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}×60 мин`,a},'onb')};
+  const a={goal:OB.goal,level:OB.level,days:OB.days,len:OB.len,place:OB.place,sex:'m',prio:[],lim:[]};
+  preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
  $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g'};go('onb')}
+function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
@@ -84,7 +93,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 19';
+ ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 20';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');

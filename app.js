@@ -33,7 +33,7 @@ const PRM={str:{c:[[3,4,5],3,6,180],a:[[2,3,3],6,10,120]},mass:{c:[[3,3,4],6,10,
 const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Зал',d:'Дом с гантелями',b:'Свой вес'};
 const LIMN={s:'спина',k:'колени',p:'плечи'};
 const eqOk=(id,a)=>(META[id]||'gdb|').split('|')[0].includes(a.place);
-const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest)+90;
+const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest),WARM=5,dayMin=d=>Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+WARM);
 function pickFor(slot,a,used,off){const[c,safe]=SLOT[slot];let L=c.filter(id=>okEx(id,a)&&!used.has(id));let swapped=false;
  if(!L.length){L=safe.filter(id=>okEx(id,a)&&!used.has(id));swapped=c.some(id=>eqOk(id,a))}
  if(!L.length)return null;const id=L[off%L.length];return{id,swapped:swapped||(c[0]!==id&&(a.lim||[]).length&&c.filter(x=>!used.has(x)&&eqOk(x,a))[0]!==id)}}
@@ -43,13 +43,14 @@ function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a
    const p=P[acc?'a':'c'];let sets=p[0][lv];if(a.prio.some(g=>SLOTG[slot]===g||(g==='Ягодицы'&&slot==='HINGE')))sets++;items.push({exId:r.id,sets,min:p[1],max:p[2],rest:p[3],acc,slot})});
   // доп. упражнение для приоритетных групп
   a.prio.forEach(g=>{const slot=PRIO_SLOT[g];if(items.some(i=>SLOTG[i.slot]===g||(g==='Ягодицы'&&i.slot==='HINGE'))){const r=pickFor(slot,a,used,off+1);if(r){used.add(r.id);const p=P.a;items.push({exId:r.id,sets:p[0][lv]+1,min:p[1],max:p[2],rest:p[3],acc:true,slot,prio:true})}}});
-  // подгонка под длительность (−8 мин разминка)
-  const budget=a.len*60-480,cardioMin=(a.goal==='loss'?20:a.goal==='fit'?15:0)*60,tot=()=>items.reduce((s,i)=>s+itemTime(i),0)+cardioMin;
+  // подгонка под длительность: подходы × (40 с работы + отдых) + 5 мин разминки; сначала убираем изоляцию
+  const budget=a.len*60-WARM*60,cardioMin=Math.min(a.goal==='loss'?20:a.goal==='fit'?15:0,Math.round(a.len/4))*60,tot=()=>items.reduce((s,i)=>s+itemTime(i),0)+cardioMin;
   while(tot()>budget){const j=items.map((x,k)=>x.acc&&!x.prio?k:-1).filter(k=>k>=0).pop();if(j!==undefined){items.splice(j,1);continue}
    const big=items.filter(x=>x.sets>2);if(big.length){big.forEach(x=>x.sets--);continue}const j2=items.map((x,k)=>x.prio?k:-1).filter(k=>k>=0).pop();if(j2!==undefined){items.splice(j2,1);continue}if(items.length>3){items.pop();continue}break}
-  if(cardioMin){const c=['tm','bike','ell','rowm','stair','jump','wlk'].filter(id=>okEx(id,a));const left=Math.max(10,Math.min(30,Math.floor((budget-tot()+cardioMin)/60)));items.push({exId:c[off%c.length]||'wlk',sets:1,min:Math.max(10,left-10),max:left,rest:0})}
+  if(cardioMin){const c=['tm','bike','ell','rowm','stair','jump','wlk'].filter(id=>okEx(id,a));const left=Math.max(a.len<=30?5:10,Math.min(30,Math.floor((budget-tot()+cardioMin)/60)));items.push({exId:c[off%c.length]||'wlk',sets:1,min:Math.max(5,left-10),max:left,rest:0})}
   return{name,items:items.map(({exId,sets,min,max,rest})=>({exId,sets,min,max,rest}))}});
  return{days,why:whyOf(a,days,[...swaps])}}
+let G0=0;function generate0Vol(a){if(G0)return 1e9;G0=1;try{const g=generate({...a,len:240});return Object.values(weekVol(g.days)).reduce((x,y)=>x+y,0)}finally{G0=0}}
 function weekVol(days){const v={};days.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return v}
 function whyOf(a,days,swaps){const v=weekVol(days),P=PRM[a.goal],w=[];
  w.push([`Сплит «${a.place!=='g'&&a.days>=5?'Верх / Низ'+(a.days==5?' + Фулбоди':' ×1,5'):SPLITNAME[a.days]}»: каждая крупная группа мышц тренируется ~${a.days>=6?2:a.days>=4?2:a.days} раз(а) в неделю — 2 раза в неделю дают больший рост, чем 1.`,['f','gf']]);
@@ -57,7 +58,7 @@ function whyOf(a,days,swaps){const v=weekVol(days),P=PRM[a.goal],w=[];
  w.push([`Объём в неделю (подходов): ${Object.entries(v).map(([g,n])=>g+' '+n).join(', ')}. `+(a.level==='nov'?'Для новичка — умеренный объём (меньше подходов): прогресс идёт и при малом объёме, важнее освоить технику.':'Для роста мышц ориентир — ~10+ подходов на группу в неделю; больше подходов — больше результат (дозозависимо).'),a.level==='nov'?['a','v']:['v','rv']]);
  if(a.prio.length)w.push([`Приоритет: ${a.prio.join(', ')} — +1 подход и доп. упражнение, т.к. больший недельный объём даёт больший рост этих мышц.`,['v']]);
  if(a.goal==='loss'||a.goal==='fit')w.push([`Кардио в конце тренировки + дополнительная активность: ориентир ВОЗ — 150–300 мин умеренной нагрузки в неделю${a.goal==='loss'?'; для снижения веса ACSM советует >150, лучше 225–420 мин':''}.`,a.goal==='loss'?['w','d']:['w']]);
- w.push([`Длительность ~${a.len} мин: число упражнений и подходов подогнано под это время (8 мин — разминка).`,[]]);
+ {const full=generate0Vol(a),cut=Object.values(v).reduce((x,y)=>x+y,0);w.push([`Длительность ~${a.len>=75?'75+':a.len} мин: подходы × (≈40 с работы + отдых) + 5 мин разминки — число упражнений и подходов подогнано под это время, базовые упражнения стоят первыми, изоляция убирается первой.`+(cut<full?` За тренировку объём урезан (${cut} из ${full} подходов в неделю). Чем меньше минут, тем ниже недельный объём и, как правило, медленнее рост — при возможности выбери больше времени или больше тренировок в неделю.`:''),cut<full?['v']:[]])}
  if(a.lim.length)w.push([`Ограничения (${a.lim.map(l=>LIMN[l]).join(', ')}): рискованные упражнения заменены на более щадящие${swaps.length?' ('+swaps.slice(0,5).join(', ')+')':''}. При боли — проконсультируйся с врачом.`,[]]);
  w.push([`Пол: ${a.sex==='f'?'женский':'мужской'} — в относительных величинах мужчины и женщины прибавляют в силе и мышцах сопоставимо, поэтому принципы программы одинаковые.`,['sx']]);
  w.push(['Прогрессия: когда все подходы выполнены на верхней границе повторов — добавь 2,5–5% веса (приложение подскажет).',['a']]);return w}
@@ -114,7 +115,7 @@ function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderP
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div></div>
- ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)}</h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
+ ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)} <span class="mut" style="font-weight:400">≈ ${dayMin(d)} мин</span></h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
@@ -143,7 +144,7 @@ function swapModal(cur,a,cb){const g=exBy(cur).group,m=$('#modal');m.classList.r
 function lastSets(exId,beforeId){for(let i=S.workouts.length-1;i>=0;i--){const w=S.workouts[i];if(w.id===beforeId)continue;const it=w.items.find(x=>x.exId===exId);if(it&&it.sets.some(s=>s.done))return it.sets.filter(s=>s.done)}return null}
 function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))return'';
  if(l.length>=item.sets&&l.every(s=>s.r>=item.max))return`<div class="pr" style="font-size:13px">⬆ В прошлый раз все подходы на ${item.max}+ — добавь вес (+2,5 кг)</div>`;return''}
-let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d=S.program[sel],mins=Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+8);
+let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d=S.program[sel],mins=dayMin(d);
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
  app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
  ${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}

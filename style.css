@@ -75,3 +75,4 @@ details summary{cursor:pointer;min-height:30px}
 .consent ul{padding-left:18px}.consent li{margin:4px 0}
 .legal h3{margin:16px 0 6px}.legal p,.legal li{line-height:1.45}
 .plan{padding:10px 14px}.pwsheet .opt{padding:10px}
+.opts.c4{grid-template-columns:repeat(2,1fr)}
