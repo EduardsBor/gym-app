@@ -23,8 +23,8 @@ VPUSH:[['ohp','dsp','ppu'],['lr']],HPULL:[['row','cr','dbr','inv'],['cr','inv']]
 SIDE:[['lr','yr','ppu'],['yr']],REAR:[['fp','rfly','yr'],['rfly','yr']],BI:[['bc','dbc','hc','chin','inv'],['hc']],TRI:[['tpd','ote','skull','dpu','bd'],['tpd','dpu']],CORE:[['pl','hlr','cru','dbug','bdog','bpl','abw'],['dbug','bdog']],CHEST2:[['fly','cc','dbp','pu'],['cc','pu']]};
 const SLOTG={SQ:'Ноги',HINGE:'Ноги',LUNGE:'Ноги',LEGISO:'Ноги',CALF:'Ноги',HPUSH:'Грудь',IPUSH:'Грудь',CHEST2:'Грудь',VPUSH:'Плечи',SIDE:'Плечи',REAR:'Плечи',HPULL:'Спина',VPULL:'Спина',BI:'Бицепс',TRI:'Трицепс',CORE:'Пресс'};
 const PRIO_SLOT={'Грудь':'CHEST2','Спина':'HPULL','Ноги':'LUNGE','Ягодицы':'LEGISO','Плечи':'SIDE','Бицепс':'BI','Трицепс':'TRI','Пресс':'CORE'};
-const T={FA:['Фулбоди A','SQ HPUSH HPULL VPUSH LEGISO* BI* TRI* CORE*'],FB:['Фулбоди B','HINGE IPUSH VPULL LUNGE SIDE* REAR* CALF* CORE*'],FC:['Фулбоди C','SQ HPUSH VPULL HINGE SIDE* BI* TRI*'],
-U1:['Верх A','HPUSH HPULL VPUSH VPULL SIDE* BI* TRI*'],L1:['Низ A','SQ HINGE LUNGE LEGISO* CALF* CORE*'],U2:['Верх B','IPUSH VPULL HPULL CHEST2* REAR* BI* TRI*'],L2:['Низ B','HINGE LUNGE SQ LEGISO* CALF* CORE*'],
+const T={FA:['Фулбоди A','SQ HPUSH HPULL VPUSH LEGISO* BI* TRI* CORE*'],FB:['Фулбоди B','HINGE IPUSH VPULL HPULL* LUNGE* SIDE* REAR* CALF* CORE*'],FC:['Фулбоди C','SQ HPUSH VPULL HPULL* CHEST2* LUNGE* SIDE* TRI* BI*'],
+U1:['Верх A','HPUSH HPULL VPUSH VPULL SIDE* BI* TRI*'],L1:['Низ A','SQ HINGE LUNGE LEGISO* CALF* CORE*'],U2:['Верх B','IPUSH VPULL VPUSH HPULL* CHEST2* REAR* BI* TRI*'],L2:['Низ B','HINGE SQ LUNGE LEGISO* CALF* CORE*'],
 PU:['Жим (грудь, плечи, трицепс)','HPUSH VPUSH IPUSH SIDE* TRI* CHEST2*'],PL:['Тяга (спина, бицепс)','VPULL HPULL HPULL REAR* BI* BI*'],LG:['Ноги','SQ HINGE LUNGE LEGISO* CALF* CORE*']};
 const SPLITS={2:['FA','FB'],3:['FA','FB','FC'],4:['U1','L1','U2','L2'],5:['PU','PL','LG','U1','L1'],6:['PU','PL','LG','PU','PL','LG']};
 const SPLITNAME={2:'Фулбоди 2×',3:'Фулбоди 3×',4:'Верх / Низ',5:'Жим / Тяга / Ноги + Верх / Низ',6:'Жим / Тяга / Ноги ×2'};
@@ -33,9 +33,46 @@ const PRM={str:{c:[[3,4,5],3,6,180],a:[[2,3,3],6,10,120]},mass:{c:[[3,3,4],6,10,
 const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Зал',d:'Дом с гантелями',b:'Свой вес'};
 const LIMN={s:'спина',k:'колени',p:'плечи'};
 const eqOk=(id,a)=>(META[id]||'gdb|').split('|')[0].includes(a.place);
-const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest),WARM=5,dayMin=d=>Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+WARM);
+const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest),WARM=5,dayMin=(d,a)=>Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+WARM+rampN(d,a||(typeof S!=='undefined'&&S.prof)||{}));
+// Разминка: общая (кардио) + динамическая подвижность под мышцы дня + подводящие подходы к первому базовому упражнению.
+// Fradkin 2010, McCrary 2015 (разминка улучшает результат), Behm 2016 (без долгой статической растяжки перед силовой).
+const BWX=new Set(['pu','pull','inv','chin','ppu','bd','dpu','bwsq','step','dip','nlc','sglb','pl','cru','hlr','rt','dbug','bdog','bpl','abw','yr']);
+const HINGEX=new Set(['dl','rdl','dbrdl','hyp','ht','sglb','nlc','lc']);
+const WMOV={
+hip:['Круги тазом','10 в каждую сторону','Руки на поясе, медленно вращай тазом, постепенно увеличивая амплитуду.'],
+legsw:['Махи ногами','10 вперёд-назад и 10 в стороны каждой ногой','Держись за опору; махи свободные, без рывков, амплитуда растёт постепенно.'],
+bwsq:['Приседания без веса','10 раз','Медленно, на комфортную глубину, колени смотрят по направлению носков.'],
+glb:['Ягодичный мост лёжа','10 раз','Лёжа на спине, стопы на полу: поднимай таз, сжимая ягодицы, без прогиба в пояснице.'],
+gm:['Наклоны «гуд-морнинг» без веса','10 раз','Руки на груди, колени чуть согнуты: наклон от таза с прямой спиной до лёгкого натяжения задней поверхности бедра.'],
+armc:['Круги руками','10 вперёд и 10 назад','Прямые руки, от маленьких кругов к большим.'],
+dislo:['Проводка палки или резинки за голову','10 раз','Широкий хват, прямые руки плавно проводи над головой назад и обратно; без боли в плечах.'],
+pa:['Разведение рук со сведением лопаток','15 раз','Руки на уровне плеч: разводи их в стороны (можно с лёгкой резинкой), сводя лопатки.'],
+scpu:['Отжимания лопатками','10 раз','В упоре на прямых руках (можно с колен): своди и разводи лопатки, локти не сгибаются.'],
+catcow:['Кошка-корова','8 раз','На четвереньках плавно округляй и прогибай спину вместе с дыханием.'],
+scpull:['Подтягивания лопатками','8 раз','В висе на прямых руках опускай и своди лопатки — тело приподнимается на пару сантиметров.'],
+bandrow:['Лёгкая тяга к поясу','12 раз','Резинка или блок с малым весом: тяни к поясу, сводя лопатки, без рывков.']};
+function warmGroups(d){const g=new Set(d.items.map(i=>exBy(i.exId).group));return{legs:g.has('Ноги'),push:g.has('Грудь')||g.has('Плечи')||g.has('Трицепс'),pull:g.has('Спина')||g.has('Бицепс'),hinge:d.items.some(i=>HINGEX.has(i.exId))}}
+function warmMain(d){const it=d.items.find(i=>!isCardio(i.exId)&&exBy(i.exId).group!=='Пресс');return it||null}
+function rampScheme(a,exId){if(!exId)return[];a=a||{};if(a.place==='b'||BWX.has(exId))return[['bw',Math.max(4,Math.round(10/2))]];
+ if(a.goal==='loss'||(a.len||60)<=30)return[[50,8]];if(a.goal==='str')return[[45,10],[65,5],[80,3]];return[[50,8],[70,4]]}
+const rampN=(d,a)=>{const m=warmMain(d);return m?rampScheme(a,m.exId).length:0};
+function warmPlan(d,a){a=a||{};const g=warmGroups(d),lim=a.lim||[],home=a.place!=='g';
+ const gen=home?(lim.includes('k')?'Ходьба на месте с высоким подниманием колен':'Джампинг-джек или ходьба на месте'):(g.pull||(g.legs&&g.push)?'Гребной тренажёр или велотренажёр, лёгкий темп':g.legs?'Велотренажёр, лёгкий темп':'Гребной тренажёр или эллипс, лёгкий темп');
+ let m=[];const up=()=>{m.push('armc');if(g.push)m.push(lim.includes('p')?'pa':'dislo');if(g.push)m.push('scpu');if(g.pull){m.push('catcow');m.push(a.place==='d'?'pa':(a.place==='b'?'scpull':'bandrow'))}};
+ if(g.legs&&(g.push||g.pull)){m=['hip','bwsq',g.hinge?'gm':'legsw','armc',g.push?(lim.includes('p')?'pa':'dislo'):'catcow',g.pull?(a.place==='b'?'scpull':'catcow'):'scpu']}
+ else if(g.legs){m=['hip','legsw','bwsq','glb'];if(g.hinge)m.push('gm')}else up();
+ m=[...new Set(m)];const main=warmMain(d),sch=main?rampScheme(a,main.exId):[];
+ let base=null;if(main&&typeof lastSets==='function'&&typeof S!=='undefined'&&S.workouts){const l=lastSets(main.exId);if(l&&l.length)base=Math.max(...l.map(s=>+s.w||0))||null}
+ const ramp=sch.map(([p,r])=>p==='bw'?{t:'Лёгкий подход',r,w:null}:{t:p+'%',r,w:base?Math.max(0,Math.round(base*p/100/2.5)*2.5):null});
+ return{gen,mob:m,main:main&&main.exId,ramp,min:WARM+ramp.length}}
+function warmItems(P){return[{k:'gen',n:P.gen,d:'3 мин'},...P.mob.map(id=>({k:id,n:WMOV[id][0],d:WMOV[id][1],x:WMOV[id][2]})),...P.ramp.map((r,i)=>({k:'r'+i,n:'Подводящий подход',d:(r.w==null&&r.t!=='Лёгкий подход'?r.t+' × '+r.r:r.t==='Лёгкий подход'?'× '+r.r:r.t+' · '+r.w+' кг × '+r.r),ramp:1,pct:r.t}))]}
+function warmHTML(P,chk){const L=warmItems(P);const noW=P.ramp.some(r=>r.w==null&&r.t!=='Лёгкий подход');
+ const row=(it,i)=>`<div class="li wu${chk&&chk[i]?' done':''}">${chk?`<button class="sm ${chk[i]?'ok':''}" data-wu="${i}" aria-label="Готово">✓</button>`:''}<div class="grow"><div><span>${esc(it.n)}</span></div>${it.x?`<div class="mut" style="font-size:12px">${esc(it.x)}</div>`:''}</div>${it.k==='bwsq'?techBtn('bwsq'):''}<span class="mut" style="max-width:42%;text-align:right">${esc(it.d)}</span></div>`;
+ return `<div class="mut" style="font-size:13px;margin:4px 0"><span>1) Общая разминка — 3 мин</span> · <span>2) Подвижность суставов — ~2 мин</span>${P.ramp.length?` · <span>3) Подводящие подходы</span>`:''}</div>${L.map((it,i)=>(it.k==='r0'?`<div class="row" style="margin-top:10px"><b class="grow"><span>3) Подводящие подходы</span>: <span>${esc(exBy(P.main).name)}</span></b>${techBtn(P.main)}</div>`:'')+row(it,i)).join('')}${noW?'<div class="mut" style="font-size:12px;margin-top:4px">% — от твоего рабочего веса. Разминочные подходы не записываются в историю и рекорды.</div>':'<div class="mut" style="font-size:12px;margin-top:4px">Разминочные подходы не записываются в историю и рекорды.</div>'}`}
+
 function pickFor(slot,a,used,off){const[c,safe]=SLOT[slot];let L=c.filter(id=>okEx(id,a)&&!used.has(id));let swapped=false;
  if(!L.length){L=safe.filter(id=>okEx(id,a)&&!used.has(id));swapped=c.some(id=>eqOk(id,a))}
+ if(!L.length){L=EX.filter(e=>e.group===SLOTG[slot]&&META[e.id]&&okEx(e.id,a)&&!used.has(e.id)).map(e=>e.id);swapped=true}
  if(!L.length)return null;const id=L[off%L.length];return{id,swapped:swapped||(c[0]!==id&&(a.lim||[]).length&&c.filter(x=>!used.has(x)&&eqOk(x,a))[0]!==id)}}
 function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a};const P=PRM[a.goal],lv=LV[a.level],seen={},notes=[];let swaps=new Set();
  const days=(a.place!=='g'&&a.days>=5?(a.days==5?['U1','L1','U2','L2','FA']:['U1','L1','U2','L2','U1','L2']):SPLITS[a.days]).map(code=>{const[name,slots]=T[code];seen[code]=(seen[code]||0)+1;const off=seen[code]-1,used=new Set();
@@ -44,7 +81,7 @@ function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a
   // доп. упражнение для приоритетных групп
   a.prio.forEach(g=>{const slot=PRIO_SLOT[g];if(items.some(i=>SLOTG[i.slot]===g||(g==='Ягодицы'&&i.slot==='HINGE'))){const r=pickFor(slot,a,used,off+1);if(r){used.add(r.id);const p=P.a;items.push({exId:r.id,sets:p[0][lv]+1,min:p[1],max:p[2],rest:p[3],acc:true,slot,prio:true})}}});
   // подгонка под длительность: подходы × (40 с работы + отдых) + 5 мин разминки; сначала убираем изоляцию
-  const budget=a.len*60-WARM*60,cardioMin=Math.min(a.goal==='loss'?20:a.goal==='fit'?15:0,Math.round(a.len/4))*60,tot=()=>items.reduce((s,i)=>s+itemTime(i),0)+cardioMin;
+  const budget=a.len*60-WARM*60,cardioMin=Math.min(a.goal==='loss'?20:a.goal==='fit'?15:0,Math.round(a.len/4))*60,tot=()=>items.reduce((s,i)=>s+itemTime(i),0)+cardioMin+rampN({items},a)*60;
   while(tot()>budget){const j=items.map((x,k)=>x.acc&&!x.prio?k:-1).filter(k=>k>=0).pop();if(j!==undefined){items.splice(j,1);continue}
    const big=items.filter(x=>x.sets>2);if(big.length){big.forEach(x=>x.sets--);continue}const j2=items.map((x,k)=>x.prio?k:-1).filter(k=>k>=0).pop();if(j2!==undefined){items.splice(j2,1);continue}if(items.length>3){items.pop();continue}break}
   if(cardioMin){const c=['tm','bike','ell','rowm','stair','jump','wlk'].filter(id=>okEx(id,a));const left=Math.max(a.len<=30?5:10,Math.min(30,Math.floor((budget-tot()+cardioMin)/60)));items.push({exId:c[off%c.length]||'wlk',sets:1,min:Math.max(5,left-10),max:left,rest:0})}
@@ -61,6 +98,7 @@ function whyOf(a,days,swaps){const v=weekVol(days),P=PRM[a.goal],w=[];
  {const full=generate0Vol(a),cut=Object.values(v).reduce((x,y)=>x+y,0);w.push([`Длительность ~${a.len>=75?'75+':a.len} мин: подходы × (≈40 с работы + отдых) + 5 мин разминки — число упражнений и подходов подогнано под это время, базовые упражнения стоят первыми, изоляция убирается первой.`+(cut<full?` За тренировку объём урезан (${cut} из ${full} подходов в неделю). Чем меньше минут, тем ниже недельный объём и, как правило, медленнее рост — при возможности выбери больше времени или больше тренировок в неделю.`:''),cut<full?['v']:[]])}
  if(a.lim.length)w.push([`Ограничения (${a.lim.map(l=>LIMN[l]).join(', ')}): рискованные упражнения заменены на более щадящие${swaps.length?' ('+swaps.slice(0,5).join(', ')+')':''}. При боли — проконсультируйся с врачом.`,[]]);
  w.push([`Пол: ${a.sex==='f'?'женский':'мужской'} — в относительных величинах мужчины и женщины прибавляют в силе и мышцах сопоставимо, поэтому принципы программы одинаковые.`,['sx']]);
+ w.push(['Разминка в каждой тренировке (~'+(WARM+rampN(days[0],a))+' мин): 3 мин лёгкого кардио, затем динамические движения для суставов и мышц этого дня и подводящие подходы к первому базовому упражнению. Разминка улучшает результат тренировки; долгую статическую растяжку перед силовой лучше не делать — она может временно снизить силу.',['wu1','wu2','wu3']]);
  w.push(['Прогрессия: когда все подходы выполнены на верхней границе повторов — добавь 2,5–5% веса (приложение подскажет).',['a']]);return w}
 const CATALOG=[
 ['Старт в зале','Для новичков: освоить базовые движения, 3 фулбоди в неделю.',{goal:'fit',level:'nov',days:3,len:60,place:'g'}],
@@ -115,7 +153,7 @@ function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderP
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div></div>
- ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)} <span class="mut" style="font-weight:400">≈ ${dayMin(d)} мин</span></h3>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
+ ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)} <span class="mut" style="font-weight:400">≈ ${dayMin(d,a)} мин</span></h3><details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,a).min} мин</span></summary>${warmHTML(warmPlan(d,a))}</details>${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span><button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button></div>`).join('')}</div>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
@@ -147,15 +185,16 @@ function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))retur
 let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d=S.program[sel],mins=dayMin(d);
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
  app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
- ${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}
+ <details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>${d.items.map(it=>`<div class="li"><div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</span></div>`).join('')}
  <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button></div>
  <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${i===sel?'👁 ':''}${esc(p.name)}</button>`).join('')}`;
  $('#start').onclick=()=>startW(sel);const tb=$('#tback');if(tb)tb.onclick=()=>today();app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
-function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,notes:'',
+function startW(i){const d=S.program[i];S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,notes:'',warm:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),
  items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
 let durInt;
 function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok" id="fin">Завершить</button></div>
+ ${A.warm?(()=>{const n=A.warm.c.filter(Boolean).length,all=n===A.warm.c.length;return`<div class="card wucard"><details ${all?'':'open'}><summary>🔥 <b>Разминка</b> <span class="mut">${n}/${A.warm.c.length}${all?' ✓':''}</span></summary>${warmHTML(A.warm.P,A.warm.c)}</details></div>`})():''}
  ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row"><h3 class="grow">${esc(exBy(it.exId).name)}</h3>${techBtn(it.exId)}<button class="sm" data-ws="${i}">⇄</button><button class="sm" data-rm="${i}">✕</button></div>
  <div class="mut">Цель: ${c?it.min+'–'+it.max+' мин':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest)}</div>
  <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':'Вес, кг'}</span><span>${c?'Минуты':'Повторы'}</span><span></span></div>
@@ -168,6 +207,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;if(s.pf){s.pf=false;inp.closest('.set').classList.remove('pf')}save()});
  app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.done.split(',').map(Number),it=A.items[i],s=it.sets[k];s.done=!s.done;
   if(s.done){s.pf=false;if(s.w==='')s.w=0;if(s.r==='')s.r=0;if(S.autoW!==false&&!isCardio(it.exId))it.sets.slice(k+1).forEach(n=>{if(!n.done&&(n.pf||n.w==='')){n.w=s.w;n.pf=true}});checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}else{delete s.pr;delete s.prInfo}save();workoutView()});
+ app.querySelectorAll('[data-wu]').forEach(b=>b.onclick=()=>{const k=+b.dataset.wu;A.warm.c[k]=!A.warm.c[k];save();const y=scrollY;workoutView();scrollTo(0,y)});
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push(S.autoW!==false?{w:l.w,r:l.r,pf:l.w!=='',done:false}:{w:'',r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
@@ -175,7 +215,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=PRM[S.goal].a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;save();stopTimer();go('today')}};
- $('#fin').onclick=()=>{A.end=Date.now();A.items=A.items.filter(it=>it.sets.some(s=>s.done));A.items.forEach(it=>it.sets=it.sets.filter(s=>s.done));
+ $('#fin').onclick=()=>{A.end=Date.now();if(A.warm)A.warmDone=A.warm.c.filter(Boolean).length;delete A.warm;A.items=A.items.filter(it=>it.sets.some(s=>s.done));A.items.forEach(it=>it.sets=it.sets.filter(s=>s.done));
   if(!A.items.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;save();stopTimer();toast('Тренировка сохранена 💪');go('history');prSummary(A)}}
 function prSummary(A){const L=[];A.items.forEach(it=>it.sets.forEach(s=>s.pr&&s.prInfo&&L.push([exBy(it.exId).name,s.prInfo])));if(!L.length)return;const m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">🏆 Рекорды тренировки: ${L.length}</h2>${L.map(([n,i])=>`<div class="li"><div class="grow"><b>${esc(n)}</b><br><span class="mut">${i.t}</span></div><span class="mut"><s>${i.o}</s></span>&nbsp;→&nbsp;<b class="pr">${i.n}</b></div>`).join('')}<p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="mc">Отлично!</button></div>`;$('#mc').onclick=()=>m.classList.add('hidden')}
@@ -378,7 +418,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${S.restOverride||''}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 18</p>`;
+ <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия 21</p>`;
  $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
@@ -393,6 +433,9 @@ l:'Schoenfeld BJ, Grgic J, Ogborn D, Krieger JW (2017). Strength and hypertrophy
 r:'Schoenfeld BJ, Pope ZK, Benik FM, et al. (2016). Longer interset rest periods enhance muscle strength and hypertrophy in resistance-trained men. Journal of Strength and Conditioning Research, 30(7), 1805–1812.',
 a:'American College of Sports Medicine (2009). Position stand: Progression models in resistance training for healthy adults. Medicine & Science in Sports & Exercise, 41(3), 687–708.',
 rv:'Ralston GW, Kilgore L, Wyatt FB, Baker JS (2017). The effect of weekly set volume on strength gain: A meta-analysis. Sports Medicine, 47(12), 2585–2601.',
+wu1:'Fradkin AJ, Zazryn TR, Smoliga JM (2010). Effects of warming-up on physical performance: a systematic review with meta-analysis. Journal of Strength and Conditioning Research, 24(1), 140–148.',
+wu2:'McCrary JM, Ackermann BJ, Halaki M (2015). A systematic review of the effects of upper body warm-up on performance and injury. British Journal of Sports Medicine, 49(14), 935–942.',
+wu3:'Behm DG, Blazevich AJ, Kay AD, McHugh M (2016). Acute effects of muscle stretching on physical performance, range of motion, and injury incidence in healthy active individuals: a systematic review. Applied Physiology, Nutrition, and Metabolism, 41(1), 1–11.',
 gf:'Grgic J, Schoenfeld BJ, Davies TB, et al. (2018). Effect of resistance training frequency on gains in muscular strength: A systematic review and meta-analysis. Sports Medicine, 48(5), 1207–1220.',
 p:'Morton RW, Murphy KT, McKellar SR, et al. (2018). A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults. British Journal of Sports Medicine, 52(6), 376–384.',
 d:'Donnelly JE, Blair SN, Jakicic JM, et al. (2009). ACSM Position Stand: Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Medicine & Science in Sports & Exercise, 41(2), 459–471.',

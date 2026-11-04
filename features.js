@@ -37,7 +37,7 @@ const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса'
  ['place','Где тренируешься?',[['g','🏢 Зал','Тренажёры, штанга, гантели'],['d','🏠 Дом с гантелями','Гантели и скамья'],['b','🤸 Без инвентаря','Свой вес (желательно турник)']]],
  ['len','Сколько времени готов тратить на тренировку?',[[30,'⏱ ~30 мин','Коротко: только базовые упражнения'],[45,'⏱ ~45 мин','База + немного изоляции'],[60,'⏱ ~60 мин','Полноценная тренировка'],[75,'⏱ 75+ мин','Максимум объёма']]]];
 // Recommended session length for the chosen frequency: weekly volume (Schoenfeld 2017) ÷ sessions, same duration formula as generate().
-function recLen(a){const P=PRM[a.goal]||PRM.mass,per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+sets*(40+rest)/60);
+function recLen(a){const P=PRM[a.goal]||PRM.mass,per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+(a.goal==='str'?3:a.goal==='loss'?1:2)+sets*(40+rest)/60);
  const opt=min>=68?75:[30,45,60].reduce((b,o)=>Math.abs(o-min)<Math.abs(b-min)?o:b);return{min,sets:Math.round(sets),opt,per,rest:Math.round(P.c[3]/60*10)/10}}
 function recHint(a){const r=recLen(a),o=r.opt>=75?'75+':'~'+r.opt,T={
  ru:`<b>Рекомендация для ${a.days}× в неделю: ${o} мин</b> (расчёт ≈${r.min} мин). Для роста нужно ~${r.per} тяжёлых подходов на мышцу в неделю (ориентир 10–20) [1]. При ${a.days} тренировках это ~${r.sets} подходов за тренировку; ≈40 с работы + отдых ~${r.rest} мин в базовых [2] + 5 мин разминки. Меньше тренировок в неделю — дольше каждая.`,
@@ -93,7 +93,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 20';
+ ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 21';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
