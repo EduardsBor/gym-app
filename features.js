@@ -93,7 +93,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 25';
+ ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 26';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
