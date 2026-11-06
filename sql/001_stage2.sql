@@ -1,5 +1,8 @@
 -- Stage 2: per-user app snapshot + privacy-light analytics
--- Applied to project nwbnrjiiqfyuakotacln (eu-west-1) as migration stage2_user_state_and_events
+-- Applied to project nwbnrjiiqfyuakotacln (eu-west-1, original Gmail-owned account) as migration stage2_user_state_and_events
+-- Also required on project krrhwuldkwkkcegxhyqq (Europe, bot email eduardsboroda@mail.grokbot.com).
+-- MCP list_projects currently only sees nwbnrjiiqfyuakotacln, so this file was not applied to krrhwuldkwkkcegxhyqq via MCP.
+-- Run this SQL on krrhwuldkwkkcegxhyqq (SQL Editor or apply_migration after MCP is on the bot account).
 
 create table public.user_state (
   user_id uuid primary key references auth.users (id) on delete cascade,
