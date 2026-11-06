@@ -9,7 +9,7 @@ document.documentElement.lang=LANG;
 const CYR=/[А-Яа-яЁё]/;
 let TRM=null,TRE=null,TRX=null;
 function trInit(){if(TRM||LANG==='ru')return;const i=LANG==='en'?1:2;TRM=new Map();TRE=new Map();
- DICT.concat(typeof DICT2!=='undefined'?DICT2:[]).forEach(r=>{if(r[i]!=null)TRM.set(r[0],r[i])});DICT_EXACT.forEach(r=>TRE.set(r[0],r[i]));
+ DICT.concat(typeof DICT2!=='undefined'?DICT2:[],typeof DICT3!=='undefined'?DICT3:[]).forEach(r=>{if(r[i]!=null)TRM.set(r[0],r[i])});DICT_EXACT.forEach(r=>TRE.set(r[0],r[i]));
  const keys=[...TRM.keys()].sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
  TRX=new RegExp('(?<![\\p{L}])(?:'+keys.join('|')+')(?![\\p{L}])','gu')}
 function tr(s){if(LANG==='ru'||s==null)return s;s=String(s);if(!CYR.test(s))return s;trInit();const t=s.trim();

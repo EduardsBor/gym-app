@@ -6,6 +6,7 @@ All Latvian (LV) strings were machine-assisted drafts. Before release a native L
 |---|---|---|
 | `i18n/dict.js` | 3rd column of `DICT` / `DICT_EXACT`: the whole UI (tabs, today/workout, program, progress, history, body, more, science, library, catalog, quiz, exercise names, units) | ⚠️ needs review |
 | `i18n/dict2.js` | 3rd column: onboarding, paywall, consent, privacy & data, owner mode | ⚠️ needs review |
+| `i18n/dict3.js` | 3rd column: account, sync, analytics (Stage 2) | ⚠️ needs review |
 | `i18n/lib.lv.js` | `LIB_LV`: 68 exercises (muscles, description, steps, mistakes) | ⚠️ needs review (anatomy terms) |
 | `i18n/tech.lv.js` | `TECH_LV`: 68 technique sheets | ⚠️ needs review |
 | `legal.js` (`LEGAL.lv`) | Privacy Policy + Terms of Use (DRAFT, placeholders) | ⚠️ needs native review **and** a lawyer |
@@ -165,3 +166,19 @@ v21 — warm-up block (`i18n/dict2.js`, end of file):
 - Описание: Разогревает мышцы спины перед основными тягами. В разминке — 12 повторений с резинкой или малым весом блока. → **Iesilda muguras muskuļus pirms galvenajām vilkmēm. Iesildīšanā — 12 atkārtojumi ar gumiju vai nelielu trenažiera svaru.**
 - Шаги: Nostiprini gumiju krūšu vai vidukļa augstumā (vai satver trenažiera rokturi ar nelielu svaru). / Nostājies taisni, ceļi nedaudz saliekti, rokas izstieptas uz priekšu. / Velc rokturus pie vidukļa, savelkot lāpstiņas un virzot elkoņus gar ķermeni. / Vienmērīgi iztaisno rokas, nezaudējot stāju.
 - Ошибки: Rāvieni ar ķermeni atpakaļ. / Pacelti pleci. / Pārāk liela pretestība iesildīšanai.
+
+
+## v23 additions (need review)
+
+Account and sync (`i18n/dict3.js`, `sync.js`, `legal.js`):
+
+- ☁️ Аккаунт и синхронизация → **Konts un sinhronizācija**
+- Без входа всё остаётся только на этом устройстве. После входа программа, история, рекорды и настройки копируются в облако (серверы в ЕС) и не затирают то, что уже есть. → **Bez ieiešanas viss paliek tikai šajā ierīcē. Pēc ieiešanas programma, vēsture, rekordi un iestatījumi tiek kopēti mākonī (ES serveri) un nepārraksta to, kas jau ir.**
+- Войти / Создать аккаунт / Войти по ссылке на почту / Забыли пароль? → **Ieiet / Izveidot kontu / Ieiet ar e-pasta saiti / Aizmirsi paroli?**
+- На iPhone в приложении с домашнего экрана надёжнее вход с паролем: ссылка из письма откроется в Safari. → **iPhone lietotnē no sākuma ekrāna drošāk ieiet ar paroli: e-pasta saite atvērsies Safari.**
+- Синхронизировать сейчас / Выйти → **Sinhronizēt tagad / Iziet**
+- Выход не удаляет данные на этом устройстве. … Фото тела остаются на устройстве. → **Iziešana neizdzēš datus šajā ierīcē. … Ķermeņa foto paliek ierīcē.**
+- Анонимная аналитика / Короткие события (открытие, онбординг, показ оплаты) без имени, почты и тренировок → **Anonīma analitika / Īsi notikumi (atvēršana, ievadanketa, apmaksas ekrāns) bez vārda, e-pasta un treniņiem**
+- Если войдёшь в аккаунт, они синхронизируются с облаком в ЕС. → **Ja ieiesi kontā, tie sinhronizēsies ES mākonī.**
+- Consent extras: «На этом устройстве данные хранятся в браузере.» / cloud + photos note / «Анонимную аналитику можно включить отдельно в «Ещё».»
+- Legal drafts (`LEGAL.lv` sections 3–4): guest vs EU Supabase account, body measurements only with consent, photos stay local, opt-in analytics events (install, app_open, onboarding_done, paywall_shown, trial_start, purchase, cancel).

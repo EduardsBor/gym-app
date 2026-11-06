@@ -9,7 +9,7 @@ const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id
 (function(){let ch=false;const has=!!((S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.program);
  if(S.ownerPremium===undefined&&has){S.ownerPremium=true;ch=true}
  if(S.obOffer===undefined){S.obOffer=S.goal?1:0;ch=true}
- if(S.schema!==3){S.schema=3;ch=true}if(ch)save()})();
+ if(S.schema!==4){S.schema=4;ch=true}if(ch)save()})();
 
 // ---- Paywall (DEMO, no real payments)
 function paywall(reason){let d=$('#pw');if(!d){d=document.createElement('div');d.id='pw';document.body.append(d)}d.className='';let plan='y';
@@ -49,7 +49,7 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
  ${RL?recHint(OB):''}<div class="${k==='days'?'opts c5':k==='len'?'opts c4':'opts'}">${opts.map(([v,l,s])=>`<button class="opt ${String(OB[k])===String(v)?'sel':''}" data-ob="${v}"><b>${l}${RL&&RL.opt===v?' ★':''}</b>${s?`<br><span class="mut">${s}</span>`:''}</button>`).join('')}</div>
  <button class="pri full" id="obnext" style="margin-top:18px">${OB.step<OBS.length-1?'Далее':'Составить программу'}</button>
  <div class="row" style="margin:8px 0 20px">${OB.step?'<button class="grow" id="obback">← Назад</button>':''}<button class="grow" id="obskip">Пропустить</button></div>
- <p class="mut" style="font-size:12px">Программа строится по научным данным (раздел «Научная основа»). Ответы хранятся только на этом устройстве.</p>`;
+ <p class="mut" style="font-size:12px">Программа строится по научным данным (раздел «Научная основа»). Ответы хранятся только на этом устройстве. Если войдёшь в аккаунт, они синхронизируются с облаком в ЕС.</p>`;
  app.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{OB[k]=(k==='days'||k==='len')?+b.dataset.ob:b.dataset.ob;if(k==='len')OB.lenTouched=1;onb()});
  $('#obnext').onclick=()=>{if(OB.step<OBS.length-1){OB.step++;onb();scrollTo(0,0);return}
   const a={goal:OB.goal,level:OB.level,days:OB.days,len:OB.len,place:OB.place,sex:'m',prio:[],lim:[]};
@@ -69,7 +69,7 @@ const _body=body;body=function(){$('#title').textContent='Тело';if(!isPrem()
  if(!S.consentHealth)return consentView();_body()};
 function consentView(){$('#title').textContent='Согласие';app.innerHTML=`<div class="card consent"><div style="font-size:34px">🛡️</div><h2 style="margin-top:4px">Данные о здоровье</h2>
  <p>Вес, обхваты, процент жира, рост и фото тела — это <b>данные о здоровье</b>. По GDPR (ст. 9) их можно обрабатывать только с твоего явного согласия.</p>
- <ul><li>Данные хранятся <b>только на этом устройстве</b> (в браузере).</li><li>Никуда не отправляются: нет аккаунтов, серверов и аналитики.</li><li>Используются только чтобы показать твои графики и прогресс.</li><li>Согласие можно отозвать, а данные — экспортировать или удалить в «Ещё».</li></ul>
+ <ul><li>На этом устройстве данные хранятся в браузере.</li><li>Если войдёшь в аккаунт, программа, история и настройки синхронизируются с облаком в ЕС (Supabase). Замеры тела — только при этом согласии. Фото тела остаются на устройстве и в облако не загружаются.</li><li>Используются только чтобы показать твои графики и прогресс.</li><li>Согласие можно отозвать, а данные — экспортировать или удалить в «Ещё».</li><li>Анонимную аналитику можно включить отдельно в «Ещё».</li></ul>
  <label class="li"><input type="checkbox" id="cs" style="width:28px;min-height:28px"><span class="grow">Я даю явное согласие на хранение и обработку моих данных о теле в этом приложении.</span></label>
  <button class="pri full" id="csok" disabled>Согласен — продолжить</button><button class="full" id="cspol" style="margin-top:8px">Политика конфиденциальности</button></div>
  <p class="mut">Без согласия раздел «Тело» не сохраняет никаких данных. Остальные функции работают как обычно.</p>`;
@@ -93,7 +93,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 22';
+ ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 23';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');

@@ -84,7 +84,7 @@ function libView(){$('#title').textContent='Библиотека';const ch=(k,v,
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
  app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()});
  $('#cadd').onclick=()=>{const n=$('#cn').value.trim();if(!n)return;S.custom.push({id:'c_'+Date.now(),name:n,group:$('#cg').value});save();toast('Добавлено');libView()};
- app.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>{S.custom=S.custom.filter(e=>e.id!==b.dataset.cx);save();libView()})}
+ app.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>{S.custom=S.custom.filter(e=>e.id!==b.dataset.cx);S.deletedCustom=(S.deletedCustom||[]).concat(b.dataset.cx);save();libView()})}
 function exHist(id){const H=[];S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId!==id)return;const d=it.sets.filter(s=>s.done);if(d.length)H.push({t:wo.start,sets:d,b:Math.max(...d.map(s=>e1rm(+s.w,+s.r)))})}));return H.sort((a,b)=>a.t-b.t)}
 function spark(H){const P=H.slice(-12),v=P.map(h=>h.b),mn=Math.min(...v),mx=Math.max(...v),W=300,Hh=70,x=i=>P.length>1?10+i*(W-20)/(P.length-1):W/2,y=b=>mx>mn?Hh-8-(b-mn)/(mx-mn)*(Hh-16):Hh/2;
  return `<svg viewBox="0 0 ${W} ${Hh}" class="spark"><polyline fill="none" stroke="#ff6b35" stroke-width="2.5" points="${P.map((h,i)=>x(i)+','+y(h.b)).join(' ')}"/>${P.map((h,i)=>`<circle cx="${x(i)}" cy="${y(h.b)}" r="3.5" fill="#ff6b35"/>`).join('')}</svg><p class="mut" style="font-size:12px;margin:2px 0 0">Расчётный 1ПМ по лучшему подходу каждой тренировки (${Math.round(mn)}–${Math.round(mx)} кг)</p>`}
