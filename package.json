@@ -1,0 +1,11 @@
+{
+  "name": "gym-app",
+  "private": true,
+  "description": "Test runner for the GymUp service worker. Not a release and not used by the static site.",
+  "scripts": {
+    "test": "node test/exercise-ids.mjs && node test/sw-cache.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "24.15.0"
+  }
+}
