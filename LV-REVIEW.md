@@ -168,6 +168,10 @@ v21 — warm-up block (`i18n/dict2.js`, end of file):
 - Ошибки: Rāvieni ar ķermeni atpakaļ. / Pacelti pleci. / Pārāk liela pretestība iesildīšanai.
 
 
+## v30 library cards (need review)
+
+`cards.js` adds 93 exercises. Latvian names, muscles and technique (`LIB_LV` / `TECH_LV` entries and the `DICT` name rows pushed from that file) are drafts and need a native speaker. Also new UI strings: «Заминка» → Atdzišana, «Анимация в разработке» → Animācija tiek izstrādāta. The horizontal machine-press wording for existing `mch` in `i18n/lib.lv.js` and `i18n/tech.lv.js` needs the same review.
+
 ## v23 additions (need review)
 
 Account and sync (`i18n/dict3.js`, `sync.js`, `legal.js`):

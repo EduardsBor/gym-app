@@ -8,7 +8,7 @@ fly:['Lielais krūšu muskulis','Priekšējie deltveida','Izolējošs krūšu vi
 cc:['Lielais krūšu muskulis','Priekšējie deltveida','Krūšu izolācija ar pastāvīgu troses spriegumu visā amplitūdā; ērti maksimālai kontrakcijai treniņa beigās.'],
 dip:['Lielā krūšu muskuļa apakšdaļa, tricepss','Priekšējie deltveida','Smags vingrinājums ar ķermeņa svaru krūšu apakšdaļai un tricepsam; noliecoties uz priekšu, vairāk strādā krūtis.'],
 pu:['Lielais krūšu muskulis','Tricepss, priekšējie deltveida, vēdera prese','Pamatvingrinājums bez inventāra krūtīm un rokām, kas trenē arī korpusa stabilitāti. Piemērots mājām un iesildīšanai.'],
-mch:['Lielais krūšu muskulis','Priekšējie deltveida, tricepss','Spiešana pa noteiktu trajektoriju: vieglāk apgūt un drošāk strādāt līdz atteicei nekā ar brīvo svaru.'],
+mch:['Lielais krūšu muskulis, akcents uz krūšu-ribu daļu','Priekšējie deltveida; tricepss','Horizontāla spiešana pa noteiktu trajektoriju: vieglāk apgūt un drošāk strādāt līdz atteicei nekā ar brīvo svaru.'],
 dl:['Sēžas muskuļi, muguras taisnotāji, augšstilba aizmugure','Četrgalvainais, pievilcēji, trapecveida, apakšdelmi','Attīsta visas aizmugurējās ķēdes spēku un tvērienu; viens no slodzīgākajiem pamatvingrinājumiem.'],
 pull:['Platākie muguras muskuļi','Bicepss, aizmugurējie deltveida, rombveida, apakšējie trapecveida','Pamatvingrinājums ar ķermeņa svaru muguras platumam un vilkšanas spēkam.'],
 lat:['Platākie muguras muskuļi','Bicepss, aizmugurējie deltveida, rombveida','Pievilkšanās alternatīva ar regulējamu svaru; piemērots, ja pievilkties vēl ir grūti.'],

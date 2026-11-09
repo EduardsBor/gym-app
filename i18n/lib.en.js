@@ -8,7 +8,7 @@ fly:['Pectoralis major','Front delts','Chest isolation: loads the muscle in the 
 cc:['Pectoralis major','Front delts','Chest isolation with constant cable tension through the whole range; handy for peak contractions at the end of a session.'],
 dip:['Lower pectoralis major, triceps','Front delts','A demanding bodyweight exercise for the lower chest and triceps; leaning forward works the chest more.'],
 pu:['Pectoralis major','Triceps, front delts, abs','Equipment-free basic exercise for chest and arms that also trains core stability. Good for home and warm-ups.'],
-mch:['Pectoralis major','Front delts, triceps','Press on a fixed path: easier to learn and safer to take to failure than free weights.'],
+mch:['Pectoralis major, emphasis on the sternocostal part','Front delts; triceps','Horizontal press on a fixed path: easier to learn and safer to take to failure than free weights.'],
 dl:['Glutes, spinal erectors, hamstrings','Quadriceps, adductors, traps, forearms','Builds strength of the whole posterior chain and grip; one of the most demanding compound lifts.'],
 pull:['Lats','Biceps, rear delts, rhomboids, lower traps','Core bodyweight exercise for back width and pulling strength.'],
 lat:['Lats','Biceps, rear delts, rhomboids','Pull-up alternative with adjustable load; good if pull-ups are still too hard.'],
