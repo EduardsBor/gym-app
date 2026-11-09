@@ -8,7 +8,7 @@ fly:['Большая грудная','Передние дельты','Изоли
 cc:['Большая грудная','Передние дельты','Изоляция груди с постоянным натяжением троса по всей амплитуде; удобно для пиковых сокращений в конце тренировки.'],
 dip:['Низ большой грудной, трицепс','Передние дельты','Тяжёлое упражнение с весом тела для низа груди и трицепса; при наклоне вперёд больше работает грудь.'],
 pu:['Большая грудная','Трицепс, передние дельты, пресс','Базовое упражнение без оборудования для груди и рук, которое тренирует и стабильность корпуса. Подходит для дома и разминки.'],
-mch:['Большая грудная','Передние дельты, трицепс','Жим по заданной траектории: проще освоить и безопаснее работать до отказа, чем со свободным весом.'],
+mch:['Большая грудная, акцент на грудино-рёберной порции','Передние дельты; трицепс','Горизонтальный жим по заданной траектории: проще освоить и безопаснее работать до отказа, чем со свободным весом.'],
 dl:['Ягодичные, разгибатели спины, задняя поверхность бедра','Квадрицепс, приводящие, трапеции, предплечья','Развивает силу всей задней цепи и хват; одно из самых нагрузочных базовых упражнений.'],
 pull:['Широчайшие','Бицепс, задние дельты, ромбовидные, нижние трапеции','Базовое упражнение с весом тела для ширины спины и силы тяги.'],
 lat:['Широчайшие','Бицепс, задние дельты, ромбовидные','Аналог подтягиваний с регулируемым весом; подходит, если подтянуться пока сложно.'],
@@ -73,13 +73,13 @@ const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантеля�
 
 function libView(){$('#title').textContent='Библиотека';const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
  app.innerHTML=`<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
- <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}${ch('g','Разминка','🔥 Разминка')}</div>
+ <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}${ch('g','Разминка','🔥 Разминка')}${ch('g','Заминка','🧊 Заминка')}</div>
  <div class="lchips">${ch('p','','Везде')}${Object.entries(EQN).map(([k,v])=>ch('p',k,v)).join('')}</div>
  <div id="llist"></div>
  <details class="card"><summary><b>➕ Своё упражнение</b></summary><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button>
  ${S.custom.map(e=>`<div class="li"><span class="grow">${esc(e.name)} <span class="mut">· ${esc(e.group)}</span></span><button class="sm" data-cx="${e.id}">✕</button></div>`).join('')}</details>`;
  const list=()=>{const q=LQ.q.trim().toLowerCase(),L=EX.filter(e=>(!q||tr(e.name).toLowerCase().includes(q)||e.name.toLowerCase().includes(q))&&(!LQ.g||e.group===LQ.g)&&(!LQ.p||(META[e.id]||'gdb|').split('|')[0].includes(LQ.p)));
-  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}"><img loading="lazy" decoding="async" src="anim3d/${e.id}.jpg" alt=""><span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
+  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
   app.querySelectorAll('[data-lx]').forEach(b=>b.onclick=()=>exOk(b.dataset.lx)?exCard(b.dataset.lx):paywall('Полная библиотека с 3D-видео — в Premium. Бесплатно: 20 базовых упражнений.'))};
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
  app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()});
@@ -94,19 +94,19 @@ function exCard(id){const e=exBy(id),L=LIB[id],T=TECH[id],m0=(META[id]||'gdb|').
  const H=exHist(id),b=bestOf(id),last=H[H.length-1];
  const inP=(S.program||[]).flatMap((d,di)=>d.items.filter(it=>it.exId===id).map(it=>`<div class="li"><span class="grow">${esc(d.name)}</span><b>${cardio?it.min+'–'+it.max+' мин':it.sets+'×'+it.min+'–'+it.max}</b>${it.rest?`<span class="mut">&nbsp;· отдых ${it.rest} с</span>`:''}</div>`)).join('');
  m.innerHTML=`<div class="exw"><div class="row exh"><button id="exb">‹ Назад</button><span class="grow"></span></div>
- <video class="a3d" muted loop playsinline autoplay preload="none" disablepictureinpicture poster="anim3d/${id}.jpg" src="anim3d/${id}.mp4"></video>${musLeg(id)}
+ ${animMedia(id)}${musLeg(id)}
  <h2 style="margin:10px 0 2px">${esc(e.name)}</h2><p class="mut" style="margin:0 0 8px">${esc(e.group)}</p>
  ${L?`<p>${esc(L[2])}</p><div class="card"><div class="li"><span class="mut grow">Основные мышцы</span><b style="text-align:right">${esc(L[0])}</b></div><div class="li"><span class="mut grow">Вспомогательные</span><span style="text-align:right">${esc(L[1])}</span></div>
  <div class="li"><span class="mut grow">Где выполнять</span><span style="text-align:right">${m0[0].split('').map(k=>EQN[k]).join('<br>')}</span></div>${m0[1]?`<div class="li"><span class="mut grow">Осторожно, если болят</span><span>${m0[1].split('').map(k=>RSK[k]).join(', ')}</span></div>`:''}</div>`:''}
  ${inP?`<h3>В твоей программе</h3><div class="card">${inP}</div>`:''}
  <h3>📈 Моя история</h3><div class="card">${H.length?`${!cardio&&b.w?`<div class="li"><span class="grow mut">Рекорд веса</span><b class="pr">${b.w} кг</b></div><div class="li"><span class="grow mut">Расчётный 1ПМ</span><b>${Math.round(b.r)} кг</b></div>`:''}
  <div class="li"><span class="grow mut">Последняя тренировка</span><span>${fmtD(last.t)}</span></div><p style="margin:6px 0">${last.sets.map(s=>cardio?esc(s.r)+' мин':esc(s.w||0)+'×'+esc(s.r)).join(' · ')}</p><p class="mut" style="margin:0">Всего тренировок с упражнением: ${H.length}</p>${!cardio&&H.length>1&&H.some(h=>h.b>0)?spark(H.filter(h=>h.b>0)):''}`:'<p class="mut" style="margin:0">Пока нет выполненных подходов. Сделай упражнение на тренировке — здесь появятся рекорд и прогресс.</p>'}</div>
- ${e.group==='Разминка'?'':S.active?`<button class="pri full" id="exadd">➕ Добавить в текущую тренировку</button>`:(S.program&&S.program.length?`<div class="card"><b>Добавить в программу</b><div class="row" style="margin-top:8px"><select id="exday" class="grow">${S.program.map((d,i)=>`<option value="${i}">${esc(d.name)}</option>`).join('')}</select><button class="pri" id="exadd">➕</button></div></div>`:'')}
+ ${e.group==='Разминка'&&String(e.id).startsWith('w_')?'':S.active?`<button class="pri full" id="exadd">➕ Добавить в текущую тренировку</button>`:(S.program&&S.program.length?`<div class="card"><b>Добавить в программу</b><div class="row" style="margin-top:8px"><select id="exday" class="grow">${S.program.map((d,i)=>`<option value="${i}">${esc(d.name)}</option>`).join('')}</select><button class="pri" id="exadd">➕</button></div></div>`:'')}
  ${T?`<h3>Как выполнять</h3><ol>${T[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol><h3>Частые ошибки</h3><ul>${T[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>${T[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(T[2])}</p>`:''}`:''}
  <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM/NSCA). При боли прекрати упражнение.</p></div>`;
  m.className='';m.scrollTop=0;document.body.style.overflow='hidden';
- const v=m.querySelector('video');v.muted=true;v.onerror=()=>v.remove();const pp=v.play();if(pp)pp.catch(()=>{});
- const close=()=>{m.className='hidden';document.body.style.overflow='';v.pause();v.removeAttribute('src');v.load();if(view==='library')libView()};$('#exb').onclick=close;
+ const v=m.querySelector('video');if(v){v.muted=true;v.onerror=()=>v.remove();const pp=v.play();if(pp)pp.catch(()=>{})}
+ const close=()=>{m.className='hidden';document.body.style.overflow='';if(v){v.pause();v.removeAttribute('src');v.load()}if(view==='library')libView()};$('#exb').onclick=close;
  const ad=$('#exadd');if(ad)ad.onclick=()=>{const p=PRM[S.goal||'fit'].a;
   if(S.active){S.active.items.push({exId:id,ns:cardio?1:3,rest:cardio?0:p[3],min:cardio?10:p[1],max:cardio?20:p[2],sets:Array.from({length:cardio?1:3},()=>({w:'',r:cardio?20:p[2],done:false}))});save();toast('Добавлено в тренировку')}
   else{const di=+$('#exday').value;S.program[di].items.push(cardio?{exId:id,sets:1,min:10,max:20,rest:0}:{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]});save();toast('Добавлено: '+S.program[di].name)}}}

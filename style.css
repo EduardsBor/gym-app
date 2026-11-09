@@ -51,7 +51,9 @@ details summary{cursor:pointer;min-height:30px}
 #tech video.a3d{display:block;width:100%;max-height:50vh;object-fit:contain;background:#fff;border-radius:12px;margin:8px 0}
 .lchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}.lchips::-webkit-scrollbar{display:none}.lchips .chip{flex:0 0 auto;white-space:nowrap;margin:0}
 .lcard{padding:4px 8px}.lrow{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid #ffffff12;padding:8px 2px;text-align:left;color:inherit;border-radius:0;min-height:0}.lrow:last-child{border-bottom:0}
-.lrow img{width:52px;height:69px;object-fit:contain;background:#fff;border-radius:8px;flex:0 0 auto}
+.lrow img,.athumb{width:52px;height:69px;object-fit:contain;background:#fff;border-radius:8px;flex:0 0 auto}
+.athumb{background:#242832}
+.animsoon{margin:8px 0;padding:22px 12px;text-align:center;background:#242832;border-radius:12px;color:var(--mut);font-size:14px}
 #exc{position:fixed;inset:0;z-index:30;background:var(--bg,#0f1115);overflow:auto;-webkit-overflow-scrolling:touch}#exc.hidden{display:none}
 #exc .exw{max-width:640px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
 #exc .exh{position:sticky;top:0;z-index:2}#exc video.a3d{display:block;width:100%;max-height:50vh;aspect-ratio:3/4;object-fit:contain;background:#fff;border-radius:14px}
