@@ -1,0 +1,34 @@
+'use strict';
+// Заминка: 4 карточки тренера (v2). Видео нет — «Анимация в разработке».
+[
+['cd_lat','Растяжка широчайших у опоры','Заминка','gdb|p','Supported lat stretch','Platais muguras muskuļa stiepšana pie balsta',
+['Широчайшие','Большая круглая, длинная головка трицепса','Статическая растяжка широчайших после тяг: 20–30 с, 2 раза.'],
+['Lats','Teres major, long head of the triceps','A static lat stretch after pulling: hold 20–30 s, twice.'],
+['Platie muguras muskuļi','Lielais apaļais muskulis, tricepsa garā galva','Statiska plato muskuļu stiepšana pēc vilkšanām: 20–30 s, 2 reizes.'],
+[['Встань в шаге от опоры (стойка, спинка дивана, скамья), возьмись руками на уровне пояса или чуть выше.','Отведи таз назад, опусти грудь между рук, спина ровная, руки прямые.','Почувствуй натяжение по бокам корпуса от подмышек к пояснице; для акцента сдвинь таз в сторону.','Держи 20–30 с, дыши спокойно; 2 раза.'],['Прогиб в пояснице.','Рывки и пружинящие движения.','Боль в плече — сразу уменьши амплитуду.'],'При ограничении «плечи» не выполнять (замена — дыхание лёжа).'],
+[['Stand a step from a support and hold it at hip height or a little higher.','Push your hips back and lower your chest between your arms, back straight, arms straight.','Feel the stretch along your sides; shift your hips sideways to bias one side.','Hold 20–30 s, breathe calmly; twice.'],['Arching the lower back.','Bouncing.','If the shoulder hurts, shorten the range.'],'Skip this with a shoulder limitation (use the lying breath instead).'],
+[['Stāvi soli no balsta un turi to gurnu augstumā vai nedaudz augstāk.','Atbīdi gurnus atpakaļ un nolaid krūtis starp rokām, mugura taisna, rokas taisnas.','Sajūti stiepumu sānos; akcentam pārbīdi gurnus uz sāniem.','Turi 20–30 s, elpo mierīgi; 2 reizes.'],['Muguras lejasdaļas izliekums.','Rāvieni.','Ja sāp plecs, samazini amplitūdu.'],'Ar plecu ierobežojumu nedari (aizvieto ar elpošanu guļus).']],
+['cd_quad','Растяжка квадрицепса стоя','Заминка','gdb|k','Standing quadriceps stretch','Četrgalvu muskuļa stiepšana stāvus',
+['Квадрицепс (прямая мышца бедра)','Сгибатели бедра','Статическая растяжка передней поверхности бедра: 30 с на ногу.'],
+['Quadriceps (rectus femoris)','Hip flexors','A static stretch for the front of the thigh: 30 s each leg.'],
+['Četrgalvu muskulis (taisnais augšstilba muskulis)','Gūžas saliecēji','Statiska augšstilba priekšpuses stiepšana: 30 s katrai kājai.'],
+[['Встань у опоры, держись одной рукой.','Согни ногу, возьми стопу или щиколотку рукой и подтяни пятку к ягодице.','Колени рядом, таз слегка подкручен (копчик вниз), корпус прямой.','Держи 30 с, смени ногу.'],['Прогиб в пояснице.','Колено уходит в сторону или вперёд.','Резкое подтягивание стопы.'],'При ограничении «колени» не выполнять.'],
+[['Stand by a support and hold it with one hand.','Bend the leg, hold the foot or ankle and draw the heel toward the glute.','Knees together, pelvis slightly tucked, torso upright.','Hold 30 s, then switch legs.'],['Arching the lower back.','The knee drifting forward or out.','Yanking the foot up.'],'Skip this with a knee limitation.'],
+[['Stāvi pie balsta un turi to ar vienu roku.','Saliec kāju, satver pēdu vai potīti un velc papēdi pie gurna.','Ceļi blakus, iegurnis viegli iegriezts, korpuss taisns.','Turi 30 s, maini kāju.'],['Muguras lejasdaļas izliekums.','Celis aiziet uz priekšu vai sānis.','Strauja pēdas vilkšana.'],'Ar ceļu ierobežojumu nedari.']],
+['cd_xbody','Растяжка задней дельты (рука поперёк груди)','Заминка','gdb|p','Cross-body shoulder stretch','Aizmugurējā deltveida stiepšana',
+['Задняя дельта','Средняя часть трапециевидной, ромбовидные','Статическая растяжка задней дельты: 30 с на руку.'],
+['Rear deltoid','Mid traps, rhomboids','A static rear-delt stretch: 30 s each arm.'],
+['Aizmugurējais deltveida muskulis','Trapeces vidusdaļa, rombveida muskuļi','Statiska aizmugurējās deltas stiepšana: 30 s katrai rokai.'],
+[['Встань или сядь прямо, плечи опущены.','Выпрями одну руку перед собой и переведи её поперёк груди.','Второй рукой мягко прижми плечо (не локоть) к груди.','Держи 30 с, смени руку.'],['Поднятое к уху плечо.','Давление на локтевой сустав.','Поворот корпуса вслед за рукой.'],'При ограничении «плечи» не выполнять.'],
+[['Stand or sit tall, shoulders down.','Reach one arm across your chest at shoulder height.','With the other hand, press the upper arm — not the elbow — toward the chest.','Hold 30 s, then switch arms.'],['The shoulder shrugged toward the ear.','Pressing on the elbow joint.','Turning the torso with the arm.'],'Skip this with a shoulder limitation.'],
+[['Stāvi vai sēdi taisni, pleci nolaisti.','Iztaisno vienu roku un pārliec to pāri krūtīm.','Ar otru roku viegli piespied augšdelmu (ne elkoni) pie krūtīm.','Turi 30 s, maini roku.'],['Plecs pie auss.','Spiediens uz elkoņa locītavu.','Korpusa pagriešana līdzi rokai.'],'Ar plecu ierobežojumu nedari.']],
+['cd_breath','Спокойное дыхание лёжа','Заминка','gdb|','Supine diaphragmatic breathing','Mierīga elpošana guļus',
+['Диафрагма','Мышцы живота (расслабление)','Спокойное дыхание лёжа: вдох ~4 с, выдох ~6 с, около 60 с. Замена растяжек при ограничении «плечи».'],
+['Diaphragm','Abdominals (relaxed)','Quiet breathing lying down: inhale ~4 s, exhale ~6 s, about 60 s. Replaces stretches when the shoulders are limited.'],
+['Diafragma','Vēdera muskuļi (atslābuši)','Mierīga elpošana guļus: ieelpa ~4 s, izelpa ~6 s, apmēram 60 s. Aizstāj stiepšanos, ja ir plecu ierobežojums.'],
+[['Ляг на спину, колени согнуты, стопы на полу; одна ладонь на груди, другая на животе.','Медленный вдох носом ~4 с: поднимается в первую очередь живот.','Медленный выдох ~6 с через рот или нос.','60 с, до спокойного дыхания.'],['Подъём плеч на вдохе.','Задержка дыхания.'],'Без ограничений. Используется и как замена растяжек при ограничении «плечи».'],
+[['Lie on your back, knees bent, feet on the floor; one palm on the chest, the other on the belly.','Slow nasal inhale ~4 s: the belly rises first.','Slow exhale ~6 s through the mouth or nose.','Continue for 60 s, until breathing is quiet.'],['Lifting the shoulders as you inhale.','Holding the breath.'],'No joint limitation. Also replaces stretches when the shoulders are limited.'],
+[['Apgulies uz muguras, ceļi saliekti, pēdas uz grīdas; viena plauksta uz krūtīm, otra uz vēdera.','Lēna ieelpa caur degunu ~4 s: vispirms ceļas vēders.','Lēna izelpa ~6 s caur muti vai degunu.','60 s, līdz elpa ir mierīga.'],['Plecu pacelšana ieelpā.','Elpas aizture.'],'Nav locītavu ierobežojuma. Aizstāj stiepšanos, ja ir plecu ierobežojums.']]
+].forEach(([id,name,group,meta,en,lv,lib,libEn,libLv,tech,techEn,techLv])=>{
+  EX.push({id,name,group}); META[id]=meta; LIB[id]=lib; LIB_EN[id]=libEn; LIB_LV[id]=libLv; TECH[id]=tech; TECH_EN[id]=techEn; TECH_LV[id]=techLv; NO_ANIM.add(id); DICT.push([name,en,lv]);
+});
