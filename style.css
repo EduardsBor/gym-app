@@ -80,5 +80,10 @@ details summary{cursor:pointer;min-height:30px}
 .opts.c4{grid-template-columns:repeat(2,1fr)}
 .wu.done{opacity:.55}.wu .grow>div:first-child{font-weight:500}details.wud{margin:6px 0 8px;padding:6px 10px;border:1px solid #262b36;border-radius:10px}details.wud summary{padding:4px 0}
 
+.bpm{font-size:28px;line-height:1.1;color:var(--mut)}.bpm.on{color:#ff4d6a}
+.hrdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff4d6a;margin-right:4px;vertical-align:middle;box-shadow:0 0 0 3px #ff4d6a33}
+.zrow{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px}.zlab{width:118px;flex:none}
+.zbar{flex:1;height:8px;background:#242832;border-radius:6px;overflow:hidden}.zbar i{display:block;height:100%;border-radius:6px}
+.z1{background:#5b8def}.z2{background:#2ecc71}.z3{background:#ffc83d}.z4{background:#ff6b35}.z5{background:#ff4d6a}
 /* stage 2 account */
 #mzacc input[type=email],#mzacc input[type=password],#mzacc input[type=text],#mzacc input[inputmode=numeric]{width:100%;margin:6px 0}#mzacc #mzmsg{min-height:1.2em}

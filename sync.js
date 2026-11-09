@@ -89,7 +89,7 @@
     S.workouts=w.list;S.deletedWorkouts=w.deleted;
     if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted}
     S.custom=c.list;S.deletedCustom=c.deleted;
-    ['program','progName','why','next','prof','goal','days','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v'].forEach(k=>{
+    ['program','progName','why','next','prof','goal','days','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v','weightKg','age','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
     if(S.consentHealth||R.consentHealth){const h=pick('height');if(h!==undefined) S.height=h}
