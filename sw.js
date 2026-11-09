@@ -1,8 +1,8 @@
-const C='moyzal-v30',F=['./','index.html','style.css','app.js','tech.js','lib.js','cards.js','features.js','legal.js','i18n/i18n.js','i18n/dict.js','i18n/dict2.js','i18n/dict3.js','i18n/apply.js','warm.js','supabase-config.js','vendor/supabase.js','sync.js','i18n/lib.en.js','i18n/lib.lv.js','i18n/tech.en.js','i18n/tech.lv.js','manifest.json','icon.svg','icon-192.png','icon-512.png'];
+const C='moyzal-v31',F=['./','index.html','style.css','app.js','tech.js','lib.js','cards.js','features.js','legal.js','i18n/i18n.js','i18n/dict.js','i18n/dict2.js','i18n/dict3.js','i18n/apply.js','warm.js','supabase-config.js','vendor/supabase.js','sync.js','i18n/lib.en.js','i18n/lib.lv.js','i18n/tech.en.js','i18n/tech.lv.js','manifest.json','icon.svg','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(F.map(u=>new Request(u,{cache:'reload'})))))});
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x!=='moyzal-anim3d-v7').map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x!=='moyzal-anim3d-v8').map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;if(new URL(e.request.url).pathname.includes('/anim3d/')){e.respondWith(anim(e.request));return}e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){const c=r.clone();caches.open(C).then(x=>x.put(e.request,c))}return r}).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(m=>m||caches.match('index.html'))))});
-const A3='moyzal-anim3d-v7';
+const A3='moyzal-anim3d-v8';
 async function anim(q){const u=q.url.split('#')[0],c=await caches.open(A3);let r=await c.match(u);
 if(!r){try{const n=await fetch(u);if(n.ok&&n.status===200){await c.put(u,n.clone());r=n}else return n}catch(x){return fetch(q)}}
 const h=q.headers.get('range');if(!h)return r.clone();
