@@ -1,0 +1,7 @@
+{
+  "name": "gym-app",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
