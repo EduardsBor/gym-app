@@ -229,13 +229,13 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
   assert.equal(live.includes('Подключить пульсометр'), false);
 });
 
-test('service worker cache is v36 and precaches health.js', () => {
+test('service worker cache is v37 and precaches health.js', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(sw, /moyzal-v36/);
-  assert.equal(sw.includes('moyzal-v35'), false);
-  assert.match(sw, /moyzal-anim3d-v10/);
-  assert.equal(sw.includes('moyzal-anim3d-v9'), false);
+  assert.match(sw, /moyzal-v37/);
+  assert.equal(sw.includes('moyzal-v36'), false);
+  assert.match(sw, /moyzal-anim3d-v11/);
+  assert.equal(sw.includes('moyzal-anim3d-v10'), false);
   assert.match(sw, /health\.js/);
   assert.match(html, /health\.js/);
 });
