@@ -11,7 +11,7 @@ const ALT={
   "smith-incline-bench",
   "idb",
   "mch-incline",
-  "dip"
+  "mk-parralel-bar-dips"
  ],
  "dbp": [
   "bp",
@@ -24,7 +24,7 @@ const ALT={
   "ibp",
   "mch-incline",
   "smith-incline-bench",
-  "dip"
+  "mk-parralel-bar-dips"
  ],
  "ibp": [
   "smith-incline-bench",
@@ -50,15 +50,15 @@ const ALT={
  ],
  "fly": [
   "pec-deck",
-  "cc",
+  "mk-cable-pec-fly",
   "incline-db-fly"
  ],
- "cc": [
+ "mk-cable-pec-fly": [
   "pec-deck",
   "fly",
   "incline-db-fly"
  ],
- "dip": [
+ "mk-parralel-bar-dips": [
   "decline-db-press",
   "dbp",
   "bp",
@@ -67,7 +67,7 @@ const ALT={
   "pu",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
  "pu": [
@@ -77,7 +77,7 @@ const ALT={
   "mch",
   "smith-bench",
   "decline-db-press",
-  "dip",
+  "mk-parralel-bar-dips",
   "idb",
   "ibp",
   "mch-incline",
@@ -94,7 +94,7 @@ const ALT={
   "smith-incline-bench",
   "ibp",
   "idb",
-  "dip"
+  "mk-parralel-bar-dips"
  ],
  "mch-incline": [
   "smith-incline-bench",
@@ -108,14 +108,14 @@ const ALT={
   "pu"
  ],
  "pec-deck": [
-  "cc",
+  "mk-cable-pec-fly",
   "fly",
   "incline-db-fly"
  ],
- "dl": [
+ "mk-barbell-deadlift": [
   "rdl",
   "smith-rdl",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "sl-rdl",
   "hyp",
   "reverse-hyper",
@@ -191,9 +191,9 @@ const ALT={
   "pendlay-row"
  ],
  "hyp": [
-  "dl"
+  "mk-barbell-deadlift"
  ],
- "shr": [
+ "mk-dumbbell-shrug": [
   "smith-shrug",
   "farmers-walk"
  ],
@@ -269,7 +269,7 @@ const ALT={
   "bss",
   "smith-split-squat",
   "lun",
-  "step"
+  "mk-dumbbell-step-up-low"
  ],
  "fsq": [
   "gsq",
@@ -290,13 +290,13 @@ const ALT={
   "fsq",
   "gsq",
   "bwsq",
-  "step"
+  "mk-dumbbell-step-up-low"
  ],
  "rdl": [
   "smith-rdl",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "sl-rdl",
-  "dl",
+  "mk-barbell-deadlift",
   "reverse-hyper",
   "kettlebell-swing"
  ],
@@ -306,7 +306,7 @@ const ALT={
   "smith-split-squat",
   "bss",
   "smith-bss",
-  "step",
+  "mk-dumbbell-step-up-low",
   "single-leg-press",
   "pistol-squat"
  ],
@@ -315,7 +315,7 @@ const ALT={
   "smith-split-squat",
   "reverse-lunge",
   "lun",
-  "step",
+  "mk-dumbbell-step-up-low",
   "single-leg-press",
   "reverse-lunge-supported",
   "pistol-squat"
@@ -340,12 +340,12 @@ const ALT={
   "smith-hip-thrust",
   "sglb",
   "reverse-hyper",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "rdl",
   "smith-rdl",
   "kettlebell-swing"
  ],
- "calf": [
+ "mk-standing-calf-raise-machine": [
   "smith-calf",
   "seated-calf"
  ],
@@ -359,7 +359,7 @@ const ALT={
   "bss",
   "lun",
   "reverse-lunge",
-  "step"
+  "mk-dumbbell-step-up-low"
  ],
  "bwsq": [
   "gsq",
@@ -369,12 +369,12 @@ const ALT={
   "lp",
   "hack-squat",
   "reverse-lunge",
-  "step",
+  "mk-dumbbell-step-up-low",
   "bss",
   "lun",
   "pistol-squat"
  ],
- "step": [
+ "mk-dumbbell-step-up-low": [
   "reverse-lunge",
   "lun",
   "bss",
@@ -388,11 +388,11 @@ const ALT={
   "jump-squat",
   "broad-jump"
  ],
- "dbrdl": [
+ "mk-dumbbell-stiff-leg-deadlift": [
   "rdl",
   "smith-rdl",
   "sl-rdl",
-  "dl",
+  "mk-barbell-deadlift",
   "reverse-hyper",
   "kettlebell-swing"
  ],
@@ -406,7 +406,7 @@ const ALT={
   "smith-hip-thrust",
   "sl-rdl",
   "reverse-hyper",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "rdl",
   "smith-rdl"
  ],
@@ -416,7 +416,7 @@ const ALT={
   "smith-split-squat",
   "bss",
   "smith-bss",
-  "step",
+  "mk-dumbbell-step-up-low",
   "single-leg-press",
   "pistol-squat"
  ],
@@ -424,7 +424,7 @@ const ALT={
   "reverse-lunge",
   "smith-split-squat",
   "lun",
-  "step",
+  "mk-dumbbell-step-up-low",
   "smith-bss",
   "bss",
   "single-leg-press"
@@ -434,7 +434,7 @@ const ALT={
   "smith-bss",
   "bss",
   "smith-split-squat",
-  "step",
+  "mk-dumbbell-step-up-low",
   "reverse-lunge",
   "lun",
   "reverse-lunge-supported",
@@ -442,7 +442,7 @@ const ALT={
   "pistol-squat"
  ],
  "seated-calf": [
-  "calf",
+  "mk-standing-calf-raise-machine",
   "smith-calf"
  ],
  "ohp": [
@@ -463,20 +463,20 @@ const ALT={
  ],
  "lr": [
   "single-arm-cable-lateral",
-  "ur",
+  "mk-barbell-upright-row",
   "smith-upright-row"
  ],
- "rfly": [
+ "mk-dumbbell-rear-delt-fly": [
   "reverse-pec-deck",
-  "fp",
-  "yr"
+  "mk-cable-seated-rope-face-pull",
+  "mk-prone-y-t-raises"
  ],
- "fp": [
-  "rfly",
+ "mk-cable-seated-rope-face-pull": [
+  "mk-dumbbell-rear-delt-fly",
   "reverse-pec-deck",
-  "yr"
+  "mk-prone-y-t-raises"
  ],
- "ur": [
+ "mk-barbell-upright-row": [
   "smith-upright-row",
   "lr",
   "single-arm-cable-lateral"
@@ -489,10 +489,10 @@ const ALT={
   "landmine-press",
   "push-press"
  ],
- "yr": [
-  "rfly",
+ "mk-prone-y-t-raises": [
+  "mk-dumbbell-rear-delt-fly",
   "reverse-pec-deck",
-  "fp",
+  "mk-cable-seated-rope-face-pull",
   "wall-slide"
  ],
  "standing-db-press": [
@@ -505,7 +505,7 @@ const ALT={
  ],
  "bc": [
   "dbc",
-  "pc",
+  "mk-ez-bar-preacher-curl",
   "incline-db-curl",
   "concentration-curl",
   "hc"
@@ -514,17 +514,17 @@ const ALT={
   "bc",
   "incline-db-curl",
   "concentration-curl",
-  "pc",
+  "mk-ez-bar-preacher-curl",
   "hc"
  ],
  "hc": [
   "dbc",
   "bc",
   "concentration-curl",
-  "pc",
+  "mk-ez-bar-preacher-curl",
   "incline-db-curl"
  ],
- "pc": [
+ "mk-ez-bar-preacher-curl": [
   "concentration-curl",
   "bc",
   "dbc",
@@ -551,97 +551,97 @@ const ALT={
  ],
  "cgb": [
   "smith-close-grip",
-  "dpu",
-  "dip",
+  "mk-diamond-push-ups",
+  "mk-parralel-bar-dips",
   "bd",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "tpd-rope",
-  "skull",
-  "ote",
+  "mk-ez-bar-skullcrusher",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cable-overhead-extension"
  ],
- "tpd": [
+ "mk-cable-bar-pushdown": [
   "tpd-rope",
-  "skull",
+  "mk-ez-bar-skullcrusher",
   "cable-overhead-extension",
-  "ote",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
  "tpd-rope": [
-  "tpd",
+  "mk-cable-bar-pushdown",
   "cable-overhead-extension",
-  "skull",
-  "ote",
+  "mk-ez-bar-skullcrusher",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
- "skull": [
-  "ote",
+ "mk-ez-bar-skullcrusher": [
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cable-overhead-extension",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "tpd-rope",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
- "ote": [
+ "mk-dumbbell-seated-overhead-tricep-extension": [
   "cable-overhead-extension",
-  "skull",
+  "mk-ez-bar-skullcrusher",
   "tpd-rope",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
  "bd": [
-  "dpu",
-  "dip",
+  "mk-diamond-push-ups",
+  "mk-parralel-bar-dips",
   "cgb",
   "smith-close-grip",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "tpd-rope",
-  "skull",
-  "ote",
+  "mk-ez-bar-skullcrusher",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cable-overhead-extension"
  ],
- "dpu": [
+ "mk-diamond-push-ups": [
   "cgb",
   "smith-close-grip",
   "bd",
-  "dip",
-  "tpd",
+  "mk-parralel-bar-dips",
+  "mk-cable-bar-pushdown",
   "tpd-rope",
-  "skull",
-  "ote",
+  "mk-ez-bar-skullcrusher",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cable-overhead-extension"
  ],
- "pl": [
+ "mk-front-plank": [
   "plank-advanced",
   "dbug",
-  "abw",
+  "mk-rkc-plank",
   "standing-ab-wheel"
  ],
- "cru": [
+ "mk-crunches": [
   "cru-machine",
   "cable-crunch"
  ],
  "cru-machine": [
   "cable-crunch",
-  "cru"
+  "mk-crunches"
  ],
- "hlr": [
+ "mk-hanging-knee-raises": [
   "hanging-knee-raise"
  ],
- "abw": [
+ "mk-rkc-plank": [
   "plank-advanced",
-  "pl",
+  "mk-front-plank",
   "dbug",
   "standing-ab-wheel"
  ],
@@ -649,9 +649,9 @@ const ALT={
   "woodchop"
  ],
  "dbug": [
-  "pl",
+  "mk-front-plank",
   "plank-advanced",
-  "abw"
+  "mk-rkc-plank"
  ],
  "bdog": [],
  "bpl": [
@@ -661,65 +661,65 @@ const ALT={
  ],
  "cable-crunch": [
   "cru-machine",
-  "cru"
+  "mk-crunches"
  ],
  "plank-advanced": [
-  "pl",
-  "abw",
+  "mk-front-plank",
+  "mk-rkc-plank",
   "dbug",
   "standing-ab-wheel"
  ],
- "tm": [
-  "wlk",
+ "mk-treadmill-run": [
+  "mk-incline-treadmill-walk",
   "stair",
-  "ell",
-  "bike",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
   "air-bike",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "ski-erg",
   "jump-rope",
   "jump"
  ],
- "bike": [
+ "mk-indoor-cycling-spin": [
   "air-bike",
-  "ell",
+  "mk-elliptical",
   "stair",
-  "tm",
-  "wlk",
-  "rowm",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
+  "mk-rowing-machine-steady-state",
   "ski-erg",
   "jump-rope",
   "jump"
  ],
- "ell": [
+ "mk-elliptical": [
   "air-bike",
-  "tm",
+  "mk-treadmill-run",
   "stair",
-  "wlk",
-  "bike",
+  "mk-incline-treadmill-walk",
+  "mk-indoor-cycling-spin",
   "ski-erg",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "jump-rope",
   "jump"
  ],
- "rowm": [
+ "mk-rowing-machine-steady-state": [
   "ski-erg",
   "air-bike",
-  "ell",
-  "bike",
-  "tm",
-  "wlk",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
   "stair",
   "jump-rope",
   "jump"
  ],
  "stair": [
-  "tm",
-  "wlk",
-  "ell",
-  "bike",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
   "air-bike",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "ski-erg",
   "jump-rope",
   "jump"
@@ -727,21 +727,21 @@ const ALT={
  "jump": [
   "jump-rope",
   "stair",
-  "tm",
-  "wlk",
-  "ell",
-  "bike",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
   "air-bike",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "ski-erg"
  ],
- "wlk": [
-  "tm",
+ "mk-incline-treadmill-walk": [
+  "mk-treadmill-run",
   "stair",
-  "ell",
-  "bike",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
   "air-bike",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "ski-erg",
   "jump-rope",
   "jump"
@@ -757,7 +757,7 @@ const ALT={
   "ibp",
   "mch-incline",
   "idb",
-  "dip"
+  "mk-parralel-bar-dips"
  ],
  "smith-incline-bench": [
   "ibp",
@@ -772,13 +772,13 @@ const ALT={
  ],
  "smith-close-grip": [
   "cgb",
-  "dpu",
-  "dip",
+  "mk-diamond-push-ups",
+  "mk-parralel-bar-dips",
   "bd",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "tpd-rope",
-  "skull",
-  "ote",
+  "mk-ez-bar-skullcrusher",
+  "mk-dumbbell-seated-overhead-tricep-extension",
   "cable-overhead-extension"
  ],
  "smith-seated-press": [
@@ -790,7 +790,7 @@ const ALT={
   "push-press"
  ],
  "smith-upright-row": [
-  "ur",
+  "mk-barbell-upright-row",
   "lr",
   "single-arm-cable-lateral"
  ],
@@ -811,7 +811,7 @@ const ALT={
   "reverse-lunge",
   "lun",
   "single-leg-press",
-  "step"
+  "mk-dumbbell-step-up-low"
  ],
  "smith-bss": [
   "bss",
@@ -820,13 +820,13 @@ const ALT={
   "reverse-lunge",
   "lun",
   "single-leg-press",
-  "step"
+  "mk-dumbbell-step-up-low"
  ],
  "smith-rdl": [
   "rdl",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "sl-rdl",
-  "dl",
+  "mk-barbell-deadlift",
   "reverse-hyper",
   "kettlebell-swing"
  ],
@@ -835,12 +835,12 @@ const ALT={
   "sglb",
   "reverse-hyper",
   "rdl",
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "smith-rdl",
   "kettlebell-swing"
  ],
  "smith-calf": [
-  "calf",
+  "mk-standing-calf-raise-machine",
   "seated-calf"
  ],
  "smith-row": [
@@ -855,7 +855,7 @@ const ALT={
   "inv"
  ],
  "smith-shrug": [
-  "shr",
+  "mk-dumbbell-shrug",
   "farmers-walk"
  ],
  "hack-squat": [
@@ -872,7 +872,7 @@ const ALT={
   "copenhagen-plank"
  ],
  "reverse-hyper": [
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "rdl",
   "smith-rdl",
   "sl-rdl",
@@ -880,7 +880,7 @@ const ALT={
   "smith-hip-thrust",
   "sglb",
   "kettlebell-swing",
-  "dl",
+  "mk-barbell-deadlift",
   "hyp"
  ],
  "standing-single-leg-curl": [
@@ -893,7 +893,7 @@ const ALT={
   "bp",
   "smith-bench",
   "mch",
-  "dip",
+  "mk-parralel-bar-dips",
   "pu",
   "band-chest-press",
   "idb",
@@ -903,7 +903,7 @@ const ALT={
  ],
  "incline-db-fly": [
   "fly",
-  "cc",
+  "mk-cable-pec-fly",
   "pec-deck"
  ],
  "straight-arm-pulldown": [
@@ -937,13 +937,13 @@ const ALT={
   "inv"
  ],
  "reverse-pec-deck": [
-  "rfly",
-  "fp",
-  "yr"
+  "mk-dumbbell-rear-delt-fly",
+  "mk-cable-seated-rope-face-pull",
+  "mk-prone-y-t-raises"
  ],
  "single-arm-cable-lateral": [
   "lr",
-  "ur",
+  "mk-barbell-upright-row",
   "smith-upright-row"
  ],
  "cable-external-rotation": [
@@ -954,24 +954,24 @@ const ALT={
   "dbc",
   "bc",
   "concentration-curl",
-  "pc",
+  "mk-ez-bar-preacher-curl",
   "hc"
  ],
  "concentration-curl": [
-  "pc",
+  "mk-ez-bar-preacher-curl",
   "dbc",
   "incline-db-curl",
   "bc",
   "hc"
  ],
  "cable-overhead-extension": [
-  "ote",
-  "skull",
+  "mk-dumbbell-seated-overhead-tricep-extension",
+  "mk-ez-bar-skullcrusher",
   "tpd-rope",
-  "tpd",
+  "mk-cable-bar-pushdown",
   "cgb",
   "smith-close-grip",
-  "dpu",
+  "mk-diamond-push-ups",
   "bd"
  ],
  "wrist-curl": [],
@@ -981,14 +981,14 @@ const ALT={
   "suitcase-carry"
  ],
  "standing-ab-wheel": [
-  "abw",
+  "mk-rkc-plank",
   "plank-advanced",
-  "pl",
+  "mk-front-plank",
   "dbug"
  ],
  "farmers-walk": [
   "suitcase-carry",
-  "shr",
+  "mk-dumbbell-shrug",
   "smith-shrug",
   "dead-hang",
   "plate-pinch"
@@ -1000,15 +1000,15 @@ const ALT={
   "farmers-walk"
  ],
  "kettlebell-swing": [
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "rdl",
   "smith-rdl",
   "reverse-hyper",
   "sl-rdl",
-  "dl"
+  "mk-barbell-deadlift"
  ],
  "sled-push": [
-  "step",
+  "mk-dumbbell-step-up-low",
   "lun",
   "reverse-lunge"
  ],
@@ -1066,31 +1066,31 @@ const ALT={
   "cuban-press"
  ],
  "hanging-knee-raise": [
-  "hlr"
+  "mk-hanging-knee-raises"
  ],
  "sl-rdl": [
-  "dbrdl",
+  "mk-dumbbell-stiff-leg-deadlift",
   "rdl",
   "smith-rdl",
   "reverse-hyper",
-  "dl",
+  "mk-barbell-deadlift",
   "kettlebell-swing"
  ],
  "copenhagen-plank": [
   "hip-adduction"
  ],
  "wall-slide": [
-  "yr"
+  "mk-prone-y-t-raises"
  ],
  "jump-rope": [
   "jump",
   "stair",
-  "tm",
-  "wlk",
-  "ell",
-  "bike",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
+  "mk-elliptical",
+  "mk-indoor-cycling-spin",
   "air-bike",
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "ski-erg"
  ],
  "jump-squat": [
@@ -1123,12 +1123,12 @@ const ALT={
   "mch-incline",
   "ibp",
   "smith-incline-bench",
-  "dip"
+  "mk-parralel-bar-dips"
  ],
  "pistol-squat": [
   "bss",
   "smith-bss",
-  "step",
+  "mk-dumbbell-step-up-low",
   "reverse-lunge",
   "lun",
   "single-leg-press",
@@ -1148,24 +1148,24 @@ const ALT={
   "jump-squat"
  ],
  "air-bike": [
-  "bike",
-  "ell",
-  "rowm",
+  "mk-indoor-cycling-spin",
+  "mk-elliptical",
+  "mk-rowing-machine-steady-state",
   "ski-erg",
-  "tm",
-  "wlk",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
   "stair",
   "jump-rope",
   "jump"
  ],
  "ski-erg": [
-  "rowm",
+  "mk-rowing-machine-steady-state",
   "air-bike",
-  "ell",
-  "tm",
-  "wlk",
+  "mk-elliptical",
+  "mk-treadmill-run",
+  "mk-incline-treadmill-walk",
   "stair",
-  "bike",
+  "mk-indoor-cycling-spin",
   "jump-rope",
   "jump"
  ],

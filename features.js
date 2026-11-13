@@ -1,10 +1,10 @@
 'use strict';
 // ===== Stage 1: onboarding, Free/Premium (demo), language, GDPR =====
 // ---- Entitlement (one flag). S.premium = real purchase (future, via store/RevenueCat); S.ownerPremium = owner/dev unlock.
-const FREE_EX=new Set(['bp','dbp','pu','sq','gsq','bwsq','lp','rdl','ht','dl','lat','pull','dbr','inv','ohp','lr','bc','tpd','pl','tm']);
+const FREE_EX=new Set(['bp','dbp','pu','sq','gsq','bwsq','lp','rdl','ht','mk-barbell-deadlift','lat','pull','dbr','inv','ohp','lr','bc','mk-cable-bar-pushdown','mk-front-plank','mk-treadmill-run']);
 const FREE_CAT=new Set(['c0','c7','c9']);
 const isPrem=()=>!!(S.premium||S.ownerPremium);
-const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id).startsWith('w_');
+const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id).startsWith('w_')||(typeof exBy==='function'&&exBy(id).group==='Разминка');
 // ---- Migration: never lose access or data. Only adds new fields.
 (function(){let ch=false;const has=!!((S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.program);
  if(S.ownerPremium===undefined&&has){S.ownerPremium=true;ch=true}
@@ -30,7 +30,7 @@ const lockCard=(t,r)=>`<div class="card lock"><div style="font-size:34px">🔒</
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pw]');if(b){e.preventDefault();paywall(b.dataset.pw)}});
 
 // ---- Onboarding (first launch; skippable; re-runnable from «Ещё»)
-let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
+let OB={"mk-dumbbell-step-up-low":0,goal:'mass',level:'nov',days:3,place:'g',len:60};
 const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса','Набрать мышцы'],['str','🏋️ Сила','Поднимать больше'],['loss','🔥 Похудение','Снизить жир, сохранить мышцы']]],
  ['level','Какой у тебя опыт?',[['nov','Новичок','Меньше 6 месяцев регулярных тренировок'],['mid','Средний','6 месяцев – 2 года'],['adv','Опытный','Больше 2 лет']]],
  ['days','Сколько тренировок в неделю?',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']]],
@@ -56,7 +56,7 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
   preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
  $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
+function obStart(){OB={"mk-dumbbell-step-up-low":0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);

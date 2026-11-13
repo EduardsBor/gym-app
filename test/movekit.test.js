@@ -60,21 +60,22 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
     const placeholder = EX.map(e => e.id).filter(id => !hasAnim(id) && !MOVEKIT[id]).sort();
     return { keys: keys.length, files: new Set(files).size, mapped, unmatched, oldAnim, placeholder };
   })()`);
-  assert.equal(report.keys, 100);
-  assert.equal(report.files, 100);
+  assert.equal(report.keys, 132);
+  assert.equal(report.files, 131);
   assert.equal(run('movekitFile("bp")'), 'barbell-bench-press.mp4');
   assert.equal(run('movekitFile("pu")'), 'push-up.mp4');
+  assert.equal(run('movekitFile("mk-barbell-deadlift")'), 'barbell-deadlift.mp4');
   assert.equal(run('movekitFile("dl")'), '');
   assert.equal(run('movekitFile("no-such")'), '');
   assert.ok(report.mapped.includes('bp'));
   assert.ok(report.mapped.includes('pu'));
   assert.equal(report.unmatched.includes('bp'), false);
-  assert.ok(report.oldAnim.includes('dl'));
+  assert.equal(report.oldAnim.includes('mk-barbell-deadlift'), false);
   assert.equal(report.oldAnim.includes('bp'), false);
-  assert.equal(report.mapped.length + report.unmatched.length, 100);
+  assert.equal(report.mapped.length + report.unmatched.length, 132);
   const bp = run('animMedia("bp")');
   const pu = run('animMedia("pu")');
-  const dl = run('animMedia("dl")');
+  const dl = run('animMedia("mk-barbell-deadlift")');
   const soon = run('animMedia("cd_lat")');
   assert.match(bp, /data-mk="bp"/);
   assert.match(bp, /class="a3d mk"/);
@@ -83,21 +84,21 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   assert.equal(/https?:/.test(bp), false);
   assert.match(pu, /data-mk="pu"/);
   assert.equal(pu.includes('anim3d/'), false);
-  assert.match(dl, /src="anim3d\/dl\.mp4"/);
-  assert.equal(dl.includes('data-mk'), false);
+  assert.match(dl, /data-mk="mk-barbell-deadlift"/);
+  assert.equal(dl.includes('anim3d/'), false);
   assert.match(soon, /Анимация в разработке/);
   assert.equal(run('hasAnim("bp")'), false);
   assert.equal(run('hasAnim("pu")'), false);
-  assert.equal(run('hasAnim("dl")'), true);
+  assert.equal(run('hasAnim("mk-barbell-deadlift")'), false);
   assert.equal(run('hasAnim("chest-supported-2db")'), false);
   assert.match(run('animMedia("chest-supported-2db")'), /data-mk="chest-supported-2db"/);
   assert.equal(run('animMedia("chest-supported-2db")').includes('anim3d/'), false);
-  assert.equal(report.oldAnim.length, 33);
+  assert.equal(report.oldAnim.length, 0);
 });
 
 test('anim3d keeps clips only for exercises without a MoveKit file', () => {
   const dir = path.join(root, 'anim3d');
-  const files = fs.readdirSync(dir).sort();
+  const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => !f.startsWith('.')).sort() : [];
   const map = run('MOVEKIT');
   const stems = [...new Set(files.map(f => f.replace(/\.(mp4|jpg)$/i, '')))].sort();
   for (const f of files) {
@@ -107,13 +108,13 @@ test('anim3d keeps clips only for exercises without a MoveKit file', () => {
     assert.equal(files.includes(stem + '.mp4'), true, stem + ' mp4');
     assert.equal(files.includes(stem + '.jpg'), true, stem + ' jpg');
   }
-  assert.equal(files.length, 66);
-  assert.equal(stems.length, 33);
+  assert.equal(files.length, 0);
+  assert.equal(stems.length, 0);
   assert.deepEqual(stems, Array.from(run('EX.map(e => e.id).filter(id => hasAnim(id)).sort()')));
   assert.equal(files.includes('bp.mp4'), false);
   assert.equal(files.includes('bp.jpg'), false);
-  assert.equal(files.includes('dl.mp4'), true);
-  assert.equal(files.includes('dl.jpg'), true);
+  assert.equal(files.includes('dl.mp4'), false);
+  assert.equal(files.includes('dl.jpg'), false);
 });
 
 test('signed url is requested once and reused until near expiry', async () => {

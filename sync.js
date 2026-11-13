@@ -75,6 +75,7 @@
     if(installId) S.installId=installId;
     if(az&&!S.consentAnalytics) S.consentAnalytics=az;
     if(lang&&!S.lang) S.lang=lang;
+    if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
   }
   function applyMerged(R,remoteAt){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd;
@@ -96,6 +97,7 @@
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
     if(keepTEnd) S.tEnd=keepTEnd;
+    if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
     S.updatedAt=Math.max(S.updatedAt||0,remoteAt||0,Date.now());
   }
   async function pushNow(){
