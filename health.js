@@ -30,13 +30,14 @@ var HR_STORE_NOTE = 'Пульсометр будет доступен в вер�
 
 var CARDIO_MET = {
   tm: 8, bike: 6.8, ell: 5, rowm: 7, stair: 9, jump: 8, wlk: 4.3,
+  'mk-treadmill-run': 8, 'mk-indoor-cycling-spin': 6.8, 'mk-elliptical': 5, 'mk-rowing-machine-steady-state': 7, 'mk-incline-treadmill-walk': 4.3,
   'jump-rope': 11, 'air-bike': 8.8, 'ski-erg': 7
 };
 var VIGOROUS = {
-  bp: 1, dbp: 1, ibp: 1, idb: 1, dip: 1, pu: 1, mch: 1, dpu: 1, cgb: 1,
-  dl: 1, pull: 1, lat: 1, row: 1, dbr: 1, cr: 1, inv: 1, chin: 1,
-  sq: 1, fsq: 1, lp: 1, rdl: 1, lun: 1, bss: 1, ht: 1, gsq: 1, bwsq: 1, step: 1, dbrdl: 1, nlc: 1, sglb: 1,
-  ohp: 1, dsp: 1, ppu: 1, ur: 1
+  bp: 1, dbp: 1, ibp: 1, idb: 1, dip: 1, pu: 1, mch: 1, dpu: 1, cgb: 1, 'mk-parralel-bar-dips': 1, 'mk-diamond-push-ups': 1,
+  'mk-barbell-deadlift': 1, dl: 1, pull: 1, lat: 1, row: 1, dbr: 1, cr: 1, inv: 1, chin: 1,
+  sq: 1, fsq: 1, lp: 1, rdl: 1, lun: 1, bss: 1, ht: 1, gsq: 1, bwsq: 1, step: 1, dbrdl: 1, nlc: 1, sglb: 1, 'mk-dumbbell-step-up-low': 1, 'mk-dumbbell-stiff-leg-deadlift': 1,
+  ohp: 1, dsp: 1, ppu: 1, ur: 1, 'mk-barbell-upright-row': 1
 };
 
 function metOf(exId, group) {

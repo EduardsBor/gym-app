@@ -80,7 +80,7 @@ test('every ALT key and value is a real exercise id', () => {
   }
   assert.equal(ALT['smith-inverted-row'], undefined);
   for (const id of ['w_march','ankle-knee-to-wall']) assert.equal(Object.prototype.hasOwnProperty.call(ALT, id), false);
-  for (const id of ['sq','lp','gsq']) assert.equal(ALT[id][ALT[id].length-1], 'step', id);
+  for (const id of ['sq','lp','gsq']) assert.equal(ALT[id][ALT[id].length-1], 'mk-dumbbell-step-up-low', id);
 });
 
 test('swapModal offers only the trainer list, same muscles, trainer order', () => {

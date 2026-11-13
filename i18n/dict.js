@@ -125,5 +125,40 @@ const DICT=[
 // units (substring-safe)
 ['кг','kg','kg'],['см','cm','cm'],['мин','min','min'],
 ];
+[
+
+["RKC-планка","RKC plank","RKC-planka"],
+["Велотренажёр (сайкл)","Indoor cycling (spin)","Velotrenažieris (spin)"],
+["Подъём на носки стоя в тренажёре","Standing calf raise machine","Pacelšanās uz pirkstgaliem stāvus trenažierī"],
+["Сведение рук в кроссовере","Cable pec fly","Roku savilkšana krosā"],
+["Скручивания на полу","Floor crunches","Vēdera saliekšana uz grīdas"],
+["Становая тяга на прямых ногах с гантелями","Dumbbell stiff-leg deadlift","Vilkme ar taisnām kājām ar hantelēm"],
+["Отжимания на брусьях","Parallel bar dips","Atspiedieni uz līdztekām"],
+["Становая тяга со штангой","Barbell deadlift","Vilkme no grīdas ar stieni"],
+["Отжимания узкие «алмаз»","Diamond push-ups","Šaurie atspiedieni «dimants»"],
+["Эллиптический тренажёр","Elliptical trainer","Eliptiskais trenažieris"],
+["Тяга каната к лицу сидя","Seated cable rope face pull","Troses vilkme pie sejas sēdus"],
+["Подъём коленей в висе","Hanging knee raises","Ceļu celšana karājoties"],
+["Разгибание рук с гантелью из-за головы сидя","Seated dumbbell overhead triceps extension","Roku iztaisnošana ar hanteli no aiz galvas sēdus"],
+["Сгибание рук на скамье Скотта с EZ-грифом","EZ-bar preacher curl","Roku saliekšana Skota solā ar EZ-stieni"],
+["Планка на предплечьях","Forearm plank","Planka uz apakšdelmiem"],
+["Разведение гантелей в наклоне на заднюю дельту","Dumbbell rear-delt fly","Hanteļu izvēršana noliecoties aizmugurējam deltveidam"],
+["Гребной тренажёр, ровный темп","Rowing machine, steady pace","Airēšanas trenažieris, vienmērīgs temps"],
+["Шраги с гантелями","Dumbbell shrug","Šragi ar hantelēm"],
+["Французский жим лёжа с EZ-грифом","EZ-bar skull crusher","Franču spiediens guļus ar EZ-stieni"],
+["Зашагивание на низкую платформу с гантелями","Dumbbell step-up on a low platform","Uzkāpšana uz zema paliktņa ar hantelēm"],
+["Бег на беговой дорожке","Treadmill run","Skriešana uz skrejceliņa"],
+["Разгибание рук на блоке с прямой рукоятью","Straight-bar cable pushdown","Roku iztaisnošana blokā ar taisnu rokturi"],
+["Тяга штанги к подбородку","Barbell upright row","Stieņa vilkme pie zoda"],
+["Круговые вращения руками вперёд и назад","Arm circles forward and back","Roku apļi uz priekšu un atpakaļ"],
+["Тяга резинки к поясу","Band row","Gumijas vilkme pie jostas"],
+["«Кошка-верблюд»","Cat-camel","«Kaķis-kamielis»"],
+["Проносы палки за голову","Broomstick pass-throughs","Nūjas pārnešana aiz galvas"],
+["Упражнение на наклон с отведением таза (без веса)","Hip hinge drill (no weight)","Noliešanās ar gurnu atvirzīšanu (bez svara)"],
+["Подтягивание колена к груди в ходьбе","Walking knee hugs","Ceļa pievilkšana pie krūtīm ejot"],
+["Тяга резинки к лицу","Band face pull","Gumijas vilkme pie sejas"],
+["Быстрая ходьба на дорожке с наклоном","Incline treadmill walk","Ātra iešana slīpumā uz skrejceliņa"],
+["Подъём рук «Y-T» лёжа на животе","Prone Y-T raises","Roku celšana «Y-T» guļus uz vēdera"]
+].forEach(r=>DICT.push(r));
 // Exact-match-only short words (never replaced inside sentences)
 const DICT_EXACT=[['с','s','s'],['до','to','līdz'],['ч','h','h'],['Удалить','Delete','Dzēst']];

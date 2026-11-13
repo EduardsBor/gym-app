@@ -81,12 +81,12 @@ test('sample days include the trainer warm-up and cool-down', () => {
   const mass = plan({goal: 'mass', level: 'mid', days: 4, len: 60, place: 'g', sex: 'm', prio: [], lim: []});
   const d = mass.days[0];
   assert.equal(d.name, 'Верх A');
-  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,lr,tpd');
+  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,lr,mk-cable-bar-pushdown');
   assert.equal(mass.timeLabel, '≈56–58 мин');
-  assert.equal(d.wu.cardio.id, 'rowm');
-  assert.equal(Array.from(d.wu.mob, m => m.id).join(','), 'w_armc,w_catcow,w_dislo,w_scpull,w_scpu');
+  assert.equal(d.wu.cardio.id, 'mk-rowing-machine-steady-state');
+  assert.equal(Array.from(d.wu.mob, m => m.id).join(','), 'mk-arm-circles-front-back,mk-cat-camel,mk-broomstick-pass-throughs,w_scpull');
   assert.equal(d.wu.ramp[0].exId, 'bp');
-  assert.equal(d.cd.cardio.id, 'bike');
+  assert.equal(d.cd.cardio.id, 'mk-indoor-cycling-spin');
   assert.equal(Array.from(d.cd.stretch, m => m.id).join(','), 'stretch-chest-doorway,cd_lat,cd_xbody');
   const loss = plan({goal: 'loss', level: 'nov', days: 3, len: 30, place: 'd', sex: 'm', prio: [], lim: []});
   const e = loss.days[0];
