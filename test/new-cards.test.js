@@ -89,8 +89,9 @@ test('each new card has RU/EN/LV name and steps and no service fields', () => {
     assert.equal(NO_ANIM.has(c.id), true);
     assert.equal(get('hasAnim')(c.id), false);
   }
-  assert.equal(get('hasAnim')('bp'), true);
-  assert.equal(get('hasAnim')('mch'), true);
+  assert.equal(NO_ANIM.has('bp'), false);
+  assert.equal(NO_ANIM.has('mch'), false);
+  assert.equal(get('hasAnim')('dl'), true);
 });
 
 test('library-only cards never land in working sets or the warm-up block', () => {

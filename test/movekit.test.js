@@ -79,21 +79,41 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   assert.match(bp, /data-mk="bp"/);
   assert.match(bp, /class="a3d mk"/);
   assert.equal(bp.includes('src='), false);
+  assert.equal(bp.includes('anim3d/'), false);
   assert.equal(/https?:/.test(bp), false);
   assert.match(pu, /data-mk="pu"/);
+  assert.equal(pu.includes('anim3d/'), false);
   assert.match(dl, /src="anim3d\/dl\.mp4"/);
   assert.equal(dl.includes('data-mk'), false);
   assert.match(soon, /Анимация в разработке/);
-  assert.equal(run('hasAnim("bp")'), true);
+  assert.equal(run('hasAnim("bp")'), false);
+  assert.equal(run('hasAnim("pu")'), false);
+  assert.equal(run('hasAnim("dl")'), true);
   assert.equal(run('hasAnim("chest-supported-2db")'), false);
   assert.match(run('animMedia("chest-supported-2db")'), /data-mk="chest-supported-2db"/);
-  console.log('MOVEKIT_REPORT ' + JSON.stringify({
-    mappedCount: report.mapped.length,
-    mapped: report.mapped,
-    unmatched: report.unmatched,
-    oldAnim: report.oldAnim,
-    placeholder: report.placeholder
-  }));
+  assert.equal(run('animMedia("chest-supported-2db")').includes('anim3d/'), false);
+  assert.equal(report.oldAnim.length, 33);
+});
+
+test('anim3d keeps clips only for exercises without a MoveKit file', () => {
+  const dir = path.join(root, 'anim3d');
+  const files = fs.readdirSync(dir).sort();
+  const map = run('MOVEKIT');
+  const stems = [...new Set(files.map(f => f.replace(/\.(mp4|jpg)$/i, '')))].sort();
+  for (const f of files) {
+    assert.match(f, /\.(mp4|jpg)$/);
+    const stem = f.replace(/\.(mp4|jpg)$/i, '');
+    assert.equal(map[stem], undefined, f);
+    assert.equal(files.includes(stem + '.mp4'), true, stem + ' mp4');
+    assert.equal(files.includes(stem + '.jpg'), true, stem + ' jpg');
+  }
+  assert.equal(files.length, 66);
+  assert.equal(stems.length, 33);
+  assert.deepEqual(stems, Array.from(run('EX.map(e => e.id).filter(id => hasAnim(id)).sort()')));
+  assert.equal(files.includes('bp.mp4'), false);
+  assert.equal(files.includes('bp.jpg'), false);
+  assert.equal(files.includes('dl.mp4'), true);
+  assert.equal(files.includes('dl.jpg'), true);
 });
 
 test('signed url is requested once and reused until near expiry', async () => {
