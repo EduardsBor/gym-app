@@ -76,7 +76,7 @@ function consentView(){$('#title').textContent='Согласие';app.innerHTML=
  $('#cs').onchange=e=>$('#csok').disabled=!e.target.checked;$('#csok').onclick=()=>{S.consentHealth={v:1,at:new Date().toISOString()};save();toast('Согласие сохранено');body()};$('#cspol').onclick=()=>legal('privacy','body')}
 const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('body');_bodyForm(e)};
 // ---- Technique sheet: 3D video only for unlocked exercises
-const _techModal=techModal;techModal=function(id){_techModal(id);if(exOk(id)||window._wf)return;const m=document.getElementById('tech'),v=m&&m.querySelector('video.a3d');if(v){if(typeof stopMovekitVideo==='function')stopMovekitVideo(v);else{v.pause();v.removeAttribute('src');v.load()}v.outerHTML=`<div class="vlock" data-pw="3D-видео всех 68 упражнений доступны в Premium">${hasAnim(id)?`<img src="anim3d/${id}.jpg" alt="">`:''}<span>🔒 3D-видео — Premium</span></div>`}};
+const _techModal=techModal;techModal=function(id){_techModal(id);if(exOk(id)||window._wf)return;const m=document.getElementById('tech'),v=m&&m.querySelector('video.a3d');if(v){if(typeof stopMovekitVideo==='function')stopMovekitVideo(v);else{v.pause();v.removeAttribute('src');v.load()}v.outerHTML=`<div class="vlock" data-pw="3D-видео всех 68 упражнений доступны в Premium">${animPosterBox(id)}<span>🔒 3D-видео — Premium</span></div>`}};
 
 // ---- «Ещё»: language, premium, onboarding, privacy & data
 const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();

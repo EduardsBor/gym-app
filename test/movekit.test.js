@@ -78,8 +78,10 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   const dl = run('animMedia("mk-barbell-deadlift")');
   const soon = run('animMedia("cd_lat")');
   assert.match(bp, /data-mk="bp"/);
+  assert.match(bp, /data-mk-poster="bp"/);
   assert.match(bp, /class="a3d mk"/);
   assert.equal(bp.includes('src='), false);
+  assert.equal(/\sposter=/.test(bp), false);
   assert.equal(bp.includes('anim3d/'), false);
   assert.equal(/https?:/.test(bp), false);
   assert.match(pu, /data-mk="pu"/);
@@ -94,6 +96,41 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   assert.match(run('animMedia("chest-supported-2db")'), /data-mk="chest-supported-2db"/);
   assert.equal(run('animMedia("chest-supported-2db")').includes('anim3d/'), false);
   assert.equal(report.oldAnim.length, 0);
+  const names = run('Object.keys(MOVEKIT).map(movekitPosterName)');
+  assert.equal(new Set(names).size, 131);
+  assert.equal(names.every(n => /^[a-z0-9.-]+\.jpg$/.test(n)), true);
+  assert.equal(run('movekitPosterName("bp")'), 'barbell-bench-press.jpg');
+  assert.equal(run('movekitPosterName("mk-barbell-deadlift")'), 'barbell-deadlift.jpg');
+  assert.equal(run('movekitPosterName("dl")'), '');
+  assert.equal(run('movekitPosterPath("bp")'), 'posters/barbell-bench-press.jpg');
+  assert.equal(run('movekitCacheUrl("posters/barbell-deadlift.jpg")'), 'http://127.0.0.1/movekit/posters/barbell-deadlift.jpg');
+  const thumb = run('animThumb("bp")');
+  assert.match(thumb, /class="athumb mkposter"/);
+  assert.match(thumb, /data-mk-poster="bp"/);
+  assert.equal(thumb.includes('src='), false);
+  assert.equal(thumb.includes('anim3d/'), false);
+  assert.equal(/https?:/.test(thumb), false);
+  assert.match(run('animShot("mk-barbell-deadlift")'), /data-mk-poster="mk-barbell-deadlift"/);
+  assert.equal(run('animShot("cd_lat")'), '');
+  assert.match(run('animPosterBox("bp")'), /mkwide/);
+  assert.equal(run('animThumb("cd_lat")').includes('data-mk-poster'), false);
+});
+
+test('poster slots are in the workout and the alternatives list', () => {
+  run('S.goal="mass";S.days=3;S.workouts=[];S.next=0;S.prof={place:"g",lim:[],goal:"mass",level:"mid",days:3,len:60};S.program=[{name:"День",items:[{exId:"bp",sets:3,min:6,max:10,rest:120},{exId:"cd_lat",sets:1,min:1,max:1,rest:0}]}]');
+  run('today(0)');
+  const today = run('app.innerHTML');
+  assert.match(today, /data-mk-poster="bp"/);
+  assert.equal(today.includes('data-mk-poster="cd_lat"'), false);
+  assert.equal(/https?:/.test(today), false);
+  run('S.active={id:"w1",start:Date.now(),dayIdx:0,dayName:"День",notes:"",items:[{exId:"mk-barbell-deadlift",ns:1,rest:60,min:5,max:8,sets:[{w:"",r:5,done:false}]}]}');
+  run('workoutView()');
+  assert.match(run('app.innerHTML'), /data-mk-poster="mk-barbell-deadlift"/);
+  run('swapModal("bp",{place:"g",lim:[]},function(){})');
+  const modal = run('document.querySelector("#modal").innerHTML');
+  assert.match(modal, /data-mk-poster="dbp"/);
+  assert.equal(modal.includes('token='), false);
+  assert.equal(/https?:/.test(modal), false);
 });
 
 test('anim3d keeps clips only for exercises without a MoveKit file', () => {
@@ -163,4 +200,133 @@ test('signed url is requested once and reused until near expiry', async () => {
   } finally {
     Date.now = now;
   }
+});
+
+function posterGlobals(fetchImpl) {
+  function URLShim(a, b) { return new URL(a, b); }
+  URLShim.createObjectURL = blob => 'blob:poster-' + (blob && blob.size);
+  URLShim.revokeObjectURL = () => {};
+  const g = {
+    console, URL: URLShim, Blob, Map, Promise, JSON, encodeURIComponent, Date, Uint8Array, Response,
+    setTimeout, clearTimeout,
+    location: { href: 'http://127.0.0.1/' },
+    MZ_SB: { url: 'https://example.test', anon: 'anon-test' }
+  };
+  g.window = g;
+  g.globalThis = g;
+  g.self = g;
+  g.fetch = fetchImpl;
+  const signCtx = vm.createContext(g);
+  vm.runInContext(fs.readFileSync(path.join(root, 'movekit.js'), 'utf8'), signCtx, { filename: 'movekit.js' });
+  return { go: code => vm.runInContext(code, signCtx) };
+}
+
+test('poster signed url is requested once per file and reused', async () => {
+  const calls = [];
+  const { go } = posterGlobals(async (url, opt) => {
+    calls.push({ url, opt });
+    const file = String(url).split('/').pop();
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ signedURL: '/object/sign/movekit/posters/' + file + '?token=fixture' })
+    };
+  });
+  assert.equal(await go('movekitPosterSignedUrl("missing")'), null);
+  assert.equal(calls.length, 0);
+  const first = await go('movekitPosterSignedUrl("bp")');
+  const second = await go('movekitPosterSignedUrl("bp")');
+  assert.equal(calls.length, 1);
+  assert.equal(first, second);
+  assert.equal(first, 'https://example.test/storage/v1/object/sign/movekit/posters/barbell-bench-press.jpg?token=fixture');
+  assert.equal(calls[0].url, 'https://example.test/storage/v1/object/sign/movekit/posters/barbell-bench-press.jpg');
+  assert.equal(calls[0].opt.method, 'POST');
+  assert.equal(calls[0].opt.headers.apikey, 'anon-test');
+  assert.equal(calls[0].opt.headers.Authorization, 'Bearer anon-test');
+  assert.deepEqual(JSON.parse(calls[0].opt.body), { expiresIn: 3600 });
+  const pair = await Promise.all([go('movekitPosterSignedUrl("pu")'), go('movekitPosterSignedUrl("pu")')]);
+  assert.equal(pair[0], pair[1]);
+  assert.equal(calls.length, 2);
+});
+
+test('visible posters sign a few at a time, not the whole map', async () => {
+  const calls = [];
+  let waiting = [];
+  const hold = () => new Promise(resolve => { waiting.push(resolve); });
+  const release = () => { const batch = waiting.splice(0); batch.forEach(fn => fn()); };
+  const { go } = posterGlobals((url, opt) => {
+    calls.push({ url, opt });
+    const file = String(url).split('/').pop();
+    return hold().then(() => {
+      if (opt && opt.method === 'POST') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ signedURL: '/object/sign/movekit/posters/' + file + '?token=fixture' })
+        };
+      }
+      const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+      return { ok: true, status: 200, arrayBuffer: async () => bytes.buffer };
+    });
+  });
+  const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+  const ids = ['bp', 'dbp', 'pu', 'sq', 'ohp', 'lat'];
+  go(`
+    globalThis.__els = ${JSON.stringify(ids)}.map(function (id) {
+      return { isConnected: true, tagName: 'SPAN', dataset: { mkPoster: id }, style: {}, classList: { contains: function () { return false; } } };
+    });
+    __els.forEach(enqueueMovekitPoster);
+  `);
+  for (let i = 0; i < 30 && calls.length < 4; i++) await flush();
+  assert.equal(calls.length, 4);
+  assert.equal(calls.filter(c => c.opt && c.opt.method === 'POST').length, 4);
+  release();
+  for (let i = 0; i < 30 && calls.length < 8; i++) await flush();
+  assert.equal(calls.length, 8);
+  release();
+  for (let i = 0; i < 30 && calls.length < 10; i++) await flush();
+  assert.equal(calls.length, 10);
+  assert.equal(calls.filter(c => c.opt && c.opt.method === 'POST').length, 6);
+});
+
+test('a cached poster shows without signing, and a miss keeps the placeholder', async () => {
+  const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const bag = new Map();
+  function URLShim(a, b) { return new URL(a, b); }
+  URLShim.createObjectURL = blob => 'blob:cached-' + (blob && blob.size);
+  URLShim.revokeObjectURL = () => {};
+  const g = {
+    console, URL: URLShim, Blob, Map, Promise, JSON, encodeURIComponent, Date, Uint8Array, Response,
+    setTimeout, clearTimeout,
+    location: { href: 'http://127.0.0.1/' },
+    MZ_SB: { url: 'https://example.test', anon: 'anon-test' },
+    caches: {
+      async open() {
+        return {
+          async match(u) { return bag.get(u) || null; },
+          async put(u, res) { bag.set(u, res); }
+        };
+      }
+    }
+  };
+  g.window = g;
+  g.globalThis = g;
+  g.self = g;
+  let fetches = 0;
+  g.fetch = async () => { fetches++; return { ok: false, status: 404 }; };
+  const ctx = vm.createContext(g);
+  vm.runInContext(fs.readFileSync(path.join(root, 'movekit.js'), 'utf8'), ctx, { filename: 'movekit.js' });
+  const go = code => vm.runInContext(code, ctx);
+  const key = go('movekitCacheUrl("posters/barbell-bench-press.jpg")');
+  bag.set(key, new Response(new Blob([bytes], { type: 'image/jpeg' }), { headers: { 'Content-Type': 'image/jpeg' } }));
+  go('globalThis.__v = { isConnected: true, tagName: "VIDEO", dataset: { mkPoster: "bp", mk: "bp" }, style: {}, classList: { contains: function () { return false; } } }');
+  await go('loadMovekitPoster(__v)');
+  assert.equal(fetches, 0);
+  assert.equal(go('__v.dataset.mkPosterState'), 'ok');
+  assert.equal(go('__v.poster'), 'blob:cached-' + bytes.length);
+  go('globalThis.__miss = { isConnected: true, tagName: "VIDEO", dataset: { mkPoster: "pu" }, style: {}, poster: "", classList: { contains: function () { return false; } } }');
+  await go('loadMovekitPoster(__miss)');
+  assert.equal(go('__miss.dataset.mkPosterState'), 'fail');
+  assert.equal(go('__miss.poster'), '');
+  assert.equal(fetches, 1);
 });
