@@ -1,9 +1,11 @@
 'use strict';
-// Licensed MoveKit clips. Exercise id -> file name in the private "movekit" bucket.
-// File names only: never put a public URL, a signed URL, or video bytes in this file.
-// Signed URLs stay in memory until near expiry. After the first successful load the
-// video bytes are stored in Cache Storage under a stable key (movekit/<file>), never
-// under the signed URL, and that copy is what plays offline or when signing fails.
+// Licensed MoveKit clips and posters. Exercise id -> clip file name in the private "movekit" bucket.
+// File names only: never put a public URL, a signed URL, or media bytes in this file.
+// A poster is posters/<clip-name>.jpg next to the clip. Signed URLs stay in memory until near expiry.
+// After the first successful load the bytes are stored in Cache Storage under a stable key
+// (movekit/<file> for a clip, movekit/posters/<name>.jpg for a poster), never under the signed URL.
+// That copy is what plays, or what the card shows, offline or when signing fails.
+// Posters in a long list are signed only once they are near the viewport, a few at a time.
 
 const MOVEKIT = {
   "bp": "barbell-bench-press.mp4",
@@ -248,6 +250,271 @@ function stopMovekitVideo(video) {
   try { video.load(); } catch (e) {}
 }
 
+function movekitPosterName(id) {
+  const file = movekitFile(id);
+  if (!file) return '';
+  const name = file.slice(0, -4) + '.jpg';
+  return /^[a-z0-9.-]+\.jpg$/.test(name) ? name : '';
+}
+
+function movekitPosterPath(id) {
+  const name = movekitPosterName(id);
+  return name ? 'posters/' + name : '';
+}
+
+function movekitImageBlob(blob) {
+  if (blob && blob.type === 'image/jpeg') return blob;
+  return new Blob([blob], { type: 'image/jpeg' });
+}
+
+function jpegBytes(buf) {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
+function posterObjectUrl(blob) {
+  if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') return URL.createObjectURL(blob);
+  return 'blob:poster';
+}
+
+function posterRevoke(url) {
+  if (!url || typeof URL === 'undefined' || typeof URL.revokeObjectURL !== 'function') return;
+  try { URL.revokeObjectURL(url); } catch (e) {}
+}
+
+const mkPosterUrls = new Map();
+const MK_POSTER_LIMIT = 4;
+let mkPosterActive = 0;
+const mkPosterQueue = [];
+let mkPosterIO = null;
+
+function rememberPosterUrl(el, url) {
+  const prev = mkPosterUrls.get(el);
+  if (prev && prev !== url) posterRevoke(prev);
+  mkPosterUrls.set(el, url);
+}
+
+function forgetPosterUrl(el) {
+  const prev = mkPosterUrls.get(el);
+  if (prev) posterRevoke(prev);
+  mkPosterUrls.delete(el);
+}
+
+function sweepPosterUrls() {
+  for (const el of mkPosterUrls.keys()) {
+    if (el && el.isConnected === false) forgetPosterUrl(el);
+  }
+}
+
+async function requestMovekitPosterUrl(name) {
+  const cfg = movekitCfg();
+  if (!cfg.url || !cfg.anon) throw new Error('movekit config');
+  if (!/^[a-z0-9.-]+\.jpg$/.test(name)) throw new Error('movekit poster name');
+  const objectPath = 'posters/' + name;
+  const res = await fetch(cfg.url + '/storage/v1/object/sign/movekit/posters/' + encodeURIComponent(name), {
+    method: 'POST',
+    headers: {
+      apikey: cfg.anon,
+      Authorization: 'Bearer ' + cfg.anon,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ expiresIn: 3600 })
+  });
+  if (!res.ok) throw new Error('movekit poster sign ' + res.status);
+  const data = await res.json();
+  const path = data && (data.signedURL || data.signedUrl);
+  if (!path || typeof path !== 'string') throw new Error('movekit poster sign empty');
+  const full = /^https?:\/\//i.test(path)
+    ? path
+    : cfg.url + '/storage/v1' + (path.charAt(0) === '/' ? path : '/' + path);
+  mkMem.set(objectPath, { url: full, exp: Date.now() + MK_TTL_MS });
+  return full;
+}
+
+async function movekitPosterSignedUrl(id) {
+  const name = movekitPosterName(id);
+  if (!name) return null;
+  const objectPath = 'posters/' + name;
+  const hit = mkMem.get(objectPath);
+  if (hit && hit.exp - MK_SKEW_MS > Date.now()) return hit.url;
+  if (mkSign.has(objectPath)) return mkSign.get(objectPath);
+  const pending = requestMovekitPosterUrl(name);
+  mkSign.set(objectPath, pending);
+  try {
+    return await pending;
+  } finally {
+    if (mkSign.get(objectPath) === pending) mkSign.delete(objectPath);
+  }
+}
+
+async function readPosterBlob(objectPath) {
+  let blob = null;
+  try { blob = await movekitCachedBlob(objectPath); } catch (e) { blob = null; }
+  if (!blob) return null;
+  try {
+    const head = new Uint8Array(await blob.slice(0, 3).arrayBuffer());
+    if (!jpegBytes(head)) return null;
+  } catch (e) { return null; }
+  return blob;
+}
+
+async function movekitStorePoster(objectPath, signed) {
+  const key = 'poster:' + objectPath;
+  if (mkSave.has(key)) return mkSave.get(key);
+  const job = (async function () {
+    const res = await fetch(signed, { referrerPolicy: 'no-referrer', cache: 'no-store' });
+    if (!res.ok) throw new Error('movekit poster fetch ' + res.status);
+    const buf = await res.arrayBuffer();
+    if (!jpegBytes(buf)) throw new Error('movekit poster type');
+    const typed = new Blob([buf], { type: 'image/jpeg' });
+    if (typeof caches === 'undefined') return typed;
+    const cache = await caches.open(MK_CACHE);
+    await cache.put(movekitCacheUrl(objectPath), new Response(typed, {
+      status: 200,
+      headers: { 'Content-Type': 'image/jpeg' }
+    }));
+    return typed;
+  })();
+  mkSave.set(key, job);
+  try {
+    return await job;
+  } finally {
+    if (mkSave.get(key) === job) mkSave.delete(key);
+  }
+}
+
+function posterFailed(el) {
+  if (!el || !el.dataset) return;
+  el.dataset.mkPosterState = 'fail';
+  forgetPosterUrl(el);
+  const wide = el.classList && el.classList.contains && el.classList.contains('mkwide');
+  if (wide && typeof el.remove === 'function') el.remove();
+}
+
+function showMovekitPoster(el, blob) {
+  const url = posterObjectUrl(movekitImageBlob(blob));
+  rememberPosterUrl(el, url);
+  if (String(el.tagName || '').toUpperCase() === 'VIDEO') {
+    el.poster = url;
+    el.dataset.mkPosterState = 'ok';
+    return;
+  }
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.decoding = 'async';
+    if ('referrerPolicy' in img) img.referrerPolicy = 'no-referrer';
+    img.onload = function () { if (el.dataset) el.dataset.mkPosterState = 'ok'; };
+    img.onerror = function () {
+      img.onerror = null;
+      if (typeof img.remove === 'function') img.remove();
+      posterFailed(el);
+    };
+    img.src = url;
+    if (typeof el.replaceChildren === 'function') el.replaceChildren(img);
+    else if (typeof el.appendChild === 'function') el.appendChild(img);
+    else {
+      el.style = el.style || {};
+      el.style.backgroundImage = 'url("' + url + '")';
+      el.dataset.mkPosterState = 'ok';
+    }
+    return;
+  }
+  el.style = el.style || {};
+  el.style.backgroundImage = 'url("' + url + '")';
+  el.dataset.mkPosterState = 'ok';
+}
+
+async function loadMovekitPoster(el) {
+  if (!el || !el.dataset) return;
+  if (el.isConnected === false) return;
+  const state = el.dataset.mkPosterState;
+  if (state === 'ok' || state === 'fail' || state === 'pending') return;
+  const id = el.dataset.mkPoster || el.dataset.mk || '';
+  const objectPath = movekitPosterPath(id);
+  if (!objectPath) { posterFailed(el); return; }
+  el.dataset.mkPosterState = 'pending';
+  const alive = function () { return el.isConnected !== false && el.dataset && el.dataset.mkPosterState === 'pending'; };
+  let blob = await readPosterBlob(objectPath);
+  if (!alive()) return;
+  if (blob) { showMovekitPoster(el, blob); return; }
+  let signed = null;
+  try { signed = await movekitPosterSignedUrl(id); } catch (e) { signed = null; }
+  if (!alive()) return;
+  if (!signed) {
+    blob = await readPosterBlob(objectPath);
+    if (!alive()) return;
+    if (blob) { showMovekitPoster(el, blob); return; }
+    posterFailed(el);
+    return;
+  }
+  try { blob = await movekitStorePoster(objectPath, signed); } catch (e) { blob = null; }
+  if (!alive()) return;
+  if (!blob) blob = await readPosterBlob(objectPath);
+  if (!alive()) return;
+  if (blob && blob.size) showMovekitPoster(el, blob);
+  else posterFailed(el);
+}
+
+function enqueueMovekitPoster(el) {
+  if (!el || !el.dataset || el.dataset.mkPosterQueued) return;
+  const state = el.dataset.mkPosterState;
+  if (state === 'ok' || state === 'fail' || state === 'pending') return;
+  el.dataset.mkPosterQueued = '1';
+  mkPosterQueue.push(el);
+  pumpMovekitPosters();
+}
+
+function pumpMovekitPosters() {
+  while (mkPosterActive < MK_POSTER_LIMIT && mkPosterQueue.length) {
+    const el = mkPosterQueue.shift();
+    if (!el || el.isConnected === false) continue;
+    const state = el.dataset && el.dataset.mkPosterState;
+    if (state === 'ok' || state === 'fail' || state === 'pending') continue;
+    mkPosterActive++;
+    Promise.resolve()
+      .then(function () { return loadMovekitPoster(el); })
+      .catch(function () { if (el.dataset && el.dataset.mkPosterState === 'pending') posterFailed(el); })
+      .then(function () {
+        mkPosterActive--;
+        pumpMovekitPosters();
+      });
+  }
+}
+
+function watchMovekitPoster(el) {
+  if (!el || !el.dataset || el.dataset.mkPosterWatch) return;
+  el.dataset.mkPosterWatch = '1';
+  if (el.dataset.mkPosterState === 'ok' || el.dataset.mkPosterState === 'fail') return;
+  if (mkPosterIO) mkPosterIO.observe(el);
+}
+
+function mountMovekitPosters() {
+  if (typeof document === 'undefined' || !document.body) return;
+  if (typeof IntersectionObserver !== 'function' || typeof MutationObserver !== 'function' || typeof requestAnimationFrame !== 'function') return;
+  mkPosterIO = new IntersectionObserver(function (entries) {
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (!entry.isIntersecting) continue;
+      mkPosterIO.unobserve(entry.target);
+      enqueueMovekitPoster(entry.target);
+    }
+  }, { root: null, rootMargin: '240px 0px', threshold: 0.01 });
+  const scan = function () {
+    sweepPosterUrls();
+    const list = document.querySelectorAll('[data-mk-poster]');
+    for (let i = 0; i < list.length; i++) watchMovekitPoster(list[i]);
+  };
+  let scheduled = false;
+  const mo = new MutationObserver(function () {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function () { scheduled = false; scan(); });
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+  scan();
+}
+
 async function movekitStore(file, signed) {
   if (mkSave.has(file)) return mkSave.get(file);
   const job = (async function () {
@@ -282,6 +549,7 @@ async function loadMovekit(video) {
     if (typeof animFallback === 'function') animFallback(video, id);
     return;
   }
+  loadMovekitPoster(video);
   let blob = null;
   try { blob = await movekitCachedBlob(file); } catch (e) { blob = null; }
   if (!alive()) return;
@@ -316,3 +584,5 @@ async function loadMovekit(video) {
   if (play && play.catch) play.catch(function () {});
   movekitStore(file, signed).catch(function () {});
 }
+
+mountMovekitPosters();
