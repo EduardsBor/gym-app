@@ -30,6 +30,7 @@ function workOk(id, a, used) {
   if (typeof LIB_ONLY !== 'undefined' && LIB_ONLY.has(id)) return false;
   if (typeof FINISHER !== 'undefined' && FINISHER.has(id)) return false;
   if (typeof GEAR !== 'undefined' && GEAR[id] && !((a.gear) || []).includes(GEAR[id])) return false;
+  if (typeof placeAutoOk === 'function' && !placeAutoOk(id, a.place)) return false;
   if (!placeOk(id, a.place, false) || !levelOk(id, a.level) || !riskOk(id, a.lim) || kneeCardio(id, a.lim)) return false;
   return true;
 }
@@ -49,6 +50,9 @@ function altAfter(exId) {
 function pickWork(exId, a, used, prefer) {
   const cands = [exId];
   const seen = new Set([exId]);
+  // D-214: отдельный id для дома / своего веса идёт сразу за прежним (до запасных и замен).
+  const pv = typeof placeVariant === 'function' ? placeVariant(exId, a.place) : null;
+  if (pv) { seen.add(pv); cands.push(pv); }
   for (const id of (prefer || [])) if (!seen.has(id)) { seen.add(id); cands.push(id); }
   for (const id of altAfter(exId)) if (!seen.has(id)) { seen.add(id); cands.push(id); }
   for (const id of cands) if (workOk(id, a, used)) return id;
@@ -56,8 +60,9 @@ function pickWork(exId, a, used, prefer) {
 }
 function workSec(it) {
   if (isCardio(it.exId)) return it.max * 60;
-  const mult = PROG.H[it.exId] || 1;
-  const work = it.sec ? mult * (+it.max || 0) : (UNI.has(it.exId) ? 70 : 40);
+  const tid = (typeof PLACE_BASE !== 'undefined' && PLACE_BASE[it.exId]) || it.exId; // время как у упражнения из шаблона тренера
+  const mult = PROG.H[tid] || 1;
+  const work = it.sec ? mult * (+it.max || 0) : (UNI.has(tid) ? 70 : 40);
   return it.sets * (work + it.rest);
 }
 function daySeconds(day) { return (day.warmMin + day.coolMin) * 60 + day.items.reduce((s, it) => s + workSec(it), 0); }
@@ -113,7 +118,7 @@ function planFromTemplate(a) {
         if (!droppedHinge && (HINGE.has(base.exId) || base.slot === 'HINGE')) droppedHinge = base;
         return;
       }
-      if (id !== base.exId) swaps.push(exBy(id).name);
+      if (id !== base.exId && !(typeof placeVariant === 'function' && placeVariant(base.exId, a.place) === id)) swaps.push(exBy(id).name);
       used.add(id);
       kept.push({ exId: id, sets: n, min: base.min, max: base.max, rest: base.rest, sec: base.sec, acc: base.acc, slot: base.slot, prio: false });
     });
@@ -188,7 +193,7 @@ function planFromTemplate(a) {
         if (!day._build.some(it => slots.has(it.slot))) return;
         const used = new Set(day._build.map(it => it.exId));
         let id = null;
-        for (const cand of pool) if (workOk(cand, a, used)) { id = cand; break; }
+        for (const c0 of pool) { const cand = (typeof placeVariant === 'function' && placeVariant(c0, a.place)) || c0; if (workOk(cand, a, used)) { id = cand; break; } }
         if (!id) return;
         day._build.push({ exId: id, sets, min: spec[1], max: spec[2], rest: spec[3], acc: true, prio: true, slot: trained(g)[0] || '' });
         added = true;

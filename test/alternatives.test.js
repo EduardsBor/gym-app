@@ -35,7 +35,7 @@ function boot() {
   };
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
-  const files = ['alt.js','i18n/dict.js','i18n/dict2.js','i18n/dict3.js','i18n/i18n.js','app.js','tech.js','lib.js','i18n/lib.en.js','i18n/lib.lv.js','i18n/tech.en.js','i18n/tech.lv.js','cards.js','warm.js'];
+  const files = ['alt.js','i18n/dict.js','i18n/dict2.js','i18n/dict3.js','i18n/i18n.js','app.js','tech.js','lib.js','i18n/lib.en.js','i18n/lib.lv.js','i18n/tech.en.js','i18n/tech.lv.js','cards.js','warm.js','cd.js','place.js'];
   for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, {filename: f});
   ctx.__nodes = nodes;
   return ctx;
@@ -68,7 +68,8 @@ const prof = {goal: 'mass', sex: 'm', level: 'mid', days: 3, len: 60, place: 'g'
 const nameOf = id => EX.find(e => e.id === id).name;
 
 test('every ALT key and value is a real exercise id', () => {
-  assert.equal(Object.keys(ALT).length, 154);
+  // 154 списка тренера + 5 отдельных id для дома / своего веса (D-214, place.js).
+  assert.equal(Object.keys(ALT).length, 159);
   for (const [k, list] of Object.entries(ALT)) {
     assert.equal(ids.has(k), true, k);
     assert.equal(list.includes(k), false, 'self '+k);
@@ -80,7 +81,7 @@ test('every ALT key and value is a real exercise id', () => {
   }
   assert.equal(ALT['smith-inverted-row'], undefined);
   for (const id of ['w_march','ankle-knee-to-wall']) assert.equal(Object.prototype.hasOwnProperty.call(ALT, id), false);
-  for (const id of ['sq','lp','gsq']) assert.equal(ALT[id][ALT[id].length-1], 'mk-dumbbell-step-up-low', id);
+  for (const id of ['sq','lp','gsq']) assert.deepEqual(Array.from(ALT[id].slice(-2)), ['mk-dumbbell-step-up-low','step-bw'], id);
 });
 
 test('swapModal offers only the trainer list, same muscles, trainer order', () => {

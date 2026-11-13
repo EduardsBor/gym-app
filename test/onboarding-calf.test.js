@@ -37,7 +37,7 @@ function boot(stored, withFeatures) {
   };
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
-  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'prog.js', 'plan.js'];
+  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js'];
   if (withFeatures) files.push('features.js');
   for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
   return { run: code => vm.runInContext(code, ctx), store };
