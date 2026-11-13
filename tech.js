@@ -70,8 +70,11 @@ jump:[['Встань прямо, ноги вместе, руки вдоль те
 wlk:[['Иди в темпе, при котором дыхание учащено, но можно говорить.','Корпус прямой, плечи расслаблены.','Работай руками.','Шаг с пятки на носок.'],['Сутулость.','Слишком длинный шаг.','Неудобная обувь.'],'']
 };
 function hasAnim(id){return !(typeof NO_ANIM!=='undefined'&&NO_ANIM.has(id))}
-function animMedia(id){if(!hasAnim(id))return '<p class="animsoon">Анимация в разработке</p>';return `<video class="a3d" muted loop playsinline autoplay preload="none" disablepictureinpicture poster="anim3d/${id}.jpg" src="anim3d/${id}.mp4"></video>`}
+function animMedia(id){if(typeof movekitFile==='function'&&movekitFile(id)){const poster=hasAnim(id)?` poster="anim3d/${id}.jpg"`:'';return `<video class="a3d mk" muted loop playsinline autoplay preload="metadata" disablepictureinpicture referrerpolicy="no-referrer" data-mk="${id}"${poster}></video>`}if(!hasAnim(id))return '<p class="animsoon">Анимация в разработке</p>';return `<video class="a3d" muted loop playsinline autoplay preload="none" disablepictureinpicture poster="anim3d/${id}.jpg" src="anim3d/${id}.mp4"></video>`}
 function animThumb(id){if(!hasAnim(id))return '<span class="athumb" aria-hidden="true"></span>';return `<img loading="lazy" decoding="async" src="anim3d/${id}.jpg" alt="">`}
+function startAnim(v){if(!v)return;if(v.dataset&&v.dataset.mk){if(typeof loadMovekit==='function'){loadMovekit(v);return}animFallback(v,v.dataset.mk);return}v.muted=true;v.onerror=()=>v.remove();const p=v.play();if(p)p.catch(()=>{})}
+function stopAnim(v){if(!v)return;if(typeof stopMovekitVideo==='function'){stopMovekitVideo(v);return}v.pause();v.removeAttribute('src');try{v.load()}catch(e){}}
+function animFallback(v,id){if(!v||!v.isConnected)return;v._mkToken=(v._mkToken||0)+1;v.onerror=null;if(v.dataset&&v.dataset.blob){try{URL.revokeObjectURL(v.dataset.blob)}catch(e){}v.dataset.blob=''}if(v.dataset)v.dataset.mkSrc='anim';v.removeAttribute('data-mk');if(hasAnim(id)){v.poster='anim3d/'+id+'.jpg';v.onerror=()=>v.remove();v.src='anim3d/'+id+'.mp4';v.muted=true;const p=v.play();if(p)p.catch(()=>{});return}const p=document.createElement('p');p.className='animsoon';p.textContent='Анимация в разработке';v.replaceWith(p)}
 function techBtn(id){return TECH[id]?`<button class="sm tbtn" data-ti="${id}" aria-label="Техника">ⓘ</button>`:''}
 function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementById('tech');if(!m){m=document.createElement('div');m.id='tech';document.body.appendChild(m)}
  const e=exBy(id);m.className='';
@@ -81,6 +84,6 @@ function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementBy
  <h3>Частые ошибки</h3><ul>${t[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
  ${t[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(t[2])}</p>`:''}
  <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM/NSCA). При боли прекрати упражнение.</p></div>`;
- const v=m.querySelector('video.a3d');if(v){v.muted=true;v.onerror=()=>v.remove();const p=v.play();if(p)p.catch(()=>{})}
- const close=()=>{m.className='hidden';const x=m.querySelector('video.a3d');if(x){x.pause();x.removeAttribute('src');x.load()}};m.querySelector('#tc').onclick=close;m.onclick=ev=>{if(ev.target===m)close()}}
+ const v=m.querySelector('video.a3d');startAnim(v);
+ const close=()=>{m.className='hidden';const x=m.querySelector('video.a3d');if(x)stopAnim(x)};m.querySelector('#tc').onclick=close;m.onclick=ev=>{if(ev.target===m)close()}}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-ti]');if(b){ev.stopPropagation();ev.preventDefault();window._wf=!!b.dataset.wf;techModal(b.dataset.ti)}},true);
