@@ -43,14 +43,24 @@
     S.deletedCustom=S.deletedCustom||[];
     return ch;
   }
-  function persistLocal(){localStorage.setItem('gym',JSON.stringify(S))}
+  function persistLocal(){
+    if(typeof S_RO!=='undefined'&&S_RO) return;
+    try{localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
+  }
+  // Отпечаток программы: по его изменению ставим отдельную метку времени progAt,
+  // чтобы правка настроек на одном устройстве не затирала новую программу с другого.
+  function progSigOf(){try{return JSON.stringify([S.program||null,S.prof||null,S.progName||null])}catch(e){return ''}}
+  let progSig=progSigOf();
+  // Локальные данные принадлежат другому аккаунту (вход сменили на этом устройстве).
+  function foreignData(){return !!(user&&S.ownerUid&&S.ownerUid!==user.id&&hasLocalData())}
   function adoptLS(){
     try{const cur=JSON.parse(localStorage.getItem('gym')||'null');if(cur) Object.keys(cur).forEach(k=>{S[k]=cur[k]})}catch(e){}
   }
   function payloadOf(src){
     const p=JSON.parse(JSON.stringify(src));
-    delete p.ownerPremium;delete p.active;delete p.tEnd;
-    if(!p.consentHealth){delete p.body;delete p.height}
+    delete p.ownerPremium;delete p.active;delete p.tEnd;delete p.ownerUid;
+    // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
+    if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age}
     return p;
   }
   function mergeLists(local,remote,delA,delB,idKey,timeFn){
@@ -90,10 +100,17 @@
     S.workouts=w.list;S.deletedWorkouts=w.deleted;
     if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted}
     S.custom=c.list;S.deletedCustom=c.deleted;
-    ['program','progName','why','next','prof','goal','days','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v','weightKg','age','weightAsked','ageAsked'].forEach(k=>{
+    // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
+    const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
+    ['program','progName','why','prof','goal','days'].forEach(k=>{
+      const v=progLocal?(S[k]!==undefined?S[k]:R[k]):(R[k]!==undefined?R[k]:S[k]);
+      if(v!==undefined) S[k]=v;
+    });
+    const pa=Math.max(S.progAt||0,R.progAt||0);if(pa) S.progAt=pa;
+    ['next','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
-    if(S.consentHealth||R.consentHealth){const h=pick('height');if(h!==undefined) S.height=h}
+    if(S.consentHealth||R.consentHealth){['height','weightKg','age'].forEach(k=>{const h=pick(k);if(h!==undefined) S[k]=h})}
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
     if(keepTEnd) S.tEnd=keepTEnd;
@@ -122,14 +139,16 @@
     const R=data.payload||{};
     if(!hasLocalData()) applyRemoteFresh(R);
     else applyMerged(R,remoteAt);
+    progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
     persistLocal();
     await pushNow();
   }
   async function sync(){
     if(!READY||!user||syncing) return;
     if(typeof navigator!=='undefined'&&navigator.onLine===false){status='offline';paint();return}
+    if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return}
     syncing=true;status='syncing';lastErr='';paint();
-    try{await pullAndMerge();status='ok'}
+    try{await pullAndMerge();status='ok';if(S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
     catch(e){status='err';lastErr=friendly(e)}
     syncing=false;paint();
   }
@@ -141,6 +160,7 @@
     timer=setTimeout(()=>sync(),2000);
   }
   window.mzOnSave=function(){
+    const sg=progSigOf();if(sg!==progSig){progSig=sg;S.progAt=Date.now()}
     if(S.obDone&&!S._azOb){S._azOb=1;persistLocal();mzTrack('onboarding_done')}
     schedule();
   };
@@ -163,9 +183,13 @@
   }
 
   async function afterAuth(){
+    if(foreignData()){
+      if(confirm('На этом устройстве сохранены данные другого аккаунта. Объединить их с этим аккаунтом?\n\nОК — объединить. Отмена — выйти, данные останутся как есть.')) S.ownerUid=user.id;
+      else{await doLogout();return}
+    }
     ensureMeta();persistLocal();
     await sync();
-    toast('Вход выполнен. Данные синхронизируются');
+    toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
     if(view==='more') more();
   }
   function creds(){
@@ -227,14 +251,26 @@
     toast('Выход выполнен. Данные на этом устройстве на месте');
     if(view==='more') more();
   }
+  // Удаление данных в облаке. Возвращает:
+  //  'none'    — входа нет, в облаке удалять нечего;
+  //  'account' — удалены и данные, и аккаунт;
+  //  'data'    — данные удалены, аккаунт (почта для входа) остался;
+  //  'fail'    — удалить не удалось (нет сети, ошибка сервера). Локальные данные при этом трогать нельзя.
+  // supabase-js не бросает исключение при ошибке, а возвращает её в поле error — его и проверяем.
   async function mzDeleteCloud(){
-    if(!sb||!user) return;
-    try{await sb.rpc('delete_my_account')}
-    catch(e){
-      try{await sb.from('user_state').delete().eq('user_id',user.id)}catch(e2){}
-      try{await sb.auth.signOut()}catch(e3){}
+    if(!sb||!user) return 'none';
+    let res='fail';
+    try{const {error}=await sb.rpc('delete_my_account');if(!error) res='account'}catch(e){}
+    if(res==='fail'){
+      try{const {error}=await sb.from('user_state').delete().eq('user_id',user.id);if(!error) res='data'}catch(e){}
     }
-    user=null;
+    if(res==='fail') return res;
+    clearTimeout(timer);
+    try{await sb.auth.signOut({scope:'local'})}catch(e){}
+    // На случай, если signOut не сработал (аккаунт уже удалён): убираем сохранённую сессию вручную.
+    try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+    user=null;status='off';
+    return res;
   }
   window.mzDeleteCloud=mzDeleteCloud;
 
@@ -311,11 +347,20 @@
     wipeAll=async function(){
       if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?')) return;
       if(!confirm('Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?')) return;
+      let cloud='fail';
+      try{cloud=await mzDeleteCloud()}catch(e){}
+      if(cloud==='fail'){
+        // Облако не очищено: локальные данные оставляем, иначе после перезагрузки они вернутся из облака.
+        alert('Не удалось удалить данные в облаке. Проверь интернет и попробуй ещё раз. Данные на этом устройстве пока не удалены.');
+        return;
+      }
       try{
-        await mzDeleteCloud();
         localStorage.removeItem('gym');
         await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
+        // Кэш сервис-воркера мог содержать ответы сервера с личными данными (версии до v39).
+        if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
       }catch(e){}
+      if(cloud==='data') alert('Данные удалены. Аккаунт (почту для входа) удалить не удалось — войди ещё раз и повтори удаление позже.');
       location.reload();
     };
   }
