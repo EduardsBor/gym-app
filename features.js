@@ -4,10 +4,15 @@
 const FREE_EX=new Set(['bp','dbp','pu','sq','gsq','bwsq','lp','rdl','ht','mk-barbell-deadlift','lat','pull','dbr','inv','ohp','lr','bc','mk-cable-bar-pushdown','mk-front-plank','mk-treadmill-run']);
 const FREE_CAT=new Set(['c0','c7','c9']);
 const isPrem=()=>!!(S.premium||S.ownerPremium);
+// Переключатель «Режим владельца» виден только тем, у кого он уже включён, или на устройстве разработчика
+// (в консоли браузера: localStorage.setItem('gymOwner','1')). Обычный пользователь его не видит.
+const ownerUI=()=>{try{return !!S.ownerPremium||localStorage.getItem('gymOwner')==='1'}catch(e){return !!S.ownerPremium}};
 const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id).startsWith('w_')||(typeof exBy==='function'&&exBy(id).group==='Разминка');
 // ---- Migration: never lose access or data. Only adds new fields.
 (function(){let ch=false;const has=!!((S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.program);
- if(S.ownerPremium===undefined&&has){S.ownerPremium=true;ch=true}
+ // Владельческий доступ получают только данные, созданные до схемы 4 (до появления Free/Premium).
+ // У новых пользователей флаг сразу фиксируется как false, иначе он выдавался бы при втором запуске.
+ if(S.ownerPremium===undefined){S.ownerPremium=!!(has&&S.schema!==4);ch=true}
  if(S.obOffer===undefined){S.obOffer=S.goal?1:0;ch=true}
  if(S.schema!==4){S.schema=4;ch=true}if(ch)save()})();
 
@@ -30,7 +35,7 @@ const lockCard=(t,r)=>`<div class="card lock"><div style="font-size:34px">🔒</
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pw]');if(b){e.preventDefault();paywall(b.dataset.pw)}});
 
 // ---- Onboarding (first launch; skippable; re-runnable from «Ещё»)
-let OB={"mk-dumbbell-step-up-low":0,goal:'mass',level:'nov',days:3,place:'g',len:60};
+let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
 const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса','Набрать мышцы'],['str','🏋️ Сила','Поднимать больше'],['loss','🔥 Похудение','Снизить жир, сохранить мышцы']]],
  ['level','Какой у тебя опыт?',[['nov','Новичок','Меньше 6 месяцев регулярных тренировок'],['mid','Средний','6 месяцев – 2 года'],['adv','Опытный','Больше 2 лет']]],
  ['days','Сколько тренировок в неделю?',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']]],
@@ -56,7 +61,7 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
   preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
  $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={"mk-dumbbell-step-up-low":0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
+function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
@@ -84,7 +89,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  const html=`<div class="card"><b data-noi18n>🌐 Язык / Language / Valoda</b><div class="chips" style="margin-top:8px" data-noi18n>${Object.entries(LANGS).map(([k,l])=>`<button class="opt chip ${LANG===k?'sel':''}" data-lang="${k}">${l}</button>`).join('')}</div>${LANG==='lv'?'<p class="mut" style="font-size:12px">Latviešu tulkojums ir melnraksts — to vēl pārbaudīs dzimtās valodas runātājs.</p>':''}</div>
  <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0">${isPrem()?(S.premium?'Подписка активна.':'Открыто в режиме владельца.'):'Сейчас бесплатная версия.'}</p>
  <button class="full" id="pwopen">Посмотреть Premium (демо)</button>
- <label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label></div>
+ ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
  <div class="card"><b>🤖 ИИ-советы</b> <span class="badge">скоро · Premium</span><p class="mut" style="margin:4px 0 0">Персональные подсказки по прогрессу. Пока не подключено — данные никуда не отправляются.</p></div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
  <div class="card"><b>🛡️ Конфиденциальность и данные</b>
@@ -95,10 +100,12 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
  ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 30';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
- $('#pwopen').onclick=()=>paywall('');$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
+ $('#pwopen').onclick=()=>paywall('');if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
  if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;
-  if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));S.body=[];S.height=0}save();more()};
+  if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
+   // id удалённых замеров запоминаем: иначе синхронизация вернёт их из старой копии в облаке
+   S.deletedBody=(S.deletedBody||[]).concat(S.body.map(e=>e.id));S.body=[];S.height=0}save();more()};
  $('#wipe').onclick=wipeAll};
 async function wipeAll(){if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?'))return;
  if(!confirm('Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?'))return;

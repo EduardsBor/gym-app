@@ -38,6 +38,12 @@ function boot() {
   return ctx;
 }
 
+
+// movekit.js first asks the movekit-sign function; until it is deployed the function answers 404
+// and the app falls back to the direct storage sign. These mocks keep that 404 route separate.
+const FN_URL = 'https://example.test/functions/v1/movekit-sign';
+const fnMissing = { ok: false, status: 404, json: async () => ({}) };
+
 const ctx = boot();
 const run = code => vm.runInContext(code, ctx);
 
@@ -164,7 +170,9 @@ test('signed url is requested once and reused until near expiry', async () => {
   g.window = g;
   g.globalThis = g;
   g.self = g;
+  const fnCalls = [];
   g.fetch = async (url, opt) => {
+    if (url === FN_URL) { fnCalls.push({ url, opt }); return fnMissing; }
     calls.push({ url, opt });
     const file = url.split('/').pop();
     return {
@@ -181,6 +189,8 @@ test('signed url is requested once and reused until near expiry', async () => {
   const first = await go('movekitSignedUrl("bp")');
   const second = await go('movekitSignedUrl("bp")');
   assert.equal(calls.length, 1);
+  assert.equal(fnCalls.length, 1);
+  assert.deepEqual(JSON.parse(fnCalls[0].opt.body), { path: 'barbell-bench-press.mp4' });
   assert.equal(first, second);
   assert.equal(first, 'https://example.test/storage/v1' + '/object/sign/movekit/barbell-bench-press.mp4?token=fixture');
   assert.equal(calls[0].url, 'https://example.test/storage/v1/object/sign/movekit/barbell-bench-press.mp4');
@@ -224,6 +234,7 @@ function posterGlobals(fetchImpl) {
 test('poster signed url is requested once per file and reused', async () => {
   const calls = [];
   const { go } = posterGlobals(async (url, opt) => {
+    if (url === FN_URL) return fnMissing;
     calls.push({ url, opt });
     const file = String(url).split('/').pop();
     return {
@@ -255,6 +266,7 @@ test('visible posters sign a few at a time, not the whole map', async () => {
   const hold = () => new Promise(resolve => { waiting.push(resolve); });
   const release = () => { const batch = waiting.splice(0); batch.forEach(fn => fn()); };
   const { go } = posterGlobals((url, opt) => {
+    if (url === FN_URL) return Promise.resolve(fnMissing);
     calls.push({ url, opt });
     const file = String(url).split('/').pop();
     return hold().then(() => {
@@ -313,7 +325,7 @@ test('a cached poster shows without signing, and a miss keeps the placeholder', 
   g.globalThis = g;
   g.self = g;
   let fetches = 0;
-  g.fetch = async () => { fetches++; return { ok: false, status: 404 }; };
+  g.fetch = async url => { if (url !== FN_URL) fetches++; return { ok: false, status: 404 }; };
   const ctx = vm.createContext(g);
   vm.runInContext(fs.readFileSync(path.join(root, 'movekit.js'), 'utf8'), ctx, { filename: 'movekit.js' });
   const go = code => vm.runInContext(code, ctx);
@@ -329,4 +341,45 @@ test('a cached poster shows without signing, and a miss keeps the placeholder', 
   assert.equal(go('__miss.dataset.mkPosterState'), 'fail');
   assert.equal(go('__miss.poster'), '');
   assert.equal(fetches, 1);
+});
+
+test('deployed movekit-sign function is used and storage is not signed directly', async () => {
+  const calls = [];
+  const { go } = posterGlobals(async (url, opt) => {
+    calls.push({ url, opt });
+    if (url !== FN_URL) throw new Error('direct sign must not be used');
+    const p = JSON.parse(opt.body).path;
+    return { ok: true, status: 200, json: async () => ({ signedUrl: 'https://example.test/storage/v1/object/sign/movekit/' + p + '?token=fn' }) };
+  });
+  assert.equal(await go('movekitSignedUrl("bp")'), 'https://example.test/storage/v1/object/sign/movekit/barbell-bench-press.mp4?token=fn');
+  assert.equal(await go('movekitPosterSignedUrl("bp")'), 'https://example.test/storage/v1/object/sign/movekit/posters/barbell-bench-press.jpg?token=fn');
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].opt.method, 'POST');
+  assert.equal(calls[0].opt.headers.apikey, 'anon-test');
+  assert.deepEqual(JSON.parse(calls[1].opt.body), { path: 'posters/barbell-bench-press.jpg' });
+});
+
+test('a movekit-sign error other than 404 does not fall back to the direct sign', async () => {
+  const calls = [];
+  const { go } = posterGlobals(async (url, opt) => {
+    calls.push(url);
+    return { ok: false, status: 429, json: async () => ({}) };
+  });
+  await assert.rejects(go('movekitSignedUrl("bp")'), /movekit sign 429/);
+  assert.deepEqual(calls, [FN_URL]);
+});
+
+test('a missing movekit-sign function is asked once, then direct sign is used for a while', async () => {
+  const calls = [];
+  const { go } = posterGlobals(async (url) => {
+    calls.push(url);
+    if (url === FN_URL) throw new TypeError('Failed to fetch');
+    const file = String(url).split('/').pop();
+    return { ok: true, status: 200, json: async () => ({ signedURL: '/object/sign/movekit/' + file + '?token=fixture' }) };
+  });
+  await go('movekitSignedUrl("bp")');
+  await go('movekitSignedUrl("pu")');
+  await go('movekitPosterSignedUrl("sq")');
+  assert.equal(calls.filter(u => u === FN_URL).length, 1);
+  assert.equal(calls.filter(u => u !== FN_URL).length, 3);
 });

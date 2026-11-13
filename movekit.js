@@ -169,25 +169,40 @@ function movekitVideoBlob(blob) {
   return new Blob([blob], { type: 'video/mp4' });
 }
 
-async function requestMovekitUrl(file) {
+
+// Подпись ссылки: сначала серверная функция movekit-sign (без анонимного доступа к списку бакета),
+// если функция ещё не развёрнута (404) — прежняя прямая подпись. После sql/002 прямая подпись перестанет работать.
+const MK_FN_RETRY_MS = 5 * 60 * 1000;
+let mkFnOffUntil = 0;
+async function movekitSignPath(objectPath) {
   const cfg = movekitCfg();
   if (!cfg.url || !cfg.anon) throw new Error('movekit config');
-  const res = await fetch(cfg.url + '/storage/v1/object/sign/movekit/' + encodeURIComponent(file), {
-    method: 'POST',
-    headers: {
-      apikey: cfg.anon,
-      Authorization: 'Bearer ' + cfg.anon,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ expiresIn: 3600 })
+  const headers = { apikey: cfg.anon, Authorization: 'Bearer ' + cfg.anon, 'Content-Type': 'application/json' };
+  let res = null;
+  if (Date.now() >= mkFnOffUntil) {
+    try {
+      res = await fetch(cfg.url + '/functions/v1/movekit-sign', { method: 'POST', headers, body: JSON.stringify({ path: objectPath }) });
+    } catch (e) { res = null; }
+    if (res && res.ok) {
+      const d = await res.json();
+      if (d && typeof d.signedUrl === 'string') return d.signedUrl;
+    }
+    if (res && res.status !== 404) throw new Error('movekit sign ' + res.status);
+    // Функции нет (404 или сетевой/CORS отказ): не повторяем запрос к ней для каждого файла 5 минут.
+    mkFnOffUntil = Date.now() + MK_FN_RETRY_MS;
+  }
+  const direct = await fetch(cfg.url + '/storage/v1/object/sign/movekit/' + objectPath.split('/').map(encodeURIComponent).join('/'), {
+    method: 'POST', headers, body: JSON.stringify({ expiresIn: 3600 })
   });
-  if (!res.ok) throw new Error('movekit sign ' + res.status);
-  const data = await res.json();
+  if (!direct.ok) throw new Error('movekit sign ' + direct.status);
+  const data = await direct.json();
   const path = data && (data.signedURL || data.signedUrl);
   if (!path || typeof path !== 'string') throw new Error('movekit sign empty');
-  const full = /^https?:\/\//i.test(path)
-    ? path
-    : cfg.url + '/storage/v1' + (path.charAt(0) === '/' ? path : '/' + path);
+  return /^https?:\/\//i.test(path) ? path : cfg.url + '/storage/v1' + (path.charAt(0) === '/' ? path : '/' + path);
+}
+
+async function requestMovekitUrl(file) {
+  const full = await movekitSignPath(file);
   mkMem.set(file, { url: full, exp: Date.now() + MK_TTL_MS });
   return full;
 }
@@ -307,26 +322,9 @@ function sweepPosterUrls() {
 }
 
 async function requestMovekitPosterUrl(name) {
-  const cfg = movekitCfg();
-  if (!cfg.url || !cfg.anon) throw new Error('movekit config');
   if (!/^[a-z0-9.-]+\.jpg$/.test(name)) throw new Error('movekit poster name');
   const objectPath = 'posters/' + name;
-  const res = await fetch(cfg.url + '/storage/v1/object/sign/movekit/posters/' + encodeURIComponent(name), {
-    method: 'POST',
-    headers: {
-      apikey: cfg.anon,
-      Authorization: 'Bearer ' + cfg.anon,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ expiresIn: 3600 })
-  });
-  if (!res.ok) throw new Error('movekit poster sign ' + res.status);
-  const data = await res.json();
-  const path = data && (data.signedURL || data.signedUrl);
-  if (!path || typeof path !== 'string') throw new Error('movekit poster sign empty');
-  const full = /^https?:\/\//i.test(path)
-    ? path
-    : cfg.url + '/storage/v1' + (path.charAt(0) === '/' ? path : '/' + path);
+  const full = await movekitSignPath(objectPath);
   mkMem.set(objectPath, { url: full, exp: Date.now() + MK_TTL_MS });
   return full;
 }
