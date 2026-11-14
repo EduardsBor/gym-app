@@ -316,7 +316,7 @@ if(typeof autoOk==='function'){const autoOk1=autoOk;autoOk=function(id,a,acc){re
 // Как и в v1.2c: меняются только id в S.program; история (S.workouts) и начатая тренировка (S.active) не меняются.
 const D215_MAP={'chest-supported-1db':'chest-supported-2db',
   'smith-split-squat':{g:'bss',d:'bss',b:'reverse-lunge'},'smith-bss':{g:'bss',d:'bss',b:'reverse-lunge'},
-  'smith-rdl':{g:'rdl',d:'rdl-db',b:'sglb'},'standing-single-leg-curl':{g:'lc',d:'rdl-db',b:'nlc'},
+  'smith-rdl':{g:'rdl',d:'rdl-db',b:'sglb'},'standing-single-leg-curl':{g:'lc',d:'rdl-db',b:'sglb'},
   'negative-pullup':{g:'scap-pullup',d:'band-pulldown',b:'scap-pullup'},'neck-flexion-extension':'neck-retraction',
   'cable-internal-rotation':'cable-external-rotation','cable-external-rotation-90':'cable-external-rotation',
   'band-chest-press':{g:'dbp',d:'dbp',b:'pu'},'wrist-mobility':'wrist-flexor-stretch',
