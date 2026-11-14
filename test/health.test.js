@@ -229,10 +229,10 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
   assert.equal(live.includes('Подключить пульсометр'), false);
 });
 
-test('service worker cache is v43 and precaches health.js and movekit.js', () => {
+test('service worker cache is v44 and precaches health.js and movekit.js', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(sw, /moyzal-v43/);
+  assert.match(sw, /moyzal-v44/);
   assert.equal(sw.includes('moyzal-v42'), false);
   assert.equal(sw.charCodeAt(0) === 0xfeff, false);
   assert.match(sw, /moyzal-anim3d-v14/);
@@ -274,7 +274,7 @@ function bootApp() {
   };
   g.window = g; g.globalThis = g; g.self = g;
   const appCtx = vm.createContext(g);
-  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'health.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'prog.js', 'plan.js'];
+  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'health.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js'];
   for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), appCtx, { filename: f });
   appCtx.__nodes = nodes;
   return appCtx;

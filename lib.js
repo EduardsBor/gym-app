@@ -69,7 +69,7 @@ stair:['Сердечно-сосудистая система','Ягодичны�
 jump:['Сердечно-сосудистая система','Икры, плечи','Простое кардио без оборудования для разминки и интервалов.'],
 "mk-incline-treadmill-walk":["ягодичные, бицепс бедра, икры (лёгкое кардио)","—","Лёгкое кардио: быстрая ходьба на дорожке с наклоном."]
 };
-const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантелями',b:'🤸 Без инвентаря'},RSK={s:'спину',k:'колени',p:'плечи'};
+const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантелями',b:'🤸 Без инвентаря'},EQI={g:'🏢',d:'🏠',b:'🤸'},RSK={s:'спину',k:'колени',p:'плечи'};
 
 function libView(){$('#title').textContent='Библиотека';const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
  app.innerHTML=`<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
@@ -79,7 +79,7 @@ function libView(){$('#title').textContent='Библиотека';const ch=(k,v,
  <details class="card"><summary><b>➕ Своё упражнение</b></summary><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button>
  ${S.custom.map(e=>`<div class="li"><span class="grow">${esc(e.name)} <span class="mut">· ${esc(e.group)}</span></span><button class="sm" data-cx="${e.id}">✕</button></div>`).join('')}</details>`;
  const list=()=>{const q=LQ.q.trim().toLowerCase(),L=EX.filter(e=>(!q||tr(e.name).toLowerCase().includes(q)||e.name.toLowerCase().includes(q))&&(!LQ.g||e.group===LQ.g)&&(!LQ.p||(META[e.id]||'gdb|').split('|')[0].includes(LQ.p)));
-  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
+  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}<span class="eqi" title="${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQN[k]).filter(Boolean).join(', ')}"> · ${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQI[k]||'').join('')}</span>${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
   app.querySelectorAll('[data-lx]').forEach(b=>b.onclick=()=>exOk(b.dataset.lx)?exCard(b.dataset.lx):paywall('Полная библиотека с 3D-видео — в Premium. Бесплатно: 20 базовых упражнений.'))};
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
  app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()});
