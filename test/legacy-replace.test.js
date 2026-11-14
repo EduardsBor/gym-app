@@ -77,7 +77,7 @@ test('library and programs use the new deadlift, history keeps the old name', ()
   assert.equal(run('EX.filter(e => e.name === "Становая тяга" || e.id === "dl").length'), 0);
   const plan = run('planFromTemplate({goal:"mass",level:"mid",days:4,len:60,place:"g",sex:"m",prio:[],lim:[]})');
   assert.equal(plan.days[0].items.some(it => it.exId === 'dl' || it.exId === 'w_scpu'), false);
-  assert.equal(plan.days[0].items.some(it => it.exId === 'mk-cable-bar-pushdown'), true);
+  assert.equal(plan.days.some(d => d.items.some(it => it.exId === 'mk-cable-bar-pushdown')), true);
   assert.equal(plan.days[0].wu.mob.some(m => m.id === 'w_scpu'), false);
   assert.match(run('animMedia("mk-barbell-deadlift")'), /data-mk="mk-barbell-deadlift"/);
   assert.equal(run('movekitFile("mk-barbell-deadlift")'), 'barbell-deadlift.mp4');

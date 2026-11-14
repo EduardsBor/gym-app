@@ -25,8 +25,12 @@ function levelOk(id, level) {
   return lv >= need;
 }
 function kneeCardio(id, lim) { return (lim || []).includes('k') && PROG.K.indexOf(id) >= 0; }
+// v1.2c: в программу попадают только упражнения с роликом MoveKit; без ролика — только быстрая ходьба и дыхание лёжа.
+const NO_CLIP_OK = new Set(['walk-brisk', 'cd_breath']);
+function clipOk(id) { return typeof movekitFile !== 'function' || NO_CLIP_OK.has(id) || !!movekitFile(id); }
 function workOk(id, a, used) {
   if (!id || (used && used.has(id))) return false;
+  if (!clipOk(id)) return false;
   if (typeof LIB_ONLY !== 'undefined' && LIB_ONLY.has(id)) return false;
   if (typeof FINISHER !== 'undefined' && FINISHER.has(id)) return false;
   if (typeof GEAR !== 'undefined' && GEAR[id] && !((a.gear) || []).includes(GEAR[id])) return false;

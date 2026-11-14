@@ -68,8 +68,8 @@ const prof = {goal: 'mass', sex: 'm', level: 'mid', days: 3, len: 60, place: 'g'
 const nameOf = id => EX.find(e => e.id === id).name;
 
 test('every ALT key and value is a real exercise id', () => {
-  // 154 списка тренера + 5 отдельных id для дома / своего веса (D-214, place.js).
-  assert.equal(Object.keys(ALT).length, 159);
+  // 154 списка тренера + 5 отдельных id для дома / своего веса (D-214) + ht-db, ht-bw, band-pulldown (v1.2c, place.js).
+  assert.equal(Object.keys(ALT).length, 162);
   for (const [k, list] of Object.entries(ALT)) {
     assert.equal(ids.has(k), true, k);
     assert.equal(list.includes(k), false, 'self '+k);
