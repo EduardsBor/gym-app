@@ -61,8 +61,8 @@ function finish(b, reps, feel, pain) {
    const d=A.items.map(it=>({...it,sets:it.sets.filter(s=>s.done)}));A.items=d;S.workouts.push(A);S.active=null;awFinish(A);save()})()`);
 }
 const demo = (b, t) => b.run(`setDemoTier(${JSON.stringify(t)})`);
-const SUB = ['programs', 'warmup', 'cooldown', 'autoWeight', 'deload', 'breakReturn', 'video', 'charts', 'prs', 'oneRM', 'muscleVolume', 'girths'];
-const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight'];
+const SUB = ['programs', 'autoWeight', 'deload', 'breakReturn', 'video', 'charts', 'prs', 'oneRM', 'muscleVolume', 'girths'];
+const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight', 'warmup', 'cooldown'];
 const can = (b, f) => b.run(`can(${JSON.stringify(f)})`);
 // launch long ago = no clamp; the empty-launch fallback is tested separately
 const gateOn = b => b.run('PREM_CFG.PAYWALL_ENABLED=true; PREM_CFG.PAYWALL_LAUNCH=1');
@@ -253,7 +253,10 @@ test('free forever after the demo: diary, sets, previous weight and reps, pain, 
   const hist0 = b.run('JSON.stringify(S.workouts)'), next0 = b.run('S.next');
   b.run('premStartFree()');
   assert.equal(b.run('S.active.dayName'), 'Своя тренировка');
-  assert.equal(b.run('S.active.warm'), null); assert.equal(b.run('S.active.cool'), null); // warm-up/cool-down: subscription
+  assert.equal(b.run('!!S.active.warm && !!S.active.warm.P'), true); // P-307: warm-up/cool-down are free
+  assert.equal(b.run('!!S.active.cool && !!S.active.cool.cd'), true);
+  assert.ok(b.run('S.active.warm.c.length') > 0);
+  assert.ok(b.run('S.active.cool.c.length') > 0);
   assert.equal(b.run('S.active.items.length'), 0);
   // own exercise from the list → previous weight and reps prefilled, no auto-weight suggestion
   b.run('S.active.items.push({exId:"bp",ns:3,rest:120,min:8,max:12,sets:[0,0,0].map(()=>({w:"",r:12,done:false}))});awApply(S.active.items[0],null)');
@@ -329,6 +332,8 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   b.run('paywall("")');
   const html = b.run('document.querySelector("#pw").innerHTML');
   assert.ok(html.indexOf('Год — €29,99') < html.indexOf('Месяц — €4,99'));
+  assert.match(html, /Всегда бесплатно:[\s\S]*разминка и заминка/);
+  assert.equal(/<li>Разминка и заминка<\/li>/.test(html), false);
   const D = b.run('DICT3');
   for (const ru of ['14 дней бесплатно, без карты', 'Дневник остаётся бесплатным', 'Всегда бесплатно:', '≈ €2,50/мес', 'Год — €29,99', 'Месяц — €4,99', 'Оформить подписку', '▶ Начать свою тренировку', 'Демо: осталось дней —']) {
     const r = D.find(x => x[0] === ru); assert.ok(r && r[1] && r[2], ru);
@@ -348,5 +353,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v53'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v54'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

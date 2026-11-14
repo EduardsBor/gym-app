@@ -103,8 +103,20 @@
     });
     return {list:[...map.values()],deleted:[...del]};
   }
+  // P-307: health-consent withdrawal always wins. Compare grant.at vs the latest revocation timestamp.
+  function tsAt(v){if(v==null||v==='')return 0;if(typeof v==='number'&&isFinite(v)&&v>0)return v;const t=Date.parse(v);return isFinite(t)?t:0}
+  function consentGrantAt(c){return c&&c.at?tsAt(c.at):0}
+  function applyHealthConsent(cA,rA,cB,rB){
+    const rev=Math.max(tsAt(rA),tsAt(rB));
+    const gA=consentGrantAt(cA),gB=consentGrantAt(cB);
+    let grant=null;if(gA||gB) grant=gA>=gB?cA:cB;
+    if(rev&&(!grant||consentGrantAt(grant)<=rev)) grant=null;
+    S.consentHealth=grant||null;
+    if(rev) S.healthConsentRevokedAt=new Date(rev).toISOString();
+  }
   function applyRemoteFresh(R){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId;
+    const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
     const az=S.consentAnalytics,lang=S.lang,LL=localLimits(),ds=S.demoStart;
     Object.keys(R).forEach(k=>{S[k]=R[k]});
     keepEarliestDemo(ds,R.demoStart);
@@ -115,12 +127,14 @@
     if(installId) S.installId=installId;
     if(az&&!S.consentAnalytics) S.consentAnalytics=az;
     if(lang&&!S.lang) S.lang=lang;
+    applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
   }
   // P-305b: demo start (first completed workout) — always the earliest of local and cloud, never a later date.
   function keepEarliestDemo(a,b){const m=[a,b].filter(x=>typeof x==='number'&&isFinite(x)&&x>0);if(m.length) S.demoStart=Math.min(...m)}
   function applyMerged(R,remoteAt){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,LL=localLimits();
+    const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
     const w=mergeLists(S.workouts,R.workouts,S.deletedWorkouts,R.deletedWorkouts,'id',x=>x.end||x.start||0);
     const b=mergeLists(S.body,R.body,S.deletedBody,R.deletedBody,'id',x=>Date.parse(x.date||'')||0);
     const c=mergeLists(S.custom,R.custom,S.deletedCustom,R.deletedCustom,'id',x=>+(String(x.id).replace(/\D/g,'')||0));
@@ -139,9 +153,10 @@
       if(v!==undefined) S[k]=v;
     });
     const pa=Math.max(S.progAt||0,R.progAt||0);if(pa) S.progAt=pa;
-    ['next','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
+    ['next','lang','sound','wake','autoW','restOverride','premium','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
+    applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
     keepEarliestDemo(S.demoStart,R.demoStart);
     if(S.consentHealth||R.consentHealth){['height','weightKg','age'].forEach(k=>{const h=pick(k);if(h!==undefined) S[k]=h})}
     keepLocalLimits(LL);

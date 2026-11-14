@@ -206,5 +206,5 @@ test('place.js is loaded after cd.js and before the plan builder, and is precach
   assert.ok(i('cd.js') >= 0 && i('cd.js') < i('place.js') && i('place.js') < i('prog.js') && i('place.js') < i('plan.js'));
   const sw = read('sw.js');
   assert.match(sw, /'place\.js'/);
-  assert.match(sw, /const C='moyzal-v53'/);
+  assert.match(sw, /const C='moyzal-v54'/);
 });

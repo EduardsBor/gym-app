@@ -65,3 +65,37 @@ test('CSV export is wired in «Ещё», never gated, precached for offline', ()
   assert.match(html, /<script src="csv\.js"><\/script>/);
   assert.match(prem, /exportCsv:'free'/);
 });
+
+test('CSV exercise names follow the interface language; custom names stay as stored', () => {
+  const src = fs.readFileSync(path.join(root, 'csv.js'), 'utf8');
+  assert.match(src, /function csvExName\(id\)/);
+  assert.match(src, /typeof tr==='function'\?tr\(raw\):raw/);
+  const g = {
+    S: { workouts: [{ id: 'w1', start: new Date(2026, 10, 14, 9, 0).getTime(), dayName: 'A', notes: '', items: [
+      { exId: 'bp', sets: [{ w: 60, r: 8, done: true }] },
+      { exId: 'c_1', sets: [{ w: 40, r: 10, done: true }] }
+    ] }] },
+    tr(s) { return s === 'Жим лёжа' ? 'Barbell bench press' : s; },
+    exBy(id) { return id === 'bp' ? { name: 'Жим лёжа' } : id === 'c_1' ? { name: 'My squat' } : { name: '?' }; },
+    isCardio() { return false; },
+    document: { createElement() { return { href: '', download: '', click() {}, style: {} }; }, body: { append() {}, remove() {} } },
+    URL: { createObjectURL() { return 'blob:x' }, revokeObjectURL() {} },
+    Blob, Date
+  };
+  g.window = g;
+  const c = vm.createContext(g);
+  vm.runInContext(fs.readFileSync(path.join(root, 'csv.js'), 'utf8'), c);
+  const out = vm.runInContext('workoutsCsv(S.workouts, csvExName, tr)', c);
+  assert.match(out, /Barbell bench press/);
+  assert.match(out, /My squat/);
+  assert.equal(out.includes('Жим лёжа'), false);
+});
+
+test('library no longer offers custom exercise creation; existing custom data is kept', () => {
+  const lib = fs.readFileSync(path.join(root, 'lib.js'), 'utf8');
+  const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  assert.equal(lib.includes('➕ Своё упражнение'), false);
+  assert.equal(lib.includes("id=\"cadd\""), false);
+  assert.match(app, /const allEx=\(\)=>EX\.concat\(S\.custom\|\|\[\]\)/);
+  assert.match(app, /exBy=id=>allEx\(\)\.find/);
+});

@@ -20,8 +20,10 @@ function workoutsCsv(workouts,nameOf,trf,cardioOf){const T=trf||(x=>x);const row
      cardio?'':(it.sec?'':wt),cardio||it.sec?'':r,!cardio&&it.sec?r:'',cardio?wt:'',cardio?r:'',
      csvCell(feel,1),csvCell(pain,1),csvCell(w.notes,1)].join(CSV_SEP))})})});
  return '\uFEFF'+rows.join('\r\n')+'\r\n'}
+// Interface language (same lookup as the UI: tr(exBy(id).name)); custom exercises keep the stored name.
+function csvExName(id){const e=typeof exBy==='function'?exBy(id):null;const raw=e&&e.name&&e.name!=='?'?e.name:id;
+ return typeof tr==='function'?tr(raw):raw}
 function exportCsv(){if(typeof S==='undefined'||!S)return;const T=typeof tr==='function'?tr:null;
- const nameOf=id=>{const e=typeof exBy==='function'?exBy(id):null;return e&&e.name&&e.name!=='?'?e.name:id};
- const data=workoutsCsv(S.workouts,nameOf,T,typeof isCardio==='function'?isCardio:null);
+ const data=workoutsCsv(S.workouts,csvExName,T,typeof isCardio==='function'?isCardio:null);
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv;charset=utf-8'}));
  a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}

@@ -68,7 +68,7 @@ function boot(stored, withFeatures, cloud) {
   }
   for (const f of files) {
     let src = read(f);
-    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;window.__mzSync=sync;\n  init();\n})();');
+    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;window.__mzApplyMerged=applyMerged;window.__mzSync=sync;\n  init();\n})();');
     vm.runInContext(src, ctx, { filename: f });
   }
   return { run: code => vm.runInContext(code, ctx), store };
@@ -205,7 +205,7 @@ test('withdrawing health consent: next sync sends no limitations, pain marks, we
   assert.deepEqual(first.prof.lim, ['s', 'k']); // with consent they were synced
   assert.equal(first.weightKg, 80);
   // withdraw (same as the «Отозвать согласие» button, keeping the measurements)
-  b.run('S.consentHealth=null; save()');
+  b.run('S.consentHealth=null; S.healthConsentRevokedAt=new Date().toISOString(); save()');
   cloud.upserts.length = 0;
   await b.run('__mzSync()');
   const ups = cloud.upserts.filter(u => u.table === 'user_state');
@@ -225,6 +225,68 @@ test('withdrawing health consent: next sync sends no limitations, pain marks, we
   assert.equal(b.run('S.workouts[0].items[0].pain'), true);
   assert.equal(b.run('S.weightKg'), 80);
   assert.equal(b.run('S.age'), 40);
+});
+
+test('after health-consent withdrawal, an older grant from another device does not turn consent back on', async () => {
+  const REV = '2026-11-14T12:00:00.000Z', OLD = '2026-11-01T00:00:00.000Z';
+  const cloud = { inserts: [], upserts: [], user: USER };
+  const b = boot(seed({ consentHealth: null, healthConsentRevokedAt: REV, updatedAt: Date.parse(REV) }), true, cloud);
+  for (let i = 0; i < 6; i++) await tick();
+  const later = Date.parse(REV) + 1e6;
+  const ok = b.run(`(function(){
+    __mzApplyMerged({
+      consentHealth: { v: 1, at: '${OLD}' },
+      healthConsentRevokedAt: null,
+      updatedAt: ${later},
+      lang: 'ru',
+      workouts: S.workouts, custom: S.custom, body: S.body, prof: S.prof, program: S.program
+    }, ${later});
+    return JSON.stringify({ cons: S.consentHealth, rev: S.healthConsentRevokedAt });
+  })()`);
+  const r = JSON.parse(ok);
+  assert.equal(r.cons, null);
+  assert.equal(r.rev, REV);
+});
+
+test('a new explicit health-consent grant after revocation is kept', async () => {
+  const REV = '2026-11-14T12:00:00.000Z', NEW = '2026-11-14T15:00:00.000Z';
+  const cloud = { inserts: [], upserts: [], user: USER };
+  const b = boot(seed({ consentHealth: null, healthConsentRevokedAt: REV, updatedAt: Date.parse(REV) }), true, cloud);
+  for (let i = 0; i < 6; i++) await tick();
+  const later = Date.parse(NEW);
+  const ok = b.run(`(function(){
+    __mzApplyMerged({
+      consentHealth: { v: 1, at: '${NEW}' },
+      healthConsentRevokedAt: '${REV}',
+      updatedAt: ${later},
+      lang: 'ru',
+      workouts: S.workouts, custom: S.custom, body: S.body, prof: S.prof, program: S.program
+    }, ${later});
+    return JSON.stringify({ at: S.consentHealth && S.consentHealth.at, rev: S.healthConsentRevokedAt });
+  })()`);
+  const r = JSON.parse(ok);
+  assert.equal(r.at, NEW);
+  assert.equal(r.rev, REV);
+});
+
+test('withdrawing consent stores healthConsentRevokedAt, and applyRemoteFresh keeps an older remote grant off', async () => {
+  const src = read('features.js');
+  assert.match(src, /S\.healthConsentRevokedAt=new Date\(\)\.toISOString\(\)/);
+  const REV = '2026-11-14T12:00:00.000Z', OLD = '2026-11-01T00:00:00.000Z';
+  const cloud = { inserts: [], upserts: [], user: USER };
+  const b = boot(seed({ consentHealth: null, healthConsentRevokedAt: REV }), true, cloud);
+  for (let i = 0; i < 6; i++) await tick();
+  const ok = b.run(`(function(){
+    __mzApplyRemoteFresh({
+      consentHealth: { v: 1, at: '${OLD}' },
+      lang: 'ru',
+      workouts: S.workouts, custom: [], body: [], prof: S.prof, program: S.program
+    });
+    return JSON.stringify({ cons: S.consentHealth, rev: S.healthConsentRevokedAt });
+  })()`);
+  const r = JSON.parse(ok);
+  assert.equal(r.cons, null);
+  assert.equal(r.rev, REV);
 });
 
 test('D-215 mapping: standing single-leg curl, bodyweight -> single-leg glute bridge', () => {

@@ -16,9 +16,9 @@ const FEATURES={
  prevInField:'free',    // previous weight and reps
  history:'free', library:'free', pain:'free', limitations:'free', painSwap:'free', disclaimer:'free',
  sync:'free', exportCsv:'free', deleteAccount:'free', bodyWeight:'free', equipProfile:'free',
+ warmup:'free', cooldown:'free',  // text/structure in every workout, including «Своя тренировка»; MoveKit clips still gated by video
  // Subscription
  programs:'sub',        // trainer programs from the questionnaire (after the demo: last one read-only)
- warmup:'sub', cooldown:'sub',
  autoWeight:'sub', deload:'sub', breakReturn:'sub',
  video:'sub',           // technique videos AND posters (no movekit-sign call without it)
  charts:'sub', prs:'sub', oneRM:'sub', muscleVolume:'sub', girths:'sub'
