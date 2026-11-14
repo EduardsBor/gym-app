@@ -25,8 +25,8 @@ function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(
  <div style="text-align:center;font-size:44px">👑</div><h2 style="text-align:center;margin:4px 0">${PREM_NAME}</h2>
  <p style="text-align:center;margin:4px 0"><b>${sub}</b></p>${stx}
  ${reason?`<p class="mut" style="text-align:center">${esc(reason)}</p>`:''}
- <ul class="pwlist"><li>Программы тренера по анкете</li><li>Разминка и заминка</li><li>Авто-вес, разгрузка и возврат после перерыва</li><li>Видео техники</li><li>Графики, рекорды и 1ПМ</li><li>Объём по мышцам и обхваты тела</li></ul>
- <p class="mut" style="font-size:12px"><b>Всегда бесплатно:</b> свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, «Боль» и ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела.</p>
+ <ul class="pwlist"><li>Программы тренера по анкете</li><li>Авто-вес, разгрузка и возврат после перерыва</li><li>Видео техники</li><li>Графики, рекорды и 1ПМ</li><li>Объём по мышцам и обхваты тела</li></ul>
+ <p class="mut" style="font-size:12px"><b>Всегда бесплатно:</b> свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, «Боль» и ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела, разминка и заминка.</p>
  <button class="plan ${plan==='y'?'sel':''}" data-pl="y"><span class="grow"><b>Год — €29,99</b><br><span class="mut">≈ €2,50/мес</span></span></button>
  <button class="plan ${plan==='m'?'sel':''}" data-pl="m"><span class="grow"><b>Месяц — €4,99</b><br><span class="mut">Отмена в любой момент</span></span></button>
  <button class="pri full" id="pwbuy" style="margin-top:12px">Оформить подписку</button>
@@ -107,7 +107,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
- if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;
+ if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;S.healthConsentRevokedAt=new Date().toISOString();
   if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
    // id удалённых замеров запоминаем: иначе синхронизация вернёт их из старой копии в облаке
    S.deletedBody=(S.deletedBody||[]).concat(S.body.map(e=>e.id));S.body=[];S.height=0}save();more()};
@@ -131,13 +131,22 @@ function premStatusText(){const d=demoTier(),st=premState(),M={free:'Демо-р
  if(d)return M[d];if(st.tier==='open')return'Сейчас всё открыто бесплатно.';if(st.tier==='premium')return S.premium?'Подписка активна.':'Открыто в режиме владельца.';
  if(st.tier==='trial')return st.pre?'14 дней бесплатно, без карты — с первой тренировки.':'Демо: осталось дней — '+st.left;return'Демо закончилось. Дневник — бесплатно.'}
 // ---- After the demo: the free diary (own workout from the exercise list), last program read-only
+// P-307: warm-up/cool-down text and structure are free in every workout, including the diary after the demo.
+function diaryWarmCool(items){const P=warmPlan({items:items||[]},S.prof||{});
+ const cd={note:'лёгкий темп, пульс снижается',stretch:[{id:'cd_breath',dose:'≈ 60 с'}]};
+ return{warm:{P,c:warmItems(P).map(()=>false)},cool:typeof cdRows==='function'?{cd,c:cdRows(cd).map(()=>false)}:null}}
+function refreshDiaryWarmCool(A){if(!A||A.dayName!=='Своя тренировка')return;
+ const started=(A.warm&&A.warm.c&&A.warm.c.some(Boolean))||(A.cool&&A.cool.c&&A.cool.c.some(Boolean));
+ if(started&&A.warm&&A.cool)return;const wc=diaryWarmCool(A.items);A.warm=wc.warm;A.cool=wc.cool}
 function premStartFree(){if(S.active)return go('today');const n=(S.program&&S.program.length)||0;
  // dayIdx = the day before the planned one, so finishing keeps S.next where it was
- S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:n?((S.next||0)%n+n-1)%n:0,dayName:'Своя тренировка',notes:'',warm:null,cool:null,items:[]};save();go('today')}
+ const wc=diaryWarmCool([]);
+ S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:n?((S.next||0)%n+n-1)%n:0,dayName:'Своя тренировка',notes:'',warm:wc.warm,cool:wc.cool,items:[]};save();go('today')}
 function premFreeToday(){$('#title').textContent='Сегодня';
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">📓 Мой дневник</h2><p class="mut">Записывай свои тренировки бесплатно: выбери упражнения из списка и вводи подходы — прошлый вес и повторы подставятся сами.</p><button class="pri full" id="fstart">▶ Начать свою тренировку</button></div>
- <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес, разминка, заминка и видео техники — по подписке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
+ <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес и видео техники — по подписке. Разминка и заминка — бесплатно в каждой тренировке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
  $('#fstart').onclick=premStartFree}
+const _pwv=workoutView;workoutView=function(){if(typeof S!=='undefined'&&S&&S.active)refreshDiaryWarmCool(S.active);return _pwv()};
 const _ptoday=today;today=function(sel){if(!can('programs'))return premFreeToday();_ptoday(sel);
  const st=premState();let hide=false;try{hide=localStorage.getItem('gymSignOffer')==='1'}catch(e){}
  if(st.tier==='trial'&&!premFirstWorkout()&&!hide&&!(typeof mzSignedIn==='function'&&mzSignedIn())&&app.insertAdjacentHTML){

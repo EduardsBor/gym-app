@@ -229,7 +229,7 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
 test('service worker cache is v44 and precaches health.js and movekit.js', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(sw, /moyzal-v53/);
+  assert.match(sw, /moyzal-v54/);
   assert.equal(sw.includes('moyzal-v42'), false);
   assert.equal(sw.charCodeAt(0) === 0xfeff, false);
   assert.match(sw, /moyzal-anim3d-v14/);
@@ -341,4 +341,9 @@ test('a finished workout stores optional health fields and an old workout stays 
   const list = appCtx.__nodes.get('app').innerHTML;
   assert.match(list, /Старая/);
   assert.match(list, new RegExp('≈ ' + saved.kcal + ' ккал'));
+});
+
+test('built-in policy no longer mentions the heart-rate monitor (RU/EN/LV)', () => {
+  const legal = fs.readFileSync(path.join(root, 'legal.js'), 'utf8');
+  assert.equal(/пульсометр|heart-rate monitor|pulsa monitors/i.test(legal), false);
 });

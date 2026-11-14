@@ -75,16 +75,12 @@ function libView(){$('#title').textContent='Библиотека';const ch=(k,v,
  app.innerHTML=`<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
  <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}${ch('g','Разминка','🔥 Разминка')}${ch('g','Заминка','🧊 Заминка')}</div>
  <div class="lchips">${ch('p','','Везде')}${Object.entries(EQN).map(([k,v])=>ch('p',k,v)).join('')}</div>
- <div id="llist"></div>
- <details class="card"><summary><b>➕ Своё упражнение</b></summary><input id="cn" placeholder="Название" style="margin:8px 0"><select id="cg">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select><button class="pri full" id="cadd" style="margin-top:8px">Добавить</button>
- ${S.custom.map(e=>`<div class="li"><span class="grow">${esc(e.name)} <span class="mut">· ${esc(e.group)}</span></span><button class="sm" data-cx="${e.id}">✕</button></div>`).join('')}</details>`;
+ <div id="llist"></div>`;
  const list=()=>{const q=LQ.q.trim().toLowerCase(),L=EX.filter(e=>(!q||tr(e.name).toLowerCase().includes(q)||e.name.toLowerCase().includes(q))&&(!LQ.g||e.group===LQ.g)&&(!LQ.p||(META[e.id]||'gdb|').split('|')[0].includes(LQ.p)));
   $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}<span class="eqi" title="${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQN[k]).filter(Boolean).join(', ')}"> · ${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQI[k]||'').join('')}</span>${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
   app.querySelectorAll('[data-lx]').forEach(b=>b.onclick=()=>exOk(b.dataset.lx)?exCard(b.dataset.lx):paywall('Полная библиотека с 3D-видео — в Premium. Бесплатно: 20 базовых упражнений.'))};
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
- app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()});
- $('#cadd').onclick=()=>{const n=$('#cn').value.trim();if(!n)return;S.custom.push({id:'c_'+Date.now(),name:n,group:$('#cg').value});save();toast('Добавлено');libView()};
- app.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>{S.custom=S.custom.filter(e=>e.id!==b.dataset.cx);S.deletedCustom=(S.deletedCustom||[]).concat(b.dataset.cx);save();libView()})}
+ app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()})}
 function exHist(id){const H=[];S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId!==id)return;const d=it.sets.filter(s=>s.done);if(d.length)H.push({t:wo.start,sets:d,b:Math.max(...d.map(s=>e1rm(+s.w,+s.r)))})}));return H.sort((a,b)=>a.t-b.t)}
 function spark(H){const P=H.slice(-12),v=P.map(h=>h.b),mn=Math.min(...v),mx=Math.max(...v),W=300,Hh=70,x=i=>P.length>1?10+i*(W-20)/(P.length-1):W/2,y=b=>mx>mn?Hh-8-(b-mn)/(mx-mn)*(Hh-16):Hh/2;
  return `<svg viewBox="0 0 ${W} ${Hh}" class="spark"><polyline fill="none" stroke="#ff6b35" stroke-width="2.5" points="${P.map((h,i)=>x(i)+','+y(h.b)).join(' ')}"/>${P.map((h,i)=>`<circle cx="${x(i)}" cy="${y(h.b)}" r="3.5" fill="#ff6b35"/>`).join('')}</svg><p class="mut" style="font-size:12px;margin:2px 0 0">Расчётный 1ПМ по лучшему подходу каждой тренировки (${Math.round(mn)}–${Math.round(mx)} кг)</p>`}
