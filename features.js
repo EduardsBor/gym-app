@@ -19,10 +19,11 @@ const exOk=id=>can('library'); // library and videos are never gated (G-005)
 
 // ---- Paywall (DEMO, no real payments)
 function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(!d){d=document.createElement('div');d.id='pw';document.body.append(d)}d.className='';let plan='y';
- const st=premState(),stx=st.tier==='trial'?(st.pre?'<p class="mut" style="text-align:center">Отсчёт начнётся с первой завершённой тренировки.</p>':`<p class="mut" style="text-align:center"><span>Демо: осталось дней —</span> <b>${st.left}</b></p>`):st.tier==='free'?'<p class="mut" style="text-align:center">Демо закончилось. Дневник тренировок остаётся бесплатным.</p>':'';
+ const st=premState(),sub=st.tier==='free'?'Дневник остаётся бесплатным':'14 дней бесплатно, без карты';
+ const stx=st.tier==='trial'?(st.pre?'<p class="mut" style="text-align:center">Отсчёт начнётся с первой завершённой тренировки.</p>':`<p class="mut" style="text-align:center"><span>Демо: осталось дней —</span> <b>${st.left}</b></p>`):st.tier==='free'?'<p class="mut" style="text-align:center">Демо закончилось. Дневник тренировок остаётся бесплатным.</p>':'';
  const draw=()=>{d.innerHTML=`<div class="sheet pwsheet"><div class="row"><span class="badge demo">ДЕМО</span><span class="grow"></span><button id="pwc" aria-label="Закрыть">✕</button></div>
- <div style="text-align:center;font-size:44px">👑</div><h2 style="text-align:center;margin:4px 0">Мой Зал Premium</h2>
- <p style="text-align:center;margin:4px 0"><b>14 дней бесплатно, без карты</b></p>${stx}
+ <div style="text-align:center;font-size:44px">👑</div><h2 style="text-align:center;margin:4px 0">${PREM_NAME}</h2>
+ <p style="text-align:center;margin:4px 0"><b>${sub}</b></p>${stx}
  ${reason?`<p class="mut" style="text-align:center">${esc(reason)}</p>`:''}
  <ul class="pwlist"><li>Программы тренера по анкете</li><li>Разминка и заминка</li><li>Авто-вес, разгрузка и возврат после перерыва</li><li>Видео техники</li><li>Графики, рекорды и 1ПМ</li><li>Объём по мышцам и обхваты тела</li></ul>
  <p class="mut" style="font-size:12px"><b>Всегда бесплатно:</b> свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, «Боль» и ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела.</p>
