@@ -1,0 +1,9 @@
+# Чек-лист выпуска Android (Мой Зал / GymUp)
+
+Публикация в магазин — только по команде Эдуарда.
+
+## Premium / оплата
+- [ ] Перед PAYWALL_ENABLED=true задать PAYWALL_LAUNCH (premium.js, `PREM_CFG`). Иначе падает `test/prelaunch.test.js`; в рантайме запуском станет дата первого запуска сборки на устройстве.
+- [ ] `TEST_BUILD=false` в боевой сборке (режимы `?demo=` игнорируются).
+- [ ] Статус подписки брать с сервера (RevenueCat или Play Billing), а не из `S.premium`.
+- [ ] `node --test test/*.test.js` — всё зелёное.
