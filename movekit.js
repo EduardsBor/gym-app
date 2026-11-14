@@ -139,7 +139,33 @@ const MOVEKIT = {
   "mk-walking-knee-hugs": "walking-knee-hugs.mp4",
   "mk-band-high-face-pull": "band-high-face-pull.mp4",
   "mk-incline-treadmill-walk": "incline-treadmill-walk.mp4",
-  "mk-prone-y-t-raises": "prone-y-t-raises.mp4"
+  "mk-prone-y-t-raises": "prone-y-t-raises.mp4",
+  // v1.2c (D-214, 14.11.2026): 22 new clips in the private bucket + existing clips for new place ids.
+  "adductor-stretch": "adductor-groin-stretch.mp4",
+  "ankle-circles": "seated-ankle-circles.mp4",
+  "assisted-pullup": "machine-assisted-pull-up.mp4",
+  "band-pulldown": "band-kneeling-pulldown.mp4",
+  "calf-bw": "single-leg-standing-calf-raise.mp4",
+  "calf-db": "dumbbell-single-leg-calf-raise.mp4",
+  "chest-wall-stretch": "standing-wall-shoulder-opening-stretch.mp4",
+  "hamstring-sweep": "romanian-deadlift-hamstring-sweeps.mp4",
+  "hip-90-90": "90-90-hip-switches.mp4",
+  "hip-flexor-rock": "half-kneeling-hip-flexor-rock.mp4",
+  "ht-bw": "glute-bridge.mp4",
+  "ht-db": "glute-bridge.mp4",
+  "lc-seated": "seated-leg-curl.mp4",
+  "open-book": "open-book-rotation.mp4",
+  "rdl-band": "band-romanian-deadlift.mp4",
+  "rdl-db": "kickstand-dumbbell-romanian-deadlift.mp4",
+  "rdl-kb": "kettlebell-romanian-deadlift.mp4",
+  "reverse-lunge": "bodyweight-reverse-lunge.mp4",
+  "reverse-lunge-db": "dumbbell-reverse-lunge.mp4",
+  "scap-pullup": "scapular-pull-up.mp4",
+  "shoulder-rolls": "seated-shoulder-rolls-scapular-retraction.mp4",
+  "skull-db": "dumbbell-skullcrusher.mp4",
+  "step-bw": "single-leg-step-down.mp4",
+  "thoracic-rotation": "quadruped-thoracic-rotation.mp4",
+  "wrist-flexor-stretch": "seated-wrist-flexor-stretch.mp4"
 };
 const MK_CACHE = 'moyzal-movekit-v1';
 const MK_TTL_MS = 3600 * 1000;

@@ -50,9 +50,11 @@ const BASES = {
   'mk-incline-treadmill-walk': { d: 'walk-brisk', b: 'walk-brisk' }
 };
 const NEW = ['calf-db', 'calf-bw', 'step-bw', 'skull-db', 'walk-brisk'];
+// v1.2c: clips from movekit-by-place.json; brisk walk at home / bodyweight stays without a clip (Eduards' exception).
+const CLIP = { 'calf-db': 'dumbbell-single-leg-calf-raise.mp4', 'calf-bw': 'single-leg-standing-calf-raise.mp4', 'step-bw': 'single-leg-step-down.mp4', 'skull-db': 'dumbbell-skullcrusher.mp4', 'walk-brisk': '' };
 const arr = x => JSON.parse(JSON.stringify(x));
 
-test('per-place ids exist with the right place labels, cards and no clip yet', () => {
+test('per-place ids exist with the right place labels, cards and their v1.2c clips', () => {
   const { run } = boot();
   const ids = arr(run('EX.map(e => e.id)'));
   assert.equal(new Set(ids).size, ids.length);
@@ -66,7 +68,7 @@ test('per-place ids exist with the right place labels, cards and no clip yet', (
   for (const id of NEW) {
     assert.equal(ids.includes(id), true, id);
     assert.equal(run(`NO_ANIM.has(${JSON.stringify(id)})`), true, id);
-    assert.equal(run(`movekitFile(${JSON.stringify(id)})`), '', id);
+    assert.equal(run(`movekitFile(${JSON.stringify(id)})`), CLIP[id], id);
     for (const T of ['LIB', 'LIB_EN', 'LIB_LV']) assert.equal(run(`${T}[${JSON.stringify(id)}].length`), 3, T + ' ' + id);
     for (const T of ['TECH', 'TECH_EN', 'TECH_LV']) assert.ok(run(`${T}[${JSON.stringify(id)}][0].length`) >= 3, T + ' ' + id);
   }
@@ -204,5 +206,5 @@ test('place.js is loaded after cd.js and before the plan builder, and is precach
   assert.ok(i('cd.js') >= 0 && i('cd.js') < i('place.js') && i('place.js') < i('prog.js') && i('place.js') < i('plan.js'));
   const sw = read('sw.js');
   assert.match(sw, /'place\.js'/);
-  assert.match(sw, /const C='moyzal-v44'/);
+  assert.match(sw, /const C='moyzal-v45'/);
 });

@@ -74,20 +74,20 @@ test('every template id exists and every duration stays within the chosen time',
       for (const m of d.cd.stretch) assert.equal(ids.has(m.id), true, m.id);
     }
   }
-  assert.equal(shorter.length, 39);
+  assert.equal(shorter.length, 31); // v1.2c: shorter_than_selected in programs.json
 });
 
 test('sample days include the trainer warm-up and cool-down', () => {
   const mass = plan({goal: 'mass', level: 'mid', days: 4, len: 60, place: 'g', sex: 'm', prio: [], lim: []});
   const d = mass.days[0];
   assert.equal(d.name, 'Верх A');
-  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,lr,mk-cable-bar-pushdown');
-  assert.equal(mass.timeLabel, '≈56–58 мин');
+  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,lr,bc');
+  assert.equal(mass.timeLabel, '≈54–57 мин');
   assert.equal(d.wu.cardio.id, 'mk-rowing-machine-steady-state');
   assert.equal(Array.from(d.wu.mob, m => m.id).join(','), 'mk-arm-circles-front-back,mk-cat-camel,mk-broomstick-pass-throughs,w_scpull');
   assert.equal(d.wu.ramp[0].exId, 'bp');
   assert.equal(d.cd.cardio.id, 'mk-indoor-cycling-spin');
-  assert.equal(Array.from(d.cd.stretch, m => m.id).join(','), 'stretch-chest-doorway,cd_lat,cd_xbody');
+  assert.equal(Array.from(d.cd.stretch, m => m.id).join(','), 'chest-wall-stretch,dead-hang,shoulder-rolls');
   const loss = plan({goal: 'loss', level: 'nov', days: 3, len: 30, place: 'd', sex: 'm', prio: [], lim: []});
   const e = loss.days[0];
   assert.equal(e.name, 'Фулбоди A');
@@ -97,10 +97,10 @@ test('sample days include the trainer warm-up and cool-down', () => {
   assert.equal(e.wu.mob.length, 3);
   assert.equal(e.cd.cardio, null);
   assert.match(e.cd.note, /заминки/);
-  assert.equal(Array.from(e.cd.stretch, m => m.id).join(','), 'stretch-hamstring');
+  assert.equal(Array.from(e.cd.stretch, m => m.id).join(','), 'hamstring-sweep');
   const nov = plan({goal: 'fit', level: 'nov', days: 5, len: 90, place: 'g', sex: 'f', prio: [], lim: []});
   assert.match(nov.advice, /3–4/);
-  assert.equal(nov.shorter, true);
+  assert.equal(nov.shorter, false); // v1.2c: fit_nov_5_g at 90 min is no longer shorter
 });
 
 test('cool-down cards are in the library without video', () => {
@@ -122,11 +122,11 @@ test('preview and today show warm-up and cool-down for a new plan only', () => {
   const html = ctx.__nodes.get('app').innerHTML;
   assert.match(html, /Разминка/);
   assert.match(html, /Заминка/);
-  assert.match(html, /≈56–58 мин/);
+  assert.match(html, /≈54–57 мин/);
   assert.match(html, /Жим штанги лёжа/);
   run('S.goal="mass";S.days=4;S.prof={goal:"mass",level:"mid",days:4,len:60,place:"g",sex:"m",prio:[],lim:[]};S.program=PV.gen.days;S.next=0;S.workouts=[];today(0)');
   const today = ctx.__nodes.get('app').innerHTML;
   assert.match(today, /Разминка/);
   assert.match(today, /Заминка/);
-  assert.match(today, /cd_lat|Растяжка широчайших/);
+  assert.match(today, /Растяжка груди и плеча у стены/);
 });

@@ -1,12 +1,32 @@
 'use strict';
-// Packs the trainer's programs.json (v1.1) into a minified prog.js. Not shipped to the app.
+// Packs the trainer's programs.json (v1.1 / v1.2c) into a minified prog.js. Not shipped to the app.
+// Usage: node tools/pack-programs.js <programs.json> [prog.js]
+// Deterministic: the same programs.json and app.js always give the same prog.js.
+// The trainer writes the old short ids (tpd, pl, wlk...). The app renamed them to MoveKit ids in PR #13
+// (LEGACY_TO in app.js), so every id is mapped here. wlk (brisk walk) is per place:
+// gym -> incline treadmill walk (MoveKit clip), home / bodyweight -> walk-brisk (no clip, Eduards' exception).
 const fs = require('fs');
-const src = process.argv[2] || '/home/ubuntu/.cursor/projects/agent-repos-gym-app/uploads/programs_c07f.json';
+const path = require('path');
+const root = path.join(__dirname, '..');
+const src = process.argv[2];
+if (!src) { console.error('usage: node tools/pack-programs.js <programs.json> [prog.js]'); process.exit(1); }
 const d = JSON.parse(fs.readFileSync(src, 'utf8'));
+const appSrc = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const legM = /const LEGACY_TO=(\{[^}]*\});/.exec(appSrc);
+if (!legM) throw new Error('LEGACY_TO not found in app.js');
+const LEGACY_TO = Function('return ' + legM[1])();
+const DROP = new Set(['w_scpu']);
+let curPlace = 'g';
+function mapId(id) {
+  if (DROP.has(id)) throw new Error('dropped id in programs: ' + id);
+  if (id === 'wlk') return curPlace === 'g' ? LEGACY_TO.wlk : 'walk-brisk';
+  return LEGACY_TO[id] || id;
+}
 const L = [30, 45, 60, 75, 90];
 const ids = [];
 const idAt = new Map();
 function iid(id) {
+  id = mapId(id);
   if (!idAt.has(id)) { idAt.set(id, ids.length); ids.push(id); }
   return idAt.get(id);
 }
@@ -49,6 +69,7 @@ function aid(t) {
 }
 const T = {};
 for (const [key, t] of Object.entries(d.templates)) {
+  curPlace = key.slice(-1);
   const est = [];
   for (const e of t.duration_estimate) est.push(e.est_min, e.est_max, e.shorter_than_selected ? 1 : 0);
   const days = t.days.map(day => {
@@ -63,10 +84,12 @@ for (const [key, t] of Object.entries(d.templates)) {
   });
   T[key] = [aid(t.advice), est, days];
 }
+curPlace = 'g';
 const SG = {};
 for (const [g, list] of Object.entries(d.priority_rules.slot_groups)) SG[g] = list.map(sid);
 const P = {};
 for (const [place, groups] of Object.entries(d.priority_rules.pools)) {
+  curPlace = place;
   P[place] = {};
   for (const [g, list] of Object.entries(groups)) P[place][g] = list.map(iid);
 }
@@ -75,17 +98,25 @@ for (const [goal, levels] of Object.entries(d.params.sets_reps_rest)) {
   R[goal] = {};
   for (const [lv, row] of Object.entries(levels)) R[goal][lv] = row.a;
 }
-const F = Object.values(d.limit_rules.families).map(list => list.map(iid));
+curPlace = 'g';
+// Families are shared by all places: the brisk walk family member covers both walk ids.
+// v1.2c: only ids from exercise_index (every id the 180 templates use, all with a MoveKit clip) go into families,
+// so the swap fallback never offers a card without a clip (e.g. woodchop).
+const inIndex = id => !d.exercise_index || Object.prototype.hasOwnProperty.call(d.exercise_index, id);
+const famIds = list => list.filter(inIndex).flatMap(id => id === 'wlk' ? [iid(id), iid('walk-brisk')] : [iid(id)]);
+const F = Object.values(d.limit_rules.families).map(famIds);
+const byName = o => { const r = {}; for (const [k, v] of Object.entries(o)) r[mapId(k)] = v; return r; };
 const prog = {
   L, I: ids, D: doses, N: names, V: adviceTexts, S: slots, SG, P, R, F, T,
   U: d.params.unilateral_ids.map(iid),
-  H: {'pl': 1, 'bpl': 2, 'plank-advanced': 1},
-  B: d.limit_rules.families.BRIDGE.map(iid),
-  G: d.limit_rules.families.HINGE.map(iid),
+  H: byName({'pl': 1, 'bpl': 2, 'plank-advanced': 1}),
+  B: famIds(d.limit_rules.families.BRIDGE),
+  G: famIds(d.limit_rules.families.HINGE),
   K: ['jump', 'stair', 'jump-rope'],
-  X: {nlc: 1, dip: 1, hlr: 1, fsq: 1, abw: 1}
+  // Intermediate and up only (level rank 1). rdl-db: trainer D-214 answer (kickstand RDL, intermediate+).
+  X: byName({nlc: 1, dip: 1, hlr: 1, fsq: 1, abw: 1, 'rdl-db': 1})
 };
 const out = 'const PROG=' + JSON.stringify(prog) + ';\n';
-const dest = process.argv[3] || '/agent/repos/gym-app/prog.js';
+const dest = process.argv[3] || path.join(root, 'prog.js');
 fs.writeFileSync(dest, out);
 console.log('bytes', Buffer.byteLength(out), 'ids', ids.length, 'doses', doses.length, 'names', names.length, 'templates', Object.keys(T).length);
