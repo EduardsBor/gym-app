@@ -68,7 +68,7 @@ function boot(stored, withFeatures, cloud) {
   }
   for (const f of files) {
     let src = read(f);
-    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;\n  init();\n})();');
+    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;window.__mzSync=sync;\n  init();\n})();');
     vm.runInContext(src, ctx, { filename: f });
   }
   return { run: code => vm.runInContext(code, ctx), store };
@@ -191,6 +191,40 @@ test('applyRemoteFresh without health consent keeps local it.pain marks, like li
     });
   })()`);
   assert.deepEqual(JSON.parse(ok), { pain1: true, sqPain: false, pain2: true, lim: ['s', 'k'], w: 60 });
+});
+
+test('withdrawing health consent: next sync sends no limitations, pain marks, weight/age; device keeps them', async () => {
+  const CONSENT = { v: 1, at: '2026-11-01T00:00:00Z' };
+  const old = new Date(Date.now() - 864e5).toISOString();
+  // the cloud still holds the copy made with consent
+  const remote = seed({ consentHealth: CONSENT, updatedAt: Date.parse(old) });
+  const cloud = { inserts: [], upserts: [], user: USER, remote: { payload: remote, updated_at: old } };
+  const b = boot(seed({ consentHealth: CONSENT }), true, cloud);
+  for (let i = 0; i < 6; i++) await tick();
+  const first = cloud.upserts.filter(u => u.table === 'user_state').pop().row.payload;
+  assert.deepEqual(first.prof.lim, ['s', 'k']); // with consent they were synced
+  assert.equal(first.weightKg, 80);
+  // withdraw (same as the «Отозвать согласие» button, keeping the measurements)
+  b.run('S.consentHealth=null; save()');
+  cloud.upserts.length = 0;
+  await b.run('__mzSync()');
+  const ups = cloud.upserts.filter(u => u.table === 'user_state');
+  assert.equal(ups.length, 1);
+  const p = ups[0].row.payload; // upsert replaces the whole cloud payload
+  assert.equal(p.consentHealth, null);
+  assert.equal(p.prof.lim, undefined);
+  assert.ok(!JSON.stringify(p.why).includes('Ограничения'));
+  assert.equal(p.workouts[0].items[0].pain, undefined);
+  assert.equal(p.pg.bp.next.note, 'same');
+  assert.equal(p.weightKg, undefined);
+  assert.equal(p.age, undefined);
+  assert.equal(p.body, undefined);
+  // the older cloud copy with consent did not switch consent back on; data stays on the device
+  assert.equal(b.run('S.consentHealth'), null);
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.prof.lim)')), ['s', 'k']);
+  assert.equal(b.run('S.workouts[0].items[0].pain'), true);
+  assert.equal(b.run('S.weightKg'), 80);
+  assert.equal(b.run('S.age'), 40);
 });
 
 test('D-215 mapping: standing single-leg curl, bodyweight -> single-leg glute bridge', () => {

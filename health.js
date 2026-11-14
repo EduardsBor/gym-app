@@ -24,9 +24,9 @@ var MET_MODERATE = 3.5;
 var MET_VIGOROUS = 6;
 var HR_GAP_MS = 20000;
 var HR_SOURCES = ['ble', 'manual', 'healthkit', 'healthconnect'];
-var KCAL_LABEL = '≈ ккал, оценка';
-var HR_CONNECT_LABEL = 'Подключить пульсометр';
-var HR_STORE_NOTE = 'Пульсометр будет доступен в версии из магазина приложений.';
+var KCAL_LABEL = '≈ ккал, примерно';
+// D-208: the Bluetooth heart-rate monitor UI is removed (no connect button, no store-version promise).
+// The hr module stays dormant so old workouts with heart-rate summaries still display; nothing is deleted.
 
 var CARDIO_MET = {
   tm: 8, bike: 6.8, ell: 5, rowm: 7, stair: 9, jump: 8, wlk: 4.3,
@@ -207,15 +207,14 @@ function readWorkoutHealth(w) {
 function historyKcalText(w) {
   var h = readWorkoutHealth(w);
   if (h.kcal == null) return '';
-  return ' · ≈ ' + h.kcal + ' ккал';
+  return ' · ≈ ' + h.kcal + ' ккал, примерно';
 }
 function kcalPhrase(kcal) {
   if (kcal == null || !isFinite(+kcal)) return '';
-  return '≈ ' + Math.round(+kcal) + ' ккал, оценка';
+  return '≈ ' + Math.round(+kcal) + ' ккал, примерно';
 }
 function hrConnectOffer(hasBluetooth, source) {
-  if (source === 'healthkit' || source === 'healthconnect' || hasBluetooth) return 'button';
-  return 'note';
+  return 'none'; // D-208: no heart-rate connection offered
 }
 
 var hr = {
@@ -376,19 +375,8 @@ function statusLine(status) {
 function healthPanelHTML(s) {
   s = s || {};
   var phrase = s.kcal == null ? '—' : hesc(kcalPhrase(s.kcal));
-  var bpm = s.bpm ? hesc(s.bpm) : '—';
-  var ctrl;
-  if (s.status === 'live') {
-    ctrl = '<div class="mut" id="hrstat">' + (s.deviceName ? hesc(s.deviceName) : 'Пульсометр подключён') + '</div><button class="full sm" id="hrdisc" type="button" style="margin-top:8px">Отключить</button>';
-  } else if (s.offer === 'button') {
-    var label = (s.status === 'disconnected' || s.status === 'reconnecting' || s.status === 'error') ? 'Подключить снова' : HR_CONNECT_LABEL;
-    var line = statusLine(s.status);
-    ctrl = '<button class="pri full" id="hrconn" type="button" style="margin-top:8px">' + label + '</button>' + (line ? '<div class="mut" id="hrstat">' + line + '</div>' : '<div class="mut" id="hrstat"></div>');
-  } else {
-    ctrl = '<p class="mut" id="hrnote">' + HR_STORE_NOTE + '</p>';
-  }
   var hint = s.kcal == null ? '<div class="mut">Укажи вес в «Ещё»</div>' : '';
-  return '<div class="card" id="healthcard"><div class="row"><div class="grow"><div class="mut">Энергия</div><b id="kcal" style="font-size:18px">' + phrase + '</b>' + hint + '</div><div style="text-align:right"><div class="mut">' + (s.status === 'live' ? '<span class="hrdot"></span>' : '') + 'Пульс</div><b class="bpm' + (s.bpm ? ' on' : '') + '" id="bpm">' + bpm + '</b><div class="mut">уд/мин</div></div></div>' + ctrl + '</div>';
+  return '<div class="card" id="healthcard"><div class="mut">Энергия</div><b id="kcal" style="font-size:18px">' + phrase + '</b>' + hint + '</div>';
 }
 function healthDetailHTML(w) {
   if (!w) return '';
@@ -458,9 +446,7 @@ function healthSnap(A) {
 function healthPanel() {
   var summary = {};
   if (typeof S !== 'undefined' && S && S.active) summary = summarizeHealth(healthSnap(S.active), healthProfile());
-  var fresh = hr.bpm && (hr.status === 'live' || (hr.lastSampleAt && Date.now() - hr.lastSampleAt < 8000));
-  var hasBle = typeof navigator !== 'undefined' && !!navigator.bluetooth;
-  return healthPanelHTML({ kcal: summary.kcal, bpm: fresh ? hr.bpm : null, status: hr.status, offer: hrConnectOffer(hasBle, hr.source), deviceName: hr.deviceName || '' });
+  return healthPanelHTML({ kcal: summary.kcal });
 }
 function healthTick() {
   if (typeof document === 'undefined') return;

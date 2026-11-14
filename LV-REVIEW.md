@@ -254,3 +254,13 @@ Rows at the end of `i18n/dict3.js` (comment «P-305c»).
 
 - Дневник остаётся бесплатным → **Dienasgrāmata paliek bez maksas**
 
+
+## Prelaunch batch: D-208 calories, P-306 CSV export (need review, D-216)
+
+Rows in `i18n/dict3.js` near «ккал, примерно».
+
+- ккал, примерно → **kcal, aptuveni**
+- Вес нужен для примерной оценки калорий. Оба поля необязательны и хранятся на устройстве. → **Svars vajadzīgs aptuvenam kaloriju novērtējumam. Abi lauki nav obligāti un glabājas šajā ierīcē.**
+- ⬇ Экспорт CSV (история тренировок) → **⬇ Eksportēt CSV (treniņu vēsture)**
+- Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта. → **Tabula Excel/Google izklājlapām. Darbojas bez interneta un bez konta.**
+- CSV headers: Упражнение → **Vingrinājums**, ID упражнения → **Vingrinājuma ID**, Подход → **Pieeja**, Секунды → **Sekundes**, Оценка → **Vērtējums**, да → **jā**

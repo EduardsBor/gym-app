@@ -81,7 +81,7 @@ test('a fresh user has no Premium entitlement and stays free on the second launc
   assert.equal(first.run('S.ownerPremium'), false);
   first.run('S.workouts.push({id:"w1",date:"2026-11-13",ex:[]}); save()');
   const second = boot(JSON.parse(first.store.get('gym')), true);
-  second.run('PREM_CFG.PAYWALL_ENABLED = true');
+  second.run('PREM_CFG.PAYWALL_ENABLED = true; PREM_CFG.PAYWALL_LAUNCH = 1');
   assert.equal(second.run('premTier()'), 'trial');
   second.run('S.demoStart = Date.now() - 15 * 864e5');
   assert.equal(second.run('isPrem()'), false);

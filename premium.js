@@ -39,7 +39,12 @@ try{if(demoAllowed())premUrl(typeof location!=='undefined'&&location.search);els
 const premPos=v=>typeof v==='number'&&isFinite(v)&&v>0;
 function premMergeStart(a,b){a=premPos(a)?a:0;b=premPos(b)?b:0;return a&&b?Math.min(a,b):(a||b||0)}
 function premFirstWorkout(){let t=0;((typeof S!=='undefined'&&S&&S.workouts)||[]).forEach(w=>{t=premMergeStart(t,w&&(w.end||w.start))});return t}
-function premLaunchAt(){const L=PREM_CFG.PAYWALL_LAUNCH;if(L==null||L==='')return 0;const t=typeof L==='number'?L:Date.parse(L);return premPos(t)?t:0}
+// Launch safeguard: PAYWALL_LAUNCH must be set before PAYWALL_ENABLED=true (test/prelaunch.test.js fails otherwise).
+// If it is still empty with the paywall on, launch = the first run of this build on this device (stored locally, never in S).
+const PREM_LAUNCH_KEY='gymPwLaunch';
+function premLaunchFallback(){try{const v=+localStorage.getItem(PREM_LAUNCH_KEY);if(premPos(v))return v;const n=Date.now();localStorage.setItem(PREM_LAUNCH_KEY,String(n));return n}catch(e){return Date.now()}}
+function premLaunchAt(){const L=PREM_CFG.PAYWALL_LAUNCH;if(L==null||L===''){return PREM_CFG.PAYWALL_ENABLED?premLaunchFallback():0}
+ const t=typeof L==='number'?L:Date.parse(L);return premPos(t)?t:(PREM_CFG.PAYWALL_ENABLED?premLaunchFallback():0)}
 function demoStartAt(now){const d=demoTier();now=now||Date.now();
  if(d==='trial')return now-3600e3;                               // review: day 1
  if(d==='trialend')return now-(DEMO_DAYS-DEMO_WARN_DAYS)*PREM_DAY; // review: 2 days left

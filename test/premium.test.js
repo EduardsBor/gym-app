@@ -64,7 +64,8 @@ const demo = (b, t) => b.run(`setDemoTier(${JSON.stringify(t)})`);
 const SUB = ['programs', 'warmup', 'cooldown', 'autoWeight', 'deload', 'breakReturn', 'video', 'charts', 'prs', 'oneRM', 'muscleVolume', 'girths'];
 const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight'];
 const can = (b, f) => b.run(`can(${JSON.stringify(f)})`);
-const gateOn = b => b.run('PREM_CFG.PAYWALL_ENABLED=true');
+// launch long ago = no clamp; the empty-launch fallback is tested separately
+const gateOn = b => b.run('PREM_CFG.PAYWALL_ENABLED=true; PREM_CFG.PAYWALL_LAUNCH=1');
 
 test('gate is off until Play Billing: every real user (fresh, old, after 14 days) gets everything', () => {
   const now = Date.now();
@@ -204,11 +205,15 @@ test('existing users get 14 days from PAYWALL_LAUNCH; new users count from the f
   assert.equal(st2.tier, 'trial');
   assert.equal(st2.start, first + 3600e3);
   assert.equal(st2.left, 12);
-  // launch unset: a 90-day history still ends the demo (clamp only when a launch date is set)
+  // launch unset with the paywall on (safeguard): launch = first run on this device, so old users still get 14 days
   const u = boot(seed({ demoStart: old, workouts: [hist(old, 60, [10, 10, 10])] }));
-  gateOn(u);
+  u.run('PREM_CFG.PAYWALL_ENABLED=true');
   assert.equal(u.run('PREM_CFG.PAYWALL_LAUNCH'), null);
-  assert.equal(u.run('premTier()'), 'free');
+  assert.equal(u.run('premTier()'), 'trial');
+  const fb = +u.store.get('gymPwLaunch');
+  assert.ok(fb > 0 && Math.abs(fb - now) < 60e3);
+  assert.equal(u.run(`premState(${fb + 15 * DAY}).tier`), 'free'); // the stored date is reused, not reset to "now"
+  assert.equal(u.run('S.demoStart'), old);
 });
 
 test('without subscription movekit-sign is never called: no video, no poster, no direct sign', async () => {
@@ -343,5 +348,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v52'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v53'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

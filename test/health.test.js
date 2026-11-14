@@ -161,8 +161,8 @@ test('history keeps old records and only adds optional health fields', () => {
   assert.equal(JSON.stringify(saved.hr.zones), JSON.stringify([10, 20, 30, 40, 50]));
   assert.equal(saved.hr.hrMax, 184.2);
   assert.equal(saved.items.length, 1);
-  assert.equal(run('historyKcalText(workout)'), ' · ≈ 300 ккал');
-  assert.match(run('kcalPhrase(workout.kcal)'), /≈ 300 ккал, оценка/);
+  assert.equal(run('historyKcalText(workout)'), ' · ≈ 300 ккал, примерно');
+  assert.match(run('kcalPhrase(workout.kcal)'), /≈ 300 ккал, примерно/);
 
   const bad = { id: 'x', items: [] };
   ctx.bad = bad;
@@ -189,10 +189,10 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
   assert.equal(typeof run('hr.connect'), 'function');
   assert.equal(typeof run('hr.disconnect'), 'function');
   assert.equal(JSON.stringify(run('HR_SOURCES')), JSON.stringify(['ble', 'manual', 'healthkit', 'healthconnect']));
-  assert.equal(run('hrConnectOffer(false, "ble")'), 'note');
-  assert.equal(run('hrConnectOffer(true, "ble")'), 'button');
-  assert.equal(run('hrConnectOffer(false, "healthkit")'), 'button');
-  assert.equal(run('hrConnectOffer(false, "healthconnect")'), 'button');
+  // D-208: no heart-rate connection is offered anywhere
+  assert.equal(run('hrConnectOffer(false, "ble")'), 'none');
+  assert.equal(run('hrConnectOffer(true, "ble")'), 'none');
+  assert.equal(run('hrConnectOffer(false, "healthconnect")'), 'none');
   assert.throws(() => run('hr.use({source:"fitbit", connect:function(){}, disconnect:function(){}})'), /bad-source/);
 
   let stopped = 0;
@@ -216,23 +216,20 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
   assert.equal(run('parseHeartRateMeasurement(u16)'), 180);
   assert.equal(run('parseHeartRateMeasurement(badView)'), null);
 
-  const note = run('healthPanelHTML({kcal:null,bpm:null,status:"idle",offer:"note",deviceName:""})');
-  const button = run('healthPanelHTML({kcal:12,bpm:null,status:"idle",offer:"button",deviceName:""})');
-  const live = run('healthPanelHTML({kcal:186,bpm:132,status:"live",offer:"note",deviceName:"Polar H10"})');
-  assert.match(note, /Пульсометр будет доступен в версии из магазина приложений/);
-  assert.equal(note.includes('Подключить пульсометр'), false);
-  assert.match(button, /Подключить пульсометр/);
-  assert.equal(button.includes('магазина приложений'), false);
-  assert.match(live, /132/);
-  assert.match(live, /≈ 186 ккал, оценка/);
-  assert.match(live, /Polar H10/);
-  assert.equal(live.includes('Подключить пульсометр'), false);
+  const none = run('healthPanelHTML({kcal:null})');
+  const live = run('healthPanelHTML({kcal:186,bpm:132,status:"live",offer:"button",deviceName:"Polar H10"})');
+  for (const h of [none, live]) {
+    assert.equal(/Пульсометр|пульсометр|магазина приложений|Пульс</.test(h), false);
+    assert.equal(h.includes('hrconn'), false);
+  }
+  assert.match(live, /≈ 186 ккал, примерно/);
+  assert.match(none, /Укажи вес/);
 });
 
 test('service worker cache is v44 and precaches health.js and movekit.js', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(sw, /moyzal-v52/);
+  assert.match(sw, /moyzal-v53/);
   assert.equal(sw.includes('moyzal-v42'), false);
   assert.equal(sw.charCodeAt(0) === 0xfeff, false);
   assert.match(sw, /moyzal-anim3d-v14/);
@@ -290,7 +287,7 @@ test('a finished workout stores optional health fields and an old workout stays 
   go('S.workouts=' + JSON.stringify([old]));
   go('startW(0)');
   let html = appCtx.__nodes.get('app').innerHTML;
-  assert.match(html, /Пульсометр будет доступен в версии из магазина приложений/);
+  assert.equal(html.includes("магазина приложений"), false); // D-208: no store-version promise
   assert.equal(html.includes('Подключить пульсометр'), false);
 
   go(`
@@ -309,14 +306,14 @@ test('a finished workout stores optional health fields and an old workout stays 
   `);
   go('workoutView()');
   html = appCtx.__nodes.get('app').innerHTML;
-  assert.match(html, /Polar H10/);
-  assert.match(html, /140/);
-  assert.match(html, /ккал, оценка/);
+  // D-208: no heart-rate UI during the workout, calories labelled approximate
+  assert.equal(html.includes('Polar H10'), false);
+  assert.match(html, /ккал, примерно/);
   assert.equal(html.includes('Подключить пульсометр'), false);
   appCtx.navigator.bluetooth = { requestDevice() { return Promise.resolve(); } };
   go('hr.status="idle"; hr.bpm=null; workoutView()');
   html = appCtx.__nodes.get('app').innerHTML;
-  assert.match(html, /Подключить пульсометр/);
+  assert.equal(html.includes('Подключить пульсометр'), false);
   assert.equal(html.includes('магазина приложений'), false);
 
   const programIds = go('S.program[0].items.map(function(it){return it.exId}).join(",")');
