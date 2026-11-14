@@ -1,5 +1,5 @@
 'use strict';
-// P-301: auto-weight wired into the app (startW prefill, finish -> S.pg, equipment profile). History is not rewritten.
+// P-305b: Premium model v3 — 14-day demo from the first completed workout, free diary forever, subscription features.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -9,7 +9,7 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
-function boot(stored, withFeatures) {
+function boot(stored, extra) {
   const store = new Map();
   if (stored !== undefined) store.set('gym', JSON.stringify(stored));
   const nodes = new Map();
@@ -35,6 +35,7 @@ function boot(stored, withFeatures) {
       querySelectorAll() { return []; }, addEventListener() {}, createElement() { return el(); }
     }
   };
+  Object.assign(g, extra || {});
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
   const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'movekit.js'];
@@ -60,195 +61,227 @@ function finish(b, reps, feel, pain) {
    const d=A.items.map(it=>({...it,sets:it.sets.filter(s=>s.done)}));A.items=d;S.workouts.push(A);S.active=null;awFinish(A);save()})()`);
 }
 const demo = (b, t) => b.run(`setDemoTier(${JSON.stringify(t)})`);
-const PREMIUM_ONLY = ['autoWeightExact', 'deload', 'breakReturn', 'programDays6', 'programsAll', 'programSwitch', 'customTemplate', 'chartsFull', 'prHistory', 'muscleVolume', 'equipProfiles', 'bodyGirths'];
-const NEVER = ['pain', 'limitations', 'painSwap', 'warmup', 'cooldown', 'sync', 'exportCsv', 'video', 'library', 'journal', 'prevInField', 'prBanner'];
+const SUB = ['programs', 'warmup', 'cooldown', 'autoWeight', 'deload', 'breakReturn', 'video', 'charts', 'prs', 'oneRM', 'muscleVolume', 'girths'];
+const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight'];
+const can = (b, f) => b.run(`can(${JSON.stringify(f)})`);
+const gateOn = b => b.run('PREM_CFG.PAYWALL_ENABLED=true');
 
-test('gate is off until the Android build: every real user (fresh or old) gets everything', () => {
-  for (const st of [undefined, seed(), seed({ ownerPremium: true })]) {
+test('gate is off until Play Billing: every real user (fresh, old, after 14 days) gets everything', () => {
+  const now = Date.now();
+  for (const st of [undefined, seed(), seed({ demoStart: now - 60 * DAY, workouts: [hist(now - 60 * DAY, 60, [10, 10, 10])] })]) {
     const b = boot(st);
     assert.equal(b.run('PREM_CFG.PAYWALL_ENABLED'), false);
+    assert.equal(b.run('premTier()'), 'open');
     assert.equal(b.run('isPremium()'), true);
-    assert.equal(b.run('isPrem()'), true);
-    for (const f of PREMIUM_ONLY.concat(NEVER)) assert.equal(b.run(`can(${JSON.stringify(f)})`), true, f);
-    assert.equal(b.run('chartFrom()'), 0);
+    for (const f of SUB.concat(NEVER)) assert.equal(can(b, f), true, f);
+    assert.equal(b.run('premNextMoment()'), null); // no automatic paywall for real users
   }
 });
 
-test('one feature table: premium-only flags and never-gated flags (incl. P-302/P-303 placeholders)', () => {
+test('one feature table: subscription vs free forever; v1 flags are gone', () => {
   const b = boot(seed());
-  for (const f of PREMIUM_ONLY) assert.equal(b.run(`FEATURES[${JSON.stringify(f)}]`), 'premium', f);
+  for (const f of SUB) assert.equal(b.run(`FEATURES[${JSON.stringify(f)}]`), 'sub', f);
   for (const f of NEVER) { assert.equal(b.run(`FEATURES[${JSON.stringify(f)}]`), 'free', f); assert.ok(b.run(`NEVER_GATED.includes(${JSON.stringify(f)})`), f); }
+  for (const old of ['autoWeightArrow', 'programDays6', 'programSwitch', 'charts90', 'chartsFull', 'equipProfiles', 'bodyGirths']) assert.equal(b.run(`${JSON.stringify(old)} in FEATURES`), false, old);
+  const p = read('premium.js') + read('features.js') + read('autow.js') + read('app.js');
+  for (const gone of ['PREM_BLOCK_DAYS', 'blockEnded', 'awDir', 'AW_DIR', 'chartFrom', 'S.progStart=', 'Пора прибавить']) assert.equal(p.includes(gone), false, gone);
 });
 
-test('demo Free: premium features closed, never-gated features stay open', () => {
+test('demo: 14 days from the FIRST COMPLETED workout; before it full access; then free', () => {
+  const now = Date.now();
+  const b = boot(seed()); gateOn(b);
+  let st = b.run('premState()');
+  assert.equal(st.tier, 'trial'); assert.equal(st.pre, true); // not started yet: full access
+  assert.equal(can(b, 'programs'), true);
+  b.run(`S.workouts=[${JSON.stringify(hist(now - 5 * DAY, 60, [10, 10, 10]))}]`);
+  st = b.run('premState()');
+  assert.equal(st.tier, 'trial'); assert.equal(st.left, 10);
+  b.run(`S.workouts.unshift(${JSON.stringify(hist(now - 20 * DAY, 60, [10, 10, 10]))})`);
+  assert.equal(b.run('premTier()'), 'free');
+  for (const f of SUB) assert.equal(can(b, f), false, f);
+  for (const f of NEVER) assert.equal(can(b, f), true, f);
+  b.run('S.premium=true'); assert.equal(b.run('premTier()'), 'premium');
+  b.run('S.premium=false;S.ownerPremium=true'); assert.equal(b.run('premTier()'), 'premium');
+});
+
+test('demo start is stored once (first completed workout) and only ever moves earlier', () => {
+  const now = Date.now();
   const b = boot(seed());
-  demo(b, 'free');
-  assert.equal(b.run('isPremium()'), false);
-  for (const f of PREMIUM_ONLY) assert.equal(b.run(`can(${JSON.stringify(f)})`), false, f);
-  for (const f of NEVER) assert.equal(b.run(`can(${JSON.stringify(f)})`), true, f);
-  // library and every video stay open
-  assert.equal(b.run('exOk("bp") && exOk("mk-front-plank") && exOk("sglb")'), true);
-  demo(b, 'premium');
-  assert.equal(b.run('isPremium()'), true);
-  demo(b, 'off');
-  assert.equal(b.run('isPremium()'), true);
+  b.run(`premMarkDemo({start:${now - 2 * DAY},end:${now - 2 * DAY + 3600e3}})`);
+  assert.equal(b.run('S.demoStart'), now - 2 * DAY + 3600e3);
+  b.run(`premMarkDemo({start:${now},end:${now + 1}})`);
+  assert.equal(b.run('S.demoStart'), now - 2 * DAY + 3600e3); // a later workout never moves it
+  assert.equal(b.run(`premMergeStart(${now},${now - DAY})`), now - DAY);
+  assert.equal(b.run(`premMergeStart(0,${now})`), now);
+  assert.equal(b.run(`premMergeStart(undefined,null)`), 0);
+  // stored date earlier than history (e.g. history deleted) still counts
+  b.run(`S.demoStart=${now - 30 * DAY}`); gateOn(b);
+  assert.equal(b.run('premTier()'), 'free');
 });
 
-test('demo tier via ?demo=free in the URL, stored outside user data', () => {
-  const b = boot(seed());
-  const s = b.run('localStorage.getItem("gym")');
-  assert.equal(b.run('premUrl("?x=1&demo=free")'), 'free');
-  assert.equal(b.store.get('gymDemoTier'), 'free');
-  assert.equal(b.run('localStorage.getItem("gym")'), s);
+test('sync keeps the earliest demo start (account and device), never a later one', () => {
+  const s = read('sync.js');
+  assert.match(s, /function keepEarliestDemo\(a,b\)\{const m=\[a,b\]\.filter\(x=>typeof x==='number'&&isFinite\(x\)&&x>0\);if\(m\.length\) S\.demoStart=Math\.min\(\.\.\.m\)\}/);
+  assert.match(s, /ds=S\.demoStart;\n    Object\.keys\(R\)\.forEach\(k=>\{S\[k\]=R\[k\]\}\);\n    keepEarliestDemo\(ds,R\.demoStart\);/);
+  assert.match(s, /keepEarliestDemo\(S\.demoStart,R\.demoStart\);/);
+  // payload keeps demoStart (only owner/active/install/health fields are stripped)
+  const pay = /function payloadOf\(src\)\{[\s\S]*?return p;\n  \}/.exec(s)[0];
+  assert.equal(pay.includes('demoStart'), false);
+  // run the merge helper itself
+  const fn = /function keepEarliestDemo[^\n]*/.exec(s)[0];
+  const ctx = vm.createContext({ S: { demoStart: 500 } });
+  vm.runInContext(fn + ';keepEarliestDemo(S.demoStart,300)', ctx); assert.equal(ctx.S.demoStart, 300);
+  vm.runInContext('keepEarliestDemo(S.demoStart,900)', ctx); assert.equal(ctx.S.demoStart, 300);
+  vm.runInContext('S.demoStart=undefined;keepEarliestDemo(S.demoStart,700)', ctx); assert.equal(ctx.S.demoStart, 700);
+  vm.runInContext('S.demoStart=undefined;keepEarliestDemo(undefined,undefined)', ctx); assert.equal(ctx.S.demoStart, undefined);
 });
 
-test('paywall enabled: entitlement decides; demo overrides only on this device', () => {
-  const b = boot(seed());
-  b.run('PREM_CFG.PAYWALL_ENABLED=true');
-  assert.equal(b.run('isPremium()'), false);
-  b.run('S.premium=true'); assert.equal(b.run('isPremium()'), true);
-  b.run('S.premium=false;S.ownerPremium=true'); assert.equal(b.run('isPremium()'), true);
-  b.run('S.ownerPremium=false'); demo(b, 'premium'); assert.equal(b.run('isPremium()'), true);
-  demo(b, 'off'); assert.equal(b.run('isPremium()'), false);
+test('finishing a workout records the demo start; history and exercise ids unchanged', () => {
+  const now = Date.now();
+  const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [10, 10, 9])] }));
+  const hist0 = b.run('JSON.stringify(S.workouts)');
+  b.run('startW(0)'); finish(b, [12, 12, 12], 'easy');
+  b.run('awMoment(S.workouts[S.workouts.length-1])');
+  assert.equal(b.run('S.demoStart'), now - 3 * DAY + 3600e3); // earliest completed workout wins
+  assert.equal(b.run('JSON.stringify(S.workouts.slice(0,1))'), hist0);
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.workouts.map(w=>w.items.map(i=>i.exId)))')), [['bp'], ['bp', 'mk-front-plank']]);
 });
 
-test('toggling the demo tier and checking access never changes user data', () => {
+test('review modes ?demo=free|premium|trial|trialend|off live outside user data', () => {
   const now = Date.now();
   const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [10, 10, 9])], body: [{ id: 'b1', date: '2026-11-01', weight: 80, waist: 85 }], consentHealth: { v: 1, at: '2026-11-01' } }));
   const before = b.run('JSON.stringify(S)'), stored = b.store.get('gym');
-  for (const t of ['free', 'premium', 'off', 'free']) {
-    demo(b, t);
-    b.run('isPremium();can("chartsFull");can("bodyGirths");chartFrom();premProgLock(S.prof,"quiz");blockEnded()');
-  }
+  assert.equal(b.run('premUrl("?x=1&demo=trialend")'), 'trialend'); assert.equal(b.store.get('gymDemoTier'), 'trialend');
+  let st = b.run('premState()'); assert.equal(st.tier, 'trial'); assert.equal(st.left, 2);
+  assert.equal(b.run('premUrl("?demo=trial")'), 'trial');
+  st = b.run('premState()'); assert.equal(st.tier, 'trial'); assert.equal(st.left, 14);
+  assert.equal(b.run('premUrl("?demo=free")'), 'free'); assert.equal(b.run('premTier()'), 'free');
+  assert.equal(b.run('premUrl("?demo=premium")'), 'premium'); assert.equal(b.run('premTier()'), 'premium');
+  assert.equal(b.run('premUrl("?demo=off")'), 'off'); assert.equal(b.store.has('gymDemoTier'), false); assert.equal(b.run('premTier()'), 'open');
+  for (const t of ['free', 'trial', 'trialend', 'premium', 'off']) { demo(b, t); b.run('isPremium();can("girths");premState();premNextMoment();premProgLock()'); }
   assert.equal(b.run('JSON.stringify(S)'), before);
   assert.equal(b.store.get('gym'), stored);
 });
 
-test('auto-weight Free: previous weight in the field, only an arrow, no number; feel still recorded', () => {
+test('without subscription movekit-sign is never called: no video, no poster, no direct sign', async () => {
+  const calls = [];
+  const b = boot(seed(), {
+    MZ_SB: { url: 'https://example.test', anon: 'anon-test' },
+    fetch: async (url) => { calls.push(String(url)); return { ok: true, status: 200, json: async () => ({ signedUrl: '/object/sign/movekit/x?token=t' }), blob: async () => new Blob(['x']) }; }
+  });
+  demo(b, 'free');
+  // no markup that would start a load
+  assert.equal(b.run('animMedia("bp")').includes('data-mk'), false);
+  assert.match(b.run('animMedia("bp")'), /data-pw=/);
+  assert.equal(b.run('animThumb("bp")').includes('data-mk-poster'), false);
+  assert.equal(b.run('animPosterBox("bp")'), '');
+  // and even if called directly, nothing is signed
+  await assert.rejects(b.run('movekitSignPath("barbell-bench-press.mp4")'), /locked/);
+  await b.run('movekitSignedUrl("bp").catch(()=>null)');
+  const v = { isConnected: true, dataset: { mk: 'bp', mkPoster: 'bp' }, removed: 0, remove() { this.removed++; }, play() { return Promise.resolve(); } };
+  b.run('globalThis.__v=null'); b.run('(v)=>{globalThis.__v=v}')(v);
+  await b.run('loadMovekit(__v)'); assert.equal(v.removed, 1);
+  const p = { isConnected: true, dataset: { mkPoster: 'bp' }, classList: { contains: () => false } };
+  b.run('(p)=>{globalThis.__p=p}')(p);
+  await b.run('loadMovekitPoster(__p)'); assert.equal(p.dataset.mkPosterState, 'fail');
+  b.run('startAnim(__v)'); assert.equal(v.removed, 2);
+  assert.deepEqual(calls, []);
+  // trial and paid users do sign (sanity)
+  demo(b, 'trial');
+  assert.match(b.run('animMedia("bp")'), /data-mk="bp"/);
+  const url = await b.run('movekitSignPath("barbell-bench-press.mp4")');
+  assert.match(url, /sign/); assert.equal(calls.length, 1); assert.match(calls[0], /functions\/v1\/movekit-sign$/);
+});
+
+test('free forever after the demo: diary, sets, previous weight and reps, pain, history stay open', () => {
   const now = Date.now();
-  const mk = () => boot(seed({ workouts: [hist(now - 3 * DAY, 60, [10, 10, 9])] }));
-  const free = mk(); demo(free, 'free');
-  const hist0 = free.run('JSON.stringify(S.workouts)');
-  free.run('startW(0)');
-  finish(free, [12, 12, 12], 'easy');
-  assert.equal(free.run('JSON.stringify(S.workouts.slice(0,1))'), hist0);
-  assert.equal(free.run('S.workouts[1].items[0].feel'), 'easy');
-  assert.equal(free.run('S.pg.bp.next.weight'), 62.5); // progression state keeps running
-  free.run('startW(0)');
-  assert.deepEqual(JSON.parse(free.run('JSON.stringify(S.active.items[0].sets.map(s=>s.w))')), [12, 12, 12].map(() => 60));
-  assert.deepEqual(JSON.parse(free.run('JSON.stringify(S.active.items[0].sets.map(s=>s.r))')), [12, 12, 12]);
-  const h = free.run('awSugHTML(S.active.items[0],0)');
-  assert.match(h, /Пора прибавить ↑/);
-  assert.equal(/62[.,]5|кг/.test(h), false);
-  assert.match(free.run('awFeelHTML(Object.assign({},S.active.items[0],{sets:[{done:true}]}),0)'), /легко/);
-
-  const prem = mk(); demo(prem, 'premium');
-  prem.run('startW(0)'); finish(prem, [12, 12, 12], 'easy'); prem.run('startW(0)');
-  assert.deepEqual(JSON.parse(prem.run('JSON.stringify(S.active.items[0].sets.map(s=>s.w))')), [62.5, 62.5, 62.5]);
-  assert.match(prem.run('awSugHTML(S.active.items[0],0)'), /62\.5/);
+  const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [10, 10, 9])] }));
+  demo(b, 'free');
+  const hist0 = b.run('JSON.stringify(S.workouts)'), next0 = b.run('S.next');
+  b.run('premStartFree()');
+  assert.equal(b.run('S.active.dayName'), 'Своя тренировка');
+  assert.equal(b.run('S.active.warm'), null); assert.equal(b.run('S.active.cool'), null); // warm-up/cool-down: subscription
+  assert.equal(b.run('S.active.items.length'), 0);
+  // own exercise from the list → previous weight and reps prefilled, no auto-weight suggestion
+  b.run('S.active.items.push({exId:"bp",ns:3,rest:120,min:8,max:12,sets:[0,0,0].map(()=>({w:"",r:12,done:false}))});awApply(S.active.items[0],null)');
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.active.items[0].sets.map(s=>[s.w,s.r]))')), [[60, 10], [60, 10], [60, 9]]);
+  assert.equal(b.run('S.active.items[0].sug'), null);
+  const h = b.run('awSugHTML(Object.assign(S.active.items[0],{pain:true}),0)');
+  assert.match(h, /Боль/); assert.equal(/Авто-вес|↑|↓/.test(h), false);
+  // finishing keeps the planned day and history
+  b.run('const A=S.active;A.items[0].sets.forEach(s=>s.done=true);A.end=Date.now();S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null');
+  assert.equal(b.run('S.next'), next0);
+  assert.equal(b.run('JSON.stringify(S.workouts.slice(0,1))'), hist0);
 });
 
-test('auto-weight arrow directions: up / hold / down', () => {
-  const b = boot(seed());
-  assert.equal(b.run('awDir({note:"inc",weight:62.5},60)'), 'up');
-  assert.equal(b.run('awDir({note:"same",weight:60},60)'), 'hold');
-  assert.equal(b.run('awDir({note:"miss3",weight:55},60)'), 'down');
-  assert.equal(b.run('awDir({note:"same",weight:55},60)'), 'down');
-  assert.equal(b.run('AW_DIR.down'), 'Сбавь ↓');
-});
-
-test('deload is Premium: Free gets no deload week and S.dl is not written', () => {
+test('subscription features after the demo: programs read-only, auto-weight, deload, charts, PRs, girths', () => {
   const now = Date.now();
-  const st = seed({ pgSince: now - 36 * DAY, workouts: [hist(now - 40 * DAY, 60, [10, 10, 10]), hist(now - 2 * DAY, 80, [10, 10, 10])] });
-  const f = boot(st); demo(f, 'free'); f.run('startW(0)');
-  assert.equal(f.run('S.active.dl'), null);
-  assert.equal(f.run('S.dl'), undefined);
-  assert.equal(f.run('S.active.items[0].sets.length'), 3);
-  const p = boot(st); demo(p, 'premium'); p.run('startW(0)');
-  assert.equal(p.run('S.active.dl'), 'scheduled');
+  const st = seed({ pgSince: now - 36 * DAY, consentHealth: { v: 1, at: '2026-11-01' }, body: [{ id: 'b1', date: '2026-11-01', weight: 80, waist: 85 }], workouts: [hist(now - 40 * DAY, 60, [10, 10, 10]), hist(now - 2 * DAY, 80, [10, 10, 10])] });
+  const f = boot(st); demo(f, 'free');
+  assert.match(f.run('premProgLock()'), /по подписке/);
+  f.run('startW(0)');
+  assert.equal(f.run('S.active.dl'), null); // no deload
+  assert.equal(f.run('S.active.items[0].sug'), null); // no auto-weight
+  assert.deepEqual(JSON.parse(f.run('JSON.stringify(S.active.items[0].sets.map(s=>s.w))')), [80, 80, 80]); // previous weight only
+  f.run('S.active=null');
+  assert.match(f.run('volBadges()'), /по подписке/);
+  f.run('globalThis.__app=0;document.body.append=function(){globalThis.__app++}');
+  f.run('celebrate("x",{t:"",o:"",n:""})'); assert.equal(f.run('__app'), 0); // no PR celebration without subscription
+  f.run('progress()'); assert.match(f.run('app.innerHTML'), /Графики и рекорды/);
+  const body0 = f.run('JSON.stringify(S.body)');
+  f.run('chart=function(){};bM="waist";body()'); assert.equal(f.run('bM'), 'weight'); assert.equal(f.run('JSON.stringify(S.body)'), body0);
+  const p = boot(st); demo(p, 'premium');
+  assert.equal(p.run('premProgLock()'), '');
+  p.run('startW(0)'); assert.equal(p.run('S.active.dl'), 'scheduled');
+  assert.match(p.run('volBadges()'), /badge/);
 });
 
-test('pain stays free: Free still records pain and lowers the next weight; warning shown', () => {
-  const b = boot(seed({ workouts: [hist(Date.now() - 2 * DAY, 60, [10, 10, 10])] }));
-  demo(b, 'free'); b.run('startW(0)');
-  finish(b, [12, 12, 12], 'easy', true);
-  assert.equal(b.run('S.workouts[S.workouts.length-1].items[0].pain'), true);
-  assert.equal(b.run('S.pg.bp.next.weight'), 52.5);
-  b.run('startW(0)');b.run('S.active.items[0].pain=true');
-  assert.match(b.run('awSugHTML(S.active.items[0],0)'), /Боль/);
+test('trial: programs, warm-up and auto-weight are open; sign-in offer before the first workout', () => {
+  const b = boot(seed()); demo(b, 'trial');
+  for (const f of SUB) assert.equal(can(b, f), true, f);
+  const s = read('features.js');
+  assert.match(s, /st\.tier==='trial'&&!premFirstWorkout\(\)&&!hide&&!\(typeof mzSignedIn==='function'&&mzSignedIn\(\)\)/);
+  assert.match(read('sync.js'), /window\.mzSignedIn=\(\)=>!!user;/);
 });
 
-test('charts: Free 90 days, Premium full history', () => {
-  const b = boot(seed()); demo(b, 'free');
-  const cf = b.run('chartFrom()');
-  assert.ok(Math.abs(Date.now() - 90 * DAY - cf) < 5000);
-  demo(b, 'premium'); assert.equal(b.run('chartFrom()'), 0);
-});
-
-test('programs: Free = 1 questionnaire program 2–5 days, new one after the block; Premium any time', () => {
+test('paywall moments: first increase, 3rd demo workout, 2 days before the end; once each; never mid-workout', () => {
   const now = Date.now();
-  const b = boot(seed({ progStart: now - 10 * DAY })); demo(b, 'free');
-  assert.match(b.run('premProgLock({days:3},"quiz")'), /после окончания блока/);
-  assert.match(b.run('premProgLock({days:3},"catalog")'), /Premium/);
-  assert.match(b.run('premProgLock({days:6},"quiz")'), /6 тренировок/);
-  b.run(`S.progStart=${now - 57 * DAY}`);
-  assert.equal(b.run('premProgLock({days:5},"quiz")'), '');
-  b.run('delete S.progStart'); // older data without a block start: never locked out
-  assert.equal(b.run('premProgLock({days:4},"onb")'), '');
-  b.run('S.program=null;S.progStart=Date.now()');
-  assert.equal(b.run('premProgLock({days:2},"quiz")'), '');
-  demo(b, 'premium');
-  b.run(`S.program=[{name:'A',items:[]}];S.progStart=${now}`);
-  assert.equal(b.run('premProgLock({days:6},"catalog")'), '');
-});
-
-test('body: Free keeps only body weight (other values are hidden, not deleted), 90-day range', () => {
-  const b = boot(seed({ consentHealth: { v: 1, at: '2026-11-01' }, body: [{ id: 'b1', date: '2026-11-01', weight: 80, waist: 85 }] }));
-  const before = b.run('JSON.stringify(S.body)');
-  b.run("chart=function(){}");
-  demo(b, 'free'); b.run('bM="waist";bR=0;body()');
-  assert.equal(b.run('bM'), 'weight'); assert.equal(b.run('bR'), 90);
-  assert.equal(b.run('JSON.stringify(S.body)'), before);
-  demo(b, 'premium'); b.run('bM="waist";bR=0;body()');
-  assert.equal(b.run('bM'), 'waist'); assert.equal(b.run('bR'), 0);
-});
-
-test('no paywall in the middle of a workout; natural moments only after it', () => {
-  const b = boot(seed({ workouts: [hist(Date.now() - 2 * DAY, 60, [10, 10, 10])] })); demo(b, 'free');
-  b.run('startW(0)');
-  assert.equal(b.run('paywall("x")'), false);
-  assert.equal(b.run('premMoment("plateau")'), false);
-  assert.equal(b.run('paywall("",{force:1})'), true);
+  const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [12, 12, 12])] })); demo(b, 'trial');
+  b.run('startW(0)'); finish(b, [12, 12, 12], 'easy'); b.run('startW(0)');
+  assert.equal(b.run('S.active.items[0].sug.note'), 'inc');
+  assert.equal(b.run('premNextMoment()'), 'inc'); // auto-weight suggested +2.5 kg → pending
+  assert.equal(b.run('paywall("x")'), false); assert.equal(b.run('premMoment()'), false); // never during the workout
   b.run('S.active=null');
-  assert.equal(b.run('paywall("x")'), true);
-  assert.equal(b.run('premMoment("block")'), true);
-  assert.equal(b.run('premMoment("block")'), false); // at most once per 14 days
-  demo(b, 'premium'); b.store.delete('gymPwMoment');
-  assert.equal(b.run('premMoment("block")'), false); // Premium never sees it
+  assert.equal(b.run('premMoment()'), true); assert.equal(b.run('premNextMoment()'), null);
+  // 3rd workout of the demo
+  const c = boot(seed()); demo(c, 'trial');
+  c.run(`S.workouts=[1,2].map(i=>({id:'w'+i,start:Date.now()-i*1000,end:Date.now()-i*500,items:[]}))`);
+  assert.equal(c.run('premNextMoment()'), null);
+  c.run(`S.workouts.push({id:'w3',start:Date.now()-100,end:Date.now()-50,items:[]})`);
+  assert.equal(c.run('premNextMoment()'), 'third'); assert.equal(c.run('premMoment()'), true); assert.equal(c.run('premMoment()'), false);
+  // 2 days left
+  const e = boot(seed()); demo(e, 'trialend');
+  assert.equal(e.run('premNextMoment()'), 'ending'); assert.equal(e.run('premMoment()'), true); assert.equal(e.run('premMoment()'), false);
+  // after the demo / premium: no automatic moments (only when opening a paid feature)
+  for (const t of ['free', 'premium', 'off']) { const x = boot(seed()); demo(x, t); x.run('premFlagInc()'); assert.equal(x.run('premNextMoment()'), null, t); }
 });
 
-test('never-gated features are not locked in the code (questionnaire, videos, history, export)', () => {
+test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, no store trial, always-free list, RU/EN/LV', () => {
   const f = read('features.js');
-  assert.equal(f.includes('chip[data-k="lim"]'), false);
-  assert.equal(f.includes('🔒 3D-видео — Premium</span>'), false);
-  assert.equal(/lockCard\('Графики и рекорды/.test(f), false);
-  assert.equal(/lockCard\('Замеры тела/.test(f), false);
-  const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v50'/);
-  assert.match(sw, /'premium\.js','features\.js'/);
-  const html = read('index.html');
-  assert.ok(html.indexOf('premium.js') < html.indexOf('features.js') && html.indexOf('premium.js') > html.indexOf('app.js'));
-});
-
-test('Premium screen: prices, 14-day trial only on the yearly plan, restore stub, RU/EN/LV texts', () => {
-  const f = read('features.js');
-  assert.match(f, /Год — €29,99/); assert.match(f, /Месяц — €4,99/);
-  assert.match(f, /≈ €2,50 в месяц · 14 дней бесплатно/);
-  assert.match(f, /Без пробного периода · отмена в любой момент/);
-  assert.match(f, /Восстановить покупки/); assert.equal(f.includes('7 дней'), false);
+  assert.match(f, /14 дней бесплатно, без карты/);
+  assert.ok(f.indexOf('Год — €29,99') < f.indexOf('Месяц — €4,99'));
+  assert.match(f, /≈ €2,50\/мес/); assert.match(f, /Всегда бесплатно:/); assert.match(f, /Восстановить покупки/);
+  for (const gone of ['Попробовать 14 дней', 'Без пробного периода', 'После 14 дней', '−50%', '21']) assert.equal(f.includes(gone), false, gone);
   const b = boot(seed());
+  b.run('paywall("")');
+  const html = b.run('document.querySelector("#pw").innerHTML');
+  assert.ok(html.indexOf('Год — €29,99') < html.indexOf('Месяц — €4,99'));
   const D = b.run('DICT3');
-  for (const ru of ['Попробовать 14 дней бесплатно', 'Без пробного периода · отмена в любой момент', 'Пора прибавить ↑', 'Держи вес', 'Сбавь ↓', 'Графики за всю историю']) {
+  for (const ru of ['14 дней бесплатно, без карты', 'Всегда бесплатно:', '≈ €2,50/мес', 'Год — €29,99', 'Месяц — €4,99', 'Оформить подписку', '▶ Начать свою тренировку', 'Демо: осталось дней —']) {
     const r = D.find(x => x[0] === ru); assert.ok(r && r[1] && r[2], ru);
   }
+  assert.equal(D.some(x => /Пора прибавить|Попробовать 14/.test(x[0])), false);
+  assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
+  const sw = read('sw.js');
+  assert.match(sw, /const C='moyzal-v51'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

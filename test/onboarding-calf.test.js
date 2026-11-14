@@ -76,11 +76,14 @@ test('a fresh user has no Premium entitlement and stays free on the second launc
   // P-305: until the Android build the gate is off, so everything is open for everyone.
   assert.equal(first.run('isPrem()'), true);
   first.run('PREM_CFG.PAYWALL_ENABLED = true');
-  assert.equal(first.run('isPrem()'), false);
+  // P-305b (v3): no paid/owner entitlement — a fresh user is in the 14-day demo (not started yet), not 'premium'.
+  assert.equal(first.run('premTier()'), 'trial');
   assert.equal(first.run('S.ownerPremium'), false);
   first.run('S.workouts.push({id:"w1",date:"2026-11-13",ex:[]}); save()');
   const second = boot(JSON.parse(first.store.get('gym')), true);
   second.run('PREM_CFG.PAYWALL_ENABLED = true');
+  assert.equal(second.run('premTier()'), 'trial');
+  second.run('S.demoStart = Date.now() - 15 * 864e5');
   assert.equal(second.run('isPrem()'), false);
   assert.equal(second.run('ownerUI()'), false);
 });

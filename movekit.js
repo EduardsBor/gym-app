@@ -221,7 +221,10 @@ function movekitVideoBlob(blob) {
 // если функция ещё не развёрнута (404) — прежняя прямая подпись. После sql/002 прямая подпись перестанет работать.
 const MK_FN_RETRY_MS = 5 * 60 * 1000;
 let mkFnOffUntil = 0;
+// P-305b: videos and posters are a subscription feature. Without it the function is never called.
+function movekitAllowed() { return typeof can !== 'function' || can('video'); }
 async function movekitSignPath(objectPath) {
+  if (!movekitAllowed()) throw new Error('movekit locked');
   const cfg = movekitCfg();
   if (!cfg.url || !cfg.anon) throw new Error('movekit config');
   const headers = { apikey: cfg.anon, Authorization: 'Bearer ' + cfg.anon, 'Content-Type': 'application/json' };
@@ -473,6 +476,7 @@ function showMovekitPoster(el, blob) {
 async function loadMovekitPoster(el) {
   if (!el || !el.dataset) return;
   if (el.isConnected === false) return;
+  if (!movekitAllowed()) { posterFailed(el); return; }
   const state = el.dataset.mkPosterState;
   if (state === 'ok' || state === 'fail' || state === 'pending') return;
   const id = el.dataset.mkPoster || el.dataset.mk || '';
@@ -585,6 +589,7 @@ async function movekitStore(file, signed) {
 async function loadMovekit(video) {
   if (!video || !video.isConnected || !video.dataset || !video.dataset.mk) return;
   const id = video.dataset.mk;
+  if (!movekitAllowed()) { if (typeof video.remove === 'function') video.remove(); return; }
   const file = movekitFile(id);
   const token = video._mkToken = (video._mkToken || 0) + 1;
   const alive = function () { return video.isConnected && video._mkToken === token; };

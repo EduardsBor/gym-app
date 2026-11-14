@@ -47,28 +47,26 @@ function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg(
  const s={ex:it.exId,weight:o.weight,sets:ctx.deload||ctx.days_since_last?o.sets:(nx.sets||plan),target:ctx.deload||ctx.days_since_last?o.target:(nx.target!=null?nx.target:null),
   rir:o.rir,note:ctx.deload?o.note:ctx.days_since_last?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,st:o.state};
  if(dl)s.dl=dl;if(!dl&&awAfterDeload())s.after=1;return s}
-function awApply(it,dl){const s=awSuggest(it,dl);it.awx=1;it.sug=s;if(!s||S.autoW===false)return;
+function awApply(it,dl){if(!awOn())return awPrev(it);const s=awSuggest(it,dl);it.awx=1;it.sug=s;if(s&&/^(inc|cal_up|time_up)$/.test(s.note||'')&&typeof premFlagInc==='function')premFlagInc();if(!s||S.autoW===false)return;
  const last=awLast(it.exId,S.active&&S.active.id),L=last?last.it.sets.filter(x=>x.done):null,n=Math.max(1,s.sets||it.sets.length);
  const done=it.sets.filter(x=>x.done);let rest=it.sets.filter(x=>!x.done);
  while(done.length+rest.length<n)rest.push({w:'',r:'',done:false});if(done.length+rest.length>n)rest=rest.slice(0,Math.max(0,n-done.length));
- const ex=awExact();
  rest.forEach((x,k)=>{const j=done.length+k,pv=L&&(L[j]||L[L.length-1]);
-  if(!ex){const w=pv?pv.w:'';x.w=w;x.pf=w!=='';x.r=pv?pv.r:(s.target!=null?s.target:it.max);return}
   const w=s.cal?'':(s.weight!=null?s.weight:(pv?pv.w:''));x.w=w;x.pf=w!=='';x.r=s.target!=null?s.target:(pv?pv.r:it.max)});
  it.sets=done.concat(rest)}
 
-// P-305: Free gets only the direction; exact weight, deload and break-return are Premium (premium.js). No premium.js → full.
+// P-305b: auto-weight, deload and return after a break are a subscription feature (premium.js). No premium.js → full.
+// Without it the free diary only puts the previous weight and reps into the fields (no suggestion, no arrow).
 const awCan=f=>typeof can!=='function'||can(f);
-const awExact=()=>awCan('autoWeightExact');
+const awOn=()=>awCan('autoWeight');
+function awPrev(it){it.awx=1;it.sug=null;if(S.autoW===false)return;const last=awLast(it.exId,S.active&&S.active.id),L=last?last.it.sets.filter(x=>x.done):null;if(!L||!L.length)return;
+ it.sets.forEach((x,j)=>{if(x.done||(x.w!==''&&x.w!=null&&!x.pf))return;const pv=L[j]||L[L.length-1];x.w=pv.w;x.r=pv.r;x.pf=true})}
 function awStart(){const A=S.active;if(!A)return;const dl=awCan('deload')?awDeload():null;A.dl=dl||null;
  A.items.forEach(it=>awApply(it,dl));save()}
 const _awSW=startW;startW=function(i){_awSW(i);awStart();if(S.active)workoutView()};
 
-function awArrowHTML(it){const s=it.sug,last=awLast(it.exId,S.active&&S.active.id),lw=last?awWork(last.it.sets.filter(x=>x.done)):null;
- if(s&&s.cal)return`<span>Калибровка:</span> <span>подбери вес, с которым выйдет верх диапазона и останется 3–4 повтора в запасе</span>`;
- if(!s||(!last&&!awPg()[it.exId]))return'';const d=awDir(s,lw);return`<b>🎯 <span>Авто-вес</span>: <span>${AW_DIR[d]}</span></b>`}
 function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';const L=[];
- if(!awExact()){const h=awArrowHTML(it);if(h)L.push(h)}else if(!it.sug){}else if(s.cal)L.push(`<span>Калибровка:</span> <span>подбери вес, с которым выйдет верх диапазона и останется 3–4 повтора в запасе</span>`);
+ if(!awOn()||!it.sug){}else if(s.cal)L.push(`<span>Калибровка:</span> <span>подбери вес, с которым выйдет верх диапазона и останется 3–4 повтора в запасе</span>`);
  else{const u=c.eq==='band'?'ур. резинки':c.eq==='assisted'?'кг противовеса':c.eq==='bodyweight'?'кг доп. веса':'кг';
   const parts=[];if(s.weight!=null&&c.eq!=='time')parts.push(`${awFmt(s.weight)} <span>${u}</span>`);if(s.target!=null)parts.push(`${s.target} <span>${c.eq==='time'?'с':'повт.'}</span>`);
   if(parts.length)L.push(`<b>🎯 <span>Авто-вес</span>: ${parts.join(' × ')}</b>`);
@@ -87,7 +85,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  const first=app.querySelector('[data-rm]');
  if(first&&first.closest){const fc=first.closest('.card');let b='';
   if(A.dl)b=`<div class="card awdl"><b>🔋 Разгрузочная неделя</b><br><span class="mut"><span>${A.dl==='early'?'Подходов вдвое меньше, вес −10 %.':'Каждые 6 недель: подходов вдвое меньше, вес тот же.'}</span> <span>Запас +2 повтора. Результаты этой недели не меняют прогрессию.</span></span></div>`;
-  else if(awCan('deload')&&awEarly()&&!A.items.some(it=>it.sets.some(s=>s.done)))b=`<div class="card awdl"><span class="mut">Тяжело восстанавливаться или вес давно не растёт? Можно начать разгрузочную неделю.</span><button class="sm full" id="awdl" style="margin-top:6px">🔋 Начать разгрузку</button></div>`;
+  else if(awCan('deload')&&awOn()&&awEarly()&&!A.items.some(it=>it.sets.some(s=>s.done)))b=`<div class="card awdl"><span class="mut">Тяжело восстанавливаться или вес давно не растёт? Можно начать разгрузочную неделю.</span><button class="sm full" id="awdl" style="margin-top:6px">🔋 Начать разгрузку</button></div>`;
   if(b)fc.insertAdjacentHTML('beforebegin',b)}
  A.items.forEach((it,i)=>{const rm=app.querySelector(`[data-rm="${i}"]`);if(!rm||!rm.closest)return;const card=rm.closest('.card');if(!card)return;
   const c=awCls(it.exId);if(!c)return;
@@ -142,7 +140,6 @@ function awEquipSave(){const num=v=>+String(v).replace(',','.'),list=v=>String(v
  const e=prEquip(S.equip);S.equip.db=e.db;S.equip.kb=e.kb;save();toast('Оборудование сохранено')}
 const _awMore=more;more=function(){_awMore();const aw=$('#aw');const card=aw&&aw.closest?aw.closest('.card'):null;if(!card)return;
  card.insertAdjacentHTML('afterend',awEquipHTML());$('#eqsave').onclick=awEquipSave};
-// P-305: natural paywall moments, only after the workout is saved (never mid-set), only for Free (premium.js).
-function awMoment(W){if(typeof premMoment!=='function'||!premFree())return;const n=W.items.map(it=>it.sug&&it.sug.note||'');
- const k=n.some(x=>/^break/.test(x))?'break':typeof blockEnded==='function'&&S.progStart&&blockEnded()?'block':n.some(x=>/^miss[23]$/.test(x))||awEarly()?'plateau':null;
- if(k)premMoment(k)}
+// P-305b: demo paywall moments (premium.js) — only after the workout is saved, never mid-set; not over the summary sheet.
+function awMoment(W){if(typeof premMarkDemo==='function'){premMarkDemo(W);save()}if(typeof premMoment!=='function')return;
+ setTimeout(()=>{const m=$('#modal');if(S.active||(m&&m.classList&&!m.classList.contains('hidden')))return;premMoment()},800)}
