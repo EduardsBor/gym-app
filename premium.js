@@ -1,61 +1,67 @@
 'use strict';
-// ===== P-305 / G-005: one access module for Free / Premium =====
-// No payments here. Until the Android build (store billing) the gate is OFF: every real user gets everything.
-// Demo tier (reviewers/tests only, never shown to normal users): open the app with ?demo=free | ?demo=premium | ?demo=off.
-// It lives in localStorage 'gymDemoTier' — NOT in S, so it never touches the user's data, history or sync.
+// ===== P-305b / G-005 v3: one access module (demo 14 days → free diary forever, or subscription) =====
+// No payments here. Until Play Billing (Android build) the gate is OFF: every real user gets everything (tier 'open').
+// Review modes (this device only, never in user data): ?demo=free | premium | trial | trialend | off.
+// Stored in localStorage 'gymDemoTier' — NOT in S, so it never touches the user's data, history or sync.
 const PREM_CFG={PAYWALL_ENABLED:false};
-const PREM_DEMO_KEY='gymDemoTier';
-const PREM_BLOCK_DAYS=56; // Free: a new questionnaire program after the block ends (8–12 weeks → shortest, 8)
-const PREM_CHART_DAYS=90; // Free: charts for the last 90 days
-// One table. 'free' = available in Free, 'premium' = Premium only.
+const PREM_DEMO_KEY='gymDemoTier',PREM_SEEN_KEY='gymPwSeen';
+const PREM_DAY=864e5,DEMO_DAYS=14,DEMO_WARN_DAYS=2;
+// One table. 'free' = free forever (also after the demo), 'sub' = subscription (or the 14-day demo).
 const FEATURES={
- // Auto-weight (P-301)
- autoWeightArrow:'free',     // «пора прибавить ↑ / держи / сбавь ↓», no number
- autoWeightFeel:'free',      // «легко / нормально / тяжело» is always recorded
- autoWeightExact:'premium',  // exact weight and equipment step
- deload:'premium',           // deload week every 6 weeks (+ early deload offer)
- breakReturn:'premium',      // exact return weights after a break
- // Programs
- programQuiz:'free',         // 1 program from the questionnaire, 2–5 days
- programDays6:'premium',     // 6 days per week
- programsAll:'premium',      // all ready-made templates
- programSwitch:'premium',    // switch program at any time (Free: after the block ends)
- customTemplate:'premium',   // own workout template (P-302, not built yet)
- // Charts and records
- charts90:'free', chartsFull:'premium',
- prHistory:'premium',        // PR history / 1RM curves (P-303, not built yet; exercise-card 1RM spark)
- muscleVolume:'premium',     // weekly volume per muscle (P-303, not built yet)
- // Equipment and body
- equipProfile:'free', equipProfiles:'premium',
- bodyWeight:'free', bodyGirths:'premium',
- // Never gated (G-005 §3)
- pain:'free', limitations:'free', painSwap:'free', warmup:'free', cooldown:'free', sync:'free', exportCsv:'free',
- video:'free', library:'free', journal:'free', prevInField:'free', prBanner:'free'
+ // Free forever
+ diary:'free',          // own workout: exercises picked from the list (names and groups), logging sets
+ prevInField:'free',    // previous weight and reps
+ history:'free', library:'free', pain:'free', limitations:'free', painSwap:'free', disclaimer:'free',
+ sync:'free', exportCsv:'free', deleteAccount:'free', bodyWeight:'free', equipProfile:'free',
+ // Subscription
+ programs:'sub',        // trainer programs from the questionnaire (after the demo: last one read-only)
+ warmup:'sub', cooldown:'sub',
+ autoWeight:'sub', deload:'sub', breakReturn:'sub',
+ video:'sub',           // technique videos AND posters (no movekit-sign call without it)
+ charts:'sub', prs:'sub', oneRM:'sub', muscleVolume:'sub', girths:'sub'
 };
-const NEVER_GATED=['pain','limitations','painSwap','warmup','cooldown','sync','exportCsv','video','library','journal','prevInField','prBanner','autoWeightArrow','autoWeightFeel','programQuiz','charts90','equipProfile','bodyWeight'];
-function demoTier(){try{const v=localStorage.getItem(PREM_DEMO_KEY);return v==='free'||v==='premium'?v:null}catch(e){return null}}
-function setDemoTier(v){try{if(v==='free'||v==='premium')localStorage.setItem(PREM_DEMO_KEY,v);else localStorage.removeItem(PREM_DEMO_KEY)}catch(e){}}
-function premUrl(q){const m=/[?&]demo=(free|premium|off)\b/.exec(q||'');if(m)setDemoTier(m[1]);return m?m[1]:null}
+const NEVER_GATED=Object.keys(FEATURES).filter(k=>FEATURES[k]==='free');
+const DEMO_MODES=['free','premium','trial','trialend'];
+function demoTier(){try{const v=localStorage.getItem(PREM_DEMO_KEY);return DEMO_MODES.includes(v)?v:null}catch(e){return null}}
+function setDemoTier(v){try{if(DEMO_MODES.includes(v))localStorage.setItem(PREM_DEMO_KEY,v);else localStorage.removeItem(PREM_DEMO_KEY);
+ localStorage.removeItem(PREM_SEEN_KEY)}catch(e){}}
+function premUrl(q){const m=/[?&]demo=(free|premium|trialend|trial|off)\b/.exec(q||'');if(m)setDemoTier(m[1]);return m?m[1]:null}
 try{premUrl(typeof location!=='undefined'&&location.search)}catch(e){}
-function premTier(){const d=demoTier();if(d)return d;if(!PREM_CFG.PAYWALL_ENABLED)return'premium';
- return typeof S!=='undefined'&&S&&(S.premium||S.ownerPremium)?'premium':'free'}
-function isPremium(){return premTier()==='premium'}
-function can(f){if(NEVER_GATED.includes(f))return true;if(!(f in FEATURES))return true;return FEATURES[f]==='free'||isPremium()}
+// ---- Demo start: the FIRST COMPLETED workout. Kept on the account (S.demoStart is synced in user_state);
+// merges always take the earliest date, never a later one. Guests keep it locally.
+const premPos=v=>typeof v==='number'&&isFinite(v)&&v>0;
+function premMergeStart(a,b){a=premPos(a)?a:0;b=premPos(b)?b:0;return a&&b?Math.min(a,b):(a||b||0)}
+function premFirstWorkout(){let t=0;((typeof S!=='undefined'&&S&&S.workouts)||[]).forEach(w=>{t=premMergeStart(t,w&&(w.end||w.start))});return t}
+function demoStartAt(now){const d=demoTier();now=now||Date.now();
+ if(d==='trial')return now-3600e3;                               // review: day 1
+ if(d==='trialend')return now-(DEMO_DAYS-DEMO_WARN_DAYS)*PREM_DAY; // review: 2 days left
+ return premMergeStart(typeof S!=='undefined'&&S?S.demoStart:0,premFirstWorkout())}
+// Called when a workout is saved. Only ever moves the date earlier.
+function premMarkDemo(W){if(typeof S==='undefined'||!S)return;const t=premMergeStart(premMergeStart(S.demoStart,premFirstWorkout()),W&&(W.end||W.start)||Date.now());if(t!==S.demoStart)S.demoStart=t}
+// ---- Access state: 'open' (gate off), 'premium' (paid/owner), 'trial' (demo running or not started), 'free' (after demo)
+function premState(now){now=now||Date.now();const d=demoTier();
+ if(d==='premium')return{tier:'premium'};if(d==='free')return{tier:'free',start:now-30*PREM_DAY,left:0};
+ if(!d){if(!PREM_CFG.PAYWALL_ENABLED)return{tier:'open'};if(typeof S!=='undefined'&&S&&(S.premium||S.ownerPremium))return{tier:'premium'}}
+ const st=demoStartAt(now);if(!st)return{tier:'trial',pre:true,left:DEMO_DAYS};
+ const end=st+DEMO_DAYS*PREM_DAY;return end>now?{tier:'trial',start:st,end,left:Math.ceil((end-now)/PREM_DAY)}:{tier:'free',start:st,end,left:0}}
+function premTier(){return premState().tier}
+function isPremium(){return premTier()!=='free'} // full access (open, paid or demo)
+function can(f){if(NEVER_GATED.includes(f))return true;if(!(f in FEATURES))return true;return isPremium()}
 const premFree=()=>!isPremium();
-// Free: start of the next allowed program = end of the current block
-function blockEndsAt(){return S&&S.program&&S.progStart?S.progStart+PREM_BLOCK_DAYS*864e5:0}
-function blockEnded(){return Date.now()>=blockEndsAt()}
-function chartFrom(){return can('chartsFull')?0:Date.now()-PREM_CHART_DAYS*864e5}
 // Never open the paywall in the middle of a workout/set
-function paywallAllowed(o){return!!(o&&o.force)||!(typeof S!=='undefined'&&S&&S.active)}
-// Natural moments (plateau, deload, after a break, end of block): at most once per 14 days, never during a workout.
-function premMoment(kind){if(isPremium()||!paywallAllowed())return false;let t=0;try{t=+localStorage.getItem('gymPwMoment')||0}catch(e){}
- if(Date.now()-t<14*864e5)return false;try{localStorage.setItem('gymPwMoment',String(Date.now()))}catch(e){}
- const R={plateau:'Вес давно не растёт? Premium подскажет точный вес и шаг оборудования.',deload:'Пора разгрузиться. В Premium — разгрузочная неделя каждые 6 недель.',
-  break:'С возвращением! В Premium — точный вес после перерыва.',block:'Блок программы завершён. В Premium — все программы и смена в любой момент.'};
- return typeof paywall==='function'&&paywall(R[kind]||'')!==false}
-// Free auto-weight: direction only
-function awDir(s,lastW){if(!s)return'hold';const n=s.note||'';
- if(/^(inc|cal_up|time_up)$/.test(n))return'up';if(/^(cal_down|miss3|pain|break14|break28|deload_early|time_down)$/.test(n))return'down';
- if(s.weight!=null&&lastW!=null&&+lastW>0){if(+s.weight>+lastW)return'up';if(+s.weight<+lastW)return'down'}return'hold'}
-const AW_DIR={up:'Пора прибавить ↑',hold:'Держи вес',down:'Сбавь ↓'};
+function paywallAllowed(){return!(typeof S!=='undefined'&&S&&S.active)}
+// ---- Paywall moments (demo only; each at most once): first weight increase suggestion, after the 3rd demo workout,
+// 2 days before the demo ends. After the demo: only when the user opens a paid feature (lock buttons).
+function premSeen(){try{return JSON.parse(localStorage.getItem(PREM_SEEN_KEY)||'{}')||{}}catch(e){return{}}}
+function premSee(k){const s=premSeen();s[k]=Date.now();try{localStorage.setItem(PREM_SEEN_KEY,JSON.stringify(s))}catch(e){}}
+function premFlagInc(){if(premTier()!=='trial')return;const s=premSeen();if(!s.inc&&!s.incPending){s.incPending=1;try{localStorage.setItem(PREM_SEEN_KEY,JSON.stringify(s))}catch(e){}}}
+function premCountDemo(st){return((typeof S!=='undefined'&&S&&S.workouts)||[]).filter(w=>(w.end||w.start)>=st).length}
+function premNextMoment(now){const p=premState(now);if(p.tier!=='trial'||p.pre)return null;const s=premSeen();
+ if(p.left<=DEMO_WARN_DAYS&&!s.ending)return'ending';
+ if(!s.third&&premCountDemo(p.start)>=3)return'third';
+ if(s.incPending&&!s.inc)return'inc';return null}
+const PREM_MOMENT={inc:'Приложение предложило прибавить вес. Точный авто-вес остаётся в подписке после 14 дней демо.',
+ third:'Уже 3 тренировки! Программа тренера, авто-вес и видео техники остаются в подписке после 14 дней демо.',
+ ending:'Демо заканчивается через 2 дня. Дальше — бесплатный дневник или подписка.'};
+function premMoment(now){if(!paywallAllowed())return false;const k=premNextMoment(now);if(!k)return false;premSee(k);
+ return typeof paywall==='function'&&paywall(PREM_MOMENT[k])!==false}

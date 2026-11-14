@@ -105,8 +105,9 @@
   }
   function applyRemoteFresh(R){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId;
-    const az=S.consentAnalytics,lang=S.lang,LL=localLimits();
+    const az=S.consentAnalytics,lang=S.lang,LL=localLimits(),ds=S.demoStart;
     Object.keys(R).forEach(k=>{S[k]=R[k]});
+    keepEarliestDemo(ds,R.demoStart);
     keepLocalLimits(LL);
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
@@ -116,6 +117,8 @@
     if(lang&&!S.lang) S.lang=lang;
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
   }
+  // P-305b: demo start (first completed workout) — always the earliest of local and cloud, never a later date.
+  function keepEarliestDemo(a,b){const m=[a,b].filter(x=>typeof x==='number'&&isFinite(x)&&x>0);if(m.length) S.demoStart=Math.min(...m)}
   function applyMerged(R,remoteAt){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,LL=localLimits();
     const w=mergeLists(S.workouts,R.workouts,S.deletedWorkouts,R.deletedWorkouts,'id',x=>x.end||x.start||0);
@@ -139,6 +142,7 @@
     ['next','lang','sound','wake','autoW','restOverride','premium','consentHealth','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
+    keepEarliestDemo(S.demoStart,R.demoStart);
     if(S.consentHealth||R.consentHealth){['height','weightKg','age'].forEach(k=>{const h=pick(k);if(h!==undefined) S[k]=h})}
     keepLocalLimits(LL);
     S.ownerPremium=keepOwner;
@@ -209,6 +213,7 @@
     }catch(e){}
   }
   window.mzTrack=mzTrack;
+  window.mzSignedIn=()=>!!user;
   function bootAnalytics(){
     if(!canTrack()) return;
     ensureMeta();

@@ -187,6 +187,63 @@ Account and sync (`i18n/dict3.js`, `sync.js`, `legal.js`):
 - Consent extras: «На этом устройстве данные хранятся в браузере.» / cloud + photos note / «Анонимную аналитику можно включить отдельно в «Ещё».»
 - Legal drafts (`LEGAL.lv` sections 3–4): guest vs EU Supabase account, body measurements only with consent, photos stay local, opt-in analytics events (install, app_open, onboarding_done, paywall_shown, trial_start, purchase, cancel).
 
-## P-305 Premium screen and Free limits (need review, D-216)
+## P-305b Premium model v3: 14-day demo without card, free diary, subscription (need review, D-216)
 
-New rows at the end of `i18n/dict3.js` (comment «P-305»): Premium benefits list, «Всегда бесплатно…», prices/trial lines (14 days, yearly only), auto-weight arrows (Пора прибавить ↑ / Держи вес / Сбавь ↓), Free lock texts (body, charts 90 days, programs, block end), natural-moment paywall reasons.
+Rows at the end of `i18n/dict3.js` (comment «P-305b»). The P-305 v1 rows (arrows «Пора прибавить ↑», 90-day/8-week Free limits, store trial «Попробовать 14 дней бесплатно») were removed.
+
+- 14 дней бесплатно, без карты → **14 dienas bez maksas, bez kartes**
+- Отсчёт начнётся с первой завершённой тренировки. → **Atskaite sāksies ar pirmo pabeigto treniņu.**
+- Демо: осталось дней — → **Demo: atlikušās dienas —**
+- Демо закончилось. Дневник тренировок остаётся бесплатным. → **Demo ir beidzies. Treniņu dienasgrāmata paliek bez maksas.**
+- Программы тренера по анкете → **Trenera programmas pēc anketas**
+- Разминка и заминка → **Iesildīšanās un atsildīšanās**
+- Авто-вес, разгрузка и возврат после перерыва → **Auto svars, atslodze un atgriešanās pēc pārtraukuma**
+- Видео техники → **Tehnikas video**
+- Графики, рекорды и 1ПМ → **Grafiki, rekordi un 1AM**
+- Объём по мышцам и обхваты тела → **Apjoms pa muskuļiem un ķermeņa apkārtmēri**
+- Всегда бесплатно: → **Vienmēr bez maksas:**
+- свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, «Боль» и ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела. → **sava treniņu dienasgrāmata, piegājienu pierakstīšana, iepriekšējais svars un atkārtojumi, visa vēsture, “Sāpes” un ierobežojumi, sinhronizācija, CSV eksports, konta dzēšana, ķermeņa svars.**
+- Год — €29,99 → **Gads — €29,99**
+- ≈ €2,50/мес → **≈ €2,50/mēn.**
+- Месяц — €4,99 → **Mēnesis — €4,99**
+- Отмена в любой момент → **Atcelt jebkurā brīdī**
+- Оформить подписку → **Abonēt**
+- Оплата пока не подключена, деньги не списываются. → **Maksājumi vēl nav pieslēgti, nauda netiek iekasēta.**
+- €29,99 в год. → **€29,99 gadā.**
+- €4,99 в месяц. → **€4,99 mēnesī.**
+- Посмотреть Premium → **Skatīt Premium**
+- Сейчас всё открыто бесплатно. → **Pašlaik viss ir atvērts bez maksas.**
+- Демо-режим: после демо (бесплатно). → **Demo režīms: pēc demo (bez maksas).**
+- Демо-режим: подписка. → **Demo režīms: abonements.**
+- Демо-режим: идут 14 дней демо. → **Demo režīms: notiek 14 dienu demo.**
+- Демо-режим: до конца демо 2 дня. → **Demo režīms: līdz demo beigām 2 dienas.**
+- 14 дней бесплатно, без карты — с первой тренировки. → **14 dienas bez maksas, bez kartes — no pirmā treniņa.**
+- Демо закончилось. Дневник — бесплатно. → **Demo ir beidzies. Dienasgrāmata — bez maksas.**
+- Подписка активна. → **Abonements ir aktīvs.**
+- Доступно по подписке. Подробнее — после тренировки. → **Pieejams ar abonementu. Sīkāk — pēc treniņa.**
+- Видео техники — по подписке → **Tehnikas video — ar abonementu**
+- 🔒 Видео техники — по подписке → **🔒 Tehnikas video — ar abonementu**
+- Обхваты тела и тренды — по подписке → **Ķermeņa apkārtmēri un tendences — ar abonementu**
+- 🔒 Обхваты — по подписке → **🔒 Apkārtmēri — ar abonementu**
+- Обхваты, % жира и фото — по подписке. → **Apkārtmēri, tauku % un foto — ar abonementu.**
+- Графики и расчётный 1ПМ — по подписке → **Grafiki un aprēķinātais 1AM — ar abonementu**
+- 🔒 График 1ПМ — по подписке → **🔒 1AM grafiks — ar abonementu**
+- Программы тренера по анкете — по подписке. Бесплатно: свой дневник тренировок. → **Trenera programmas pēc anketas — ar abonementu. Bez maksas: sava treniņu dienasgrāmata.**
+- 🔒 По подписке → **🔒 Ar abonementu**
+- Своя тренировка → **Savs treniņš**
+- 📓 Мой дневник → **📓 Mana dienasgrāmata**
+- Записывай свои тренировки бесплатно: выбери упражнения из списка и вводи подходы — прошлый вес и повторы подставятся сами. → **Pieraksti savus treniņus bez maksas: izvēlies vingrinājumus no saraksta un ievadi piegājienus — iepriekšējais svars un atkārtojumi tiks ievietoti automātiski.**
+- ▶ Начать свою тренировку → **▶ Sākt savu treniņu**
+- Программа тренера, авто-вес, разминка, заминка и видео техники — по подписке. Последнюю программу можно посмотреть в разделе «Программа». → **Trenera programma, auto svars, iesildīšanās, atsildīšanās un tehnikas video — ar abonementu. Pēdējo programmu var apskatīt sadaļā “Programma”.**
+- 🔒 Подробнее о подписке → **🔒 Par abonementu**
+- Программа тренера по анкете — по подписке → **Trenera programma pēc anketas — ar abonementu**
+- 🔐 Войди в аккаунт → **🔐 Ienāc kontā**
+- 14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа. → **14 dienas bez maksas, bez kartes — skaitot no pirmā pabeigtā treniņa. Ar kontu demo un vēsture saglabāsies pēc pārinstalēšanas un citā ierīcē. Var turpināt arī bez ienākšanas.**
+- Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Сегодня». → **Tikai skatīšanai: trenera programmas — ar abonementu. Savus treniņus pieraksti bez maksas cilnē “Šodien”.**
+- Объём по мышцам — по подписке → **Apjoms pa muskuļiem — ar abonementu**
+- 🔒 Объём по мышцам — по подписке → **🔒 Apjoms pa muskuļiem — ar abonementu**
+- Графики и рекорды → **Grafiki un rekordi**
+- Графики, рекорды, 1ПМ и объём по мышцам — по подписке. Вся история тренировок бесплатно — в разделе «История». → **Grafiki, rekordi, 1AM un apjoms pa muskuļiem — ar abonementu. Visa treniņu vēsture bez maksas — sadaļā “Vēsture”.**
+- Приложение предложило прибавить вес. Точный авто-вес остаётся в подписке после 14 дней демо. → **Lietotne ieteica palielināt svaru. Precīzs auto svars pēc 14 dienu demo paliek abonementā.**
+- Уже 3 тренировки! Программа тренера, авто-вес и видео техники остаются в подписке после 14 дней демо. → **Jau 3 treniņi! Trenera programma, auto svars un tehnikas video pēc 14 dienu demo paliek abonementā.**
+- Демо заканчивается через 2 дня. Дальше — бесплатный дневник или подписка. → **Demo beigsies pēc 2 dienām. Pēc tam — bezmaksas dienasgrāmata vai abonements.**
