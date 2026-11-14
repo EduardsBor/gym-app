@@ -1,5 +1,5 @@
 'use strict';
-// P-305b: Premium model v3 — 14-day demo from the first completed workout, free diary forever, subscription features.
+// P-305c: Premium v3 fixes — no ?demo= bypass when the paywall is on, demo start clamped to PAYWALL_LAUNCH.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -163,6 +163,54 @@ test('review modes ?demo=free|premium|trial|trialend|off live outside user data'
   assert.equal(b.store.get('gym'), stored);
 });
 
+test('production paywall ignores ?demo= and deletes the stored demo key', () => {
+  const now = Date.now();
+  const b = boot(seed({ demoStart: now - 30 * DAY, workouts: [hist(now - 30 * DAY, 60, [10, 10, 10])] }));
+  b.run('localStorage.setItem("gymDemoTier","premium")');
+  gateOn(b);
+  assert.equal(b.run('premUrl("?demo=premium")'), null);
+  assert.equal(b.store.has('gymDemoTier'), false);
+  assert.equal(b.run('premTier()'), 'free');
+  assert.equal(b.run('isPremium()'), false);
+  // setDemoTier must also refuse and keep the key deleted
+  assert.equal(b.run('setDemoTier("premium");localStorage.getItem("gymDemoTier")'), null);
+  // TEST_BUILD still allows review modes when the paywall is on
+  b.run('PREM_CFG.TEST_BUILD=true');
+  assert.equal(b.run('premUrl("?demo=premium")'), 'premium');
+  assert.equal(b.run('premTier()'), 'premium');
+  assert.equal(b.store.get('gymDemoTier'), 'premium');
+});
+
+test('existing users get 14 days from PAYWALL_LAUNCH; new users count from the first workout', () => {
+  const now = Date.now();
+  const old = now - 90 * DAY;
+  const b = boot(seed({ demoStart: old, workouts: [hist(old, 60, [10, 10, 10])] }));
+  const hist0 = b.run('JSON.stringify(S.workouts)'), start0 = b.run('S.demoStart');
+  gateOn(b);
+  b.run(`PREM_CFG.PAYWALL_LAUNCH=${now}`);
+  const st = b.run(`premState(${now})`);
+  assert.equal(st.tier, 'trial');
+  assert.equal(st.start, now);
+  assert.equal(st.left, 14);
+  assert.equal(b.run('S.demoStart'), start0); // stored value not rewritten
+  assert.equal(b.run('JSON.stringify(S.workouts)'), hist0);
+
+  // new user after launch: first workout after PAYWALL_LAUNCH
+  const first = now - 2 * DAY - 3600e3;
+  const n = boot(seed({ workouts: [hist(first, 60, [10, 10, 10])] }));
+  gateOn(n);
+  n.run(`PREM_CFG.PAYWALL_LAUNCH=${now - 5 * DAY}`);
+  const st2 = n.run(`premState(${now})`);
+  assert.equal(st2.tier, 'trial');
+  assert.equal(st2.start, first + 3600e3);
+  assert.equal(st2.left, 12);
+  // launch unset: a 90-day history still ends the demo (clamp only when a launch date is set)
+  const u = boot(seed({ demoStart: old, workouts: [hist(old, 60, [10, 10, 10])] }));
+  gateOn(u);
+  assert.equal(u.run('PREM_CFG.PAYWALL_LAUNCH'), null);
+  assert.equal(u.run('premTier()'), 'free');
+});
+
 test('without subscription movekit-sign is never called: no video, no poster, no direct sign', async () => {
   const calls = [];
   const b = boot(seed(), {
@@ -277,11 +325,23 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   const html = b.run('document.querySelector("#pw").innerHTML');
   assert.ok(html.indexOf('Год — €29,99') < html.indexOf('Месяц — €4,99'));
   const D = b.run('DICT3');
-  for (const ru of ['14 дней бесплатно, без карты', 'Всегда бесплатно:', '≈ €2,50/мес', 'Год — €29,99', 'Месяц — €4,99', 'Оформить подписку', '▶ Начать свою тренировку', 'Демо: осталось дней —']) {
+  for (const ru of ['14 дней бесплатно, без карты', 'Дневник остаётся бесплатным', 'Всегда бесплатно:', '≈ €2,50/мес', 'Год — €29,99', 'Месяц — €4,99', 'Оформить подписку', '▶ Начать свою тренировку', 'Демо: осталось дней —']) {
     const r = D.find(x => x[0] === ru); assert.ok(r && r[1] && r[2], ru);
   }
   assert.equal(D.some(x => /Пора прибавить|Попробовать 14/.test(x[0])), false);
+  assert.equal(b.run('PREM_NAME'), 'Мой Зал Premium');
+  assert.match(html, /Мой Зал Premium/);
+  // after the demo the subtitle changes; during/before it stays the 14-day line
+  demo(b, 'free');
+  b.run('paywall("")');
+  const htmlFree = b.run('document.querySelector("#pw").innerHTML');
+  assert.match(htmlFree, /Дневник остаётся бесплатным/);
+  assert.equal(htmlFree.includes('<b>14 дней бесплатно, без карты</b>'), false);
+  demo(b, 'off');
+  b.run('paywall("")');
+  assert.match(b.run('document.querySelector("#pw").innerHTML'), /<b>14 дней бесплатно, без карты<\/b>/);
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
+  assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v51'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v52'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

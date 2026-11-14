@@ -201,4 +201,6 @@ const DICT3=[
 ['Приложение предложило прибавить вес. Точный авто-вес остаётся в подписке после 14 дней демо.','The app suggested adding weight. Exact auto weight stays in the subscription after the 14-day demo.','Lietotne ieteica palielināt svaru. Precīzs auto svars pēc 14 dienu demo paliek abonementā.'],
 ['Уже 3 тренировки! Программа тренера, авто-вес и видео техники остаются в подписке после 14 дней демо.','3 workouts done! The coach program, auto weight and technique videos stay in the subscription after the 14-day demo.','Jau 3 treniņi! Trenera programma, auto svars un tehnikas video pēc 14 dienu demo paliek abonementā.'],
 ['Демо заканчивается через 2 дня. Дальше — бесплатный дневник или подписка.','The demo ends in 2 days. After that — the free diary or a subscription.','Demo beigsies pēc 2 dienām. Pēc tam — bezmaksas dienasgrāmata vai abonements.'],
+// P-305c: paywall subtitle after the demo (LV needs native review, D-216)
+['Дневник остаётся бесплатным','The diary stays free','Dienasgrāmata paliek bez maksas'],
 ];

@@ -247,3 +247,10 @@ Rows at the end of `i18n/dict3.js` (comment «P-305b»). The P-305 v1 rows (arro
 - Приложение предложило прибавить вес. Точный авто-вес остаётся в подписке после 14 дней демо. → **Lietotne ieteica palielināt svaru. Precīzs auto svars pēc 14 dienu demo paliek abonementā.**
 - Уже 3 тренировки! Программа тренера, авто-вес и видео техники остаются в подписке после 14 дней демо. → **Jau 3 treniņi! Trenera programma, auto svars un tehnikas video pēc 14 dienu demo paliek abonementā.**
 - Демо заканчивается через 2 дня. Дальше — бесплатный дневник или подписка. → **Demo beigsies pēc 2 dienām. Pēc tam — bezmaksas dienasgrāmata vai abonements.**
+
+## P-305c Premium screen subtitle after the demo (need review, D-216)
+
+Rows at the end of `i18n/dict3.js` (comment «P-305c»).
+
+- Дневник остаётся бесплатным → **Dienasgrāmata paliek bez maksas**
+
