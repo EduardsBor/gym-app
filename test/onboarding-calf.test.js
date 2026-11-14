@@ -38,7 +38,7 @@ function boot(stored, withFeatures) {
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
   const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js'];
-  if (withFeatures) files.push('features.js');
+  if (withFeatures) files.push('premium.js', 'features.js');
   for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
   return { run: code => vm.runInContext(code, ctx), store };
 }
@@ -71,12 +71,16 @@ test('calf values saved under the wrong key move back to calf', () => {
   assert.equal(JSON.parse(store.get('gym')).body[0].calf, 38);
 });
 
-test('a fresh user does not get Premium and stays free on the second launch', () => {
+test('a fresh user has no Premium entitlement and stays free on the second launch (when the paywall is enabled)', () => {
   const first = boot(undefined, true);
+  // P-305: until the Android build the gate is off, so everything is open for everyone.
+  assert.equal(first.run('isPrem()'), true);
+  first.run('PREM_CFG.PAYWALL_ENABLED = true');
   assert.equal(first.run('isPrem()'), false);
   assert.equal(first.run('S.ownerPremium'), false);
   first.run('S.workouts.push({id:"w1",date:"2026-11-13",ex:[]}); save()');
   const second = boot(JSON.parse(first.store.get('gym')), true);
+  second.run('PREM_CFG.PAYWALL_ENABLED = true');
   assert.equal(second.run('isPrem()'), false);
   assert.equal(second.run('ownerUI()'), false);
 });

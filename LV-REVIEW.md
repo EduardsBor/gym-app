@@ -186,3 +186,7 @@ Account and sync (`i18n/dict3.js`, `sync.js`, `legal.js`):
 - Если войдёшь в аккаунт, они синхронизируются с облаком в ЕС. → **Ja ieiesi kontā, tie sinhronizēsies ES mākonī.**
 - Consent extras: «На этом устройстве данные хранятся в браузере.» / cloud + photos note / «Анонимную аналитику можно включить отдельно в «Ещё».»
 - Legal drafts (`LEGAL.lv` sections 3–4): guest vs EU Supabase account, body measurements only with consent, photos stay local, opt-in analytics events (install, app_open, onboarding_done, paywall_shown, trial_start, purchase, cancel).
+
+## P-305 Premium screen and Free limits (need review, D-216)
+
+New rows at the end of `i18n/dict3.js` (comment «P-305»): Premium benefits list, «Всегда бесплатно…», prices/trial lines (14 days, yearly only), auto-weight arrows (Пора прибавить ↑ / Держи вес / Сбавь ↓), Free lock texts (body, charts 90 days, programs, block end), natural-moment paywall reasons.
