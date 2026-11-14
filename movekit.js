@@ -165,7 +165,23 @@ const MOVEKIT = {
   "skull-db": "dumbbell-skullcrusher.mp4",
   "step-bw": "single-leg-step-down.mp4",
   "thoracic-rotation": "quadruped-thoracic-rotation.mp4",
-  "wrist-flexor-stretch": "seated-wrist-flexor-stretch.mp4"
+  "wrist-flexor-stretch": "seated-wrist-flexor-stretch.mp4",
+  // D-215 (C-109, 14.11.2026): 11 library cards get a clip. The gym file is the default.
+  "air-bike": "assault-bike.mp4",
+  "ankle-knee-to-wall": "banded-ankle-dorsiflexion-mobilization.mp4",
+  "close-pulldown": "narrow-pulldown.mp4",
+  "cru-machine": "machine-crunch.mp4",
+  "farmers-walk": "dumbbell-farmer-carry.mp4",
+  "neck-retraction": "seated-chin-tuck-neck-retraction.mp4",
+  "push-press": "dumbbell-push-press.mp4",
+  "reverse-wrist-curl": "dumbbell-wrist-extension.mp4",
+  "tpd-rope": "cable-rope-pushdown.mp4",
+  "woodchop": "cable-wood-chopper.mp4",
+  "wrist-curl": "barbell-wrist-curl.mp4"
+};
+// Per-place clip when the place has its own file (D-215: wrist curl — barbell in the gym, dumbbells at home).
+const MOVEKIT_PLACE = {
+  "wrist-curl": { "d": "dumbbell-wrist-curl.mp4" }
 };
 const MK_CACHE = 'moyzal-movekit-v1';
 const MK_TTL_MS = 3600 * 1000;
@@ -174,8 +190,13 @@ const mkMem = new Map();
 const mkSign = new Map();
 const mkSave = new Map();
 
-function movekitFile(id) {
-  const f = MOVEKIT[id];
+function movekitPlace() {
+  try { return (typeof S !== 'undefined' && S && S.prof && S.prof.place) || 'g'; } catch (e) { return 'g'; }
+}
+
+function movekitFile(id, place) {
+  const pf = MOVEKIT_PLACE[id];
+  const f = (pf && pf[place || movekitPlace()]) || MOVEKIT[id];
   return typeof f === 'string' && /^[a-z0-9.-]+\.mp4$/.test(f) ? f : '';
 }
 

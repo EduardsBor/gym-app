@@ -278,3 +278,72 @@ function migrateV12c(){
   if(Array.isArray(S.program))S.program.forEach(day);
   S.planV12c=1;return true}
 if(typeof save==='function'&&migrateV12c())save();
+
+// ---------------------------------------------------------------------------------------------
+// D-215 (C-109, принято Claude 14.11.2026): в приложении только упражнения с роликом MoveKit.
+// Без ролика остаются только быстрая ходьба (walk-brisk) и дыхание лёжа (cd_breath).
+// Скрытые карточки убраны из библиотеки, списков «добавить», замен ⇄ и генератора.
+// Названия, тексты и метки скрытых карточек остаются: история и старые планы показывают их имена.
+const HIDDEN=new Set(["chest-supported-1db","smith-split-squat","smith-rdl","standing-single-leg-curl","negative-pullup",
+  "neck-flexion-extension","cable-internal-rotation","cable-external-rotation-90","band-chest-press","wrist-mobility",
+  "reverse-lunge-supported","plank-advanced","smith-upright-row","smith-bss","smith-hip-thrust","standing-ab-wheel",
+  "deep-squat-hold","inchworm","stretch-hip-flexor","stretch-chest-doorway","stretch-hamstring","stretch-glute-figure4",
+  "stretch-calf","wall-slide","med-ball-slam",
+  // Заминка без ролика, в программах v1.2c заменена роликами MoveKit (thoracic-rotation / dead-hang, hip-flexor-rock, shoulder-rolls).
+  "cd_lat","cd_quad","cd_xbody"]);
+const HIDDEN_EX=[];
+for(let i=EX.length-1;i>=0;i--)if(HIDDEN.has(EX[i].id))HIDDEN_EX.unshift(EX.splice(i,1)[0]);
+const isHidden=id=>HIDDEN.has(id);
+// exBy() ищет в EX, затем в legacyEx(): скрытая карточка находится там с прежним названием.
+if(typeof legacyEx==='function'){const legacyEx0=legacyEx;legacyEx=function(id){const e=HIDDEN_EX.find(x=>x.id===id);return e?{id:e.id,name:e.name,group:e.group,hidden:true}:legacyEx0(id)}}
+if(typeof ALT!=='undefined')for(const k of Object.keys(ALT)){if(HIDDEN.has(k)){delete ALT[k];continue}ALT[k]=ALT[k].filter(x=>!HIDDEN.has(x))}
+if(typeof SLOT!=='undefined')for(const k of Object.keys(SLOT))SLOT[k]=SLOT[k].map(list=>list.filter(x=>!HIDDEN.has(x)));
+if(typeof autoOk==='function'){const autoOk1=autoOk;autoOk=function(id,a,acc){return !HIDDEN.has(id)&&autoOk1(id,a,acc)}}
+
+// Строка «Безопасность» у 9 карточек v1.2c (замечание Claude; band-pulldown — формулировка Claude).
+[['calf-db','При боли в ахилле или стопе уменьши амплитуду; ступенька устойчивая, держись за стену.','If the Achilles or foot hurts, shorten the range; use a stable step and hold the wall.','Ja sāp Ahileja cīpsla vai pēda, samazini amplitūdu; pakāpiens stabils, turies pie sienas.'],
+ ['calf-bw','Ступенька устойчивая, держись за опору; при боли в ахилле уменьши амплитуду или не выполняй.','Use a stable step and hold a support; if the Achilles hurts, shorten the range or skip it.','Pakāpiens stabils, turies pie balsta; ja sāp Ahileja cīpsla, samazini amplitūdu vai nedari.'],
+ ['ht-db','Придерживай гантель руками, чтобы она не скатилась; при боли в пояснице уменьши высоту подъёма.','Hold the dumbbell with both hands so it cannot roll; if the lower back hurts, lift the hips less.','Pieturi hanteli ar rokām, lai tā neaizripo; ja sāp muguras lejasdaļa, pacel gurnus zemāk.'],
+ ['ht-bw','Не прогибай поясницу вверху; при боли в пояснице уменьши высоту подъёма или не выполняй.','Do not arch the lower back at the top; if it hurts, lift the hips less or skip it.','Neizliec muguras lejasdaļu augšā; ja sāp, pacel gurnus zemāk vai nedari.'],
+ ['band-pulldown','Перед подходом проверь резинку на надрывы; дверь закрыта и открывается от тебя.','Check the band for tears before each set; the door is closed and opens away from you.','Pirms pieejas pārbaudi, vai gumijai nav plīsumu; durvis aizvērtas un veras prom no tevis.'],
+ ['hamstring-sweep','Без рывков, до лёгкого натяжения; при боли в пояснице или прострелах в ногу прекрати.','No bouncing, only to a light stretch; stop if the lower back hurts or pain shoots down the leg.','Bez rāvieniem, līdz vieglam stiepumam; pārtrauc, ja sāp muguras lejasdaļa vai sāpes izstaro kājā.'],
+ ['hip-90-90','Двигайся только в безболезненной амплитуде; при боли в тазобедренном суставе или колене прекрати.','Move only through a pain-free range; stop if the hip or knee hurts.','Kusties tikai nesāpīgā amplitūdā; pārtrauc, ja sāp gūža vai celis.'],
+ ['ankle-circles','Медленно и без боли; при свежей травме голеностопа не выполнять.','Slowly and pain-free; do not perform with a fresh ankle injury.','Lēni un bez sāpēm; ar svaigu potītes traumu nedari.'],
+ ['wrist-flexor-stretch','Натяжение лёгкое, без боли; при онемении или покалывании в пальцах прекрати.','Keep the stretch light and pain-free; stop if the fingers go numb or tingle.','Stiepums viegls, bez sāpēm; pārtrauc, ja pirksti notirpst vai durstās.']
+].forEach(([id,ru,en,lv])=>{if(TECH[id])TECH[id][2]=ru;if(TECH_EN[id])TECH_EN[id][2]=en;if(TECH_LV[id])TECH_LV[id][2]=lv});
+
+// D-215: один раз переводим сохранённый план со скрытых карточек на карточку с роликом (замена тренера или та же мышца).
+// Как и в v1.2c: меняются только id в S.program; история (S.workouts) и начатая тренировка (S.active) не меняются.
+const D215_MAP={'chest-supported-1db':'chest-supported-2db',
+  'smith-split-squat':{g:'bss',d:'bss',b:'reverse-lunge'},'smith-bss':{g:'bss',d:'bss',b:'reverse-lunge'},
+  'smith-rdl':{g:'rdl',d:'rdl-db',b:'sglb'},'standing-single-leg-curl':{g:'lc',d:'rdl-db',b:'nlc'},
+  'negative-pullup':{g:'scap-pullup',d:'band-pulldown',b:'scap-pullup'},'neck-flexion-extension':'neck-retraction',
+  'cable-internal-rotation':'cable-external-rotation','cable-external-rotation-90':'cable-external-rotation',
+  'band-chest-press':{g:'dbp',d:'dbp',b:'pu'},'wrist-mobility':'wrist-flexor-stretch',
+  'reverse-lunge-supported':{g:'reverse-lunge-db',d:'reverse-lunge',b:'reverse-lunge'},
+  'plank-advanced':'mk-rkc-plank','standing-ab-wheel':'mk-rkc-plank','smith-upright-row':'lr',
+  'smith-hip-thrust':{g:'ht',d:'ht-db',b:'ht-bw'},'deep-squat-hold':'bwsq','inchworm':'worlds-greatest-stretch',
+  'stretch-hip-flexor':'hip-flexor-rock','stretch-chest-doorway':'chest-wall-stretch','stretch-hamstring':'hamstring-sweep',
+  'stretch-glute-figure4':'hip-90-90','stretch-calf':'ankle-circles','wall-slide':'mk-prone-y-t-raises',
+  'med-ball-slam':{g:'kettlebell-swing',d:'kettlebell-swing',b:'jump-squat'},
+  'cd_lat':{g:'dead-hang',d:'thoracic-rotation',b:'dead-hang'},'cd_quad':'hip-flexor-rock','cd_xbody':'shoulder-rolls'};
+function d215Id(id,place,lim){
+  if(typeof id!=='string')return id;
+  let x=D215_MAP[id];if(x&&typeof x==='object')x=x[place]||x.g;
+  if(x==='mk-rkc-plank'&&(lim||[]).includes('s'))x='mk-front-plank'; // RKC — «осторожно со спиной»
+  return x||id}
+function migrateD215(){
+  if(typeof S==='undefined'||!S||(S.planD215|0)>=1)return false;
+  const prof=S.prof||{},place=prof.place||'g',lim=prof.lim||[];
+  const map=id=>d215Id(id,place,lim);
+  const blk=list=>{if(!Array.isArray(list))return list;const seen=new Set(),out=[];
+    for(const m of list){if(m&&typeof m.id==='string'){m.id=map(m.id);if(seen.has(m.id))continue;seen.add(m.id)}out.push(m)}return out};
+  const day=d=>{if(!d)return;const used=new Set();
+    (d.items||[]).forEach(it=>{if(!it||typeof it.exId!=='string')return;let n=map(it.exId);
+      if(n!==it.exId&&used.has(n)){const alt=(typeof ALT!=='undefined'&&ALT[n])||[];const x=alt.find(a=>!used.has(a)&&!HIDDEN.has(a)&&placeHas(a,place));if(x)n=x}
+      it.exId=n;used.add(n)});
+    if(d.wu){if(d.wu.cardio&&d.wu.cardio.id)d.wu.cardio.id=map(d.wu.cardio.id);d.wu.mob=blk(d.wu.mob);(d.wu.ramp||[]).forEach(r=>{if(r&&r.exId)r.exId=map(r.exId)})}
+    if(d.cd){if(d.cd.cardio&&d.cd.cardio.id)d.cd.cardio.id=map(d.cd.cardio.id);d.cd.stretch=blk(d.cd.stretch)}};
+  if(Array.isArray(S.program))S.program.forEach(day);
+  S.planD215=1;return true}
+if(typeof save==='function'&&migrateD215())save();

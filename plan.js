@@ -31,6 +31,7 @@ function clipOk(id) { return typeof movekitFile !== 'function' || NO_CLIP_OK.has
 function workOk(id, a, used) {
   if (!id || (used && used.has(id))) return false;
   if (!clipOk(id)) return false;
+  if (typeof HIDDEN !== 'undefined' && HIDDEN.has(id)) return false; // D-215: скрытые карточки
   if (typeof LIB_ONLY !== 'undefined' && LIB_ONLY.has(id)) return false;
   if (typeof FINISHER !== 'undefined' && FINISHER.has(id)) return false;
   if (typeof GEAR !== 'undefined' && GEAR[id] && !((a.gear) || []).includes(GEAR[id])) return false;

@@ -103,9 +103,10 @@ test('sample days include the trainer warm-up and cool-down', () => {
   assert.equal(nov.shorter, false); // v1.2c: fit_nov_5_g at 90 min is no longer shorter
 });
 
-test('cool-down cards are in the library without video', () => {
+test('cool-down cards without video: only cd_breath stays in the library, the rest are hidden but keep names (D-215)', () => {
+  assert.equal(ids.has('cd_breath'), true);
+  for (const id of ['cd_lat','cd_quad','cd_xbody']) assert.equal(ids.has(id), false, id);
   for (const id of ['cd_lat','cd_quad','cd_xbody','cd_breath']) {
-    assert.equal(ids.has(id), true);
     assert.equal(run('TECH["' + id + '"][0].length >= 3'), true);
     assert.equal(run('NO_ANIM.has("' + id + '")'), true);
     assert.equal(run('hasAnim("' + id + '")'), false);

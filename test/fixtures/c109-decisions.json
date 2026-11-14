@@ -1,0 +1,72 @@
+{
+ "source": "C-109 library-noclip.json (14.11.2026), decisions only",
+ "hide": [
+  "chest-supported-1db",
+  "smith-split-squat",
+  "smith-rdl",
+  "standing-single-leg-curl",
+  "negative-pullup",
+  "neck-flexion-extension",
+  "cable-internal-rotation",
+  "cable-external-rotation-90",
+  "band-chest-press",
+  "wrist-mobility",
+  "reverse-lunge-supported",
+  "plank-advanced",
+  "smith-upright-row",
+  "smith-bss",
+  "smith-hip-thrust",
+  "standing-ab-wheel",
+  "deep-squat-hold",
+  "inchworm",
+  "stretch-hip-flexor",
+  "stretch-chest-doorway",
+  "stretch-hamstring",
+  "stretch-glute-figure4",
+  "stretch-calf",
+  "wall-slide",
+  "med-ball-slam"
+ ],
+ "show": {
+  "close-pulldown": {
+   "g": "narrow-pulldown.mp4"
+  },
+  "ankle-knee-to-wall": {
+   "g": "banded-ankle-dorsiflexion-mobilization.mp4",
+   "d": "banded-ankle-dorsiflexion-mobilization.mp4"
+  },
+  "tpd-rope": {
+   "g": "cable-rope-pushdown.mp4"
+  },
+  "wrist-curl": {
+   "g": "barbell-wrist-curl.mp4",
+   "d": "dumbbell-wrist-curl.mp4"
+  },
+  "reverse-wrist-curl": {
+   "g": "dumbbell-wrist-extension.mp4",
+   "d": "dumbbell-wrist-extension.mp4"
+  },
+  "farmers-walk": {
+   "g": "dumbbell-farmer-carry.mp4",
+   "d": "dumbbell-farmer-carry.mp4"
+  },
+  "neck-retraction": {
+   "g": "seated-chin-tuck-neck-retraction.mp4",
+   "d": "seated-chin-tuck-neck-retraction.mp4",
+   "b": "seated-chin-tuck-neck-retraction.mp4"
+  },
+  "woodchop": {
+   "g": "cable-wood-chopper.mp4"
+  },
+  "push-press": {
+   "g": "dumbbell-push-press.mp4",
+   "d": "dumbbell-push-press.mp4"
+  },
+  "air-bike": {
+   "g": "assault-bike.mp4"
+  },
+  "cru-machine": {
+   "g": "machine-crunch.mp4"
+  }
+ }
+}
