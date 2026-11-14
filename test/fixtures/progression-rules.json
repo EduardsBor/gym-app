@@ -1,0 +1,1651 @@
+{
+ "version": "C-103 v1, 14.11.2026",
+ "based_on": "programs.json v1.2c → training_rules (NSCA; ACSM 2009; Helms 2016; Refalo 2023; Bell 2023)",
+ "marks": {
+  "TR": "из training_rules v1.2c",
+  "PT": "предложение тренера (в training_rules не задано; NSCA/ACSM)"
+ },
+ "units": {
+  "kg": "вес; для гантелей и гирь — вес ОДНОГО снаряда (на руку)",
+  "reps": "повторы",
+  "sec": "секунды удержания",
+  "band": "уровень резинки 1..5",
+  "assist_kg": "противовес гравитрона (меньше = тяжелее)"
+ },
+ "available_weights": {
+  "_src": "PT",
+  "_note": "профиль снаряжения по умолчанию; пользователь может поменять в настройках",
+  "barbell": {
+   "bar": 20,
+   "multiple": 2.5,
+   "min": 20
+  },
+  "dumbbell": {
+   "list": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40,
+    42,
+    44,
+    46,
+    48,
+    50
+   ]
+  },
+  "machine": {
+   "stack_step": 5,
+   "min": 5
+  },
+  "cable": {
+   "stack_step": 2.5,
+   "min": 2.5
+  },
+  "kettlebell": {
+   "list": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28,
+    32,
+    36,
+    40,
+    48
+   ]
+  },
+  "band": {
+   "levels": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "names": {
+    "1": "очень лёгкая",
+    "2": "лёгкая",
+    "3": "средняя",
+    "4": "тяжёлая",
+    "5": "очень тяжёлая"
+   }
+  },
+  "assisted": {
+   "stack_step": 5,
+   "min": 0
+  }
+ },
+ "increment": {
+  "_src": "TR (верх +1–2,5 кг, низ +2,5–5 кг); раскладка по снарядам — PT",
+  "barbell": {
+   "upper": 2.5,
+   "lower": 5,
+   "lower_if_weight_below": {
+    "weight": 40,
+    "step": 2.5
+   }
+  },
+  "dumbbell": {
+   "upper": 1,
+   "lower": 2
+  },
+  "machine": {
+   "upper": "1 step",
+   "lower": "1 step"
+  },
+  "cable": {
+   "upper": "1 step",
+   "lower": "1 step"
+  },
+  "kettlebell": {
+   "upper": "next",
+   "lower": "next"
+  },
+  "band": "next level",
+  "assisted": "−1 step противовеса"
+ },
+ "rounding": {
+  "_src": "PT",
+  "up": "новый вес = наименьший доступный ≥ (текущий + шаг)",
+  "down": "новый вес = наибольший доступный ≤ (текущий × коэффициент); если он равен текущему — следующий доступный вниз",
+  "no_heavier": "если тяжелее нет — вес тот же, прогрессия темпом/паузой (лестница модификаторов)",
+  "assisted": "гравитрон: прибавка = противовес −1 шаг (5 кг); третий промах = противовес +1 шаг; противовес 0 → переход на pull"
+ },
+ "rir": {
+  "_src": "TR",
+  "floor_rule": "PT: подход засчитывается как «верх выполнен», только если RIR не записан или RIR ≥ (нижняя граница цели − 1), но не ниже 0",
+  "targets": {
+   "nov": {
+    "c": [
+     2,
+     3
+    ],
+    "a": [
+     2,
+     3
+    ]
+   },
+   "mid": {
+    "c": [
+     2,
+     3
+    ],
+    "a": [
+     1,
+     3
+    ]
+   },
+   "adv": {
+    "c": [
+     2,
+     3
+    ],
+    "a": [
+     0,
+     2
+    ]
+   }
+  },
+  "note": "c — базовые (присед, становая, жимы, тяги): до отказа не доводить. a у опытных: последний подход можно 0–1."
+ },
+ "double_progression": {
+  "_src": "TR + PT (уточнение «1–2 тренировки»)",
+  "success": "все рабочие подходы ≥ max диапазона (для односторонних — обе стороны) и RIR-условие выполнено",
+  "sessions_required": {
+   "nov": 1,
+   "mid": 1,
+   "adv": 2
+  },
+  "on_increase": "вес вверх по increment+rounding; цель повторов следующей тренировки = min диапазона; счётчики success=0, miss=0",
+  "in_range": "все подходы ≥ min, но не все на max → вес тот же; success=0, miss=0"
+ },
+ "missed": {
+  "_src": "PT (по заданию Claude C-103)",
+  "definition": "промах = хотя бы один рабочий подход < min диапазона (для односторонних — по слабой стороне)",
+  "1": "вес тот же, подходы те же",
+  "2": "вес тот же, на следующую тренировку −1 рабочий подход (не меньше 2); после первой тренировки без промаха подходы возвращаются к плану",
+  "3": "вес −10 % (rounding.down), подходы по плану, цель = min диапазона, счётчики обнулить — прогрессия заново",
+  "reduce_factor": 0.9
+ },
+ "start": {
+  "_src": "PT (в training_rules стартового правила нет)",
+  "no_history": "первая тренировка — калибровочная: приложение не подставляет вес, подсказка «вес, с которым выйдет max диапазона с 3–4 повторами в запасе». Введённый вес = база.",
+  "calibration_result": "если все подходы ≥ max → прибавка сразу (как успех, без ожидания 2-й тренировки у adv); если хоть один < min → −10 % без счётчика промахов; иначе вес тот же",
+  "bodyweight": "старт с варианта из программы, цель = min диапазона",
+  "time": "старт = min диапазона секунд"
+ },
+ "replaced": {
+  "_src": "PT",
+  "rule": "история ведётся по exId. Замена со своей историей — продолжается её история. Без истории — правило start (калибровка). Вес основного упражнения не переносится: другой снаряд и рычаг."
+ },
+ "long_break": {
+  "_src": "PT",
+  "14_27_days": {
+   "weight_factor": 0.9,
+   "bodyweight": "цель = min диапазона, вариант тот же"
+  },
+  "28_plus_days": {
+   "weight_factor": 0.8,
+   "rir_plus": 1,
+   "rir_plus_sessions": 2,
+   "bodyweight": "на одну ступень лестницы вниз, цель = min"
+  },
+  "counters": "обнулить",
+  "time": "14–27 дн: −5 с; 28+: старт = min диапазона"
+ },
+ "deload": {
+  "_src": "TR (каждые 6 недель, подходов вдвое, вес тот же или −10 %); RIR — PT",
+  "every_weeks": 6,
+  "levels": [
+   "mid",
+   "adv"
+  ],
+  "nov": "первые 12 недель автоматической разгрузки нет — только кнопка «разгрузка» по самочувствию; с 13-й недели — как mid (PT)",
+  "early_trigger": "PT: вес не рос 3 недели подряд в ≥ половине базовых (c) упражнений → приложение предлагает разгрузку раньше",
+  "sets": "ceil(план/2), минимум 1",
+  "weight": "тот же при плановой; −10 % при ранней (по усталости/без прогресса)",
+  "reps": "диапазон тот же, цель = min",
+  "rir_plus": 2,
+  "frequency": "та же",
+  "counts_for_progression": false,
+  "after": "первая неделя после разгрузки: вес и подходы — как до разгрузки; промахи этой недели не считаются (miss не растёт); успехи считаются"
+ },
+ "unilateral": {
+  "_src": "PT",
+  "ids": [
+   "bpl",
+   "bss",
+   "concentration-curl",
+   "dbr",
+   "lun",
+   "reverse-lunge",
+   "reverse-lunge-db",
+   "sglb",
+   "single-arm-cable-lateral",
+   "single-leg-press",
+   "sl-rdl",
+   "step",
+   "step-bw"
+  ],
+  "rule": "вес один на обе стороны; успех — только если обе стороны на max; промах — если любая сторона < min; записывать повторы по сторонам, решения по слабой стороне"
+ },
+ "risk_flags": {
+  "_src": "PT",
+  "applies": {
+   "s": "нижняя часть тела со штангой/гантелями/гирей + пресс",
+   "k": "всё нижнее тело",
+   "p": "всё верхнее тело"
+  },
+  "rules": [
+   "sessions_required = 2 на любом уровне",
+   "шаг — минимальный: штанга 2,5 кг; гантели/гири/тренажёр/блок — следующий доступный вес",
+   "цель RIR +1 (нижняя граница не ниже 2)",
+   "лестницы: не переходить на варианты, запрещённые limit_rules.forbidden[flag] (например pl → mk-rkc-plank запрещён при s)",
+   "если пользователь отметил боль в упражнении — вес не повышать, предложить −10 % или замену"
+  ]
+ },
+ "bodyweight": {
+  "_src": "TR (bodyweight_progression, core_ladder) + PT (точный порог и порядок)",
+  "trigger": "все подходы ≥ max диапазона из программы (там 10–20, у «сложных» 6–12), сессий подряд — как в double_progression",
+  "on_trigger": "следующая ступень лестницы; цель = min диапазона",
+  "modifier_ladder": [
+   "tempo: опускание 3–4 с",
+   "pause: пауза 2 с в нижней точке",
+   "load: рюкзак +5 кг, дальше +2,5 кг как вес"
+  ],
+  "id_ladders": [
+   {
+    "from": "ht-bw",
+    "to": "sglb",
+    "src": "TR (одна нога)"
+   },
+   {
+    "from": "assisted-pullup",
+    "to": "pull",
+    "src": "PT: противовес −5 кг за успех; когда противовес 0 — переход на pull"
+   },
+   {
+    "from": "scap-pullup",
+    "to": "pull",
+    "src": "PT (место b, турник есть)"
+   },
+   {
+    "from": "inv",
+    "to": "pull",
+    "src": "PT (место b)"
+   },
+   {
+    "from": "dbug",
+    "to": "hanging-knee-raise",
+    "src": "TR: при 3×12–15 под контролем и висе 30 с (dead-hang); только места g/b"
+   },
+   {
+    "from": "hanging-knee-raise",
+    "to": "hlr",
+    "src": "PT"
+   },
+   {
+    "from": "pl",
+    "to": "mk-rkc-plank",
+    "src": "TR: при 3×45 с ровно (holds_sec pl max 45); запрещено при s"
+   }
+  ],
+  "no_id_ladder": "остальные (pu, dpu, bwsq, reverse-lunge, step-bw, sglb, ppu, bd, dip, chin, pull, nlc, cru, bdog, yr, tibialis-raise, calf-bw, hyp, hlr) — modifier_ladder",
+  "end": "toes-to-bar — не используется (ролик не загружаем, решение 14.11)"
+ },
+ "band": {
+  "_src": "TR (как свой вес) + PT",
+  "ids": [
+   "mk-band-row",
+   "band-pulldown",
+   "rdl-band"
+  ],
+  "trigger": "все подходы ≥ max (8–15 у резинок) — сессий как double_progression",
+  "on_trigger": "следующий уровень резинки, цель = min",
+  "no_heavier": "короче резинку / дальше от крепления, затем modifier_ladder"
+ },
+ "time": {
+  "_src": "PT, диапазоны — params.holds_sec",
+  "ranges": {
+   "pl": [
+    20,
+    45
+   ],
+   "bpl": [
+    20,
+    40
+   ],
+   "mk-rkc-plank": [
+    10,
+    20
+   ]
+  },
+  "step_sec": {
+   "pl": 5,
+   "bpl": 5,
+   "mk-rkc-plank": 2,
+   "dead-hang": 5
+  },
+  "rule": "все подходы удержаны ≥ цели ровно → цель + шаг (не выше max); при max во всех подходах — лестница (pl → mk-rkc-plank 10 с); если переход запрещён (s) — цель растёт до 60 с и стоп",
+  "miss": "подход < цели − шаг → цель та же; 3 раза подряд → цель − шаг",
+  "note": "удержания не зависят от sessions_required: прибавка после каждой тренировки, где все подходы удержаны"
+ },
+ "exercise_classes": {
+  "_src": "PT: из exercise_index (по клипу + ручные уточнения); region по группе",
+  "items": {
+   "assisted-pullup": {
+    "name": "Подтягивания в гравитроне",
+    "equipment": "assisted",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": ""
+   },
+   "band-pulldown": {
+    "name": "Тяга резинки сверху на коленях (резинка закреплена на двери вверху)",
+    "equipment": "band",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "bc": {
+    "name": "Подъём штанги на бицепс",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "bd": {
+    "name": "Обратные отжимания от скамьи",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "bdog": {
+    "name": "Птица-собака",
+    "equipment": "bodyweight",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "bp": {
+    "name": "Жим штанги лёжа",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "bpl": {
+    "name": "Боковая планка",
+    "equipment": "time",
+    "region": "core",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "bss": {
+    "name": "Болгарские сплит-приседания",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "bwsq": {
+    "name": "Приседания с весом тела",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "cable-crunch": {
+    "name": "Скручивания на блоке",
+    "equipment": "cable",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "cable-overhead-extension": {
+    "name": "Разгибания из-за головы на блоке",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "calf": {
+    "name": "Подъём на носки",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "calf-bw": {
+    "name": "Подъём на носки на одной ноге без веса",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "calf-db": {
+    "name": "Подъём на носки на одной ноге с гантелью",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "cc": {
+    "name": "Сведение в кроссовере",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "cgb": {
+    "name": "Жим узким хватом",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "chest-supported-2db": {
+    "name": "Тяга с опорой грудью (две гантели)",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "chin": {
+    "name": "Подтягивания обратным хватом",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": ""
+   },
+   "concentration-curl": {
+    "name": "Концентрированные сгибания",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "cr": {
+    "name": "Тяга горизонтального блока",
+    "equipment": "machine",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "cru": {
+    "name": "Скручивания на полу",
+    "equipment": "bodyweight",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dbc": {
+    "name": "Подъём гантелей на бицепс",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dbp": {
+    "name": "Жим гантелей лёжа",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dbr": {
+    "name": "Тяга гантели одной рукой",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dbug": {
+    "name": "Мёртвый жук",
+    "equipment": "bodyweight",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dead-hang": {
+    "name": "Вис на перекладине",
+    "equipment": "time",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "decline-db-press": {
+    "name": "Жим гантелей на наклонной вниз",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dip": {
+    "name": "Отжимания на брусьях",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": "p"
+   },
+   "dl": {
+    "name": "Становая тяга",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "dpu": {
+    "name": "Узкие отжимания",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "dsp": {
+    "name": "Жим гантелей сидя",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "fly": {
+    "name": "Разводка гантелей",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "fp": {
+    "name": "Тяга каната к лицу",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "fsq": {
+    "name": "Фронтальные приседания",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "gsq": {
+    "name": "Гоблет-присед",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "hack-squat": {
+    "name": "Гакк-присед",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "hanging-knee-raise": {
+    "name": "Подъём коленей в висе",
+    "equipment": "bodyweight",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": ""
+   },
+   "hc": {
+    "name": "Молотки",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "hip-abduction": {
+    "name": "Отведение бедра в тренажёре",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "hlr": {
+    "name": "Подъём ног в висе",
+    "equipment": "bodyweight",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": ""
+   },
+   "ht": {
+    "name": "Ягодичный мост",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "ht-bw": {
+    "name": "Ягодичный мост на полу",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "ht-db": {
+    "name": "Ягодичный мост с гантелью",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "hyp": {
+    "name": "Гиперэкстензия",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "ibp": {
+    "name": "Жим штанги на наклонной",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "idb": {
+    "name": "Жим гантелей на наклонной",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "incline-db-curl": {
+    "name": "Сгибания на наклонной скамье",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "incline-db-fly": {
+    "name": "Сведения гантелей на наклонной",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "inv": {
+    "name": "Австралийские подтягивания",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "lat": {
+    "name": "Тяга верхнего блока",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "lc": {
+    "name": "Сгибание ног лёжа",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "lc-seated": {
+    "name": "Сгибание ног сидя",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "le": {
+    "name": "Разгибание ног",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "lp": {
+    "name": "Жим ногами",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "lr": {
+    "name": "Махи гантелями в стороны",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "lun": {
+    "name": "Выпады с гантелями",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "mch": {
+    "name": "Жим в тренажёре сидя (горизонтальный)",
+    "equipment": "machine",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "mch-incline": {
+    "name": "Жим в тренажёре сидя (наклонный)",
+    "equipment": "machine",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "meadows-row": {
+    "name": "Тяга Мидоу",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "mk-band-row": {
+    "name": "Тяга резинки к поясу",
+    "equipment": "band",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "mk-rkc-plank": {
+    "name": "RKC-планка",
+    "equipment": "time",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "nlc": {
+    "name": "Скандинавские сгибания ног",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": "k"
+   },
+   "ohp": {
+    "name": "Жим штанги стоя",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "sp"
+   },
+   "ote": {
+    "name": "Разгибание из-за головы",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "pc": {
+    "name": "Сгибания на скамье Скотта",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "pec-deck": {
+    "name": "Сведения в тренажёре",
+    "equipment": "machine",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "pendlay-row": {
+    "name": "Тяга Пендли",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "pl": {
+    "name": "Планка",
+    "equipment": "time",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "ppu": {
+    "name": "Пайк-отжимания",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "pu": {
+    "name": "Отжимания от пола",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "pull": {
+    "name": "Подтягивания",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": true,
+    "risk": ""
+   },
+   "rdl": {
+    "name": "Румынская тяга",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "rdl-band": {
+    "name": "Румынская тяга с резинкой",
+    "equipment": "band",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "rdl-db": {
+    "name": "Румынская тяга с гантелями (упор на носок)",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "rdl-kb": {
+    "name": "Румынская тяга с гирей",
+    "equipment": "kettlebell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "reverse-hyper": {
+    "name": "Обратная гиперэкстензия",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "reverse-lunge": {
+    "name": "Выпады назад без веса",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "reverse-lunge-db": {
+    "name": "Выпады назад с гантелями",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "reverse-pec-deck": {
+    "name": "Обратные разведения в тренажёре",
+    "equipment": "machine",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "rfly": {
+    "name": "Махи в наклоне",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "row": {
+    "name": "Тяга штанги в наклоне",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "scap-pullup": {
+    "name": "Подтягивания лопатками (рабочие подходы)",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "seated-calf": {
+    "name": "Подъёмы на носки сидя",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "sglb": {
+    "name": "Ягодичный мост на одной ноге",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "shr": {
+    "name": "Шраги",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "single-arm-cable-lateral": {
+    "name": "Разведения на нижнем блоке одной рукой",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "single-leg-press": {
+    "name": "Жим ногами одной ногой",
+    "equipment": "machine",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "k"
+   },
+   "skull": {
+    "name": "Французский жим",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "skull-db": {
+    "name": "Французский жим лёжа с гантелями",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "sl-rdl": {
+    "name": "Румынская тяга на одной ноге",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "smith-bench": {
+    "name": "Жим лёжа в Смите (горизонтальный)",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "smith-calf": {
+    "name": "Подъёмы на носки стоя в Смите",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "smith-close-grip": {
+    "name": "Жим узким хватом в Смите",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "smith-incline-bench": {
+    "name": "Жим лёжа в Смите (наклонный)",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "smith-row": {
+    "name": "Тяга в наклоне в Смите",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "smith-seated-press": {
+    "name": "Жим сидя в Смите",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "smith-shrug": {
+    "name": "Шраги в Смите",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "smith-squat": {
+    "name": "Приседания в Смите",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "sk"
+   },
+   "sq": {
+    "name": "Приседания со штангой",
+    "equipment": "barbell",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "sk"
+   },
+   "standing-db-press": {
+    "name": "Жим гантелей стоя",
+    "equipment": "dumbbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "step": {
+    "name": "Зашагивания на скамью",
+    "equipment": "dumbbell",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "step-bw": {
+    "name": "Спуск со ступеньки на одной ноге",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": true,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "straight-arm-pulldown": {
+    "name": "Пуловер на блоке прямыми руками",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "suitcase-carry": {
+    "name": "Suitcase carry",
+    "equipment": "dumbbell",
+    "region": "core",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "tbar-row": {
+    "name": "Тяга Т-грифа",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "s"
+   },
+   "tibialis-raise": {
+    "name": "Подъёмы носка на себя",
+    "equipment": "bodyweight",
+    "region": "lower",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "tpd": {
+    "name": "Разгибание на блоке (прямой гриф)",
+    "equipment": "cable",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   },
+   "ur": {
+    "name": "Тяга штанги широким хватом к груди",
+    "equipment": "barbell",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": "p"
+   },
+   "yr": {
+    "name": "Y-подъёмы рук лёжа",
+    "equipment": "bodyweight",
+    "region": "upper",
+    "unilateral": false,
+    "hard_bodyweight": false,
+    "risk": ""
+   }
+  }
+ },
+ "differences_from_training_rules": [
+  "«1–2 тренировки подряд» (mid/adv) уточнено: mid — 1, adv — 2; при флаге риска — 2 на любом уровне.",
+  "Свой вес: в TR порог «больше 15–20 повторов»; здесь порог = max диапазона из программы. Для «силы» (5–10) и сложных (pull, dip, chin… 3–12) усложнение наступает раньше 15.",
+  "core_ladder: «3×45–60 с» → порог 45 с, т.к. params.holds_sec pl = 20–45. При s RKC запрещена — планка растёт до 60 с.",
+  "Разгрузка: TR «вес тот же или −10 %» → плановая — тот же, ранняя — −10 %. RIR +2 и «результаты не считаются» — добавлены.",
+  "Новички: TR «первые 8–12 недель по самочувствию» → автоматической разгрузки нет 12 недель.",
+  "«Вес не растёт 2–3 недели → разгрузка» → 3 недели в ≥ половине базовых упражнений.",
+  "Правила промахов (1/2/3), старт, перерыв, замена, односторонние, флаги, время — в TR нет, всё помечено PT."
+ ],
+ "open_questions": [
+  "Профиль снаряжения (шаг гантелей 1/2 или 2,5 кг, шаг блоков) — по умолчанию, или пользователь вводит сам?",
+  "Записывает ли приложение RIR? Если нет — RIR-условие пропускается (правило это допускает).",
+  "Нужна ли в приложении отметка «боль» для правила флагов?",
+  "Резинки: дома есть разные уровни или одна резинка? Если одна — сразу no_heavier."
+ ],
+ "tests": [
+  {
+   "id": "P301-01",
+   "title": "Жим штанги, не все на верху",
+   "text": "жим 60 кг, 3×8–12, сделал 12/12/11 → 60 кг",
+   "input": {
+    "id": "bp",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 60,
+    "results": [
+     12,
+     12,
+     11
+    ]
+   },
+   "expected": {
+    "weight": 60,
+    "sets": 3
+   }
+  },
+  {
+   "id": "P301-02",
+   "title": "Жим штанги, все на верху, mid",
+   "text": "жим 60 кг, 3×8–12, 12/12/12, RIR 2/2/1 → 62,5 кг, цель 8",
+   "input": {
+    "id": "bp",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 60,
+    "results": [
+     12,
+     12,
+     12
+    ],
+    "rir": [
+     2,
+     2,
+     1
+    ]
+   },
+   "expected": {
+    "weight": 62.5,
+    "sets": 3,
+    "target": 8
+   }
+  },
+  {
+   "id": "P301-03",
+   "title": "Присед adv, вторая подряд на верху",
+   "text": "присед 100 кг, adv, 3×6–10, 10/10/10, прошлый раз тоже 10/10/10 → 105 кг",
+   "input": {
+    "id": "sq",
+    "level": "adv",
+    "range": [
+     6,
+     10
+    ],
+    "sets_plan": 3,
+    "weight": 100,
+    "results": [
+     10,
+     10,
+     10
+    ],
+    "state": {
+     "success": 1
+    }
+   },
+   "expected": {
+    "weight": 105
+   }
+  },
+  {
+   "id": "P301-04",
+   "title": "Мост с гантелью, округление вверх",
+   "text": "ягодичный мост с гантелью 9 кг, nov, 2×12–15, 15/15 → 9+2=11 → ближайшая гантель 12 кг",
+   "input": {
+    "id": "ht-db",
+    "level": "nov",
+    "range": [
+     12,
+     15
+    ],
+    "sets_plan": 2,
+    "weight": 9,
+    "results": [
+     15,
+     15
+    ]
+   },
+   "expected": {
+    "weight": 12
+   }
+  },
+  {
+   "id": "P301-05",
+   "title": "RIR 0 у новичка — не засчитывается",
+   "text": "махи 6 кг, nov, 15/15 при RIR 0/0 → 6 кг",
+   "input": {
+    "id": "lr",
+    "level": "nov",
+    "range": [
+     12,
+     15
+    ],
+    "sets_plan": 2,
+    "weight": 6,
+    "results": [
+     15,
+     15
+    ],
+    "rir": [
+     0,
+     0
+    ]
+   },
+   "expected": {
+    "weight": 6
+   }
+  },
+  {
+   "id": "P301-06",
+   "title": "Промах 1",
+   "text": "тяга блока 50 кг, 3×8–12, 9/8/7 → 50 кг, промах 1",
+   "input": {
+    "id": "cr",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 50,
+    "results": [
+     9,
+     8,
+     7
+    ]
+   },
+   "expected": {
+    "weight": 50,
+    "sets": 3,
+    "state": {
+     "success": 0,
+     "miss": 1
+    }
+   }
+  },
+  {
+   "id": "P301-07",
+   "title": "Промах 2 подряд",
+   "text": "тяга блока 50 кг, 8/7/7 второй раз → 50 кг, 2 подхода",
+   "input": {
+    "id": "cr",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 50,
+    "results": [
+     8,
+     7,
+     7
+    ],
+    "state": {
+     "miss": 1
+    }
+   },
+   "expected": {
+    "weight": 50,
+    "sets": 2,
+    "state": {
+     "success": 0,
+     "miss": 2
+    }
+   }
+  },
+  {
+   "id": "P301-08",
+   "title": "Промах 3 подряд",
+   "text": "тяга блока 50 кг, третий промах 8/7 → 45 кг, 3 подхода, счётчики 0",
+   "input": {
+    "id": "cr",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 50,
+    "results": [
+     8,
+     7
+    ],
+    "state": {
+     "miss": 2
+    }
+   },
+   "expected": {
+    "weight": 45,
+    "sets": 3,
+    "state": {
+     "success": 0,
+     "miss": 0
+    }
+   }
+  },
+  {
+   "id": "P301-09",
+   "title": "Одностороннее",
+   "text": "тяга гантели одной рукой 24 кг, Л 12/12/12, П 12/12/11 → 24 кг",
+   "input": {
+    "id": "dbr",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 24,
+    "results": {
+     "L": [
+      12,
+      12,
+      12
+     ],
+     "R": [
+      12,
+      12,
+      11
+     ]
+    }
+   },
+   "expected": {
+    "weight": 24
+   }
+  },
+  {
+   "id": "P301-10",
+   "title": "Свой вес → лестница",
+   "text": "ягодичный мост на полу, nov, 3×12–20, 20/20/20 → мост на одной ноге (sglb), цель 12",
+   "input": {
+    "id": "ht-bw",
+    "level": "nov",
+    "range": [
+     12,
+     20
+    ],
+    "sets_plan": 3,
+    "results": [
+     20,
+     20,
+     20
+    ]
+   },
+   "expected": {
+    "id": "sglb",
+    "target": 12
+   }
+  },
+  {
+   "id": "P301-11",
+   "title": "Резинка",
+   "text": "тяга резинки к поясу, резинка 3 (средняя), mid, 3×8–15, 15/15/15 → резинка 4, цель 8",
+   "input": {
+    "id": "mk-band-row",
+    "level": "mid",
+    "range": [
+     8,
+     15
+    ],
+    "sets_plan": 3,
+    "weight": 3,
+    "results": [
+     15,
+     15,
+     15
+    ]
+   },
+   "expected": {
+    "weight": 4,
+    "target": 8
+   }
+  },
+  {
+   "id": "P301-12",
+   "title": "Планка, флаг s",
+   "text": "планка, цель 45 с, 45/45/45, флаг спины → RKC запрещена → планка 50 с",
+   "input": {
+    "id": "pl",
+    "level": "mid",
+    "range": [
+     20,
+     45
+    ],
+    "sets_plan": 3,
+    "target": 45,
+    "results": [
+     45,
+     45,
+     45
+    ],
+    "flags": [
+     "s"
+    ]
+   },
+   "expected": {
+    "id": "pl",
+    "target": 50
+   }
+  },
+  {
+   "id": "P301-13",
+   "title": "Флаг s, штанга низ",
+   "text": "ягодичный мост со штангой 100 кг, mid, флаг s, 12/12/12 второй раз → 102,5 кг (а не 105)",
+   "input": {
+    "id": "ht",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 100,
+    "results": [
+     12,
+     12,
+     12
+    ],
+    "flags": [
+     "s"
+    ],
+    "state": {
+     "success": 1
+    }
+   },
+   "expected": {
+    "weight": 102.5
+   }
+  },
+  {
+   "id": "P301-14",
+   "title": "Перерыв 20 дней",
+   "text": "жим 60 кг, перерыв 20 дней → 60×0,9=54 → 52,5 кг",
+   "input": {
+    "id": "bp",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 3,
+    "weight": 60,
+    "ctx": {
+     "days_since_last": 20
+    }
+   },
+   "expected": {
+    "weight": 52.5
+   }
+  },
+  {
+   "id": "P301-15",
+   "title": "Разгрузка плановая",
+   "text": "жим 80 кг, 4 подхода, mid, плановая разгрузка → 80 кг, 2 подхода, RIR 4–5",
+   "input": {
+    "id": "bp",
+    "level": "mid",
+    "range": [
+     8,
+     12
+    ],
+    "sets_plan": 4,
+    "weight": 80,
+    "ctx": {
+     "deload": "scheduled"
+    }
+   },
+   "expected": {
+    "weight": 80,
+    "sets": 2,
+    "rir": [
+     4,
+     5
+    ]
+   }
+  }
+ ],
+ "tests_note": "input: id, level, range [min,max], sets_plan, weight (кг; гантели — на руку; резинка — уровень), results (повторы; односторонние {L,R}), rir?, state {success, miss}, flags?, ctx {days_since_last | deload: scheduled|early | after_deload}, target (сек для удержаний). expected — только проверяемые поля. Все 15 пересчитаны скриптом по этим правилам — PASS."
+}
