@@ -3,11 +3,12 @@
 // ---- Entitlement (one flag). S.premium = real purchase (future, via store/RevenueCat); S.ownerPremium = owner/dev unlock.
 const FREE_EX=new Set(['bp','dbp','pu','sq','gsq','bwsq','lp','rdl','ht','mk-barbell-deadlift','lat','pull','dbr','inv','ohp','lr','bc','mk-cable-bar-pushdown','mk-front-plank','mk-treadmill-run']);
 const FREE_CAT=new Set(['c0','c7','c9']);
-const isPrem=()=>!!(S.premium||S.ownerPremium);
+// P-305: access decisions live in premium.js (isPremium/can). Gate is off until the Android build → all open.
+const isPrem=()=>isPremium();
 // Переключатель «Режим владельца» виден только тем, у кого он уже включён, или на устройстве разработчика
 // (в консоли браузера: localStorage.setItem('gymOwner','1')). Обычный пользователь его не видит.
 const ownerUI=()=>{try{return !!S.ownerPremium||localStorage.getItem('gymOwner')==='1'}catch(e){return !!S.ownerPremium}};
-const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id).startsWith('w_')||(typeof exBy==='function'&&exBy(id).group==='Разминка');
+const exOk=id=>can('library'); // library and videos are never gated (G-005)
 // ---- Migration: never lose access or data. Only adds new fields.
 (function(){let ch=false;const has=!!((S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.program);
  // Владельческий доступ получают только данные, созданные до схемы 4 (до появления Free/Premium).
@@ -17,22 +18,23 @@ const exOk=id=>isPrem()||FREE_EX.has(id)||String(id).startsWith('c_')||String(id
  if(S.schema!==4){S.schema=4;ch=true}if(ch)save()})();
 
 // ---- Paywall (DEMO, no real payments)
-function paywall(reason){let d=$('#pw');if(!d){d=document.createElement('div');d.id='pw';document.body.append(d)}d.className='';let plan='y';
+function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(!d){d=document.createElement('div');d.id='pw';document.body.append(d)}d.className='';let plan='y';
  const draw=()=>{d.innerHTML=`<div class="sheet pwsheet"><div class="row"><span class="badge demo">ДЕМО</span><span class="grow"></span><button id="pwc" aria-label="Закрыть">✕</button></div>
  <div style="text-align:center;font-size:44px">👑</div><h2 style="text-align:center;margin:4px 0">Мой Зал Premium</h2>
  ${reason?`<p class="mut" style="text-align:center">${esc(reason)}</p>`:''}
- <ul class="pwlist"><li>Все программы по целям</li><li>Полная библиотека: 68 упражнений с 3D-видео</li><li>Графики прогресса и расчётный 1ПМ</li><li>Замеры тела, фото и ИМТ</li><li>ИИ-советы (скоро)</li></ul>
- <button class="plan ${plan==='y'?'sel':''}" data-pl="y"><span class="grow"><b>Год — €29,99</b><br><span class="mut">≈ €2,50 в месяц · 7 дней бесплатно</span></span><span class="badge pr">−50%</span></button>
- <button class="plan ${plan==='m'?'sel':''}" data-pl="m"><span class="grow"><b>Месяц — €4,99</b><br><span class="mut">Отмена в любой момент</span></span></button>
- <button class="pri full" id="pwbuy" style="margin-top:12px">${plan==='y'?'Попробовать 7 дней бесплатно':'Оформить подписку'}</button>
+ <ul class="pwlist"><li>Точный авто-вес и шаг оборудования</li><li>Разгрузка каждые 6 недель и возврат после перерыва</li><li>Все программы и смена в любой момент</li><li>Графики за всю историю</li><li>Несколько профилей оборудования</li><li>Обхваты тела и тренды</li></ul>
+ <p class="mut" style="font-size:12px">Всегда бесплатно: «Боль» и замены, ограничения, разминка и заминка, видео, синхронизация, экспорт CSV, журнал и рекорды.</p>
+ <button class="plan ${plan==='y'?'sel':''}" data-pl="y"><span class="grow"><b>Год — €29,99</b><br><span class="mut">≈ €2,50 в месяц · 14 дней бесплатно</span></span><span class="badge pr">−50%</span></button>
+ <button class="plan ${plan==='m'?'sel':''}" data-pl="m"><span class="grow"><b>Месяц — €4,99</b><br><span class="mut">Без пробного периода · отмена в любой момент</span></span></button>
+ <button class="pri full" id="pwbuy" style="margin-top:12px">${plan==='y'?'Попробовать 14 дней бесплатно':'Оформить подписку'}</button>
  <button class="full" id="pwrest" style="margin-top:8px">Восстановить покупки</button>
- <p class="mut" style="font-size:12px;text-align:center">Демо-экран: оплата не подключена, деньги не списываются. ${plan==='y'?'После пробного периода — €29,99 в год.':''}</p>
+ <p class="mut" style="font-size:12px;text-align:center">Оплата пока не подключена, деньги не списываются. ${plan==='y'?'После 14 дней — €29,99 в год.':'€4,99 в месяц.'}</p>
  <button class="full" id="pwno" style="margin-bottom:6px">Не сейчас</button></div>`;
   d.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{plan=b.dataset.pl;draw()});
   const close=()=>d.className='hidden';$('#pwc').onclick=close;$('#pwno').onclick=close;
-  $('#pwbuy').onclick=()=>toast('Демо: оплата пока не подключена');$('#pwrest').onclick=()=>toast('Демо: покупок не найдено')};draw()}
+  $('#pwbuy').onclick=()=>toast('Демо: оплата пока не подключена');$('#pwrest').onclick=()=>toast('Демо: покупок не найдено')};draw();return true}
 const lockCard=(t,r)=>`<div class="card lock"><div style="font-size:34px">🔒</div><h3>${t}</h3><p class="mut">${r}</p><button class="pri full" data-pw="${esc(r)}">Открыть Premium</button></div>`;
-document.addEventListener('click',e=>{const b=e.target.closest('[data-pw]');if(b){e.preventDefault();paywall(b.dataset.pw)}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pw]');if(b){e.preventDefault();paywall(b.dataset.pw)}});
 
 // ---- Onboarding (first launch; skippable; re-runnable from «Ещё»)
 let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
@@ -66,12 +68,14 @@ function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
  $('#ofgo').onclick=()=>{S.obOffer=2;save();obStart()};$('#ofno').onclick=()=>{S.obOffer=2;save();today(sel)}}};
-const _progress=progress;progress=function(){if(isPrem())return _progress();$('#title').textContent='Прогресс';app.innerHTML=lockCard('Графики и рекорды — в Premium','Графики веса, объёма и расчётного 1ПМ по каждому упражнению')+'<p class="mut">История тренировок остаётся бесплатной — раздел «История».</p>'};
-const _catalog=catalog;catalog=function(){_catalog();if(isPrem())return;app.querySelectorAll('[data-c]').forEach(b=>{if(FREE_CAT.has(b.dataset.c))return;b.textContent='🔒 Premium';b.classList.remove('pri');b.onclick=()=>paywall('Все программы по целям доступны в Premium');const h=b.closest('.card').querySelector('h3');if(h)h.insertAdjacentText('afterbegin','🔒 ')})};
-const _quiz=quiz;quiz=function(){_quiz();if(isPrem())return;app.querySelectorAll('.chip[data-k="prio"],.chip[data-k="lim"],.chip[data-k="len"]').forEach(b=>{if(b.dataset.k==='len'&&b.dataset.v==='60')return;b.classList.add('locked');b.onclick=()=>paywall('Приоритетные мышцы, ограничения и длительность — в Premium')})};
-// ---- Body: Premium + explicit health-data consent (GDPR art. 9) before any entry
-const _body=body;body=function(){$('#title').textContent='Тело';if(!isPrem()){app.innerHTML=lockCard('Замеры тела — в Premium','Вес, обхваты, % жира, фото и ИМТ с графиками');return}
- if(!S.consentHealth)return consentView();_body()};
+// P-305: progress (90 days in Free) is in app.js via chartFrom(); programs are gated in the preview below; the questionnaire
+// (priority muscles, limitations, duration) is never locked.
+// ---- Body: explicit health-data consent (GDPR art. 9) before any entry. Free: body weight only, charts 90 days.
+const _body=body;body=function(){$('#title').textContent='Тело';if(!S.consentHealth)return consentView();
+ if(!can('bodyGirths'))bM='weight';if(!can('chartsFull')&&(!bR||bR>90))bR=90;_body();
+ if(!can('bodyGirths'))app.querySelectorAll('[data-bm]').forEach(b=>{if(b.dataset.bm!=='weight')b.remove()});
+ if(!can('chartsFull'))app.querySelectorAll('[data-br]').forEach(b=>{if(!+b.dataset.br||+b.dataset.br>90)b.remove()});
+ if(premFree()){const c=app.querySelector('[data-bm]'),card=c&&c.closest&&c.closest('.card');if(card)card.insertAdjacentHTML('beforeend','<button class="full sm" style="margin-top:8px" data-pw="Обхваты, тренды и графики за всю историю — в Premium">🔒 Обхваты и вся история — Premium</button>')}};
 function consentView(){$('#title').textContent='Согласие';app.innerHTML=`<div class="card consent"><div style="font-size:34px">🛡️</div><h2 style="margin-top:4px">Данные о здоровье</h2>
  <p>Вес, обхваты, процент жира, рост и фото тела — это <b>данные о здоровье</b>. По GDPR (ст. 9) их можно обрабатывать только с твоего явного согласия.</p>
  <ul><li>На этом устройстве данные хранятся в браузере.</li><li>Если войдёшь в аккаунт, программа, история и настройки синхронизируются с облаком в ЕС (Supabase). Замеры тела — только при этом согласии. Фото тела остаются на устройстве и в облако не загружаются.</li><li>Используются только чтобы показать твои графики и прогресс.</li><li>Согласие можно отозвать, а данные — экспортировать или удалить в «Ещё».</li><li>Анонимную аналитику можно включить отдельно в «Ещё».</li></ul>
@@ -79,16 +83,18 @@ function consentView(){$('#title').textContent='Согласие';app.innerHTML=
  <button class="pri full" id="csok" disabled>Согласен — продолжить</button><button class="full" id="cspol" style="margin-top:8px">Политика конфиденциальности</button></div>
  <p class="mut">Без согласия раздел «Тело» не сохраняет никаких данных. Остальные функции работают как обычно.</p>`;
  $('#cs').onchange=e=>$('#csok').disabled=!e.target.checked;$('#csok').onclick=()=>{S.consentHealth={v:1,at:new Date().toISOString()};save();toast('Согласие сохранено');body()};$('#cspol').onclick=()=>legal('privacy','body')}
-const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('body');_bodyForm(e)};
-// ---- Technique sheet: 3D video only for unlocked exercises
-const _techModal=techModal;techModal=function(id){_techModal(id);if(exOk(id)||window._wf)return;const m=document.getElementById('tech'),v=m&&m.querySelector('video.a3d');if(v){if(typeof stopMovekitVideo==='function')stopMovekitVideo(v);else{v.pause();v.removeAttribute('src');v.load()}v.outerHTML=`<div class="vlock" data-pw="3D-видео всех 68 упражнений доступны в Premium">${animPosterBox(id)}<span>🔒 3D-видео — Premium</span></div>`}};
+const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('body');_bodyForm(e);if(can('bodyGirths'))return;
+ // Free: only body weight is entered. Other fields are hidden, not removed, so saved values stay untouched.
+ const m=$('#modal');if(!m||!m.querySelectorAll)return;m.querySelectorAll('[data-bf]').forEach(i=>{if(i.dataset.bf!=='weight'){const l=i.closest&&i.closest('label');if(l)l.style.display='none'}});
+ const f=m.querySelector('#bfile'),fl=f&&f.closest&&f.closest('label');if(fl){fl.style.display='none';fl.insertAdjacentHTML('afterend','<p class="mut" style="font-size:12px">Обхваты, % жира и фото — в Premium.</p>')}};
+// ---- Technique sheet: videos are never gated (G-005).
 
 // ---- «Ещё»: language, premium, onboarding, privacy & data
 const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  const ver=[...app.querySelectorAll('p.mut')].pop();
  const html=`<div class="card"><b data-noi18n>🌐 Язык / Language / Valoda</b><div class="chips" style="margin-top:8px" data-noi18n>${Object.entries(LANGS).map(([k,l])=>`<button class="opt chip ${LANG===k?'sel':''}" data-lang="${k}">${l}</button>`).join('')}</div>${LANG==='lv'?'<p class="mut" style="font-size:12px">Latviešu tulkojums ir melnraksts — to vēl pārbaudīs dzimtās valodas runātājs.</p>':''}</div>
- <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0">${isPrem()?(S.premium?'Подписка активна.':'Открыто в режиме владельца.'):'Сейчас бесплатная версия.'}</p>
- <button class="full" id="pwopen">Посмотреть Premium (демо)</button>
+ <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0">${demoTier()?(demoTier()==='free'?'Демо-режим: Free.':'Демо-режим: Premium.'):!PREM_CFG.PAYWALL_ENABLED?'Сейчас всё открыто бесплатно.':isPrem()?(S.premium?'Подписка активна.':'Открыто в режиме владельца.'):'Сейчас бесплатная версия.'}</p>
+ <button class="full" id="pwopen">Посмотреть Premium</button>
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
  <div class="card"><b>🤖 ИИ-советы</b> <span class="badge">скоро · Premium</span><p class="mut" style="margin:4px 0 0">Персональные подсказки по прогрессу. Пока не подключено — данные никуда не отправляются.</p></div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
@@ -100,7 +106,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
  ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия 30';
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
- $('#pwopen').onclick=()=>paywall('');if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
+ $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
  if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;
   if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
@@ -117,4 +123,11 @@ function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textConte
 // ---- Router additions
 const _render=render;render=function(){if(view==='onb')return onb();if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view))return onb();_render()};
 // ---- Exercise card: 1RM chart is Premium
-const _exCard=exCard;exCard=function(id){_exCard(id);if(isPrem())return;document.querySelectorAll('#exc svg.spark').forEach(s=>{const p=s.nextElementSibling;s.outerHTML='<button class="full sm" data-pw="Графики и расчётный 1ПМ — в Premium">🔒 График 1ПМ — Premium</button>';if(p&&p.tagName==='P')p.remove()})};
+const _exCard=exCard;exCard=function(id){_exCard(id);if(can('prHistory'))return;document.querySelectorAll('#exc svg.spark').forEach(s=>{const p=s.nextElementSibling;s.outerHTML='<button class="full sm" data-pw="Графики и расчётный 1ПМ — в Premium">🔒 График 1ПМ — Premium</button>';if(p&&p.tagName==='P')p.remove()})};
+// ---- P-305 programs: Free = 1 questionnaire program (2–5 days); a new one after the block ends. Premium: all templates, any time.
+function premProgLock(a,back){if(can('programSwitch')&&can('programsAll'))return'';
+ if(back==='catalog'&&!can('programsAll'))return'Все готовые программы — в Premium. Бесплатно: одна программа по анкете.';
+ if(+a.days>5&&!can('programDays6'))return'6 тренировок в неделю — в Premium. Бесплатно: 2–5 дней.';
+ if(S.program&&!blockEnded()&&!can('programSwitch'))return'Новая программа — после окончания блока ('+new Date(blockEndsAt()).toLocaleDateString(LOC)+'). В Premium — смена в любой момент.';return''}
+const _renderPreview=renderPreview;renderPreview=function(){_renderPreview();const r=premProgLock(PV.pr.a,PV.back);if(!r)return;const b=$('#pstart');if(!b||!b.insertAdjacentHTML)return;
+ b.insertAdjacentHTML('beforebegin',`<p class="mut">${esc(r)}</p>`);b.textContent='🔒 Premium';b.onclick=()=>paywall(r)};

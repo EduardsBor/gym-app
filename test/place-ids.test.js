@@ -38,7 +38,7 @@ function boot(stored, withFeatures) {
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
   const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'movekit.js'];
-  if (withFeatures) files.push('features.js');
+  if (withFeatures) files.push('premium.js', 'features.js');
   for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
   return { run: code => vm.runInContext(code, ctx), store };
 }
@@ -206,5 +206,5 @@ test('place.js is loaded after cd.js and before the plan builder, and is precach
   assert.ok(i('cd.js') >= 0 && i('cd.js') < i('place.js') && i('place.js') < i('prog.js') && i('place.js') < i('plan.js'));
   const sw = read('sw.js');
   assert.match(sw, /'place\.js'/);
-  assert.match(sw, /const C='moyzal-v47'/);
+  assert.match(sw, /const C='moyzal-v49'/);
 });

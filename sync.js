@@ -366,7 +366,7 @@
   }
   if(typeof paywall==='function'){
     const _pw=paywall;
-    paywall=function(reason){mzTrack('paywall_shown',{reason:String(reason||'').slice(0,80)});return _pw(reason)};
+    paywall=function(reason,o){const r=_pw(reason,o);if(r!==false)mzTrack('paywall_shown',{reason:String(reason||'').slice(0,80)});return r};
   }
   document.addEventListener('click',e=>{if(e.target.closest('#pwbuy')) mzTrack('trial_start',{demo:1})});
 
