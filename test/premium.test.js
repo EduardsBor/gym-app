@@ -234,7 +234,7 @@ test('never-gated features are not locked in the code (questionnaire, videos, hi
   assert.equal(/lockCard\('Графики и рекорды/.test(f), false);
   assert.equal(/lockCard\('Замеры тела/.test(f), false);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v49'/);
+  assert.match(sw, /const C='moyzal-v50'/);
   assert.match(sw, /'premium\.js','features\.js'/);
   const html = read('index.html');
   assert.ok(html.indexOf('premium.js') < html.indexOf('features.js') && html.indexOf('premium.js') > html.indexOf('app.js'));

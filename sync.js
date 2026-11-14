@@ -59,9 +59,37 @@
   function payloadOf(src){
     const p=JSON.parse(JSON.stringify(src));
     delete p.ownerPremium;delete p.active;delete p.tEnd;delete p.ownerUid;
+    // D-217: install_id остаётся только на устройстве, чтобы анонимные события нельзя было связать с аккаунтом.
+    delete p.installId;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
-    if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age}
+    if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
+  }
+  // D-217: ограничения из анкеты (спина/колени/плечи) и отметки «боль» — тоже данные о здоровье: без согласия только на устройстве.
+  const isLimWhy=w=>Array.isArray(w)&&typeof w[0]==='string'&&/^Ограничения \(/.test(w[0]);
+  function stripLimits(p){
+    if(p.prof&&typeof p.prof==='object') delete p.prof.lim;
+    if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
+    (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
+    if(p.pg&&typeof p.pg==='object') Object.keys(p.pg).forEach(k=>{const n=p.pg[k]&&p.pg[k].next;if(n&&n.note==='pain') n.note='same'});
+  }
+  // Облако без ограничений не должно стирать их на этом устройстве.
+  function keepLocalLimits(L){
+    if(!L) return;
+    if(S.prof&&typeof S.prof==='object'&&S.prof.lim===undefined&&L.lim) S.prof.lim=L.lim;
+    if(Array.isArray(S.why)&&L.why&&!S.why.some(isLimWhy)) S.why=S.why.concat(L.why);
+    // Без согласия облако без отметок «боль» не должно стирать их в истории на этом устройстве.
+    (L.pain||[]).forEach(p=>{
+      const w=(S.workouts||[]).find(x=>x&&x.id===p.id);if(!w||!w.items) return;
+      let it=w.items[p.i];
+      if(!it||(p.exId!=null&&it.exId!==p.exId)) it=w.items.find(x=>x&&x.exId===p.exId);
+      if(it&&it.pain===undefined) it.pain=true;
+    });
+  }
+  function localLimits(){
+    const pain=[];
+    (S.workouts||[]).forEach(w=>(w&&w.items||[]).forEach((it,i)=>{if(it&&it.pain) pain.push({id:w.id,i,exId:it.exId})}));
+    return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,why:Array.isArray(S.why)?S.why.filter(isLimWhy):null,pain};
   }
   function mergeLists(local,remote,delA,delB,idKey,timeFn){
     const del=new Set([].concat(delA||[],delB||[]));
@@ -77,8 +105,9 @@
   }
   function applyRemoteFresh(R){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId;
-    const az=S.consentAnalytics,lang=S.lang;
+    const az=S.consentAnalytics,lang=S.lang,LL=localLimits();
     Object.keys(R).forEach(k=>{S[k]=R[k]});
+    keepLocalLimits(LL);
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
     if(keepTEnd) S.tEnd=keepTEnd;
@@ -88,7 +117,7 @@
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
   }
   function applyMerged(R,remoteAt){
-    const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd;
+    const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,LL=localLimits();
     const w=mergeLists(S.workouts,R.workouts,S.deletedWorkouts,R.deletedWorkouts,'id',x=>x.end||x.start||0);
     const b=mergeLists(S.body,R.body,S.deletedBody,R.deletedBody,'id',x=>Date.parse(x.date||'')||0);
     const c=mergeLists(S.custom,R.custom,S.deletedCustom,R.deletedCustom,'id',x=>+(String(x.id).replace(/\D/g,'')||0));
@@ -111,6 +140,7 @@
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
     if(S.consentHealth||R.consentHealth){['height','weightKg','age'].forEach(k=>{const h=pick(k);if(h!==undefined) S[k]=h})}
+    keepLocalLimits(LL);
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
     if(keepTEnd) S.tEnd=keepTEnd;
@@ -166,11 +196,16 @@
   };
 
   function canTrack(){return !!(S.consentAnalytics&&S.consentAnalytics.v)}
+  // D-217: анонимная аналитика — только случайный install_id с устройства; без user_id, email и auth uid.
+  function eventRow(name,props){
+    const pr={};Object.entries(props||{}).forEach(([k,v])=>{if(!/^(user_?id|uid|email)$/i.test(k)) pr[k]=v});
+    return {name,install_id:S.installId,props:pr};
+  }
   async function mzTrack(name,props){
     if(!canTrack()||!READY||!sb) return;
     try{
       ensureMeta();
-      await sb.from('events').insert({name,install_id:S.installId,props:props||{},user_id:user?user.id:null});
+      await sb.from('events').insert(eventRow(name,props));
     }catch(e){}
   }
   window.mzTrack=mzTrack;
