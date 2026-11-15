@@ -46,6 +46,7 @@
   function persistLocal(){
     if(typeof S_RO!=='undefined'&&S_RO) return;
     try{localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
+    if(typeof saveHistory==='function') try{saveHistory()}catch(e){}
   }
   // Отпечаток программы: по его изменению ставим отдельную метку времени progAt,
   // чтобы правка настроек на одном устройстве не затирала новую программу с другого.
@@ -410,8 +411,11 @@
         return;
       }
       try{
-        localStorage.removeItem('gym');
-        await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
+        if(typeof clearLocalData==='function') await clearLocalData();
+        else{
+          localStorage.removeItem('gym');
+          await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
+        }
         // Кэш сервис-воркера мог содержать ответы сервера с личными данными (версии до v39).
         if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
       }catch(e){}

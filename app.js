@@ -133,6 +133,8 @@ let saveWarnAt=0;
 function save(){if(S_RO)return;
  try{localStorage.setItem('gym',JSON.stringify(S))}
  catch(e){if(Date.now()-saveWarnAt>30000){saveWarnAt=Date.now();toast('⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Ещё».')}return}
+ if(typeof saveHistory==='function')try{saveHistory()}catch(e){}
+ if(typeof requestPersist==='function')try{requestPersist()}catch(e){}
  if(window.mzOnSave)try{window.mzOnSave()}catch(e){}}
 
 const LEGACY={ abw:['Ролик для пресса','Пресс'], bike:['Велотренажёр','Кардио'], calf:['Подъём на носки','Ноги'], cc:['Сведение в кроссовере','Грудь'], cru:['Скручивания','Пресс'], dbrdl:['Румынская тяга с гантелями','Ноги'], dip:['Отжимания на брусьях','Грудь'], dl:['Становая тяга','Спина'], dpu:['Узкие отжимания','Трицепс'], ell:['Эллипс','Кардио'], fp:['Тяга каната к лицу','Плечи'], hlr:['Подъём ног в висе','Пресс'], ote:['Разгибание из-за головы','Трицепс'], pc:['Сгибания на скамье Скотта','Бицепс'], pl:['Планка','Пресс'], rfly:['Махи в наклоне','Плечи'], rowm:['Гребной тренажёр','Кардио'], shr:['Шраги','Спина'], skull:['Французский жим','Трицепс'], step:['Зашагивания на скамью','Ноги'], tm:['Беговая дорожка','Кардио'], tpd:['Разгибание на блоке','Трицепс'], ur:['Тяга штанги широким хватом к груди','Плечи'], w_armc:['Круги руками','Разминка'], w_bandrow:['Лёгкая тяга к поясу','Разминка'], w_catcow:['Кошка-корова','Разминка'], w_dislo:['Проводка палки или резинки за голову','Разминка'], w_gm:['Наклоны «гуд-морнинг» без веса','Разминка'], w_march:['Ходьба на месте с высоким подниманием колен','Разминка'], w_pa:['Разведение рук со сведением лопаток','Разминка'], wlk:['Быстрая ходьба','Кардио'], yr:['Y-подъёмы рук лёжа','Плечи'], w_scpu:['Отжимания лопатками','Разминка']};
@@ -366,9 +368,59 @@ function showW(id){const w=S.workouts.find(x=>x.id===id),m=$('#modal');m.classLi
  $('#mc').onclick=()=>m.classList.add('hidden');$('#wdel').onclick=()=>{if(confirm('Удалить?')){S.workouts=S.workouts.filter(x=>x.id!==id);S.deletedWorkouts=(S.deletedWorkouts||[]).concat(id);save();m.classList.add('hidden');history()}}}
 // ---------- Тело
 const BM=[['weight','Вес','кг'],['fat','Жир','%'],['neck','Шея','см'],['chest','Грудь','см'],['waist','Талия','см'],['belly','Живот','см'],['hips','Бёдра (таз)','см'],['biceps','Бицепс','см'],['thigh','Бедро','см'],['calf','Икра','см']];
-const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{const r=indexedDB.open('moyzal',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
- const tx=(m,f)=>open().then(db=>new Promise((res,rej)=>{const t=db.transaction('photos',m),st=t.objectStore('photos'),q=f(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)}));
- return{get:k=>tx('readonly',s=>s.get(k)),put:(k,v)=>tx('readwrite',s=>s.put(v,k)),del:k=>tx('readwrite',s=>s.delete(k)),all:()=>tx('readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o})}})();
+const IDB_NAME='moyzal',IDB_VER=2,HIST_BACKUP_KEY='gym_hist_backup',HIST_IDB_KEY='gym_hist_idb',PERSIST_KEY='gymPersist';
+const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{
+ if(typeof indexedDB==='undefined'){p=null;rej(new Error('no idb'));return}
+ const r=indexedDB.open(IDB_NAME,IDB_VER);
+ r.onupgradeneeded=()=>{const db=r.result;
+  if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos');
+  if(!db.objectStoreNames.contains('history'))db.createObjectStore('history')};
+ r.onsuccess=()=>res(r.result);
+ r.onerror=()=>{p=null;rej(r.error)}});
+ const tx=(store,m,f)=>open().then(db=>new Promise((res,rej)=>{const t=db.transaction(store,m),st=t.objectStore(store),q=f(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)}));
+ return{get:k=>tx('photos','readonly',s=>s.get(k)),put:(k,v)=>tx('photos','readwrite',s=>s.put(v,k)),del:k=>tx('photos','readwrite',s=>s.delete(k)),
+  all:()=>tx('photos','readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o}),
+  histGet:()=>tx('history','readonly',s=>s.get('workouts')),
+  histPut:list=>tx('history','readwrite',s=>s.put(list,'workouts'))}})();
+// D-207: workout history lives in IndexedDB 'history'. localStorage 'gym' still keeps a copy this version;
+// a one-time snapshot is stored in gym_hist_backup and is never overwritten. If IndexedDB is missing (private mode), we keep using localStorage.
+function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
+function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
+function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
+ Promise.resolve().then(async()=>{try{await idb.histPut(histList());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
+async function migrateHistory(){
+ if(typeof indexedDB==='undefined')return{ok:false,fallback:'localStorage'};
+ let fromIdb,idbAvail=true;
+ try{fromIdb=await idb.histGet()}catch(e){idbAvail=false}
+ if(!idbAvail)return{ok:false,fallback:'localStorage'};
+ if(Array.isArray(fromIdb)){
+  S.workouts=fromIdb;
+  try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
+  try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
+  return{ok:true,source:'idb'};
+ }
+ const local=histList();
+ writeHistBackupOnce(local);
+ try{await idb.histPut(local);try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
+ catch(e){return{ok:false,fallback:'localStorage'}}
+}
+async function clearLocalData(){
+ try{['gym','gym_hist_backup','gym_hist_idb','gymPersist'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+ try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(IDB_NAME);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
+}
+let persistAsked=false;
+function requestPersist(){
+ try{
+  if(persistAsked)return;
+  if(!S||!(S.program||(S.workouts&&S.workouts.length)))return;
+  let prev=null;try{prev=localStorage.getItem(PERSIST_KEY)}catch(e){}
+  if(prev)return;
+  persistAsked=true;
+  if(!(navigator.storage&&navigator.storage.persist)){try{localStorage.setItem(PERSIST_KEY,'unsupported')}catch(e){}return}
+  navigator.storage.persist().then(ok=>{try{localStorage.setItem(PERSIST_KEY,ok?'granted':'denied')}catch(e){}}).catch(()=>{try{localStorage.setItem(PERSIST_KEY,'error')}catch(e){}});
+ }catch(e){}
+}
+const histReady=migrateHistory();
 function compress(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',.72))};img.onerror=rej;img.src=URL.createObjectURL(file)})}
 let bM='weight',bR=0,cmpA=null,cmpB=null;
 const fmtD=d=>new Date(d).toLocaleDateString(LOC,{day:'numeric',month:'short',year:'2-digit'});
@@ -492,7 +544,7 @@ function more(){$('#title').textContent='Ещё';
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=cleanImport(JSON.parse(await e.target.files[0].text()));if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
- $('#reset').onclick=()=>{if(confirm('Удалить ВСЕ данные?')&&confirm('Точно?')){localStorage.removeItem('gym');location.reload()}}}
+ $('#reset').onclick=()=>{if(confirm('Удалить ВСЕ данные?')&&confirm('Точно?')){Promise.resolve(typeof clearLocalData==='function'?clearLocalData():localStorage.removeItem('gym')).finally(()=>location.reload())}}}
 function library(){libView()}
 // ---------- Научная основа
 const SRC={
@@ -523,7 +575,10 @@ function science(fromOb){$('#title').textContent='Научная основа';c
  app.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>{window._sg=b.dataset.sg;science(fromOb)});
  $('#back').onclick=()=>{window._sg=null;if(!S.goal)onboarding();else go('more')}}
 if('serviceWorker'in navigator){const had=!!navigator.serviceWorker.controller;let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{})}
-document.addEventListener('DOMContentLoaded',()=>{go('today');
- if(S_BROKEN)setTimeout(()=>alert(S_RO?'Сохранённые данные повреждены и не читаются. Приложение открыто без записи, чтобы их не затереть. Освободи место в браузере и перезапусти.':'Сохранённые данные были повреждены и не прочитались. Их копия сохранена на устройстве (gym_broken). Восстанови данные из резервной копии или войди в аккаунт.'),300)});
-// Просим браузер не удалять данные сайта при нехватке места (на iPhone помогает и установка на главный экран).
-try{if(navigator.storage&&navigator.storage.persist&&(S.program||S.workouts.length))navigator.storage.persist().catch(()=>{})}catch(e){}
+document.addEventListener('DOMContentLoaded',()=>{
+ const start=()=>{go('today');
+  if(S_BROKEN)setTimeout(()=>alert(S_RO?'Сохранённые данные повреждены и не читаются. Приложение открыто без записи, чтобы их не затереть. Освободи место в браузере и перезапусти.':'Сохранённые данные были повреждены и не прочитались. Их копия сохранена на устройстве (gym_broken). Восстанови данные из резервной копии или войди в аккаунт.'),300)};
+ Promise.resolve(typeof histReady!=='undefined'?histReady:null).catch(()=>{}).then(start);
+});
+// D-207: ask once (after first saved workout or when data already exists). Result is stored in gymPersist; no repeat prompts.
+try{requestPersist()}catch(e){}
