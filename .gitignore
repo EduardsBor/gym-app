@@ -1,0 +1,32 @@
+# Dependencies and Capacitor web build output (do not move repo-root web files here)
+node_modules/
+www/
+
+# Android / Gradle build outputs (commit the android/ project itself)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/app/.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.so
+*.hprof
+
+# Signing material must never be committed
+*.jks
+*.keystore
+*.p12
+keystore.properties
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- A-501: обёртка Capacitor 8 (Android). Скрипт `npm run build:web` копирует статику PWA в gitignored `www/`; сайт GitHub Pages по-прежнему из корня репозитория, веб-файлы не менялись. `appId` `app.gymcaptain` (можно сменить до первой загрузки в Play). Иконка и сплеш — дефолт Capacitor, ждут B-409. Подпись релиза и Play — позже. См. `docs/ANDROID-BUILD.md`.
 - D-219 (принято Claude): название приложения — GymCaptain (вместо «Мой Зал / GymUp»). Заголовок, manifest (`name`/`short_name`), `PREM_NAME` («GymCaptain Premium»), встроенная политика и условия legal.js (RU/EN/LV), тексты i18n, префиксы файлов экспорта CSV/JSON (`gymcaptain-`). Иконки не менялись (ждут B-409). Репозиторий и адрес сайта без изменений. Изменённые LV-строки: `docs/LV-NEW-D219.md`. sw `moyzal-v55`.
 - P-307 (принято Claude): разминка и заминка бесплатны в каждой тренировке, в том числе в «Своей тренировке» после демо (FEATURES.warmup/cooldown = free; ролики MoveKit по-прежнему только с подпиской). «➕ Своё упражнение» убрано из библиотеки (уже созданные остаются в истории и CSV). Отзыв согласия на данные о здоровье всегда побеждает при синхронизации (`S.healthConsentRevokedAt`). Из встроенной политики убрано упоминание пульсометра. CSV: названия упражнений на языке интерфейса. sw `moyzal-v54`.
 - Prelaunch (принято Claude): страховка запуска — тест падает при `PAYWALL_ENABLED=true` без `PAYWALL_LAUNCH`; в рантайме запуском считается дата первого запуска (localStorage `gymPwLaunch`). Чек-лист: `docs/RELEASE-CHECKLIST.md`.
