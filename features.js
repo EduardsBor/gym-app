@@ -160,7 +160,7 @@ const _pprogram=program;program=function(){_pprogram();if(can('programs')||!app.
  app.querySelectorAll('[data-swp],[data-up],[data-dn2],[data-x],[data-ad]').forEach(b=>b.remove());
  if(app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin','<div class="card"><p class="mut" style="margin:0 0 8px">Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Сегодня».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>')};
 const _pvol=volBadges;volBadges=function(){return can('muscleVolume')?_pvol():'<button class="full sm" data-pw="Объём по мышцам — по подписке">🔒 Объём по мышцам — по подписке</button>'};
-const _pprogress=progress;progress=function(){if(can('charts'))return _pprogress();$('#title').textContent='Прогресс';
+const _pprogress=progress;progress=function(){if(can('charts')||can('prs')||can('oneRM')||can('muscleVolume'))return _pprogress();$('#title').textContent='Прогресс';
  app.innerHTML=lockCard('Графики и рекорды','Графики, рекорды, 1ПМ и объём по мышцам — по подписке. Вся история тренировок бесплатно — в разделе «История».')};
 const _pcel=celebrate;celebrate=function(n,i){if(can('prs'))return _pcel(n,i)};
 

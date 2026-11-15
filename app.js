@@ -155,7 +155,9 @@ if(migrateLegacyPlans())save();
 (function(){const bad='mk-standing-calf-raise-machine';let ch=false;(Array.isArray(S.body)?S.body:[]).forEach(b=>{if(b&&Object.prototype.hasOwnProperty.call(b,bad)){if(b.calf==null||b.calf==='')b.calf=b[bad];delete b[bad];ch=true}});if(ch)save()})();
 
 const isCardio=id=>exBy(id).group==='Кардио';
-const e1rm=(w,r)=>r>0?w*(1+r/30):0, fmtT=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const e1rm=(w,r)=>{if(typeof epley1RM==='function'){const v=epley1RM(w,r);return v==null?0:v}w=+w;r=+r;return(w>0&&r>=1&&r<=10)?w*(1+r/30):0};
+const fmtT=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function histWorkouts(){return typeof histList==='function'?histList():((typeof S!=='undefined'&&S&&Array.isArray(S.workouts))?S.workouts:[])}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2600)}
 let view='today';
@@ -258,17 +260,27 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
   const snap=typeof healthSnap==='function'?healthSnap(A):null;A.end=snap?snap.end:Date.now();if(A.warm)A.warmDone=A.warm.c.filter(Boolean).length;delete A.warm;if(A.cool){A.coolDone=A.cool.c.filter(Boolean).length;delete A.cool}A.items=doneItems;
   if(snap&&typeof applyHealthFields==='function')applyHealthFields(A,summarizeHealth(snap,typeof healthProfile==='function'?healthProfile():{}));
   delete A.hrSamples;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);toast('Тренировка сохранена 💪');go('history');if(typeof showWorkoutSummary==='function')showWorkoutSummary(A);else prSummary(A)}}
-function prSummary(A){const L=[];A.items.forEach(it=>it.sets.forEach(s=>s.pr&&s.prInfo&&L.push([exBy(it.exId).name,s.prInfo])));if(!L.length)return;const m=$('#modal');m.classList.remove('hidden');
- m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">🏆 Рекорды тренировки: ${L.length}</h2>${L.map(([n,i])=>`<div class="li"><div class="grow"><b>${esc(n)}</b><br><span class="mut">${esc(i.t)}</span></div><span class="mut"><s>${esc(i.o)}</s></span>&nbsp;→&nbsp;<b class="pr">${esc(i.n)}</b></div>`).join('')}<p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="mc">Отлично!</button></div>`;$('#mc').onclick=()=>m.classList.add('hidden')}
-function priorSets(exId,skip){const L=[];S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>s.done&&L.push(s))}));
- if(S.active)S.active.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>s.done&&s!==skip&&L.push(s))});return L}
-function bestOf(exId){let w=0,r=0;priorSets(exId).forEach(s=>{w=Math.max(w,+s.w);r=Math.max(r,e1rm(+s.w,+s.r))});return{w,r}}
+function prNotes(A){const L=[];(A&&A.items||[]).forEach(it=>(it.sets||[]).forEach(s=>{if(s&&s.pr&&s.prInfo)L.push([exBy(it.exId).name,s.prInfo])}));
+ const seen=new Set(),out=[];L.forEach(p=>{const k=p[0]+'\0'+(p[1].t||'');if(seen.has(k))return;seen.add(k);out.push(p)});return out}
+function prNotesHTML(L){if(!L||!L.length)return'';const t=L.length===1?'🏆 Новый рекорд':'🏆 Новые рекорды';
+ return`<div class="prnote"><b>${t}</b>${L.map(([n,i])=>`<div class="li"><div class="grow"><b>${esc(n)}</b><br><span class="mut">${esc(i.t)}</span></div><span class="mut"><s>${esc(i.o)}</s></span>&nbsp;→&nbsp;<b class="pr">${esc(i.n)}</b></div>`).join('')}</div>`}
+function prSummary(A){if(typeof can==='function'&&!can('prs'))return;const L=prNotes(A);if(!L.length)return;const m=$('#modal');m.classList.remove('hidden');
+ m.innerHTML=`<div class="sheet">${prNotesHTML(L)}<button class="pri full" id="mc" style="margin-top:12px">Отлично!</button></div>`;$('#mc').onclick=()=>m.classList.add('hidden')}
+function priorSets(exId,skip){const ok=s=>s&&s.done&&s!==skip&&(typeof isWorkingSet!=='function'||isWorkingSet(s));const L=[];
+ histWorkouts().forEach(wo=>(wo.items||[]).forEach(it=>{if(it.exId===exId)(it.sets||[]).forEach(s=>{if(ok(s))L.push(s)})}));
+ if(S.active)S.active.items.forEach(it=>{if(it.exId===exId)it.sets.forEach(s=>{if(ok(s))L.push(s)})});return L}
+function bestOf(exId){if(typeof recordsForExercise==='function'){const b=recordsForExercise(histWorkouts(),exId);return{w:b.bestWeight||0,r:b.best1RM||0,reps:b.bestRepsAtWeight,wReps:b.bestWeightReps}}
+ let w=0,r=0;priorSets(exId).forEach(s=>{w=Math.max(w,+s.w);r=Math.max(r,e1rm(+s.w,+s.r))});return{w,r}}
 let pendingFan=false;
-function checkPR(exId,s){delete s.pr;delete s.prInfo;if(isCardio(exId)||!(+s.w>0)||!(+s.r>0))return;const L=priorSets(exId,s);if(!L.length)return;
- const bw=Math.max(...L.map(x=>+x.w)),br=Math.max(...L.map(x=>e1rm(+x.w,+x.r))),same=L.filter(x=>+x.w===+s.w),bRep=same.length?Math.max(...same.map(x=>+x.r)):0;let info=null;
- if(+s.w>bw)info={t:'Максимальный вес',o:bw+' кг',n:s.w+' кг'};else if(e1rm(+s.w,+s.r)>br+0.05)info={t:'Расчётный 1ПМ',o:br.toFixed(1)+' кг',n:e1rm(+s.w,+s.r).toFixed(1)+' кг'};
+function checkPR(exId,s){delete s.pr;delete s.prInfo;if(isCardio(exId)||(typeof isWarmupSet==='function'&&isWarmupSet(s))||!(+s.w>0)||!(+s.r>0))return;const L=priorSets(exId,s);if(!L.length)return;
+ const bw=Math.max(0,...L.map(x=>+x.w)),eNew=typeof epley1RM==='function'?epley1RM(+s.w,+s.r):e1rm(+s.w,+s.r);
+ const brs=L.map(x=>typeof epley1RM==='function'?epley1RM(+x.w,+x.r):e1rm(+x.w,+x.r)).filter(v=>v>0);
+ const br=brs.length?Math.max(...brs):null;
+ const same=L.filter(x=>+x.w===+s.w),bRep=same.length?Math.max(...same.map(x=>+x.r)):0;let info=null;
+ if(+s.w>bw)info={t:'Максимальный вес',o:bw+' кг',n:s.w+' кг'};
+ else if(eNew>0&&br!=null&&eNew>br+0.05)info={t:'1ПМ (оценка)',o:br.toFixed(1)+' кг',n:eNew.toFixed(1)+' кг'};
  else if(same.length&&+s.r>bRep)info={t:'Повторы с весом '+s.w+' кг',o:bRep+' повт.',n:s.r+' повт.'};
- if(info){s.pr=1;s.prInfo=info;pendingFan=true;celebrate(exBy(exId).name,info)}}
+ if(info){s.pr=1;s.prInfo=info}}
 const PHR=['Сила растёт — так держать!','Ты сильнее, чем вчера 💪','Прогресс налицо — продолжай!','Вот это результат! Гордись собой.','Каждый подход приближает к цели.','Рекорды любят упорных!','Отличная работа — тело отвечает на нагрузку.','Новая планка взята! Дальше — больше.'];
 function celebrate(name,info){const d=document.createElement('div');d.id='prov';d.innerHTML=`<canvas id="conf"></canvas><div class="prbox"><div style="font-size:64px">🏆</div><h2>Новый личный рекорд!</h2><h3>${esc(name)}</h3>
  <div class="mut">${info.t}</div><div class="prcmp"><span class="mut"><s>${info.o}</s></span> → <b class="pr">${info.n}</b></div><p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="prok">Супер!</button></div>`;
@@ -332,16 +344,46 @@ function pickEx(cb){const m=$('#modal');m.classList.remove('hidden');
  $('#q').oninput=draw;$('#mc').onclick=()=>m.classList.add('hidden');draw()}
 // ---------- Прогресс
 let pEx=null,pM='w';
-function progress(){$('#title').textContent='Прогресс';const used=[...new Set(S.workouts.flatMap(w=>w.items.map(i=>i.exId)))].filter(id=>!isCardio(id));
+function fmtWeekRange(b){const a=new Date(b.start),e=new Date(b.end);e.setDate(e.getDate()-1);return a.getDate()+'.'+(a.getMonth()+1)+'–'+e.getDate()+'.'+(e.getMonth()+1)}
+function volWeekHTML(){if(typeof can==='function'&&!can('charts'))return'<div class="card" id="volweek"><button class="full sm" data-pw="Объём по мышцам — по подписке">🔒 Объём по мышцам — по подписке</button></div>';
+ if(typeof weeklyVolume!=='function')return'';
+ const v=weeklyVolume(histWorkouts());
+ const max=Math.max(1,...v.current.groups.map(g=>g.sets),...v.previous.groups.map(g=>g.sets));
+ const block=(title,side,empty)=>{
+  const lab=fmtWeekRange(side===v.current?v.bounds.current:v.bounds.previous);
+  if(!side.groups.length)return`<div class="card"><b>${title}</b> <span class="mut">${lab}</span><p class="mut" style="margin:6px 0 0">${empty}</p></div>`;
+  return`<div class="card"><b>${title}</b> <span class="mut">${lab}</span><div style="margin-top:8px">${side.groups.map(g=>{
+   const w=Math.max(6,Math.round(100*g.sets/max));const tons=g.tonnage>0?' · '+Math.round(g.tonnage)+' кг':'';
+   return`<div class="volrow"><span class="volname">${esc(g.group)}</span><div class="voltrack"><i style="width:${w}%"></i></div><span class="voln">${g.sets} подходов${tons}</span></div>`;
+  }).join('')}</div></div>`;
+ };
+ return`<div id="volweek"><h2>Объём по мышцам за неделю</h2>${block('Эта неделя',v.current,'На этой неделе пока нет рабочих подходов.')}${block('Прошлая неделя',v.previous,'На прошлой неделе нет рабочих подходов.')}<p class="mut">Рабочие подходы и тоннаж (кг × повторы), где указан вес. Упражнения с собственным весом — только подходы. Неделя: пн–вс, местное время.</p></div>`}
+function recRow(id){const b=typeof recordsForExercise==='function'?recordsForExercise(histWorkouts(),id):null;
+ const name=esc(exBy(id).name);
+ if(!b){const o=bestOf(id);return`<div class="li"><span class="grow">${name}</span><span class="pr">🏆 ${o.w} кг</span><span class="mut">1ПМ (оценка) ${o.r?o.r.toFixed(1):'—'}</span></div>`}
+ const w=b.bestWeight?b.bestWeight+' кг × '+(b.bestWeightReps||'—'):'—';
+ let reps='';
+ if(b.bestRepsAtWeight&&(b.bestRepsAtWeight.w!==b.bestWeight||b.bestRepsAtWeight.r!==b.bestWeightReps))
+  reps=`<div class="mut">Повторы: ${b.bestRepsAtWeight.w} кг × ${b.bestRepsAtWeight.r}</div>`;
+ const rm=b.best1RM!=null?b.best1RM.toFixed(1)+' кг':'—';
+ return`<div class="li" style="align-items:flex-start"><div class="grow"><b>${name}</b><div class="mut">Макс. вес: ${w}</div>${reps}<div class="mut">1ПМ (оценка): ${rm}</div></div></div>`}
+function recsHTML(used){if(typeof can==='function'&&!can('prs'))return'<div class="card" id="prlist"><button class="full sm" data-pw="Рекорды — по подписке">🔒 Рекорды — по подписке</button></div>';
+ return`<h2>Личные рекорды</h2><div class="card" id="prlist">${used.map(recRow).join('')||'<p class="mut">Пока нет рекордов.</p>'}</div>`}
+function progress(){$('#title').textContent='Прогресс';const wo=histWorkouts();const used=[...new Set(wo.flatMap(w=>(w.items||[]).map(i=>i.exId)))].filter(id=>!isCardio(id));
  if(!used.length){app.innerHTML='<div class="card">Пока нет данных. Заверши первую тренировку — здесь появятся графики и рекорды.</div>';return}
  if(!used.includes(pEx))pEx=used[0];
- const pts=S.workouts.map(w=>{const it=w.items.find(i=>i.exId===pEx);if(!it)return null;const s=it.sets;return{d:w.start,w:Math.max(...s.map(x=>+x.w)),r:Math.max(...s.map(x=>e1rm(+x.w,+x.r))),v:s.reduce((a,x)=>a+x.w*x.r,0)}}).filter(Boolean);
- const recs=used.map(id=>{const b=bestOf(id);return`<div class="li"><span class="grow">${esc(exBy(id).name)}</span><span class="pr">🏆 ${b.w} кг</span><span class="mut">1ПМ ${b.r.toFixed(1)}</span></div>`}).join('');
- app.innerHTML=`<select id="pex">${used.map(id=>`<option value="${esc(id)}" ${id===pEx?'selected':''}>${esc(exBy(id).name)}</option>`).join('')}</select>
- <div class="tabs">${[['w','Макс. вес'],['r','1ПМ (расч.)'],['v','Объём']].map(([k,t])=>`<button class="sm ${pM===k?'on':''}" data-m="${k}">${t}</button>`).join('')}</div>
- <canvas id="ch"></canvas><h2>Личные рекорды</h2><div class="card">${recs}</div><p class="mut">1ПМ рассчитан по формуле Эпли: вес × (1 + повторы/30).</p>`;
- $('#pex').onchange=e=>{pEx=e.target.value;progress()};app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{pM=b.dataset.m;progress()});
- chart($('#ch'),pts.map(p=>[p.d,p[pM]]))}
+ const showCh=typeof can!=='function'||can('charts');
+ const pts=wo.map(w=>{const it=(w.items||[]).find(i=>i.exId===pEx);if(!it)return null;const s=(it.sets||[]).filter(x=>typeof isWorkingSet!=='function'||isWorkingSet(x));if(!s.length)return null;
+  const e1s=s.map(x=>typeof epley1RM==='function'?epley1RM(+x.w,+x.r):e1rm(+x.w,+x.r)).filter(v=>v>0);
+  const bw=typeof BWX!=='undefined'&&BWX.has(pEx);
+  return{d:w.end||w.start,w:Math.max(0,...s.map(x=>+x.w||0)),r:e1s.length?Math.max(...e1s):null,v:s.reduce((a,x)=>{const ww=+x.w,rr=+x.r;return a+(!bw&&ww>0&&rr>0?ww*rr:0)},0)}}).filter(Boolean);
+ const chartBlock=showCh?`<select id="pex">${used.map(id=>`<option value="${esc(id)}" ${id===pEx?'selected':''}>${esc(exBy(id).name)}</option>`).join('')}</select>
+ <div class="tabs">${[['w','Макс. вес'],['r','1ПМ (оценка)'],['v','Объём']].map(([k,t])=>`<button class="sm ${pM===k?'on':''}" data-m="${k}">${t}</button>`).join('')}</div>
+ <canvas id="ch"></canvas><p class="mut">1ПМ (оценка) по формуле Эпли: вес × (1 + повторы/30), только для 1–10 повторов. Это оценка, не измеренный максимум.</p>`
+ :'<div class="card"><button class="full sm" data-pw="Графики и расчётный 1ПМ — по подписке">🔒 График 1ПМ — по подписке</button></div>';
+ app.innerHTML=`${volWeekHTML()}${chartBlock}${recsHTML(used)}`;
+ if(showCh){const sel=$('#pex');if(sel)sel.onchange=e=>{pEx=e.target.value;progress()};app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{pM=b.dataset.m;progress()});
+  const series=pts.filter(p=>pM!=='r'||p.r!=null).map(p=>[p.d,p[pM]]);const c=$('#ch');if(c)chart(c,series)}}
 function chart(c,data){const dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);
  x.font='12px system-ui';x.fillStyle='#8b93a3';if(!data.length)return;const ys=data.map(d=>d[1]),mn=Math.min(...ys)*.95,mx=Math.max(...ys)*1.05||1,P=34;
  const X=i=>P+(data.length<2?(W-2*P)/2:i*(W-P-14)/(data.length-1)),Y=v=>H-24-(v-mn)/(mx-mn||1)*(H-44);

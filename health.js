@@ -540,15 +540,18 @@ function showWorkoutSummary(A) {
   if (typeof document === 'undefined' || !A) return;
   var m = document.querySelector('#modal');
   if (!m) return;
-  var prs = [];
-  (A.items || []).forEach(function (it) {
-    (it.sets || []).forEach(function (s) {
-      if (s && s.pr && s.prInfo && typeof exBy === 'function') prs.push([exBy(it.exId).name, s.prInfo]);
-    });
-  });
-  var prHtml = prs.length && typeof PHR !== 'undefined' ? '<h2>🏆 Рекорды тренировки: ' + prs.length + '</h2>' + prs.map(function (pair) {
-    return '<div class="li"><div class="grow"><b>' + hesc(pair[0]) + '</b><br><span class="mut">' + hesc(pair[1].t) + '</span></div><span class="mut"><s>' + hesc(pair[1].o) + '</s></span>&nbsp;→&nbsp;<b class="pr">' + hesc(pair[1].n) + '</b></div>';
-  }).join('') + '<p>' + PHR[Math.floor(Math.random() * PHR.length)] + '</p>' : '';
+  var prHtml = '';
+  if (typeof can !== 'function' || can('prs')) {
+    var L = typeof prNotes === 'function' ? prNotes(A) : [];
+    if (!L.length) {
+      (A.items || []).forEach(function (it) {
+        (it.sets || []).forEach(function (s) {
+          if (s && s.pr && s.prInfo && typeof exBy === 'function') L.push([exBy(it.exId).name, s.prInfo]);
+        });
+      });
+    }
+    if (L.length) prHtml = typeof prNotesHTML === 'function' ? prNotesHTML(L) : '<div class="prnote"><b>' + (L.length === 1 ? '🏆 Новый рекорд' : '🏆 Новые рекорды') + '</b></div>';
+  }
   m.classList.remove('hidden');
   m.innerHTML = '<div class="sheet" id="wsum"><div class="row"><h2 class="grow" style="margin:0">Итог тренировки</h2><button id="mc" type="button">✕</button></div><h3 style="margin-top:8px">' + hesc(A.dayName || '') + '</h3>' + healthDetailHTML(A) + prHtml + '<button class="pri full" id="sumok" type="button" style="margin-top:12px">Готово</button></div>';
   var close = function () { m.classList.add('hidden'); };

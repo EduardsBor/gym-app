@@ -19,6 +19,7 @@ const FILES = [
   'supabase-config.js',
   'alt.js',
   'app.js',
+  'stats.js',
   'autow.js',
   'cards.js',
   'cd.js',
