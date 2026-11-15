@@ -1,5 +1,5 @@
 'use strict';
-// P-301: progression rules. The 15 examples from progression-rules.json (copied to test/fixtures) must pass verbatim.
+// P-301: progression rules. The 21 examples from progression-rules.json (C-103 v2) (copied to test/fixtures) must pass verbatim.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -17,8 +17,8 @@ function pick(out, exp) {
   return r;
 }
 
-test('fixture has 15 trainer examples', () => {
-  assert.equal(rules.tests.length, 15);
+test('fixture has 21 trainer examples (C-103 v2)', () => {
+  assert.equal(rules.tests.length, 21);
 });
 
 for (const t of rules.tests) {
@@ -56,12 +56,21 @@ test('rounding: up and down per equipment', () => {
 });
 
 test('custom equipment profile changes steps', () => {
-  const out = P.prNext({ id: 'ht-db', level: 'nov', range: [12, 15], sets_plan: 2, weight: 9, results: [15, 15] }, { db: [5, 7.5, 10, 12.5] });
-  assert.equal(out.weight, 12.5);
-  const one = P.prNext({ id: 'mk-band-row', level: 'mid', range: [8, 15], sets_plan: 3, weight: 1, results: [15, 15, 15] }, { bands: [1] });
+  // v2: 9 × 1.05 = 9.45 -> smallest available above (10), not a fixed +2 kg
+  const out = P.prNext({ id: 'ht-db', level: 'nov', range: [12, 15], sets_plan: 2, weight: 9, results: [15, 15], state: { success: 1 } }, { db: [5, 7.5, 10, 12.5] });
+  assert.equal(out.weight, 10);
+  // one band at home: tempo -> pause -> shorter grip (no heavier band in the profile)
+  const b = { id: 'mk-band-row', level: 'mid', range: [8, 15], sets_plan: 3, weight: 1, results: [15, 15, 15] };
+  const one = P.prNext({ ...b, state: { success: 1 } }, { bands: [1] });
   assert.equal(one.weight, 1);
-  assert.equal(one.modKey, 'shorter');
+  assert.equal(one.modKey, 'tempo');
   assert.equal(one.target, 8);
+  const three = P.prNext({ ...b, state: { success: 1, mod: 2 } }, { bands: [1] });
+  assert.equal(three.weight, 1);
+  assert.equal(three.modKey, 'shorter');
+  const next = P.prNext({ ...b, state: { success: 1, mod: 2 } }, { bands: [1, 2] });
+  assert.equal(next.weight, 2);
+  assert.equal(next.modKey, '');
 });
 
 test('calibration: first workout', () => {
@@ -73,16 +82,35 @@ test('calibration: first workout', () => {
   assert.equal(P.prNext({ ...base, results: [10, 9, 9] }).weight, 60);
 });
 
-test('pain: no increase, -10 %', () => {
-  const out = P.prNext({ id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [12, 12, 12], pain: true });
-  assert.equal(out.weight, 52.5);
+test('pain (v2): no increase, weight the same, swap offered; twice in a row -> pain2, still no automatic cut', () => {
+  const out = P.prNext({ id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [12, 12, 12], pain: true, state: { success: 1 } });
+  assert.equal(out.weight, 60);
   assert.equal(out.note, 'pain');
+  assert.equal(out.suggest_swap, true);
   assert.equal(out.state.success, 0);
+  const two = P.prNext({ id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [6, 6, 6], pain: true, state: out.state });
+  assert.equal(two.note, 'pain2');
+  assert.equal(two.weight, 60);
+  assert.equal(two.state.miss | 0, 0);
+  const ok = P.prNext({ id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [10, 10, 10], state: two.state });
+  assert.equal(ok.state.pain, undefined);
+});
+
+test('v2 trigger: 2 sessions in a row on every level; in range resets the count', () => {
+  for (const level of ['nov', 'mid', 'adv']) {
+    const b = { id: 'bp', level, range: [8, 12], sets_plan: 3, weight: 60, results: [12, 12, 12] };
+    const one = P.prNext(b);
+    assert.equal(one.weight, 60, level);
+    assert.equal(one.state.success, 1, level);
+    assert.equal(P.prNext({ ...b, state: one.state }).weight, 62.5, level);
+    assert.equal(P.prNext({ ...b, results: [12, 12, 11], state: one.state }).state.success, 0, level);
+  }
 });
 
 test('feel button maps to RIR of the last set', () => {
   const r = f => [null, null, P.PR_FEEL[f]];
-  const base = { id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [12, 12, 12] };
+  const base = { id: 'bp', level: 'mid', range: [8, 12], sets_plan: 3, weight: 60, results: [12, 12, 12], state: { success: 1 } };
+  assert.deepEqual([P.PR_FEEL.easy, P.PR_FEEL.ok, P.PR_FEEL.hard], [4, 2, 0]);
   assert.equal(P.prNext({ ...base, rir: r('easy') }).weight, 62.5);
   assert.equal(P.prNext({ ...base, rir: r('ok') }).weight, 62.5);
   assert.equal(P.prNext({ ...base, rir: r('hard') }).weight, 60);
@@ -109,7 +137,7 @@ test('after deload: a miss does not count', () => {
 });
 
 test('assisted pull-up: -5 kg counterweight, at 0 -> pull', () => {
-  const b = { id: 'assisted-pullup', level: 'nov', range: [6, 12], sets_plan: 3, results: [12, 12, 12] };
+  const b = { id: 'assisted-pullup', level: 'nov', range: [6, 12], sets_plan: 3, results: [12, 12, 12], state: { success: 1 } };
   assert.equal(P.prNext({ ...b, weight: 20 }).weight, 15);
   const z = P.prNext({ ...b, weight: 5 });
   assert.equal(z.id, 'pull');
@@ -119,20 +147,24 @@ test('assisted pull-up: -5 kg counterweight, at 0 -> pull', () => {
 test('bodyweight without a ladder: tempo -> pause -> backpack 5 kg -> +2.5', () => {
   const b = { id: 'pu', level: 'nov', range: [10, 20], sets_plan: 3, results: [20, 20, 20] };
   let st = {}, w = null; const keys = [];
-  for (let i = 0; i < 4; i++) { const o = P.prNext({ ...b, weight: w, state: st }); keys.push(o.modKey); st = o.state; w = o.weight; }
+  // v2: every step needs 2 sessions in a row at the top
+  for (let i = 0; i < 8; i++) { const o = P.prNext({ ...b, weight: w, state: st }); if (i % 2) keys.push(o.modKey); st = o.state; w = o.weight; }
   assert.deepEqual(keys, ['tempo', 'pause', 'load', 'load']);
   assert.equal(w, 7.5);
 });
 
 test('ladder restrictions: dbug needs gym/bar place and dead hang 30 s', () => {
-  const b = { id: 'dbug', level: 'nov', range: [12, 15], sets_plan: 3, results: [15, 15, 15] };
+  const b = { id: 'dbug', level: 'nov', range: [12, 15], sets_plan: 3, results: [15, 15, 15], state: { success: 1 } };
   assert.equal(P.prNext({ ...b, place: 'd', hang: 40 }).id, 'dbug');
   assert.equal(P.prNext({ ...b, place: 'g', hang: 20 }).id, 'dbug');
   assert.equal(P.prNext({ ...b, place: 'g', hang: 30 }).id, 'hanging-knee-raise');
 });
 
 test('plank: ladder to RKC without a back flag, 3 short holds -> target down', () => {
-  const o = P.prNext({ id: 'pl', level: 'mid', range: [20, 45], sets_plan: 3, target: 45, results: [45, 45, 45] });
+  const first = P.prNext({ id: 'pl', level: 'mid', range: [20, 45], sets_plan: 3, target: 45, results: [45, 45, 45] });
+  assert.equal(first.id, 'pl'); // v2: the step to RKC needs max in all sets 2 workouts in a row
+  assert.equal(first.target, 45);
+  const o = P.prNext({ id: 'pl', level: 'mid', range: [20, 45], sets_plan: 3, target: 45, results: [45, 45, 45], state: first.state });
   assert.equal(o.id, 'mk-rkc-plank');
   assert.equal(o.target, 10);
   let st = {};

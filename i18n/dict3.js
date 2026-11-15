@@ -115,8 +115,8 @@ const DICT3=[
 ['кг противовеса','kg assistance','kg pretsvara'],
 ['ур. резинки','band level','gumijas līm.'],
 ['ур.','lvl','līm.'],
-['В прошлый раз была боль: вес −10 %. Если боль повторяется — замени упражнение ⇄','Pain last time: weight −10 %. If the pain comes back, swap the exercise ⇄','Pagājušo reizi bija sāpes: svars −10 %. Ja sāpes atkārtojas, aizstāj vingrinājumu ⇄'],
-['Не повышай вес: снизь на 10 % или замени упражнение ⇄','Do not add weight: drop it by 10 % or swap the exercise ⇄','Nepalielini svaru: samazini par 10 % vai aizstāj vingrinājumu ⇄'],
+['В прошлый раз была боль: без прибавки, вес тот же. Можно заменить упражнение ⇄','Pain last time: no increase, same weight. You can swap the exercise ⇄','Iepriekšreiz bija sāpes: bez palielinājuma, svars tas pats. Vingrinājumu var aizstāt ⇄'],
+['Боль: без прибавки, вес оставь тем же. Замени упражнение ⇄; если боль повторяется — снизь вес на 10 % или обратись к врачу','Pain: no increase, keep the same weight. Swap the exercise ⇄; if the pain comes back — lower the weight by 10 % or see a doctor','Sāpes: bez palielinājuma, atstāj to pašu svaru. Aizstāj vingrinājumu ⇄; ja sāpes atkārtojas — samazini svaru par 10 % vai vērsies pie ārsta'],
 ['Два промаха подряд: на один подход меньше','Two misses in a row: one set fewer','Divas neveiksmes pēc kārtas: par vienu sēriju mazāk'],
 ['Три промаха подряд: вес −10 %, прогрессия заново','Three misses in a row: weight −10 %, progression starts over','Trīs neveiksmes pēc kārtas: svars −10 %, progresija no sākuma'],
 ['Промах в прошлый раз: вес тот же','Missed last time: same weight','Pagājušo reizi neveiksme: svars tas pats'],
@@ -134,7 +134,7 @@ const DICT3=[
 ['Пора усложнить','Time to make it harder','Laiks sarežģīt'],
 ['↑ Калибровка: сразу прибавка','↑ Calibration: add weight right away','↑ Kalibrēšana: uzreiz palielini svaru'],
 ['↓ Калибровка: вес −10 %','↓ Calibration: weight −10 %','↓ Kalibrēšana: svars −10 %'],
-['↑ Прибавка: все подходы на верхней границе','↑ Increase: all sets at the top of the range','↑ Palielinājums: visas sērijas diapazona augšā'],
+['↑ Прибавка: верх диапазона 2 тренировки подряд','↑ Increase: top of the range 2 workouts in a row','↑ Palielinājums: diapazona augša 2 treniņus pēc kārtas'],
 ['↑ Цель удержания выше','↑ Longer hold target','↑ Garāks noturēšanas mērķis'],
 ['↓ Цель удержания ниже','↓ Shorter hold target','↓ Īsāks noturēšanas mērķis'],
 ['Усложнение: опускание 3–4 с','Harder: lower for 3–4 s','Sarežģījums: nolaišana 3–4 s'],
@@ -288,5 +288,12 @@ const DICT3=[
 ['Не удалось сохранить профиль','Could not save the profile','Neizdevās saglabāt profilu'],
 ['Профиль нельзя сменить во время тренировки.','You cannot change the profile during a workout.','Profilu nevar mainīt treniņa laikā.'],
 ['Дом','Home','Mājas'],
+// D-217b ACSM v1.3: why-notes and auto-weight v2 (LV needs native review, see docs/LV-NEW-ACSM.md)
+['новичку на любой цели ACSM 2009 советует начинать с 8–12 повторов: сначала техника, тяжёлые веса — позже.','for beginners with any goal ACSM 2009 advises starting with 8–12 reps: technique first, heavy loads later.','iesācējam ar jebkuru mērķi ACSM 2009 iesaka sākt ar 8–12 atkārtojumiem: vispirms tehnika, smagi svari — vēlāk.'],
+['средний уровень: 6–10 повторов в базовых — шаг к тяжёлым весам, которые ACSM 2009 оставляет опытным.','intermediate level: 6–10 reps on compound lifts — a step towards the heavy loads ACSM 2009 leaves to advanced lifters.','vidējais līmenis: 6–10 atkārtojumi pamatvingrinājumos — solis uz smagajiem svariem, kurus ACSM 2009 atstāj pieredzējušajiem.'],
+['↑ Прибавка: верх диапазона 2 тренировки подряд. Шаг снаряда большой: если в первый раз не выйдет нижняя граница — это не промах','↑ Increase: top of the range 2 workouts in a row. The equipment step is big: if you miss the bottom of the range the first time, it does not count as a miss','↑ Palielinājums: diapazona augša 2 treniņus pēc kārtas. Inventāra solis ir liels: ja pirmajā reizē neizdodas apakšējā robeža, tā nav neveiksme'],
+['Верх диапазона во всех подходах: ещё одна такая тренировка — и прибавка','Top of the range in all sets: one more workout like this — and the weight goes up','Diapazona augša visās sērijās: vēl viens tāds treniņš — un svars pieaugs'],
+['Недобор на новом весе не засчитан как промах (первая тренировка после большого шага)','Falling short at the new weight did not count as a miss (first workout after a big step)','Nepietiekams atkārtojumu skaits ar jauno svaru netika ieskaitīts kā neveiksme (pirmais treniņš pēc liela soļa)'],
+['Боль две тренировки подряд: снизь вес на 10 % или замени упражнение ⇄. Если боль не проходит — обратись к врачу','Pain two workouts in a row: lower the weight by 10 % or swap the exercise ⇄. If the pain persists — see a doctor','Sāpes divus treniņus pēc kārtas: samazini svaru par 10 % vai aizstāj vingrinājumu ⇄. Ja sāpes nepāriet — vērsies pie ārsta'],
 ]
 

@@ -1,5 +1,5 @@
 'use strict';
-// Packs the trainer's programs.json (v1.1 / v1.2c) into a minified prog.js. Not shipped to the app.
+// Packs the trainer's programs.json (v1.1 / v1.2c / v1.3) into a minified prog.js. Not shipped to the app.
 // Usage: node tools/pack-programs.js <programs.json> [prog.js]
 // Deterministic: the same programs.json and app.js always give the same prog.js.
 // The trainer writes the old short ids (tpd, pl, wlk...). The app renamed them to MoveKit ids in PR #13
@@ -98,6 +98,8 @@ for (const [goal, levels] of Object.entries(d.params.sets_reps_rest)) {
   R[goal] = {};
   for (const [lv, row] of Object.entries(levels)) R[goal][lv] = row.a;
 }
+// v1.3 (D-217b ACSM): the full table by goal and level, c = compound, a = isolation: [sets, min, max, rest s].
+const Q = JSON.parse(JSON.stringify(d.params.sets_reps_rest));
 curPlace = 'g';
 // Families are shared by all places: the brisk walk family member covers both walk ids.
 // v1.2c: only ids from exercise_index (every id the 180 templates use, all with a MoveKit clip) go into families,
@@ -107,7 +109,7 @@ const famIds = list => list.filter(inIndex).flatMap(id => id === 'wlk' ? [iid(id
 const F = Object.values(d.limit_rules.families).map(famIds);
 const byName = o => { const r = {}; for (const [k, v] of Object.entries(o)) r[mapId(k)] = v; return r; };
 const prog = {
-  L, I: ids, D: doses, N: names, V: adviceTexts, S: slots, SG, P, R, F, T,
+  L, I: ids, D: doses, N: names, V: adviceTexts, S: slots, SG, P, R, Q, F, T,
   U: d.params.unilateral_ids.map(iid),
   H: byName({'pl': 1, 'bpl': 2, 'plank-advanced': 1}),
   B: famIds(d.limit_rules.families.BRIDGE),

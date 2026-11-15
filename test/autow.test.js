@@ -62,7 +62,7 @@ function finish(b, reps, feel, pain) {
    const d=A.items.map(it=>({...it,sets:it.sets.filter(s=>s.done)}));A.items=d;S.workouts.push(A);S.active=null;awFinish(A);save()})()`);
 }
 
-test('history before P-301 + «легко» at the top -> next workout prefilled with +2.5 kg, history untouched', () => {
+test('history before P-301 + «легко» at the top 2 workouts in a row (v2) -> next workout prefilled with +2.5 kg, history untouched', () => {
   const now = Date.now();
   const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [10, 10, 9])] }));
   const before = JSON.stringify(b.run('S.workouts'));
@@ -71,6 +71,11 @@ test('history before P-301 + «легко» at the top -> next workout prefilled
   finish(b, [12, 12, 12], 'easy');
   assert.equal(JSON.stringify(b.run('S.workouts.slice(0,1)')), before);
   assert.equal(b.run('S.workouts[1].items[0].feel'), 'easy');
+  assert.equal(b.run('S.pg.bp.next.weight'), 60); // v2: first time at the top — wait for the second
+  assert.equal(b.run('S.pg.bp.next.note'), 'top1');
+  b.run('startW(0)');
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.active.items[0].sets.map(s=>s.w))')), [60, 60, 60]);
+  finish(b, [12, 12, 12], 'easy');
   assert.equal(b.run('S.pg.bp.next.weight'), 62.5);
   b.run('startW(0)');
   const it = JSON.parse(b.run('JSON.stringify(S.active.items[0])'));
@@ -85,11 +90,12 @@ test('«тяжело» (RIR 0) blocks the increase for a compound lift', () => {
   assert.equal(b.run('S.pg.bp.next.weight'), 60);
 });
 
-test('pain: no increase, next suggestion -10 % (free, no Premium check)', () => {
+test('pain (v2): no increase, weight the same, swap offered (free, no Premium check)', () => {
   const b = boot(seed({ workouts: [hist(Date.now() - 2 * DAY, 60, [10, 10, 10])] }));
   b.run('startW(0)');
   finish(b, [12, 12, 12], 'easy', true);
-  assert.equal(b.run('S.pg.bp.next.weight'), 52.5);
+  assert.equal(b.run('S.pg.bp.next.weight'), 60);
+  assert.equal(b.run('S.pg.bp.next.note'), 'pain');
   assert.equal(b.run('S.workouts[S.workouts.length-1].items[0].pain'), true);
 });
 
@@ -128,6 +134,7 @@ test('scheduled deload: 6th week since auto-weight start, half the sets, results
 
 test('equipment profile is used for steps', () => {
   const b = boot(seed({ equip: { db: [5, 7.5, 10, 12.5] }, program: [{ name: 'A', items: [{ exId: 'ht-db', sets: 2, min: 12, max: 15, rest: 90 }] }],
+    pg: { 'ht-db': { st: { success: 1, miss: 0 }, next: { weight: 10, sets: 2, target: 12, note: 'top1' }, first: Date.now() - 2 * DAY, last: Date.now() - 2 * DAY } },
     workouts: [{ id: 'w1', start: Date.now() - 2 * DAY, dayIdx: 0, items: [{ exId: 'ht-db', sets: [{ w: 10, r: 15, done: true }, { w: 10, r: 15, done: true }] }] }] }));
   b.run('startW(0)');
   b.run(`(()=>{const A=S.active;A.items[0].sets.forEach(s=>{s.r=15;s.done=true});S.workouts.push(A);S.active=null;awFinish(A)})()`);
