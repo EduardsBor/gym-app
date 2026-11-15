@@ -100,7 +100,7 @@ function generateAuto(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],
   if(cardioMin){const c=['mk-treadmill-run','mk-indoor-cycling-spin','mk-elliptical','mk-rowing-machine-steady-state','stair','jump','mk-incline-treadmill-walk'].concat(typeof EXTRA_CARDIO!=='undefined'?EXTRA_CARDIO:[]).filter(id=>okEx(id,a)&&(typeof autoOk!=='function'||autoOk(id,a,false)));const left=Math.max(a.len<=30?5:10,Math.min(30,Math.floor((budget-tot()+cardioMin)/60)));items.push({exId:c[off%c.length]||'mk-incline-treadmill-walk',sets:1,min:Math.max(5,left-10),max:left,rest:0})}
   return{name,items:items.map(({exId,sets,min,max,rest})=>({exId,sets,min,max,rest}))}});
  return{days,why:whyOf(a,days,[...swaps])}}
-function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a};if(typeof planFromTemplate==='function'){const p=planFromTemplate(a);if(p)return{days:p.days,why:whyOf(a,p.days,p.swaps||[]),advice:p.advice||null,timeLabel:p.timeLabel||'',shorter:!!p.shorter}}return generateAuto(a)}
+function generate(a){a={sex:'m',level:'mid',len:60,place:'g',prio:[],lim:[],...a};if(typeof lenOff==='function'&&lenOff(a,LENS[lenIdx(a.len)]))a.len=effLen(a);if(typeof planFromTemplate==='function'){const p=planFromTemplate(a);if(p)return{days:p.days,why:whyOf(a,p.days,p.swaps||[]),advice:p.advice||null,timeLabel:p.timeLabel||'',shorter:!!p.shorter}}return generateAuto(a)}
 let G0=0;function generate0Vol(a){if(G0)return 1e9;G0=1;try{const g=generate({...a,len:240});return Object.values(weekVol(g.days)).reduce((x,y)=>x+y,0)}finally{G0=0}}
 function weekVol(days){const v={};days.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return v}
 function whyOf(a,days,swaps){const v=weekVol(days),P=prmOf(a.goal,a.level),w=[];
@@ -184,7 +184,7 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ Сила'],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
  ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
- ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${grp('Длительность тренировки','len',[30,45,60,75,90].map(n=>[n,n+' мин']))}
+ ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${(typeof lenOff==='function'&&lenOff(Q,LENS[lenIdx(Q.len)])&&(Q.len=effLen(Q)),grp('Длительность тренировки','len',[30,45,60,75,90].filter(n=>!(typeof lenOff==='function'&&lenOff(Q,n))).map(n=>[n,n+' мин'])))}${typeof lenOff==='function'&&lenOff(Q,30)?`<p class="mut" id="qlenoff" style="margin-top:0">${esc(LEN_MIN_STR)}</p>`:''}${typeof lenNote==='function'&&lenNote(Q,Q.len)?`<p class="mut" id="qlennote" style="margin-top:0">⚡ <span>${esc(lenNote(Q,Q.len))}</span></p>`:''}
  ${typeof progGlance==='function'&&progGlance(Q)?(()=>{const g=progGlance(Q);return `<p class="mut" style="margin-top:0">Реальное время с разминкой и заминкой: ${esc(g.label)}${g.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>${g.advice?`<p class="mut">${esc(g.advice)}</p>`:''}`})():''}
  ${grp('Где тренируешься','place',[['g','🏢 Зал'],['d','🏠 Дом с гантелями'],['b','🤸 Свой вес']])}
  ${grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}

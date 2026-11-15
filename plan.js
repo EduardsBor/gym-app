@@ -7,6 +7,12 @@ const HINGE = new Set(PROG.G.map(i => PROG.I[i]));
 const BRIDGE = PROG.B.map(i => PROG.I[i]);
 function lenIdx(len) { len = +len || 60; let i = 0; for (let k = 0; k < LENS.length; k++) if (LENS[k] <= len) i = k; return i; }
 function tKey(a) { return a.goal + '_' + a.level + '_' + a.days + '_' + a.place; }
+// C-111 (D-220): some templates don't offer a length (Strength mid/adv: no 30 min -> 45). Saved programs are not touched.
+function lenExt(a) { const t = typeof PROG !== 'undefined' && PROG.T[tKey(a)]; return (t && t[3]) || {}; }
+function lenOff(a, len) { const f = lenExt(a).f; return !!(f && f[String(len)]); }
+function effLen(a) { const l = LENS[lenIdx(a.len)], f = lenExt(a).f; return (f && f[String(l)]) || +a.len || 60; }
+function lenNote(a, len) { const n = lenExt(a).n; return n && n[String(len)] != null ? PROG.V[n[String(len)]] : ''; }
+const LEN_MIN_STR = 'Для «Силы» минимум 45 мин';
 function setsAt(n, i) { return +('00000' + n).slice(-5)[i]; }
 function metaOf(id) { return (typeof META !== 'undefined' && META[id]) || ''; }
 function placeOk(id, place, block) {
@@ -74,7 +80,7 @@ function daySeconds(day) { return (day.warmMin + day.coolMin) * 60 + day.items.r
 function progGlance(a) {
   if (typeof PROG === 'undefined') return null;
   const t = PROG.T[tKey(a)]; if (!t) return null;
-  const i = lenIdx(a.len), mn = t[1][i * 3], mx = t[1][i * 3 + 1];
+  const i = lenIdx(effLen(a)), mn = t[1][i * 3], mx = t[1][i * 3 + 1];
   return { label: mn === mx ? '≈' + mn + ' мин' : '≈' + mn + '–' + mx + ' мин', shorter: !!t[1][i * 3 + 2], advice: t[0] < 0 ? null : PROG.V[t[0]] };
 }
 function resolveBlock(entry, lim) {
@@ -104,6 +110,7 @@ function planFromTemplate(a) {
   if (typeof PROG === 'undefined') return null;
   a = { sex: 'm', level: 'mid', len: 60, place: 'g', prio: [], lim: [], ...a };
   const raw = PROG.T[tKey(a)]; if (!raw) return null;
+  if (lenOff(a, LENS[lenIdx(a.len)])) a = { ...a, len: effLen(a) };
   const i = lenIdx(a.len), len = LENS[i], lim = a.lim || [];
   const swaps = [];
   const days = raw[2].map(day => {
