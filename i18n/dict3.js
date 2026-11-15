@@ -212,4 +212,21 @@ const DICT3=[
 ['Демо заканчивается через 2 дня. Дальше — бесплатный дневник или подписка.','The demo ends in 2 days. After that — the free diary or a subscription.','Demo beigsies pēc 2 dienām. Pēc tam — bezmaksas dienasgrāmata vai abonements.'],
 // P-305c: paywall subtitle after the demo (LV needs native review, D-216)
 ['Дневник остаётся бесплатным','The diary stays free','Dienasgrāmata paliek bez maksas'],
+// D-209: missing EN/LV for UI strings (LV needs native review, D-216)
+['Для набора массы лучше тренироваться 3+ дня в неделю','For muscle gain it is better to train 3+ days a week','Masas uzņemšanai labāk trenēties 3+ dienas nedēļā'],
+['Для силы нужен зал: со своим весом присед и тягу трудно сделать тяжёлыми.','For strength you need a gym: bodyweight squats and deadlifts are hard to make heavy enough.','Spēkam vajadzīga zāle: ar ķermeņa svaru pietupienus un vilkmi grūti padarīt pietiekami smagus.'],
+['В дни без зала — 30–40 мин быстрой ходьбы. Худеть лучше на 0,5–1 % веса в неделю. Белок — 1,6–2,2 г на кг веса в день; при болезнях почек, диабете, беременности сначала посоветуйтесь с врачом.','On rest days — 30–40 min of brisk walking. Aim to lose 0.5–1% of body weight per week. Protein — 1.6–2.2 g per kg of body weight per day; if you have kidney disease, diabetes or are pregnant, talk to a doctor first.','Dienās bez zāles — 30–40 min raitas iešanas. Svara samazināšanai labāk 0,5–1 % ķermeņa svara nedēļā. Olbaltumvielas — 1,6–2,2 g uz kg ķermeņa svara dienā; nieru slimību, diabēta vai grūtniecības gadījumā vispirms konsultējieties ar ārstu.'],
+['В дни без зала — 30–40 мин быстрой ходьбы. Белок — 1,6–2,2 г на кг веса в день; при болезнях почек, диабете, беременности сначала посоветуйтесь с врачом.','On rest days — 30–40 min of brisk walking. Protein — 1.6–2.2 g per kg of body weight per day; if you have kidney disease, diabetes or are pregnant, talk to a doctor first.','Dienās bez zāles — 30–40 min raitas iešanas. Olbaltumvielas — 1,6–2,2 g uz kg ķermeņa svara dienā; nieru slimību, diabēta vai grūtniecības gadījumā vispirms konsultējieties ar ārstu.'],
+['Жим: грудь, плечи, трицепс','Press: chest, shoulders, triceps','Spiešana: krūtis, pleci, tricepss'],
+['Тяга: спина, бицепс','Pull: back, biceps','Vilkme: mugura, bicepss'],
+['Жим B: грудь, плечи, трицепс','Press B: chest, shoulders, triceps','Spiešana B: krūtis, pleci, tricepss'],
+['Тяга B: спина, бицепс','Pull B: back, biceps','Vilkme B: mugura, bicepss'],
+['Ноги B','Legs B','Kājas B'],
+['8–10 повторов, легко','8–10 reps, easy','8–10 atkārtojumi, viegli'],
+['на устройстве данные другого аккаунта. Выйди и войди заново','this device has data from another account. Sign out and sign in again','šajā ierīcē ir cita konta dati. Izeji un ieej no jauna'],
+['На этом устройстве сохранены данные другого аккаунта. Объединить их с этим аккаунтом?\n\nОК — объединить. Отмена — выйти, данные останутся как есть.','This device has data from another account. Merge it with this account?\n\nOK — merge. Cancel — sign out; the data will stay as it is.','Šajā ierīcē ir saglabāti cita konta dati. Apvienot tos ar šo kontu?\n\nOK — apvienot. Atcelt — iziet, dati paliks kā ir.'],
+['Не удалось удалить данные в облаке. Проверь интернет и попробуй ещё раз. Данные на этом устройстве пока не удалены.','Could not delete the data in the cloud. Check your internet connection and try again. Data on this device has not been deleted yet.','Neizdevās dzēst datus mākonī. Pārbaudi internetu un mēģini vēlreiz. Dati šajā ierīcē pagaidām nav dzēsti.'],
+['Данные удалены. Аккаунт (почту для входа) удалить не удалось — войди ещё раз и повтори удаление позже.','The data was deleted. The account (sign-in email) could not be deleted — sign in again and retry the deletion later.','Dati ir dzēsti. Kontu (e-pastu ieiešanai) neizdevās dzēst — ieej vēlreiz un atkārto dzēšanu vēlāk.'],
+['⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Ещё».','⚠ Could not save: the browser storage is full. Export a backup under “More”.','⚠ Neizdevās saglabāt: pārlūka atmiņa ir pilna. Izveido kopiju sadaļā “Vēl”.'],
+['Вход выполнен, но синхронизация не удалась: ','Signed in, but sync failed: ','Ieiešana izdevās, bet sinhronizācija neizdevās: '],
 ];
