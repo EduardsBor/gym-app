@@ -43,6 +43,9 @@
     S.deletedCustom=S.deletedCustom||[];
     S.templates=S.templates||[];
     S.deletedTemplates=S.deletedTemplates||[];
+    S.eqProfiles=S.eqProfiles||[];
+    S.deletedEqProfiles=S.deletedEqProfiles||[];
+    if(typeof eqEnsure==='function') eqEnsure();
     return ch;
   }
   function persistLocal(){
@@ -132,6 +135,7 @@
     if(lang&&!S.lang) S.lang=lang;
     applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
+    if(typeof eqEnsure==='function') eqEnsure();
   }
   // P-305b: demo start (first completed workout) — always the earliest of local and cloud, never a later date.
   function keepEarliestDemo(a,b){const m=[a,b].filter(x=>typeof x==='number'&&isFinite(x)&&x>0);if(m.length) S.demoStart=Math.min(...m)}
@@ -142,6 +146,7 @@
     const b=mergeLists(S.body,R.body,S.deletedBody,R.deletedBody,'id',x=>Date.parse(x.date||'')||0);
     const c=mergeLists(S.custom,R.custom,S.deletedCustom,R.deletedCustom,'id',x=>+(String(x.id).replace(/\D/g,'')||0));
     const tpl=mergeLists(S.templates,R.templates,S.deletedTemplates,R.deletedTemplates,'id',x=>x.updatedAt||0);
+    const eqp=mergeLists(S.eqProfiles,R.eqProfiles,S.deletedEqProfiles,R.deletedEqProfiles,'id',x=>x.updatedAt||0);
     const localNewer=(S.updatedAt||0)>=(remoteAt||0);
     const pick=(k)=>{
       if(localNewer) return S[k]!==undefined?S[k]:R[k];
@@ -151,6 +156,12 @@
     if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted}
     S.custom=c.list;S.deletedCustom=c.deleted;
     S.templates=tpl.list;S.deletedTemplates=tpl.deleted;
+    S.eqProfiles=eqp.list;S.deletedEqProfiles=eqp.deleted;
+    // Активный профиль — по своей метке eqActiveAt, чтобы смена места не затиралась чужим сохранением.
+    if((R.eqActiveAt||0)>(S.eqActiveAt||0)){S.eqActive=R.eqActive;S.eqActiveAt=R.eqActiveAt}
+    else if(S.eqActiveAt||S.eqActive){/* local wins or equal */}
+    else if(R.eqActive){S.eqActive=R.eqActive;S.eqActiveAt=R.eqActiveAt||0}
+    if(typeof eqEnsure==='function') eqEnsure();
     // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
     const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
     ['program','progName','why','prof','goal','days'].forEach(k=>{

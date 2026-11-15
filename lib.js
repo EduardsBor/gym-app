@@ -75,10 +75,12 @@ function libMeta(id){return (typeof META!=='undefined'&&META[id])||'gdb|'}
 function libPlace(id){return String(libMeta(id).split('|')[0]||'')}
 function libMatch(e,st){st=st||LQ;if(!e)return false;const q=String(st.q||'').trim().toLowerCase();
  if(q){const n=String(e.name||''),tn=typeof tr==='function'?String(tr(n)||''):'';if(!n.toLowerCase().includes(q)&&!tn.toLowerCase().includes(q))return false}
- if(st.g&&e.group!==st.g)return false;if(st.p&&!libPlace(e.id).includes(st.p))return false;return true}
+ if(st.g&&e.group!==st.g)return false;const places=st.places||st.p||'';if(places&&![...String(places)].some(x=>libPlace(e.id).includes(x)))return false;return true}
 function libFilter(list,st){return (list||[]).filter(e=>libMatch(e,st||LQ))}
 
-function libView(){$('#title').textContent='Библиотека';const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
+function libView(){$('#title').textContent='Библиотека';
+ if(typeof eqPlaces==='function'){const id=typeof eqActiveId==='function'?eqActiveId():'';if(LQ._eqAuto!==id){LQ._eqAuto=id;const pl=eqPlaces();if(pl.length===1){LQ.p=pl;LQ.places=''}else{LQ.p='';LQ.places=pl}}}
+ const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
  const bar=typeof tplBarHTML==='function'&&can('templates')?tplBarHTML():'';
  app.innerHTML=`${bar}<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
  <p class="mut" style="margin:8px 0 0;font-size:12px">Мышцы</p>
@@ -91,7 +93,7 @@ function libView(){$('#title').textContent='Библиотека';const ch=(k,v,
   $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}<span class="eqi" title="${libPlace(e.id).split('').map(k=>EQN[k]).filter(Boolean).join(', ')}"> · ${libPlace(e.id).split('').map(k=>EQI[k]||'').join('')}</span>${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
   app.querySelectorAll('[data-lx]').forEach(b=>b.onclick=()=>exOk(b.dataset.lx)?exCard(b.dataset.lx):paywall('Полная библиотека с 3D-видео — в Premium.'))};
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
- app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()})}
+ app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;if(b.dataset.lk==='p')LQ.places='';app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()})}
 function exHist(id){const H=[];S.workouts.forEach(wo=>wo.items.forEach(it=>{if(it.exId!==id)return;const d=it.sets.filter(s=>s.done);if(d.length)H.push({t:wo.start,sets:d,b:Math.max(...d.map(s=>e1rm(+s.w,+s.r)))})}));return H.sort((a,b)=>a.t-b.t)}
 function spark(H){const P=H.slice(-12),v=P.map(h=>h.b),mn=Math.min(...v),mx=Math.max(...v),W=300,Hh=70,x=i=>P.length>1?10+i*(W-20)/(P.length-1):W/2,y=b=>mx>mn?Hh-8-(b-mn)/(mx-mn)*(Hh-16):Hh/2;
  return `<svg viewBox="0 0 ${W} ${Hh}" class="spark"><polyline fill="none" stroke="#ff6b35" stroke-width="2.5" points="${P.map((h,i)=>x(i)+','+y(h.b)).join(' ')}"/>${P.map((h,i)=>`<circle cx="${x(i)}" cy="${y(h.b)}" r="3.5" fill="#ff6b35"/>`).join('')}</svg><p class="mut" style="font-size:12px;margin:2px 0 0">Расчётный 1ПМ по лучшему подходу каждой тренировки (${Math.round(mn)}–${Math.round(mx)} кг)</p>`}
