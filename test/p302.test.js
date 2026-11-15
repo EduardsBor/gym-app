@@ -151,8 +151,8 @@ function T(id, name, items, at) {
   return { id, name, items, updatedAt: at || 1 };
 }
 
-test('P-302: cache is moyzal-v60; templates are free; video stays gated', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v60'/);
+test('P-302: cache is moyzal-v61; templates are free; video stays gated', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v61'/);
   assert.equal(read('sw.js').includes("C='moyzal-v59'"), false);
   const b = boot(seed());
   assert.equal(b.run('FEATURES.templates'), 'free');

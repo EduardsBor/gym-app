@@ -47,7 +47,7 @@ const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса'
  ['place','Где тренируешься?',[['g','🏢 Зал','Тренажёры, штанга, гантели'],['d','🏠 Дом с гантелями','Гантели и скамья'],['b','🤸 Без инвентаря','Свой вес (желательно турник)']]],
  ['len','Сколько времени готов тратить на тренировку?',[[30,'⏱ ~30 мин','Коротко: только базовые упражнения'],[45,'⏱ ~45 мин','База + немного изоляции'],[60,'⏱ ~60 мин','Полноценная тренировка'],[75,'⏱ 75+ мин','Максимум объёма']]]];
 // Recommended session length for the chosen frequency: weekly volume (Schoenfeld 2017) ÷ sessions, same duration formula as generate().
-function recLen(a){const P=PRM[a.goal]||PRM.mass,per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+(a.goal==='str'?3:a.goal==='loss'?1:2)+sets*(40+rest)/60);
+function recLen(a){const P=prmOf(a.goal||'mass',a.level),per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+(a.goal==='str'?3:a.goal==='loss'?1:2)+sets*(40+rest)/60);
  const opt=min>=68?75:[30,45,60].reduce((b,o)=>Math.abs(o-min)<Math.abs(b-min)?o:b);return{min,sets:Math.round(sets),opt,per,rest:Math.round(P.c[3]/60*10)/10}}
 function recHint(a){const r=recLen(a),o=r.opt>=75?'75+':'~'+r.opt,T={
  ru:`<b>Рекомендация для ${a.days}× в неделю: ${o} мин</b> (расчёт ≈${r.min} мин). Для роста нужно ~${r.per} тяжёлых подходов на мышцу в неделю (ориентир 10–20) [1]. При ${a.days} тренировках это ~${r.sets} подходов за тренировку; ≈40 с работы + отдых ~${r.rest} мин в базовых [2] + 5 мин разминки. Меньше тренировок в неделю — дольше каждая.`,
@@ -174,7 +174,7 @@ function isSecEx(id){if(typeof isCardio==='function'&&isCardio(id))return false;
 function tplDefaults(id){const cardio=typeof isCardio==='function'&&isCardio(id);
  if(cardio)return{exId:id,sets:1,min:10,max:20,rest:0};
  if(isSecEx(id))return{exId:id,sets:3,min:20,max:45,rest:60,sec:1};
- const P=typeof PRM!=='undefined'&&(PRM[S&&S.goal||'fit']||PRM.mass||PRM.fit);const p=P&&P.a||[null,8,12,120];
+ const P=typeof prmOf==='function'&&prmOf(S&&S.goal||'fit',S&&S.prof&&S.prof.level);const p=P&&P.a||[null,8,12,120];
  return{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]}}
 function tplNormItem(it){if(!it||!it.exId)return null;const id=String(it.exId);if(!/^[\w.-]{1,60}$/.test(id))return null;
  const cardio=typeof isCardio==='function'&&isCardio(id);const sec=!!it.sec&&!cardio;

@@ -3,9 +3,10 @@
 // History (S.workouts) is never rewritten: the new fields feel/pain only go into the workout being saved now.
 const AW_DAY=864e5;
 const AW_FEELS=[['easy','легко'],['ok','нормально'],['hard','тяжело']];
-const AW_NOTE={inc:'↑ Прибавка: все подходы на верхней границе',cal_up:'↑ Калибровка: сразу прибавка',cal_down:'↓ Калибровка: вес −10 %',
+const AW_NOTE={inc:'↑ Прибавка: верх диапазона 2 тренировки подряд',inc_big:'↑ Прибавка: верх диапазона 2 тренировки подряд. Шаг снаряда большой: если в первый раз не выйдет нижняя граница — это не промах',
+ top1:'Верх диапазона во всех подходах: ещё одна такая тренировка — и прибавка',grace:'Недобор на новом весе не засчитан как промах (первая тренировка после большого шага)',cal_up:'↑ Калибровка: сразу прибавка',cal_down:'↓ Калибровка: вес −10 %',
  miss1:'Промах в прошлый раз: вес тот же',miss2:'Два промаха подряд: на один подход меньше',miss3:'Три промаха подряд: вес −10 %, прогрессия заново',
- pain:'В прошлый раз была боль: вес −10 %. Если боль повторяется — замени упражнение ⇄',break14:'После перерыва 2+ недели: вес −10 %',
+ pain:'В прошлый раз была боль: без прибавки, вес тот же. Можно заменить упражнение ⇄',pain2:'Боль две тренировки подряд: снизь вес на 10 % или замени упражнение ⇄. Если боль не проходит — обратись к врачу',break14:'После перерыва 2+ недели: вес −10 %',
  break28:'После перерыва 4+ недели: вес −20 %, запас на 1 повтор больше',deload_scheduled:'Разгрузка: подходов вдвое меньше, вес тот же',
  deload_early:'Разгрузка: подходов вдвое меньше, вес −10 %',time_up:'↑ Цель удержания выше',time_down:'↓ Цель удержания ниже',hold_max:'Максимум удержания',ladder:'Пора усложнить'};
 const AW_MOD={tempo:'Усложнение: опускание 3–4 с',pause:'Усложнение: пауза 2 с в нижней точке',load:'Усложнение: рюкзак с грузом',
@@ -47,7 +48,7 @@ function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg(
  const s={ex:it.exId,weight:o.weight,sets:ctx.deload||ctx.days_since_last?o.sets:(nx.sets||plan),target:ctx.deload||ctx.days_since_last?o.target:(nx.target!=null?nx.target:null),
   rir:o.rir,note:ctx.deload?o.note:ctx.days_since_last?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,st:o.state};
  if(dl)s.dl=dl;if(!dl&&awAfterDeload())s.after=1;return s}
-function awApply(it,dl){if(!awOn())return awPrev(it);const s=awSuggest(it,dl);it.awx=1;it.sug=s;if(s&&/^(inc|cal_up|time_up)$/.test(s.note||'')&&typeof premFlagInc==='function')premFlagInc();if(!s||S.autoW===false)return;
+function awApply(it,dl){if(!awOn())return awPrev(it);const s=awSuggest(it,dl);it.awx=1;it.sug=s;if(s&&/^(inc|inc_big|cal_up|time_up)$/.test(s.note||'')&&typeof premFlagInc==='function')premFlagInc();if(!s||S.autoW===false)return;
  const last=awLast(it.exId,S.active&&S.active.id),L=last?last.it.sets.filter(x=>x.done):null,n=Math.max(1,s.sets||it.sets.length);
  const done=it.sets.filter(x=>x.done);let rest=it.sets.filter(x=>!x.done);
  while(done.length+rest.length<n)rest.push({w:'',r:'',done:false});if(done.length+rest.length>n)rest=rest.slice(0,Math.max(0,n-done.length));
@@ -74,7 +75,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
   if(s.to&&s.to!==it.exId)L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
- if(it.pain)L.push(`<span style="color:#e5484d">Не повышай вес: снизь на 10 % или замени упражнение ⇄</span>`);
+ if(it.pain)L.push(`<span style="color:#e5484d">Боль: без прибавки, вес оставь тем же. Замени упражнение ⇄; если боль повторяется — снизь вес на 10 % или обратись к врачу</span>`);
  return`<div class="row" style="align-items:flex-start;margin:4px 0"><div class="awsug mut grow" style="font-size:13px">${L.join('<br>')}</div><button class="sm ${it.pain?'danger':''}" data-awpain="${i}" title="Боль">🤕 Боль</button></div>`}
 function awFeelHTML(it,i){if(!awCls(it.exId)||!it.sets.length||!it.sets.every(s=>s.done))return'';
  return`<div class="row awfeel" style="margin-top:6px"><span class="mut grow">Как прошло? <span style="font-size:12px">(необязательно)</span></span>${AW_FEELS.map(([k,t])=>`<button class="sm ${it.feel===k?'ok':''}" data-awfeel="${i},${k}">${t}</button>`).join('')}</div>`}
@@ -92,7 +93,6 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i));
   const add=card.querySelector('[data-add]');if(add)add.closest('.row').insertAdjacentHTML('beforebegin',awFeelHTML(it,i))});
  app.querySelectorAll('[data-awpain]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awpain];it.pain=!it.pain;
-  if(it.pain&&S.autoW!==false){const c=awCls(it.exId),e=awEq();it.sets.forEach(s=>{if(!s.done&&+s.w>0&&c&&!/^(band|bodyweight|time)$/.test(c.eq)){s.w=c.eq==='assisted'?+s.w+e.assist:prDown(+s.w,0.9,c,e);s.pf=true}})}
   save();const y=scrollY;workoutView();scrollTo(0,y)});
  app.querySelectorAll('[data-awfeel]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.awfeel.split(',');const it=A.items[+i];it.feel=it.feel===k?undefined:k;save();const y=scrollY;workoutView();scrollTo(0,y)});
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to)return;
@@ -114,14 +114,16 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
    state:Object.assign({},s.st||p.st||{}),flags:lim,ctx:s.after?{after_deload:true}:{},calibration:!!s.cal,pain:!!it.pain,place:S.prof&&S.prof.place,hang};
   if(c.eq==='time')inp.target=s.target!=null?s.target:R[0];
   const o=prNext(inp,awEq()),to=o.id!==it.exId?awAppId(o.id):null;
-  p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note:o.note,modKey:o.modKey};if(to)p.next.id=to;
+  // v2 notes: inc with a big equipment step, first of the 2 sessions at the top, grace session after a big step
+  const note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
+  p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note,modKey:o.modKey};if(to)p.next.id=to;
   p.last=W.start;if(/^(inc|cal_up|ladder)$/.test(o.note))p.incAt=W.start;
   if(to&&!P[to])P[to]={st:{success:0,miss:0},next:{target:o.target,sets:o.sets,weight:o.weight,note:'ladder'},first:W.start,last:W.start}})}
 
 // Today: show the next suggestion instead of the old "+2,5 кг" hint
 const _awHint=hint;hint=function(item){const c=awCls(item.exId),p=awPg()[item.exId];if(!c||!p||!p.next)return _awHint(item);const n=p.next,u=c.eq==='band'?'ур.':'кг';
  const parts=[];if(n.weight!=null&&c.eq!=='time')parts.push(awFmt(n.weight)+' '+u);if(n.target!=null)parts.push(n.target+(c.eq==='time'?' с':''));
- const up=/^(inc|cal_up|time_up|ladder)$/.test(n.note);if(!parts.length&&!n.id)return'';
+ const up=/^(inc|inc_big|cal_up|time_up|ladder)$/.test(n.note);if(!parts.length&&!n.id)return'';
  return`<div class="${up?'pr':'mut'}" style="font-size:13px">${up?'⬆ ':''}<span>Авто-вес</span>: ${parts.join(' × ')}${n.id?` → ${esc(exBy(n.id).name)}`:''}</div>`};
 
 // «Моё оборудование» in «Ещё»

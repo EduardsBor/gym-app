@@ -1,5 +1,7 @@
 'use strict';
-// P-301: auto-weight. Pure progression logic from the trainer's progression-rules.json (v1).
+// P-301: auto-weight. Pure progression logic from the trainer's progression-rules.json (C-103 v2, D-217b ACSM v1.3:
+// 2 sessions in a row on every level, step upper +2 % / lower +5 % (min one equipment step), big jump > 10 % with a grace session,
+// pain = no progression + swap offer, home band: reps -> tempo -> pause -> next band).
 // No DOM, no storage: everything comes in through arguments. Used by autow.js in the app and by test/progress.test.js.
 // Ids in PR_CLS are trainer ids; app ids renamed by LEGACY_TO (app.js) are resolved through prCls().
 const PR_EQ={B:'barbell',D:'dumbbell',M:'machine',C:'cable',K:'kettlebell',R:'band',A:'assisted',W:'bodyweight',T:'time'};
@@ -10,7 +12,8 @@ const PR_CLS={'assisted-pullup':'Au01','band-pulldown':'Ru00','bc':'Bu00','bd':'
 const PR_EQUIP={bar:20,plate:2.5,db:[1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50],machine:5,cable:2.5,
  kb:[4,6,8,10,12,14,16,20,24,28,32,36,40,48],bands:[1,2,3,4,5],assist:5};
 const PR_RIR={nov:{c:[2,3],a:[2,3]},mid:{c:[2,3],a:[1,3]},adv:{c:[2,3],a:[0,2]}};
-const PR_SESS={nov:1,mid:1,adv:2};
+const PR_SESS={nov:2,mid:2,adv:2};
+const PR_PCT={upper:0.02,lower:0.05,core:0.02},PR_BIG=0.10;
 // Bodyweight ladders: from -> {to, places allowed (null = any), needs}
 const PR_LADDER={'ht-bw':{to:'sglb'},'assisted-pullup':{to:'pull'},'scap-pullup':{to:'pull',pl:'gb'},'inv':{to:'pull',pl:'gb'},
  'dbug':{to:'hanging-knee-raise',pl:'gb',hang:30},'hanging-knee-raise':{to:'hlr'},'pl':{to:'mk-rkc-plank'}};
@@ -19,7 +22,7 @@ const PR_TSTEP={pl:5,bpl:5,'mk-rkc-plank':2,'dead-hang':5};
 const PR_PLANK_CAP=60;
 // Modifier ladder: 1 tempo 3–4 s down, 2 pause 2 s at the bottom, 3 backpack +5 kg, 4+ backpack +2.5 kg per step.
 const PR_MODS=['','tempo','pause','load'];
-const PR_FEEL={easy:3,ok:1,hard:0};
+const PR_FEEL={easy:4,ok:2,hard:0,'легко':4,'нормально':2,'тяжело':0};
 const PR_EPS=1e-6,pr2=x=>Math.round(x*100)/100;
 
 function prAlias(id){if(PR_CLS[id])return id;if(typeof LEGACY_TO!=='undefined'){for(const k in LEGACY_TO)if(LEGACY_TO[k]===id&&PR_CLS[k])return k}return null}
@@ -36,12 +39,12 @@ function prGrid(eq,e){if(eq==='dumbbell')return e.db;if(eq==='kettlebell')return
  const g=(min,st,max)=>{const L=[];for(let x=min;x<=max+PR_EPS;x+=st)L.push(pr2(x));return L};
  if(eq==='barbell')return g(e.bar,e.plate,500);if(eq==='machine')return g(e.machine,e.machine,400);if(eq==='cable')return g(e.cable,e.cable,300);
  if(eq==='assisted')return g(0,e.assist,150);return null}
-// rounding.up: smallest available >= w + step; null = nothing heavier (no_heavier)
-function prUp(w,c,e,minimal){const L=prGrid(c.eq,e);if(!L)return null;let st;
- if(c.eq==='barbell')st=minimal?2.5:(c.region==='upper'?2.5:(w<40?2.5:5));
- else if(c.eq==='dumbbell')st=minimal?0:(c.region==='upper'?1:2);
- else if(c.eq==='machine')st=e.machine;else if(c.eq==='cable')st=e.cable;else st=0;
- const r=L.find(x=>st?x>=w+st-PR_EPS:x>w+PR_EPS);return r==null?null:r}
+// rounding.up: smallest available >= max(w + one equipment step, w × (1 + 2 % upper / 5 % lower)); flags (minimal) = one step only.
+// null = nothing heavier (no_heavier)
+function prUp(w,c,e,minimal){const L=prGrid(c.eq,e);if(!L)return null;
+ const st=c.eq==='barbell'?e.plate:c.eq==='machine'?e.machine:c.eq==='cable'?e.cable:0;
+ const t=Math.max(w+st,minimal?0:w*(1+(PR_PCT[c.region]||0.02)));
+ const r=L.find(x=>x>w+PR_EPS&&x>=t-PR_EPS);return r==null?null:r}
 // rounding.down: largest available <= w*f; equal to w -> next one down
 function prDown(w,f,c,e){const L=prGrid(c.eq,e);if(!L||!(w>0))return w;const t=w*f;let r=null;for(const x of L)if(x<=t+PR_EPS)r=x;
  if(r!=null&&Math.abs(r-w)<PR_EPS){const lo=L.filter(x=>x<w-PR_EPS);r=lo.length?lo[lo.length-1]:null}
@@ -58,9 +61,10 @@ function prForbidden(to,lim){const c=prCls(to);return!!(c&&c.risk&&(lim||[]).som
 function prNext(inp,equip){const e=prEquip(equip);const c=prCls(inp.id)||inp.cls||{id:inp.id,eq:'bodyweight',region:'upper',uni:false,hard:false,risk:''};
  const lv=PR_RIR[inp.level]?inp.level:'mid',lo=inp.range[0],hi=inp.range[1],plan=Math.max(1,inp.sets_plan|0||3);
  const lim=inp.flags||[],fl=prFlags(c,lim),ctx=inp.ctx||{};
- const st=Object.assign({success:0,miss:0},inp.state||{});
+ if(inp.profile&&Array.isArray(inp.profile.band)){e.bands=inp.profile.band.map(Number).filter(x=>x>0).sort((a,b)=>a-b)}
+ const st=Object.assign({success:0,miss:0},inp.state||{});if(inp.variant!=null)st.mod=inp.variant|0;
  let rp=st.rirPlus|0;const rir=prRir(lv,inp.role,fl,rp?1:0);
- const out={id:inp.id,weight:inp.weight==null?null:inp.weight,sets:plan,target:null,rir,state:st,mod:st.mod|0,note:'same'};
+ const out={id:inp.id,weight:inp.weight==null?null:inp.weight,sets:plan,target:null,rir,state:st,mod:st.mod|0,note:'same',big_jump:false,grace_used:false,suggest_swap:false};
  const has=inp.results!=null&&(Array.isArray(inp.results)?inp.results.length:true);
  if(has){
   if(rp>0)st.rirPlus=rp-1;
@@ -78,38 +82,44 @@ function prNext(inp,equip){const e=prEquip(equip);const c=prCls(inp.id)||inp.cls
    else if(c.eq==='assisted'){if(out.weight!=null)out.weight=pr2(out.weight+(big?2:1)*e.assist)}
    else if(out.weight>0)out.weight=prDown(out.weight,big?0.8:0.9,c,e)}
   if(big){st.rirPlus=2;out.rir=prRir(lv,inp.role,fl,1)}}
- out.modKey=prModKey(c.eq,out.mod);return out}
+ out.modKey=prModKey(c.eq,out.mod);out.variant=out.mod;if(!out.state.mod)delete out.state.mod;return out}
 // What the modifier step means for this equipment: '', 'shorter' (band), 'tempo', 'pause', 'load'
-function prModKey(eq,m){if(!m)return'';if(eq==='band')return['','shorter','tempo','pause'][Math.min(m,3)];
+function prModKey(eq,m){if(!m)return'';if(eq==='band')return['','tempo','pause','shorter'][Math.min(m,3)];
  if(eq==='bodyweight')return PR_MODS[Math.min(m,3)];return PR_MODS[Math.min(m,2)]}
 
 function prTime(inp,c,lim,out,lo,hi){const st=out.state,R=PR_TIME[c.id]||[lo,hi];lo=R[0];hi=R[1];
  const step=PR_TSTEP[c.id]||5,t=inp.target!=null?inp.target:lo,res=prWeak(inp.results);out.target=t;out.weight=null;
  if(res.every(x=>x>=t)){st.tmiss=0;
   if(t>=hi){const L=PR_LADDER[c.id];
-   if(L&&!prForbidden(L.to,lim)){out.id=L.to;out.target=(PR_TIME[L.to]||[t])[0];out.note='ladder';st.tmiss=0}
+   if(L&&!prForbidden(L.to,lim)){st.success=(st.success|0)+1;
+    if(st.success>=2){out.id=L.to;out.target=(PR_TIME[L.to]||[t])[0];out.note='ladder';st.tmiss=0;st.success=0}else out.note='same'}
    else if(c.id==='pl'&&t<PR_PLANK_CAP){out.target=Math.min(PR_PLANK_CAP,t+step);out.note='time_up'}
    else out.note='hold_max'}
   else{out.target=Math.min(hi,t+step);out.note='time_up'}}
- else if(res.some(x=>x<t-step)){st.tmiss=(st.tmiss|0)+1;if(st.tmiss>=3){out.target=Math.max(lo,t-step);st.tmiss=0;out.note='time_down'}else out.note='same'}
- else{st.tmiss=0;out.note='same'}
+ else if(res.some(x=>x<t-step)){st.success=0;st.tmiss=(st.tmiss|0)+1;if(st.tmiss>=3){out.target=Math.max(lo,t-step);st.tmiss=0;out.note='time_down'}else out.note='same'}
+ else{st.tmiss=0;st.success=0;out.note='same'}
  if(!st.tmiss)delete st.tmiss}
 
 function prWeak(r){if(Array.isArray(r))return r.map(Number);const L=r.L||[],R=r.R||[];return L.map((x,i)=>Math.min(+x,R[i]==null?+x:+R[i]))}
 
-function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prWeak(inp.results),rr=inp.rir||[];
+function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prWeak(inp.results);
+ const btn=inp.rir_button!=null?PR_FEEL[inp.rir_button]:undefined,rr=btn!=null?res.map(()=>btn):(inp.rir||[]);
+ const grace=!!st.grace;delete st.grace;
  const floor=Math.max(0,rir[0]-1),top=(x,i)=>x>=hi&&(rr[i]==null||rr[i]>=floor);
  const need=st.cut?Math.max(2,plan-1):plan;
  const allTop=res.length>=Math.min(need,plan)&&res.every(top),miss=res.some(x=>x<lo),w=inp.weight;
  const reset=()=>{st.success=0;st.miss=0;delete st.cut};
- if(inp.pain){st.success=0;delete st.cut;out.target=lo;out.note='pain';
-  if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(w+e.assist):prDown(w,0.9,c,e);return}
+ // Pain: no progression, weight and variant the same, misses of this workout do not count, offer a swap.
+ // Pain 2 workouts in a row: note pain2 (suggest −10 % or a swap, see a doctor if it persists); the weight is not cut automatically.
+ if(inp.pain){st.success=0;delete st.cut;out.target=lo;st.pain=(st.pain|0)+1;out.note=st.pain>=2?'pain2':'pain';out.suggest_swap=true;return}
+ delete st.pain;
  if(inp.calibration){reset();
   if(allTop){prInc(inp,c,e,lim,out,lo);out.note=out.note==='inc'?'cal_up':out.note}
   else if(miss){if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(w+e.assist):prDown(w,0.9,c,e);out.target=lo;out.note='cal_down'}
   return}
  if(miss){st.success=0;
   if(inp.ctx&&inp.ctx.after_deload){out.note='same';return}
+  if(grace){out.note='grace';out.grace_used=true;return}
   st.miss=(st.miss|0)+1;
   if(st.miss>=3){reset();out.target=lo;out.note='miss3';
    if(c.eq==='assisted')out.weight=pr2((w||0)+e.assist);else if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=prDown(w,0.9,c,e)}
@@ -125,12 +135,15 @@ function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prW
 // One step of progression for a success
 function prInc(inp,c,e,lim,out,lo){const st=out.state,w=inp.weight,fl=prFlags(c,lim);out.target=lo;
  if(c.eq==='assisted'){const n=pr2((w||0)-e.assist);if(n<=0){out.id='pull';out.weight=null;out.note='ladder'}else{out.weight=n;out.note='inc'}return}
- if(c.eq==='band'){const n=e.bands.find(x=>x>(w||0)+PR_EPS);if(n!=null&&w!=null){out.weight=n;out.note='inc'}else prMod(out,st,'band');return}
+ // Band: tempo -> pause -> next band from the profile (variant back to 0) -> shorter grip / further from the anchor.
+ if(c.eq==='band'){const m=st.mod|0;if(m<2){st.mod=m+1;out.mod=m+1;out.note='mod';return}
+  const n=+w>0?e.bands.find(x=>x>+w+PR_EPS):null;if(n!=null){out.weight=n;st.mod=0;out.mod=0;out.note='inc';return}
+  st.mod=3;out.mod=3;out.note='no_heavier';out.band='shorter';return}
  if(c.eq==='bodyweight'){const L=PR_LADDER[c.id];
   if(L&&!prForbidden(L.to,lim)&&(!L.pl||!inp.place||L.pl.includes(inp.place))&&(!L.hang||(inp.hang||0)>=L.hang)){out.id=L.to;out.weight=null;st.mod=0;out.mod=0;out.note='ladder';return}
   prMod(out,st,'bw');return}
  const n=w>0?prUp(w,c,e,fl.length>0):null;
- if(n!=null){out.weight=n;out.note='inc';return}
+ if(n!=null){out.weight=n;out.note='inc';if((n-w)/w>PR_BIG+PR_EPS){out.big_jump=true;st.grace=1}return}
  prMod(out,st,'weighted')}
 // Modifier ladder (no heavier equipment / bodyweight without an id ladder)
 function prMod(out,st,kind){let m=(st.mod|0)+1;out.note='no_heavier';
@@ -139,4 +152,4 @@ function prMod(out,st,kind){let m=(st.mod|0)+1;out.note='no_heavier';
  st.mod=m;out.mod=m;
  if(kind==='bw'&&m>=3)out.weight=m===3?5:pr2(5+2.5*(m-3))}
 
-if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS};
+if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS,PR_SESS,PR_PCT};

@@ -112,10 +112,10 @@ function exCard(id){const e=exBy(id),L=LIB[id],T=TECH[id],m0=(META[id]||'gdb|').
  <div class="li"><span class="grow mut">Последняя тренировка</span><span>${fmtD(last.t)}</span></div><p style="margin:6px 0">${last.sets.map(s=>cardio?esc(s.r)+' мин':esc(s.w||0)+'×'+esc(s.r)).join(' · ')}</p><p class="mut" style="margin:0">Всего тренировок с упражнением: ${H.length}</p>${!cardio&&H.length>1&&H.some(h=>h.b>0)?spark(H.filter(h=>h.b>0)):''}`:'<p class="mut" style="margin:0">Пока нет выполненных подходов. Сделай упражнение на тренировке — здесь появятся рекорд и прогресс.</p>'}</div>
  ${e.group==='Разминка'&&String(e.id).startsWith('w_')?'':S.active?`<button class="pri full" id="exadd">➕ Добавить в текущую тренировку</button>`:(S.program&&S.program.length?`<div class="card"><b>Добавить в программу</b><div class="row" style="margin-top:8px"><select id="exday" class="grow">${S.program.map((d,i)=>`<option value="${i}">${esc(d.name)}</option>`).join('')}</select><button class="pri" id="exadd">➕</button></div></div>`:'')}
  ${T?`<h3>Как выполнять</h3><ol>${T[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>${T[1]&&T[1].length?`<h3>Частые ошибки</h3><ul>${T[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}${T[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(T[2])}</p>`:''}`:''}
- <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM/NSCA). При боли прекрати упражнение.</p></div>`;
+ <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM 2009 + дополнения). При боли прекрати упражнение.</p></div>`;
  m.className='';m.scrollTop=0;document.body.style.overflow='hidden';
  const v=m.querySelector('video');startAnim(v);
  const close=()=>{m.className='hidden';document.body.style.overflow='';const x=m.querySelector('video');if(x)stopAnim(x);if(v&&v!==x)stopAnim(v);if(view==='library')libView()};$('#exb').onclick=close;
- const ad=$('#exadd');if(ad)ad.onclick=()=>{const p=PRM[S.goal||'fit'].a;
+ const ad=$('#exadd');if(ad)ad.onclick=()=>{const p=prmMe().a;
   if(S.active){S.active.items.push({exId:id,ns:cardio?1:3,rest:cardio?0:p[3],min:cardio?10:p[1],max:cardio?20:p[2],sets:Array.from({length:cardio?1:3},()=>({w:'',r:cardio?20:p[2],done:false}))});save();toast('Добавлено в тренировку')}
   else{const di=+$('#exday').value;S.program[di].items.push(cardio?{exId:id,sets:1,min:10,max:20,rest:0}:{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]});save();toast('Добавлено: '+S.program[di].name)}}}

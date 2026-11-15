@@ -304,6 +304,9 @@ test('paywall moments: first increase, 3rd demo workout, 2 days before the end; 
   const now = Date.now();
   const b = boot(seed({ workouts: [hist(now - 3 * DAY, 60, [12, 12, 12])] })); demo(b, 'trial');
   b.run('startW(0)'); finish(b, [12, 12, 12], 'easy'); b.run('startW(0)');
+  assert.equal(b.run('S.active.items[0].sug.note'), 'top1'); // v2: the first time at the top is not an increase yet
+  b.run('S.active=null');
+  b.run('startW(0)'); finish(b, [12, 12, 12], 'easy'); b.run('startW(0)');
   assert.equal(b.run('S.active.items[0].sug.note'), 'inc');
   assert.equal(b.run('premNextMoment()'), 'inc'); // auto-weight suggested +2.5 kg → pending
   assert.equal(b.run('paywall("x")'), false); assert.equal(b.run('premMoment()'), false); // never during the workout
@@ -353,5 +356,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v60'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v61'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

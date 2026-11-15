@@ -74,15 +74,16 @@ test('every template id exists and every duration stays within the chosen time',
       for (const m of d.cd.stretch) assert.equal(ids.has(m.id), true, m.id);
     }
   }
-  assert.equal(shorter.length, 31); // v1.2c: shorter_than_selected in programs.json
+  assert.equal(shorter.length, 41); // v1.3 (D-217b ACSM): shorter_than_selected in programs.json (rest is no longer cut to fit)
 });
 
 test('sample days include the trainer warm-up and cool-down', () => {
   const mass = plan({goal: 'mass', level: 'mid', days: 4, len: 60, place: 'g', sex: 'm', prio: [], lim: []});
   const d = mass.days[0];
   assert.equal(d.name, 'Верх A');
-  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,lr,bc');
-  assert.equal(mass.timeLabel, '≈54–57 мин');
+  assert.equal(Array.from(d.items, i => i.exId).join(','), 'bp,row,dsp,pull,bc'); // v1.3: lr only from 75 min
+  assert.deepEqual([d.items[0].min, d.items[0].max, d.items[0].rest], [6, 12, 120]); // v1.3 mass mid compound
+  assert.equal(mass.timeLabel, '≈54–58 мин');
   assert.equal(d.wu.cardio.id, 'mk-rowing-machine-steady-state');
   assert.equal(Array.from(d.wu.mob, m => m.id).join(','), 'mk-arm-circles-front-back,mk-cat-camel,mk-broomstick-pass-throughs,w_scpull');
   assert.equal(d.wu.ramp[0].exId, 'bp');
@@ -100,7 +101,7 @@ test('sample days include the trainer warm-up and cool-down', () => {
   assert.equal(Array.from(e.cd.stretch, m => m.id).join(','), 'hamstring-sweep');
   const nov = plan({goal: 'fit', level: 'nov', days: 5, len: 90, place: 'g', sex: 'f', prio: [], lim: []});
   assert.match(nov.advice, /3–4/);
-  assert.equal(nov.shorter, false); // v1.2c: fit_nov_5_g at 90 min is no longer shorter
+  assert.equal(nov.shorter, true); // v1.3: fit_nov_5_g at 90 min is shorter again (≈66–78 мин in programs.json)
 });
 
 test('cool-down cards without video: only cd_breath stays in the library, the rest are hidden but keep names (D-215)', () => {
@@ -123,7 +124,7 @@ test('preview and today show warm-up and cool-down for a new plan only', () => {
   const html = ctx.__nodes.get('app').innerHTML;
   assert.match(html, /Разминка/);
   assert.match(html, /Заминка/);
-  assert.match(html, /≈54–57 мин/);
+  assert.match(html, /≈54–58 мин/);
   assert.match(html, /Жим штанги лёжа/);
   run('S.goal="mass";S.days=4;S.prof={goal:"mass",level:"mid",days:4,len:60,place:"g",sex:"m",prio:[],lim:[]};S.program=PV.gen.days;S.next=0;S.workouts=[];today(0)');
   const today = ctx.__nodes.get('app').innerHTML;
