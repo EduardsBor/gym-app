@@ -1,5 +1,5 @@
 'use strict';
-// Packs the trainer's programs.json (v1.1 / v1.2c / v1.3) into a minified prog.js. Not shipped to the app.
+// Packs the trainer's programs.json (v1.1 / v1.2c / v1.3 / C-111) into a minified prog.js. Not shipped to the app.
 // Usage: node tools/pack-programs.js <programs.json> [prog.js]
 // Deterministic: the same programs.json and app.js always give the same prog.js.
 // The trainer writes the old short ids (tpd, pl, wlk...). The app renamed them to MoveKit ids in PR #13
@@ -79,10 +79,25 @@ for (const [key, t] of Object.entries(d.templates)) {
     const wu = [iid(wuC.exId), wuC.subs.map(iid), wuC.min_by_len, day.warmup.mobility_max_by_len, day.warmup.mobility.map(mob), day.warmup.ramp.map(r => [r.item, r.pct == null ? -1 : r.pct, String(r.reps), L.indexOf(r.from)])];
     const cdC = day.cooldown.cardio;
     const cd = [cdC ? iid(cdC.exId) : -1, cdC ? cdC.subs.map(iid) : [], cdC ? cdC.min_by_len : 0, day.cooldown.note_cardio ? 1 : 0, day.cooldown.stretches_max_by_len, day.cooldown.stretches.map(mob)];
-    const x10 = a => a.map(n => Math.round(n * 10));
+    const x10 = a => a.map(n => n == null ? 0 : Math.round(n * 10));
     return [nid(day.name), items, cardio, wu, cd, x10(day.est_min), x10(day.warm_min), x10(day.cool_min)];
   });
-  T[key] = [aid(t.advice), est, days];
+  // C-111 (D-220): per-template duration availability. f = {"30": 45} (len not offered -> use 45), n = {"30": index in V} (note next to the len).
+  // Indexes stay [30,45,60,75,90]; an unavailable len has sets 0 and null estimates.
+  const fb = t.duration_fallback || {}, notes = t.duration_notes || {}, avail = t.durations_available || L;
+  for (const l of L) {
+    const off = !avail.includes(l);
+    if (off !== Object.prototype.hasOwnProperty.call(fb, String(l))) throw new Error(key + ': durations_available / duration_fallback mismatch at ' + l);
+    if (off) {
+      const i = L.indexOf(l), to = fb[String(l)];
+      if (!avail.includes(to)) throw new Error(key + ': fallback ' + l + ' -> ' + to + ' is not available');
+      if (t.days.some(day => day.items.some(it => +it.sets[i]))) throw new Error(key + ': unavailable len ' + l + ' still has sets');
+    }
+  }
+  const ext = {};
+  if (Object.keys(fb).length) ext.f = fb;
+  if (Object.keys(notes).length) { ext.n = {}; for (const [l, txt] of Object.entries(notes)) ext.n[l] = aid({show: true, text: txt}); }
+  T[key] = Object.keys(ext).length ? [aid(t.advice), est, days, ext] : [aid(t.advice), est, days];
 }
 curPlace = 'g';
 const SG = {};

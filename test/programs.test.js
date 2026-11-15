@@ -63,7 +63,8 @@ test('every template id exists and every duration stays within the chosen time',
     assert.equal(p.days.length, days);
     if (p.shorter) shorter.push(goal + '_' + level + '_' + days + '_' + place + ' ' + len);
     for (const d of p.days) {
-      assert.ok(d.est <= len + 0.05, d.est + ' > ' + len);
+      const effL = run('effLen(' + JSON.stringify({goal, level, days, len, place}) + ')'); // C-111: Strength mid/adv 30 -> 45
+      assert.ok(d.est <= effL + 0.05, d.est + ' > ' + effL);
       assert.ok(d.wu && d.wu.mob && d.cd && d.cd.stretch);
       assert.ok(d.items.length >= 2);
       for (const it of d.items) {

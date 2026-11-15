@@ -295,5 +295,7 @@ const DICT3=[
 ['Верх диапазона во всех подходах: ещё одна такая тренировка — и прибавка','Top of the range in all sets: one more workout like this — and the weight goes up','Diapazona augša visās sērijās: vēl viens tāds treniņš — un svars pieaugs'],
 ['Недобор на новом весе не засчитан как промах (первая тренировка после большого шага)','Falling short at the new weight did not count as a miss (first workout after a big step)','Nepietiekams atkārtojumu skaits ar jauno svaru netika ieskaitīts kā neveiksme (pirmais treniņš pēc liela soļa)'],
 ['Боль две тренировки подряд: снизь вес на 10 % или замени упражнение ⇄. Если боль не проходит — обратись к врачу','Pain two workouts in a row: lower the weight by 10 % or swap the exercise ⇄. If the pain persists — see a doctor','Sāpes divus treniņus pēc kārtas: samazini svaru par 10 % vai aizstāj vingrinājumu ⇄. Ja sāpes nepāriet — vērsies pie ārsta'],
+// D-220 (C-111): 30-minute workouts. LV needs native review (docs/LV-NEW-D220.md).
+['Для «Силы» минимум 45 мин','For “Strength” the minimum is 45 min','«Spēkam» minimums ir 45 min'],
+['Экспресс: рост медленнее, для максимума — 45+ мин','Express: slower progress, for maximum results — 45+ min','Ekspress: progress lēnāks, maksimālam rezultātam — 45+ min'],
 ]
-

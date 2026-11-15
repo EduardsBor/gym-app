@@ -109,7 +109,8 @@ test('plans without limitations follow the trainer template exactly', () => {
   const diff = arr(run(`(() => { const out = [];
     for (const [k, t] of Object.entries(PROG.T)) { const [goal, level, days, place] = k.split('_');
       for (let li = 0; li < 5; li++) { const p = planFromTemplate({ goal, level, days: +days, place, len: PROG.L[li], sex: 'm', prio: [], lim: [] });
-        t[2].forEach((day, di) => { const want = day[1].filter(it => setsAt(it[3], li) > 0).map(it => PROG.I[it[0]]);
+        const lj = t[3] && t[3].f && t[3].f[PROG.L[li]] ? PROG.L.indexOf(t[3].f[PROG.L[li]]) : li; // C-111: Strength mid/adv 30 -> 45
+        t[2].forEach((day, di) => { const want = day[1].filter(it => setsAt(it[3], lj) > 0).map(it => PROG.I[it[0]]);
           const got = p.days[di].items.filter(it => !isCardio(it.exId) || want.includes(it.exId)).map(it => it.exId);
           if (want.join() !== got.join()) out.push(k + ' ' + PROG.L[li] + ' ' + di + ': ' + want.join() + ' / ' + got.join()); }); } }
     return out.slice(0, 5); })()`));
