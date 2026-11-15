@@ -440,15 +440,27 @@ function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
 function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
  Promise.resolve().then(async()=>{try{await idb.histPut(histList());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
+// Union of IDB + localStorage(+in-memory) history by workout id; tombstones in S.deletedWorkouts (same list sync uses) win;
+// on a conflict the newer one (updatedAt||end||start) wins, ties go to the local copy (written synchronously, so freshest).
+function histT(w){return +(w&&(w.updatedAt||w.end||w.start))||0}
+function mergeHist(fromIdb,local,deleted){const del=new Set(Array.isArray(deleted)?deleted:[]),map=new Map(),order=[];
+ const add=(w,pref)=>{if(!w||typeof w!=='object'||w.id==null||del.has(w.id))return;const y=map.get(w.id);
+  if(!y){map.set(w.id,w);order.push(w.id)}else if(pref?histT(w)>=histT(y):histT(w)>histT(y))map.set(w.id,w)};
+ (Array.isArray(fromIdb)?fromIdb:[]).forEach(w=>add(w,false));(Array.isArray(local)?local:[]).forEach(w=>add(w,true));
+ return order.map(id=>map.get(id))}
 async function migrateHistory(){
  if(typeof indexedDB==='undefined')return{ok:false,fallback:'localStorage'};
  let fromIdb,idbAvail=true;
  try{fromIdb=await idb.histGet()}catch(e){idbAvail=false}
  if(!idbAvail)return{ok:false,fallback:'localStorage'};
  if(Array.isArray(fromIdb)){
-  S.workouts=fromIdb;
+  // D-207 fix (Claude 15.11): union by id instead of replace. localStorage 'gym' is written synchronously,
+  // the IDB write is async; if the app was closed before it finished, the last workout is only in localStorage.
+  const merged=mergeHist(fromIdb,histList(),S.deletedWorkouts);
+  S.workouts=merged;
   try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
   try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
+  if(!S_RO)try{await idb.histPut(merged)}catch(e){}
   return{ok:true,source:'idb'};
  }
  const local=histList();
