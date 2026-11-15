@@ -5,8 +5,8 @@
 // Stored in localStorage 'gymDemoTier' — NOT in S, so it never touches the user's data, history or sync.
 // ?demo= modes work only when the paywall is off or this is a test build; a production paywall ignores them and drops the stored key.
 const PREM_CFG={PAYWALL_ENABLED:false,TEST_BUILD:false,PAYWALL_LAUNCH:null};
-// Temporary product name until G-002 is decided.
-const PREM_NAME='Мой Зал Premium';
+// Product name (G-002).
+const PREM_NAME='GymCaptain Premium';
 const PREM_DEMO_KEY='gymDemoTier',PREM_SEEN_KEY='gymPwSeen';
 const PREM_DAY=864e5,DEMO_DAYS=14,DEMO_WARN_DAYS=2;
 // One table. 'free' = free forever (also after the demo), 'sub' = subscription (or the 14-day demo).

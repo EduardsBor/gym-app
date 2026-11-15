@@ -1,6 +1,6 @@
 # Health integration
 
-Web phase of calories and heart rate for Мой Зал. A store build (Capacitor) can add Apple Health and Health Connect later without changing the workout math or the history shape.
+Web phase of calories and heart rate for GymCaptain. A store build (Capacitor) can add Apple Health and Health Connect later without changing the workout math or the history shape.
 
 ## What the site does now
 

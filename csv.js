@@ -26,4 +26,4 @@ function csvExName(id){const e=typeof exBy==='function'?exBy(id):null;const raw=
 function exportCsv(){if(typeof S==='undefined'||!S)return;const T=typeof tr==='function'?tr:null;
  const data=workoutsCsv(S.workouts,csvExName,T,typeof isCardio==='function'?isCardio:null);
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv;charset=utf-8'}));
- a.download='moy-zal-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+ a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
