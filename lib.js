@@ -70,14 +70,25 @@ jump:['Сердечно-сосудистая система','Икры, плеч
 "mk-incline-treadmill-walk":["ягодичные, бицепс бедра, икры (лёгкое кардио)","—","Лёгкое кардио: быстрая ходьба на дорожке с наклоном."]
 };
 const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантелями',b:'🤸 Без инвентаря'},EQI={g:'🏢',d:'🏠',b:'🤸'},RSK={s:'спину',k:'колени',p:'плечи'};
+// P-302: library filters. Muscle = e.group; equipment = META place (g/d/b). Missing META defaults to gdb (shown in every place filter) — do not invent types.
+function libMeta(id){return (typeof META!=='undefined'&&META[id])||'gdb|'}
+function libPlace(id){return String(libMeta(id).split('|')[0]||'')}
+function libMatch(e,st){st=st||LQ;if(!e)return false;const q=String(st.q||'').trim().toLowerCase();
+ if(q){const n=String(e.name||''),tn=typeof tr==='function'?String(tr(n)||''):'';if(!n.toLowerCase().includes(q)&&!tn.toLowerCase().includes(q))return false}
+ if(st.g&&e.group!==st.g)return false;if(st.p&&!libPlace(e.id).includes(st.p))return false;return true}
+function libFilter(list,st){return (list||[]).filter(e=>libMatch(e,st||LQ))}
 
 function libView(){$('#title').textContent='Библиотека';const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
- app.innerHTML=`<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
+ const bar=typeof tplBarHTML==='function'&&can('templates')?tplBarHTML():'';
+ app.innerHTML=`${bar}<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
+ <p class="mut" style="margin:8px 0 0;font-size:12px">Мышцы</p>
  <div class="lchips">${ch('g','','Все')}${GROUPS.map(g=>ch('g',g,g)).join('')}${ch('g','Разминка','🔥 Разминка')}${ch('g','Заминка','🧊 Заминка')}</div>
+ <p class="mut" style="margin:8px 0 0;font-size:12px">Оборудование</p>
  <div class="lchips">${ch('p','','Везде')}${Object.entries(EQN).map(([k,v])=>ch('p',k,v)).join('')}</div>
  <div id="llist"></div>`;
- const list=()=>{const q=LQ.q.trim().toLowerCase(),L=EX.filter(e=>(!q||tr(e.name).toLowerCase().includes(q)||e.name.toLowerCase().includes(q))&&(!LQ.g||e.group===LQ.g)&&(!LQ.p||(META[e.id]||'gdb|').split('|')[0].includes(LQ.p)));
-  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}<span class="eqi" title="${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQN[k]).filter(Boolean).join(', ')}"> · ${(META[e.id]||'gdb|').split('|')[0].split('').map(k=>EQI[k]||'').join('')}</span>${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
+ if(typeof tplBind==='function')tplBind(app);
+ const list=()=>{const L=libFilter(EX,LQ);
+  $('#llist').innerHTML=`<p class="mut" id="lcount">Найдено: ${L.length}</p>`+(L.length?`<div class="card lcard">${L.map(e=>`<button class="lrow" data-lx="${e.id}">${animThumb(e.id)}<span class="grow"><b>${exOk(e.id)?'':'🔒 '}${esc(e.name)}</b><br><span class="mut">${esc(e.group)}<span class="eqi" title="${libPlace(e.id).split('').map(k=>EQN[k]).filter(Boolean).join(', ')}"> · ${libPlace(e.id).split('').map(k=>EQI[k]||'').join('')}</span>${priorSets(e.id).length?' · 📈 есть история':''}</span></span><span class="mut">›</span></button>`).join('')}</div>`:'<p class="mut">Ничего не найдено. Попробуй другое слово или сбрось фильтры.</p>');
   app.querySelectorAll('[data-lx]').forEach(b=>b.onclick=()=>exOk(b.dataset.lx)?exCard(b.dataset.lx):paywall('Полная библиотека с 3D-видео — в Premium.'))};
  list();$('#lq').oninput=e=>{LQ.q=e.target.value;list()};
  app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LQ[b.dataset.lk]=b.dataset.lv;app.querySelectorAll(`[data-lk="${b.dataset.lk}"]`).forEach(x=>x.classList.toggle('sel',x===b));list()})}

@@ -62,7 +62,7 @@ function finish(b, reps, feel, pain) {
 }
 const demo = (b, t) => b.run(`setDemoTier(${JSON.stringify(t)})`);
 const SUB = ['programs', 'autoWeight', 'deload', 'breakReturn', 'video', 'charts', 'prs', 'oneRM', 'muscleVolume', 'girths'];
-const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight', 'warmup', 'cooldown'];
+const NEVER = ['diary', 'prevInField', 'history', 'library', 'pain', 'limitations', 'painSwap', 'disclaimer', 'sync', 'exportCsv', 'deleteAccount', 'bodyWeight', 'warmup', 'cooldown', 'templates'];
 const can = (b, f) => b.run(`can(${JSON.stringify(f)})`);
 // launch long ago = no clamp; the empty-launch fallback is tested separately
 const gateOn = b => b.run('PREM_CFG.PAYWALL_ENABLED=true; PREM_CFG.PAYWALL_LAUNCH=1');
@@ -353,5 +353,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v57'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v58'/); assert.match(sw, /'premium\.js','features\.js'/);
 });
