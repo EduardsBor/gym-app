@@ -65,8 +65,8 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
   const a={goal:OB.goal,level:OB.level,days:OB.days,len:OB.len,place:OB.place,sex:'m',prio:[],lim:[]};
   preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
- $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
+ $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(c.a)}save();$('#nav').classList.remove('hidden');go('today')}}
+function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
@@ -97,6 +97,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
  <div class="card"><b>🤖 ИИ-советы</b> <span class="badge">скоро · Premium</span><p class="mut" style="margin:4px 0 0">Персональные подсказки по прогрессу. Пока не подключено — данные никуда не отправляются.</p></div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
+ <div class="card"><b>Профили оборудования</b><p class="mut" style="margin:4px 0 8px">Зал и дом: переключение на экране «Сегодня». В профиле — доступные места (зал, дом с гантелями, без инвентаря).</p><button class="full" id="eqmore">Настроить профили</button></div>
  <div class="card"><b>🛡️ Конфиденциальность и данные</b>
  <div class="li"><span class="grow">Согласие на данные о теле</span><span class="mut">${S.consentHealth?'дано '+new Date(S.consentHealth.at).toLocaleDateString(LOC):'не дано'}</span></div>
  ${S.consentHealth?'<button class="full sm" id="cwd">Отозвать согласие</button>':''}
@@ -106,7 +107,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+APP_VERSION;
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
- $('#obre').onclick=obStart;$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
+ $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
  if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;S.healthConsentRevokedAt=new Date().toISOString();
   if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
    // id удалённых замеров запоминаем: иначе синхронизация вернёт их из старой копии в облаке
@@ -149,7 +150,7 @@ function premFreeToday(){$('#title').textContent='Сегодня';
  <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес и видео техники — по подписке. Разминка и заминка — бесплатно в каждой тренировке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
  if(typeof tplMount==='function')tplMount(app);$('#fstart').onclick=premStartFree}
 const _pwv=workoutView;workoutView=function(){if(typeof S!=='undefined'&&S&&S.active)refreshDiaryWarmCool(S.active);return _pwv()};
-const _ptoday=today;today=function(sel){if(!can('programs'))return premFreeToday();_ptoday(sel);if(typeof tplMount==='function')tplMount(app);
+const _ptoday=today;today=function(sel){if(!can('programs')){premFreeToday();if(typeof eqMountToday==='function')eqMountToday(sel);return}_ptoday(sel);if(typeof tplMount==='function')tplMount(app);if(typeof eqMountToday==='function')eqMountToday(sel);
  const st=premState();let hide=false;try{hide=localStorage.getItem('gymSignOffer')==='1'}catch(e){}
  if(st.tier==='trial'&&!premFirstWorkout()&&!hide&&!(typeof mzSignedIn==='function'&&mzSignedIn())&&app.insertAdjacentHTML){
   app.insertAdjacentHTML('afterbegin','<div class="card offer" id="sgoffer"><b>🔐 Войди в аккаунт</b><p class="mut" style="margin:4px 0 8px">14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа.</p><div class="row"><button class="pri grow" id="sgin">Войти</button><button class="grow" id="sgno">Не сейчас</button></div></div>');
@@ -233,3 +234,63 @@ function tplView(){if(!TE)return go('library');$('#title').textContent=TE.id?'Ш
  $('#tplback').onclick=()=>{TE=null;go('library')};
  $('#tplsave').onclick=()=>{const name=String(TE.name||'').trim();if(!name){toast('Введи название шаблона');return}if(!TE.items.length){toast('Добавь хотя бы одно упражнение');return}
   const saved=tplSave({id:TE.id,name,items:TE.items});if(!saved){toast('Не удалось сохранить шаблон');return}TE=null;toast('Шаблон сохранён');go('library')}}
+
+// ===== P-304: equipment profiles (gym / home). Free (FEATURES.equipProfile). Presets from META places g/d/b.
+const EQ_PRESETS=[{id:'gym',name:'Зал',places:'g'},{id:'home',name:'Дом',places:'d'},{id:'body',name:'Без инвентаря',places:'b'}];
+const EQ_CUSTOM_MAX=1;
+function eqIsPreset(id){return EQ_PRESETS.some(p=>p.id===id)}
+function eqEnsure(){if(typeof S==='undefined'||!S)return;
+ S.eqProfiles=Array.isArray(S.eqProfiles)?S.eqProfiles:[];S.deletedEqProfiles=Array.isArray(S.deletedEqProfiles)?S.deletedEqProfiles:[];
+ S.eqProfiles=S.eqProfiles.filter(p=>p&&typeof p==='object'&&/^[\w.-]{1,60}$/.test(p.id||'')&&eqNormPlaces(p.places)&&String(p.name||'').trim())
+  .map(p=>({id:p.id,name:String(p.name).trim().slice(0,60),places:eqNormPlaces(p.places),updatedAt:+p.updatedAt||0,preset:eqIsPreset(p.id)||p.preset?1:undefined}));
+ const have=new Set(S.eqProfiles.map(p=>p.id));
+ EQ_PRESETS.forEach(pr=>{if(!have.has(pr.id))S.eqProfiles.push({id:pr.id,name:pr.name,places:pr.places,updatedAt:0,preset:1})});
+ S.deletedEqProfiles=(S.deletedEqProfiles||[]).filter(id=>/^[\w.-]{1,60}$/.test(id)&&!eqIsPreset(id));
+ if(!S.eqActive||!S.eqProfiles.some(p=>p.id===S.eqActive)){const place=(S.prof&&S.prof.place)||'g';const pr=EQ_PRESETS.find(p=>p.places===place)||EQ_PRESETS[0];S.eqActive=pr.id;if(!S.eqActiveAt)S.eqActiveAt=0}}
+function eqAll(){eqEnsure();const order=id=>{const i=EQ_PRESETS.findIndex(p=>p.id===id);return i<0?100+id:i};return S.eqProfiles.slice().sort((a,b)=>order(a.id)-order(b.id))}
+function eqGet(id){return eqAll().find(p=>p.id===id)||null}
+function eqActiveId(){eqEnsure();return S.eqActive}
+function eqActive(){return eqGet(eqActiveId())||EQ_PRESETS[0]}
+function eqPlaces(){return eqNormPlaces((eqActive()||{}).places)||'g'}
+function eqPrimaryPlace(){return (eqPlaces()||'g')[0]}
+function eqCanAdd(){return eqAll().filter(p=>!eqIsPreset(p.id)).length<EQ_CUSTOM_MAX}
+function eqNewId(){return('eq'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)).slice(0,20)}
+function eqSetActive(id,opts){eqEnsure();if(!eqGet(id))return null;S.eqActive=id;S.eqActiveAt=Date.now();if(typeof LQ!=='undefined')LQ._eqAuto=undefined;if(!(opts&&opts.silent)&&typeof save==='function')save();return id}
+function eqOnProgramApplied(a){eqEnsure();const place=a&&a.place;const pr=EQ_PRESETS.find(p=>p.places===place);if(pr)eqSetActive(pr.id,{silent:true})}
+function eqSave(t){if(typeof can==='function'&&!can('equipProfile'))return null;eqEnsure();
+ const name=String(t&&t.name||'').trim().slice(0,60),places=eqNormPlaces(t&&t.places);if(!name||!places)return null;
+ const now=Date.now();let cur=t.id?S.eqProfiles.find(p=>p.id===t.id):null;
+ if(cur){cur.name=name;cur.places=places;cur.updatedAt=now}else{if(!eqCanAdd())return null;const id=(t.id&&/^[\w.-]{1,60}$/.test(t.id)&&!eqIsPreset(t.id))?t.id:eqNewId();cur={id,name,places,updatedAt:now};S.eqProfiles.push(cur)}
+ if(typeof save==='function')save();return cur}
+function eqDelete(id){eqEnsure();if(!id||eqIsPreset(id))return false;S.eqProfiles=S.eqProfiles.filter(p=>p.id!==id);S.deletedEqProfiles=S.deletedEqProfiles||[];if(!S.deletedEqProfiles.includes(id))S.deletedEqProfiles.push(id);
+ if(S.eqActive===id)eqSetActive((eqAll()[0]||EQ_PRESETS[0]).id,{silent:true});if(typeof save==='function')save();return true}
+function eqSameMuscle(a,b){const ea=typeof exBy==='function'?exBy(a):null,eb=typeof exBy==='function'?exBy(b):null;if(ea&&eb&&ea.group&&eb.group)return ea.group===eb.group;return false}
+function eqSwapFor(id,places,used){places=eqNormPlaces(places||eqPlaces());used=used||new Set();if(eqAvail(id,places))return id;
+ if(typeof PLACE_VARIANTS!=='undefined'&&PLACE_VARIANTS[id]){for(const p of places){const v=PLACE_VARIANTS[id][p];if(v&&eqAvail(v,places)&&!used.has(v)&&eqSameMuscle(id,v))return v}}
+ const cands=typeof altCands==='function'?altCands(id).map(e=>e.id):(((typeof ALT!=='undefined'&&ALT[id])||[]));
+ for(const x of cands){if(x&&eqAvail(x,places)&&!used.has(x)&&eqSameMuscle(id,x))return x}return id}
+function eqAdaptItems(items,places){places=eqNormPlaces(places||eqPlaces());const used=new Set();return(items||[]).map(it=>{if(!it||!it.exId)return it;const id=eqSwapFor(it.exId,places,used);used.add(id);return id===it.exId?it:Object.assign({},it,{exId:id})})}
+function eqAdaptDay(d,places){if(!d)return d;return Object.assign({},d,{items:eqAdaptItems(d.items,places)})}
+function eqAdaptMisses(items,places){places=eqNormPlaces(places||eqPlaces());return(items||[]).filter(it=>it&&it.exId&&!eqAvail(it.exId,places)&&eqSwapFor(it.exId,places,new Set())===it.exId).map(it=>it.exId)}
+function eqMountToday(sel){eqEnsure();if(!app||!app.insertAdjacentHTML)return;if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('eqbar'))return;
+ const mid=!!(S&&S.active);const chips=eqAll().map(p=>`<button type="button" class="opt chip ${eqActiveId()===p.id?'sel':''}" data-eqsw="${p.id}" ${mid?'disabled':''}>${esc(p.name)}</button>`).join('');
+ const html=`<div class="card" id="eqbar"><div class="row"><span class="grow"><b>Профиль оборудования</b></span><button type="button" class="sm" id="eqedit">Изменить</button></div><div class="chips sm2" style="margin-top:8px">${chips}</div>${mid?'<p class="mut" style="margin:6px 0 0">Профиль нельзя сменить во время тренировки.</p>':''}</div>`;
+ app.insertAdjacentHTML('afterbegin',html);
+ app.querySelectorAll('[data-eqsw]').forEach(b=>b.onclick=()=>{if(S.active||b.dataset.eqsw===eqActiveId())return;eqSetActive(b.dataset.eqsw);if(typeof today==='function')today(sel)});
+ const ed=$('#eqedit');if(ed)ed.onclick=()=>eqEditor()}
+function eqEditor(){eqEnsure();const m=$('#modal');if(!m)return;m.classList.remove('hidden');
+ const placeBox=(cur)=>[...'gdb'].map(k=>{const lab=(typeof EQN!=='undefined'&&EQN[k])||k;return`<label class="li"><span class="grow">${esc(lab)}</span><input type="checkbox" data-eqpl="${k}" ${String((cur&&cur.places)||'').includes(k)?'checked':''} style="width:28px;min-height:28px"></label>`}).join('');
+ const row=p=>`<div class="card" data-eqid="${p.id}" style="margin-top:8px"><label class="mut">Название профиля<input data-eqname value="${esc(p.name)}" maxlength="60" autocomplete="off"></label>${placeBox(p)}<div class="row" style="margin-top:8px"><button type="button" class="pri grow" data-eqsave="${p.id}">Сохранить профиль</button>${eqIsPreset(p.id)?'':'<button type="button" class="danger" data-eqdel="'+p.id+'">Удалить профиль</button>'}</div></div>`;
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Профили оборудования</h2><button type="button" id="mc">✕</button></div><p class="mut">Каждый профиль — набор мест, которые реально есть в карточках: зал, дом с гантелями, без инвентаря. Активный профиль переключается на экране «Сегодня».</p>${eqAll().map(row).join('')}${eqCanAdd()?'<button type="button" class="full" id="eqadd" style="margin-top:10px">➕ Новый профиль</button>':'<p class="mut">Уже есть дополнительный профиль.</p>'}<button type="button" class="full" id="eqdone" style="margin:10px 0 0">Закрыть</button></div>`;
+ const close=()=>m.classList.add('hidden');$('#mc').onclick=close;$('#eqdone').onclick=close;
+ const boxOf=id=>{const el=m.querySelector(`[data-eqid="${id}"]`);return{name:el.querySelector('[data-eqname]').value,places:[...el.querySelectorAll('[data-eqpl]:checked')].map(x=>x.dataset.eqpl).join('')}};
+ m.querySelectorAll('[data-eqsave]').forEach(b=>b.onclick=()=>{const v=boxOf(b.dataset.eqsave);if(!String(v.name||'').trim()){toast('Введи название профиля');return}if(!eqNormPlaces(v.places)){toast('Выбери хотя бы одно место');return}if(!eqSave({id:b.dataset.eqsave,name:v.name,places:v.places})){toast('Не удалось сохранить профиль');return}toast('Профиль сохранён');eqEditor()});
+ m.querySelectorAll('[data-eqdel]').forEach(b=>b.onclick=()=>{if(!confirm('Удалить профиль?'))return;if(!eqDelete(b.dataset.eqdel)){toast('Нельзя удалить встроенный профиль');return}toast('Профиль удалён');eqEditor()});
+ const add=$('#eqadd');if(add)add.onclick=()=>{const saved=eqSave({name:'Мой профиль',places:'d'});if(!saved){toast('Уже есть дополнительный профиль');return}toast('Профиль сохранён');eqEditor()}}
+const _eqStartW=startW;startW=function(i){_eqStartW(i);if(!S.active||S.active.fromTemplate||S.active.dayName==='Своя тренировка')return;
+ const src=(S.program&&S.program[i]&&S.program[i].items)||[];const adapted=eqAdaptItems(src);
+ S.active.items=adapted.map(it=>{const l=S.autoW!==false?lastSets(it.exId,S.active.id):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}});
+ S.active.eqProfile=eqActiveId();if(typeof save==='function')save()};
+const _eqSwap=swapModal;swapModal=function(cur,a,cb){_eqSwap(cur,a&&a.places?a:Object.assign({},a||S.prof||{},{places:eqPlaces(),place:eqPrimaryPlace()}),cb)};
+const _eqQuiz=quiz;quiz=function(){const p=typeof eqPrimaryPlace==='function'&&eqPrimaryPlace();if(p&&!Q){Q={goal:'mass',sex:'m',level:'mid',days:3,len:60,place:p,prio:[],lim:[],...(S.prof||{}),place:p}}_eqQuiz()};
+eqEnsure();

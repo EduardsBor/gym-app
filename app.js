@@ -19,7 +19,10 @@ const META={bp:'g|p',dbp:'gd|',ibp:'g|p',idb:'gd|',fly:'gd|p',"mk-cable-pec-fly"
 sq:'g|sk',fsq:'g|k',lp:'g|k',rdl:'g|s',"mk-dumbbell-stiff-leg-deadlift":'gd|s',lun:'gd|k',bss:'gd|k',le:'g|k',lc:'g|',ht:'gdb|',"mk-standing-calf-raise-machine":'gdb|',gsq:'gd|k',bwsq:'b|k',"mk-dumbbell-step-up-low":'gdb|',
 ohp:'g|sp',dsp:'gd|p',lr:'gd|',"mk-dumbbell-rear-delt-fly":'gd|',"mk-cable-seated-rope-face-pull":'g|',"mk-barbell-upright-row":'g|p',ppu:'b|p',bc:'g|',dbc:'gd|',hc:'gd|',"mk-ez-bar-preacher-curl":'g|',chin:'gdb|',cgb:'g|p',"mk-cable-bar-pushdown":'g|',"mk-ez-bar-skullcrusher":'gd|p',"mk-dumbbell-seated-overhead-tricep-extension":'gd|p',bd:'db|p',"mk-diamond-push-ups":'gdb|',
 "mk-front-plank":'gdb|',"mk-crunches":'gdb|',"mk-hanging-knee-raises":'gb|',"mk-rkc-plank":'gdb|s',rt:'gdb|',dbug:'gdb|',bdog:'gdb|',"mk-treadmill-run":'g|',"mk-indoor-cycling-spin":'g|',"mk-elliptical":'g|',"mk-rowing-machine-steady-state":'g|',stair:'g|',"mk-prone-y-t-raises":'gdb|',nlc:'gdb|k',sglb:'gdb|',bpl:'gdb|',jump:'db|k',"mk-incline-treadmill-walk":'gdb|'};
-const okEx=(id,a)=>{const m=META[id];if(!m)return true;const[eq,r]=m.split('|');return eq.includes(a.place)&&!(a.lim||[]).some(l=>r.includes(l))};
+function eqNormPlaces(s){return[...'gdb'].filter(p=>String(s||'').includes(p)).join('')}
+function eqPlacesOf(a){if(a&&a.places){const p=eqNormPlaces(a.places);if(p)return p}if(typeof eqPlaces==='function'&&typeof S!=='undefined'&&S&&a&&S.prof&&a===S.prof)return eqPlaces();if(a&&a.place&&'gdb'.includes(a.place))return a.place;if(typeof eqPlaces==='function')return eqPlaces();return'g'}
+function eqAvail(id,places){const eq=((typeof META!=='undefined'&&META[id])||'gdb|').split('|')[0];if(!eq)return true;places=eqNormPlaces(places||eqPlacesOf());return![...places].length||[...places].some(p=>eq.includes(p))}
+const okEx=(id,a)=>{const m=META[id];if(!m)return true;const[,r]=m.split('|');return eqAvail(id,eqPlacesOf(a))&&!(a&&a.lim||[]).some(l=>r.includes(l))};
 const SLOT={SQ:[['sq','lp','gsq','bss','fsq','bwsq','mk-dumbbell-step-up-low'],['ht','mk-dumbbell-step-up-low','lc']],HINGE:[['rdl','mk-barbell-deadlift','mk-dumbbell-stiff-leg-deadlift','ht','hyp'],['ht','lc','bdog']],HPUSH:[['bp','dbp','mch','pu'],['mch','pu']],IPUSH:[['idb','ibp','pu','mk-parralel-bar-dips'],['mch','pu']],
 VPUSH:[['ohp','dsp','ppu'],['lr']],HPULL:[['row','cr','dbr','inv'],['cr','inv']],VPULL:[['pull','lat','chin','inv'],['lat','inv']],LUNGE:[['bss','lun','mk-dumbbell-step-up-low','lp'],['ht','lc']],LEGISO:[['lc','le','ht','sglb','nlc'],['ht','sglb']],CALF:[['mk-standing-calf-raise-machine'],['sglb']],
 SIDE:[['lr','mk-prone-y-t-raises','ppu'],['mk-prone-y-t-raises']],REAR:[['mk-cable-seated-rope-face-pull','mk-dumbbell-rear-delt-fly','mk-prone-y-t-raises'],['mk-dumbbell-rear-delt-fly','mk-prone-y-t-raises']],BI:[['bc','dbc','hc','chin','inv'],['hc']],TRI:[['mk-cable-bar-pushdown','mk-dumbbell-seated-overhead-tricep-extension','mk-ez-bar-skullcrusher','mk-diamond-push-ups','bd'],['mk-cable-bar-pushdown','mk-diamond-push-ups']],CORE:[['mk-front-plank','mk-hanging-knee-raises','mk-crunches','dbug','bdog','bpl','mk-rkc-plank'],['dbug','bdog']],CHEST2:[['fly','mk-cable-pec-fly','dbp','pu'],['mk-cable-pec-fly','pu']]};
@@ -34,7 +37,7 @@ const SPLITNAME={2:'Фулбоди 2×',3:'Фулбоди 3×',4:'Верх / Н�
 const PRM={str:{c:[[3,4,5],3,6,180],a:[[2,3,3],6,10,120]},mass:{c:[[3,3,4],6,10,150],a:[[2,3,3],10,15,90]},loss:{c:[[2,3,3],10,15,90],a:[[2,3,3],12,15,60]},fit:{c:[[2,3,3],8,12,90],a:[[2,2,3],10,15,60]}};
 const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Зал',d:'Дом с гантелями',b:'Свой вес'};
 const LIMN={s:'спина',k:'колени',p:'плечи'};
-const eqOk=(id,a)=>(META[id]||'gdb|').split('|')[0].includes(a.place);
+const eqOk=(id,a)=>eqAvail(id,eqPlacesOf(a));
 const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest),WARM=5,dayMin=(d,a)=>d.est?Math.round(d.est):Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+WARM+rampN(d,a||(typeof S!=='undefined'&&S.prof)||{}));
 const setTxt=it=>isCardio(it.exId)?it.min+'–'+it.max+' мин':it.sec?it.sets+'×'+it.min+'–'+it.max+' с':it.sets+'×'+it.min+'–'+it.max;
 // Разминка: общая (кардио) + динамическая подвижность под мышцы дня + подводящие подходы к первому базовому упражнению.
@@ -128,7 +131,7 @@ const CATALOG=[
 let S=null,S_BROKEN=false,S_RO=false;
 try{S=JSON.parse(localStorage.getItem('gym')||'null')}catch(e){S_BROKEN=true;try{localStorage.setItem('gym_broken',localStorage.getItem('gym'))}catch(_){S_RO=true}}
 if(!S||typeof S!=='object'||Array.isArray(S))S={custom:[],workouts:[],next:0};
-if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.templates=S.templates||[];S.deletedTemplates=S.deletedTemplates||[];S.v=2;
+if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.templates=S.templates||[];S.deletedTemplates=S.deletedTemplates||[];S.eqProfiles=S.eqProfiles||[];S.deletedEqProfiles=S.deletedEqProfiles||[];S.v=2;
 let saveWarnAt=0;
 function save(){if(S_RO)return;
  try{localStorage.setItem('gym',JSON.stringify(S))}
@@ -195,7 +198,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
-  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
+  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
 const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF;
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
@@ -219,7 +222,7 @@ function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=
 function lastSets(exId,beforeId){for(let i=S.workouts.length-1;i>=0;i--){const w=S.workouts[i];if(w.id===beforeId)continue;const it=w.items.find(x=>x.exId===exId);if(it&&it.sets.some(s=>s.done))return it.sets.filter(s=>s.done)}return null}
 function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))return'';
  if(l.length>=item.sets&&l.every(s=>s.r>=item.max))return`<div class="pr" style="font-size:13px">⬆ В прошлый раз все подходы на ${esc(item.max)}+ — добавь вес (+2,5 кг)</div>`;return''}
-let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d=S.program[sel],mins=dayMin(d);
+let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d0=S.program[sel],d=typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0,mins=dayMin(d);
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
  app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
  ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>`}${d.items.map(it=>`<div class="li">${animShot(it.exId)}<div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span></div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}
@@ -549,6 +552,10 @@ function cleanImport(d){
  d.templates=arr(d.templates).filter(x=>isO(x)&&idOk(x.id)&&str(x.name)).map(x=>({id:x.id,name:String(x.name||''),updatedAt:Number.isFinite(+x.updatedAt)?+x.updatedAt:0,
   items:arr(x.items).filter(it=>isO(it)&&idOk(it.exId)).map(it=>{const o={exId:it.exId,sets:+it.sets||1,min:+it.min||0,max:+it.max||0,rest:+it.rest||0};if(it.sec)o.sec=1;return o})})).filter(x=>x.items.length);
  d.deletedTemplates=arr(d.deletedTemplates).filter(idOk);
+ d.eqProfiles=arr(d.eqProfiles).filter(x=>isO(x)&&idOk(x.id)&&str(x.name)&&eqNormPlaces(x.places)).map(x=>({id:x.id,name:String(x.name||'').trim(),places:eqNormPlaces(x.places),updatedAt:Number.isFinite(+x.updatedAt)?+x.updatedAt:0,preset:x.preset?1:undefined}));
+ d.deletedEqProfiles=arr(d.deletedEqProfiles).filter(idOk);
+ if(d.eqActive!=null&&!idOk(d.eqActive))delete d.eqActive;
+ if(d.eqActiveAt!=null)d.eqActiveAt=Number.isFinite(+d.eqActiveAt)?+d.eqActiveAt:0;
  d.workouts=d.workouts.filter(w=>isO(w)&&idOk(w.id)&&Number.isFinite(+w.start)&&Array.isArray(w.items)).map(w=>({...w,start:+w.start,end:Number.isFinite(+w.end)?+w.end:+w.start,dayName:String(w.dayName||''),notes:String(w.notes||''),
   items:w.items.filter(it=>isO(it)&&idOk(it.exId)).map(it=>({...it,sets:arr(it.sets).filter(isO).map(s=>({...s,w:num(s.w),r:num(s.r)}))}))}));
  d.body=arr(d.body).filter(e=>isO(e)&&idOk(e.id)&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')).map(e=>{const o={...e,note:String(e.note||''),photos:arr(e.photos).filter(idOk)};BM.forEach(([k])=>{if(k in o)o[k]=num(o[k])});return o});
