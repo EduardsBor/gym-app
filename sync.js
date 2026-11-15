@@ -32,7 +32,7 @@
     return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
   }
   function hasLocalData(){
-    return !!(S.program||(S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.goal);
+    return !!(S.program||(S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.goal||(S.templates&&S.templates.length));
   }
   function ensureMeta(){
     let ch=false;
@@ -41,6 +41,8 @@
     S.deletedWorkouts=S.deletedWorkouts||[];
     S.deletedBody=S.deletedBody||[];
     S.deletedCustom=S.deletedCustom||[];
+    S.templates=S.templates||[];
+    S.deletedTemplates=S.deletedTemplates||[];
     return ch;
   }
   function persistLocal(){
@@ -139,6 +141,7 @@
     const w=mergeLists(S.workouts,R.workouts,S.deletedWorkouts,R.deletedWorkouts,'id',x=>x.end||x.start||0);
     const b=mergeLists(S.body,R.body,S.deletedBody,R.deletedBody,'id',x=>Date.parse(x.date||'')||0);
     const c=mergeLists(S.custom,R.custom,S.deletedCustom,R.deletedCustom,'id',x=>+(String(x.id).replace(/\D/g,'')||0));
+    const tpl=mergeLists(S.templates,R.templates,S.deletedTemplates,R.deletedTemplates,'id',x=>x.updatedAt||0);
     const localNewer=(S.updatedAt||0)>=(remoteAt||0);
     const pick=(k)=>{
       if(localNewer) return S[k]!==undefined?S[k]:R[k];
@@ -147,6 +150,7 @@
     S.workouts=w.list;S.deletedWorkouts=w.deleted;
     if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted}
     S.custom=c.list;S.deletedCustom=c.deleted;
+    S.templates=tpl.list;S.deletedTemplates=tpl.deleted;
     // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
     const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
     ['program','progName','why','prof','goal','days'].forEach(k=>{

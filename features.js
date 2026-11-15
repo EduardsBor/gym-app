@@ -136,7 +136,8 @@ function premStatusText(){const d=demoTier(),st=premState(),M={free:'Демо-р
 function diaryWarmCool(items){const P=warmPlan({items:items||[]},S.prof||{});
  const cd={note:'лёгкий темп, пульс снижается',stretch:[{id:'cd_breath',dose:'≈ 60 с'}]};
  return{warm:{P,c:warmItems(P).map(()=>false)},cool:typeof cdRows==='function'?{cd,c:cdRows(cd).map(()=>false)}:null}}
-function refreshDiaryWarmCool(A){if(!A||A.dayName!=='Своя тренировка')return;
+function isDiaryWorkout(A){return!!(A&&(A.dayName==='Своя тренировка'||A.fromTemplate))}
+function refreshDiaryWarmCool(A){if(!isDiaryWorkout(A))return;
  const started=(A.warm&&A.warm.c&&A.warm.c.some(Boolean))||(A.cool&&A.cool.c&&A.cool.c.some(Boolean));
  if(started&&A.warm&&A.cool)return;const wc=diaryWarmCool(A.items);A.warm=wc.warm;A.cool=wc.cool}
 function premStartFree(){if(S.active)return go('today');const n=(S.program&&S.program.length)||0;
@@ -146,9 +147,9 @@ function premStartFree(){if(S.active)return go('today');const n=(S.program&&S.pr
 function premFreeToday(){$('#title').textContent='Сегодня';
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">📓 Мой дневник</h2><p class="mut">Записывай свои тренировки бесплатно: выбери упражнения из списка и вводи подходы — прошлый вес и повторы подставятся сами.</p><button class="pri full" id="fstart">▶ Начать свою тренировку</button></div>
  <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес и видео техники — по подписке. Разминка и заминка — бесплатно в каждой тренировке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
- $('#fstart').onclick=premStartFree}
+ if(typeof tplMount==='function')tplMount(app);$('#fstart').onclick=premStartFree}
 const _pwv=workoutView;workoutView=function(){if(typeof S!=='undefined'&&S&&S.active)refreshDiaryWarmCool(S.active);return _pwv()};
-const _ptoday=today;today=function(sel){if(!can('programs'))return premFreeToday();_ptoday(sel);
+const _ptoday=today;today=function(sel){if(!can('programs'))return premFreeToday();_ptoday(sel);if(typeof tplMount==='function')tplMount(app);
  const st=premState();let hide=false;try{hide=localStorage.getItem('gymSignOffer')==='1'}catch(e){}
  if(st.tier==='trial'&&!premFirstWorkout()&&!hide&&!(typeof mzSignedIn==='function'&&mzSignedIn())&&app.insertAdjacentHTML){
   app.insertAdjacentHTML('afterbegin','<div class="card offer" id="sgoffer"><b>🔐 Войди в аккаунт</b><p class="mut" style="margin:4px 0 8px">14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа.</p><div class="row"><button class="pri grow" id="sgin">Войти</button><button class="grow" id="sgno">Не сейчас</button></div></div>');
@@ -162,3 +163,73 @@ const _pvol=volBadges;volBadges=function(){return can('muscleVolume')?_pvol():'<
 const _pprogress=progress;progress=function(){if(can('charts'))return _pprogress();$('#title').textContent='Прогресс';
  app.innerHTML=lockCard('Графики и рекорды','Графики, рекорды, 1ПМ и объём по мышцам — по подписке. Вся история тренировок бесплатно — в разделе «История».')};
 const _pcel=celebrate;celebrate=function(n,i){if(can('prs'))return _pcel(n,i)};
+
+// ===== P-302: own workout templates (free). IDs only; no custom-exercise creation. Sync via updatedAt / deletedTemplates.
+let TE=null;
+function tplAll(){return Array.isArray(S.templates)?S.templates:[]}
+function tplGet(id){return tplAll().find(t=>t&&t.id===id)||null}
+function tplNewId(){return('t'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)).slice(0,20)}
+function isSecEx(id){if(typeof isCardio==='function'&&isCardio(id))return false;const n=((typeof exBy==='function'&&exBy(id).name)||'')+' '+id;return/plank|планка/i.test(n)}
+function tplDefaults(id){const cardio=typeof isCardio==='function'&&isCardio(id);
+ if(cardio)return{exId:id,sets:1,min:10,max:20,rest:0};
+ if(isSecEx(id))return{exId:id,sets:3,min:20,max:45,rest:60,sec:1};
+ const P=typeof PRM!=='undefined'&&(PRM[S&&S.goal||'fit']||PRM.mass||PRM.fit);const p=P&&P.a||[null,8,12,120];
+ return{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]}}
+function tplNormItem(it){if(!it||!it.exId)return null;const id=String(it.exId);if(!/^[\w.-]{1,60}$/.test(id))return null;
+ const cardio=typeof isCardio==='function'&&isCardio(id);const sec=!!it.sec&&!cardio;
+ const sets=Math.max(1,Math.min(20,+it.sets||(cardio?1:3)));const min=Math.max(0,+it.min||0);const max=Math.max(min,+it.max||min);const rest=Math.max(0,+it.rest||0);
+ const o={exId:id,sets,min,max,rest};if(sec)o.sec=1;return o}
+function tplSave(t){if(typeof can==='function'&&!can('templates'))return null;
+ const name=String(t&&t.name||'').trim();const items=((t&&t.items)||[]).map(tplNormItem).filter(Boolean);
+ if(!name||!items.length)return null;S.templates=S.templates||[];const now=Date.now();let cur=t.id?S.templates.find(x=>x.id===t.id):null;
+ if(cur){cur.name=name;cur.items=items;cur.updatedAt=now}else{const id=t.id&&/^[\w.-]{1,60}$/.test(t.id)?t.id:tplNewId();cur={id,name,items,updatedAt:now};S.templates.push(cur)}
+ if(typeof save==='function')save();return cur}
+function tplDelete(id){if(!id)return;S.templates=(S.templates||[]).filter(t=>t.id!==id);S.deletedTemplates=S.deletedTemplates||[];if(!S.deletedTemplates.includes(id))S.deletedTemplates.push(id);if(typeof save==='function')save()}
+function startTemplate(id){if(S.active){go('today');return S.active}if(typeof can==='function'&&!can('templates'))return null;
+ const t=tplGet(id);if(!t)return null;const src=(t.items||[]).map(tplNormItem).filter(Boolean);if(!src.length)return null;
+ const n=(S.program&&S.program.length)||0;
+ const items=src.map(it=>{const cardio=isCardio(it.exId);const l=S.autoW!==false&&typeof lastSets==='function'?lastSets(it.exId):null;const sets=+it.sets||(cardio?1:3);
+  return{exId:it.exId,ns:sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}});
+ const wc=typeof diaryWarmCool==='function'?diaryWarmCool(items):{warm:null,cool:null};
+ S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:n?((S.next||0)%n+n-1)%n:0,dayName:t.name||'Своя тренировка',fromTemplate:t.id,notes:'',warm:wc.warm,cool:wc.cool,items};
+ if(typeof save==='function')save();go('today');return S.active}
+function tplCountText(t){const n=(t&&t.items&&t.items.length)||0;return n+' упражн.'}
+function tplBarHTML(){if(typeof can==='function'&&!can('templates'))return'';
+ const L=tplAll().slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+ return`<div class="card" id="tplbox"><div class="row"><b class="grow">Мои шаблоны</b><button class="sm pri" id="tplnew">➕ Новый шаблон</button></div>
+ ${L.length?L.map(t=>`<div class="li"><span class="grow"><b>${esc(t.name)}</b><br><span class="mut">${esc(tplCountText(t))}</span></span><button class="pri sm" data-tpls="${esc(t.id)}">▶ Начать</button><button class="sm" data-tple="${esc(t.id)}">Изменить</button><button class="sm" data-tpld="${esc(t.id)}">✕</button></div>`).join(''):'<p class="mut" style="margin:8px 0 0">Собери свою тренировку из библиотеки и сохраняй как шаблон.</p>'}</div>`}
+function tplBind(root){root=root||(typeof app!=='undefined'?app:null);if(!root||!root.querySelector)return;
+ const n=root.querySelector('#tplnew');if(n)n.onclick=()=>tplOpen();
+ root.querySelectorAll('[data-tpls]').forEach(b=>b.onclick=()=>startTemplate(b.dataset.tpls));
+ root.querySelectorAll('[data-tple]').forEach(b=>b.onclick=()=>tplOpen(b.dataset.tple));
+ root.querySelectorAll('[data-tpld]').forEach(b=>b.onclick=()=>{const t=tplGet(b.dataset.tpld);if(!t)return;if(!confirm('Удалить шаблон «'+t.name+'»?'))return;tplDelete(t.id);if(view==='library')libView();else go('today')})}
+function tplMount(root){if(typeof can==='function'&&!can('templates'))return;root=root||(typeof app!=='undefined'?app:null);if(!root||!root.insertAdjacentHTML)return;
+ if(root.querySelector&&root.querySelector('#tplbox'))return;const html=tplBarHTML();const first=root.querySelector&&root.querySelector('.card');
+ if(first&&first.insertAdjacentHTML)first.insertAdjacentHTML('afterend',html);else root.insertAdjacentHTML('beforeend',html);tplBind(root)}
+function tplOpen(id){if(id){const t=tplGet(id);if(!t)return;TE={id:t.id,name:t.name,items:(t.items||[]).map(x=>({...x}))}}else TE={id:'',name:'',items:[]};go('tpl')}
+function tplDose(it){const cardio=isCardio(it.exId);return cardio?it.min+'–'+it.max+' мин':it.sec?it.sets+'×'+it.min+'–'+it.max+' с':it.sets+'×'+it.min+'–'+it.max}
+function tplView(){if(!TE)return go('library');$('#title').textContent=TE.id?'Шаблон':'Новый шаблон';
+ const row=(it,i)=>{const cardio=isCardio(it.exId),sec=!!it.sec&&!cardio;
+  const unit=cardio?'мин':(sec?'с':'повт.');
+  return`<div class="card"><div class="row"><span class="grow"><b>${esc(exBy(it.exId).name)}</b><br><span class="mut">${esc(exBy(it.exId).group)} · ${esc(tplDose(it))}</span></span><button class="sm" data-tup="${i}">↑</button><button class="sm" data-tdn="${i}">↓</button><button class="sm" data-tx="${i}">✕</button></div>
+  <div class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap">
+   ${cardio?'':`<label class="mut">Подходы<input type="number" min="1" max="20" value="${esc(it.sets)}" data-tf="${i},sets" style="width:64px"></label>`}
+   <label class="mut">${cardio?'Мин.':'От'}<input type="number" min="0" value="${esc(it.min)}" data-tf="${i},min" style="width:64px"></label>
+   <label class="mut">${cardio?'Макс.':'До'} <span class="mut">${unit}</span><input type="number" min="0" value="${esc(it.max)}" data-tf="${i},max" style="width:64px"></label>
+   ${cardio?'':`<label class="mut">Отдых, с<input type="number" min="0" value="${esc(it.rest)}" data-tf="${i},rest" style="width:72px"></label>`}
+  </div></div>`};
+ app.innerHTML=`<div class="card"><label class="mut">Название шаблона<input id="tplname" value="${esc(TE.name)}" placeholder="Например: Жим день" autocomplete="off"></label></div>
+ ${TE.items.length?TE.items.map(row).join(''):'<p class="mut">Добавь хотя бы одно упражнение</p>'}
+ <button class="full" id="tpladd" style="margin-top:8px">+ Упражнение</button>
+ <button class="pri full" id="tplsave" style="margin-top:14px">Сохранить шаблон</button>
+ <button class="full" id="tplback" style="margin:8px 0 20px">← Назад</button>`;
+ $('#tplname').oninput=e=>{TE.name=e.target.value};
+ app.querySelectorAll('[data-tf]').forEach(i=>i.onchange=()=>{const[idx,f]=i.dataset.tf.split(',');const it=TE.items[+idx];if(!it)return;it[f]=+i.value||0;if(f==='min'&&it.max<it.min)it.max=it.min;if(f==='max'&&it.max<it.min)it.min=it.max;tplView()});
+ const mv=(i,d)=>{const j=i+d;if(j<0||j>=TE.items.length)return;[TE.items[i],TE.items[j]]=[TE.items[j],TE.items[i]];tplView()};
+ app.querySelectorAll('[data-tup]').forEach(b=>b.onclick=()=>mv(+b.dataset.tup,-1));
+ app.querySelectorAll('[data-tdn]').forEach(b=>b.onclick=()=>mv(+b.dataset.tdn,1));
+ app.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{TE.items.splice(+b.dataset.tx,1);tplView()});
+ $('#tpladd').onclick=()=>pickEx(id=>{TE.items.push(tplDefaults(id));tplView()});
+ $('#tplback').onclick=()=>{TE=null;go('library')};
+ $('#tplsave').onclick=()=>{const name=String(TE.name||'').trim();if(!name){toast('Введи название шаблона');return}if(!TE.items.length){toast('Добавь хотя бы одно упражнение');return}
+  const saved=tplSave({id:TE.id,name,items:TE.items});if(!saved){toast('Не удалось сохранить шаблон');return}TE=null;toast('Шаблон сохранён');go('library')}}

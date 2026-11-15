@@ -128,7 +128,7 @@ const CATALOG=[
 let S=null,S_BROKEN=false,S_RO=false;
 try{S=JSON.parse(localStorage.getItem('gym')||'null')}catch(e){S_BROKEN=true;try{localStorage.setItem('gym_broken',localStorage.getItem('gym'))}catch(_){S_RO=true}}
 if(!S||typeof S!=='object'||Array.isArray(S))S={custom:[],workouts:[],next:0};
-if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.v=2;
+if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.templates=S.templates||[];S.deletedTemplates=S.deletedTemplates||[];S.v=2;
 let saveWarnAt=0;
 function save(){if(S_RO)return;
  try{localStorage.setItem('gym',JSON.stringify(S))}
@@ -162,7 +162,7 @@ let view='today';
 function go(v){view=v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view))return quiz();
- if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
+ if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){quiz()}
 let Q=null,catF={};
@@ -504,6 +504,9 @@ function cleanImport(d){
  const num=x=>x===''||x==null?x:(Number.isFinite(+x)?+x:0),arr=x=>Array.isArray(x)?x:[];
  if(!isO(d)||!Array.isArray(d.workouts))throw 0;
  d.custom=arr(d.custom).filter(c=>isO(c)&&idOk(c.id)&&str(c.name)&&str(c.group));
+ d.templates=arr(d.templates).filter(x=>isO(x)&&idOk(x.id)&&str(x.name)).map(x=>({id:x.id,name:String(x.name||''),updatedAt:Number.isFinite(+x.updatedAt)?+x.updatedAt:0,
+  items:arr(x.items).filter(it=>isO(it)&&idOk(it.exId)).map(it=>{const o={exId:it.exId,sets:+it.sets||1,min:+it.min||0,max:+it.max||0,rest:+it.rest||0};if(it.sec)o.sec=1;return o})})).filter(x=>x.items.length);
+ d.deletedTemplates=arr(d.deletedTemplates).filter(idOk);
  d.workouts=d.workouts.filter(w=>isO(w)&&idOk(w.id)&&Number.isFinite(+w.start)&&Array.isArray(w.items)).map(w=>({...w,start:+w.start,end:Number.isFinite(+w.end)?+w.end:+w.start,dayName:String(w.dayName||''),notes:String(w.notes||''),
   items:w.items.filter(it=>isO(it)&&idOk(it.exId)).map(it=>({...it,sets:arr(it.sets).filter(isO).map(s=>({...s,w:num(s.w),r:num(s.r)}))}))}));
  d.body=arr(d.body).filter(e=>isO(e)&&idOk(e.id)&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')).map(e=>{const o={...e,note:String(e.note||''),photos:arr(e.photos).filter(idOk)};BM.forEach(([k])=>{if(k in o)o[k]=num(o[k])});return o});
