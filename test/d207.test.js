@@ -29,6 +29,7 @@ function fakeIDB(opts) {
   const dbs = new Map();
   const later = fn => queueMicrotask(fn);
   const failOpen = !!(opts && opts.failOpen);
+  if (opts && opts.preHist) dbs.set('moyzal', { version: 2, stores: new Map([['photos', new Map()], ['history', new Map([['workouts', opts.preHist]])]]) });
   function req(fill) {
     const r = { result: undefined, error: null, onsuccess: null, onerror: null, onupgradeneeded: null, onblocked: null };
     later(() => {
@@ -254,11 +255,45 @@ test('clearLocalData removes gym, the history backup and the IndexedDB database'
   assert.equal(b.idb.has('moyzal'), false);
 });
 
-test('service worker cache is moyzal-v61 and still precaches app.js and sync.js', () => {
+test('service worker cache is moyzal-v62 and still precaches app.js and sync.js', () => {
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v61'/);
-  assert.equal(sw.includes("C='moyzal-v59'"), false);
+  assert.match(sw, /const C='moyzal-v62'/);
+  assert.equal(sw.includes("C='moyzal-v61'"), false);
   assert.match(sw, /'app\.js'/);
   assert.match(sw, /'sync\.js'/);
   assert.match(read('CHANGELOG.md'), /D-207/);
+});
+
+// D-207 fix (Claude 15.11): startup merges IDB + localStorage history by id instead of replacing it.
+test('startup: a workout only in localStorage (IDB write not finished) survives and is written back to IDB', async () => {
+  const w1 = W('w1', 1_700_000_000_000, 'bp', 60), w2 = W('w2', 1_700_100_000_000, 'sq', 80);
+  const b = boot(seed({ workouts: [w1, w2] }), { ls: { gym_hist_idb: '1' }, preHist: [jclone(w1)] });
+  const r = await b.run('histReady');
+  assert.equal(r.source, 'idb');
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.workouts.map(w=>w.id))')), ['w1', 'w2']);
+  assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1', 'w2']);
+  assert.deepEqual(JSON.parse(b.store.get('gym')).workouts.map(w => w.id), ['w1', 'w2']);
+  assert.equal(jclone(histFromDb(b.idb))[1].items[0].exId, 'sq');
+});
+
+test('startup: a workout deleted locally is not resurrected from IDB', async () => {
+  const w1 = W('w1', 1_700_000_000_000, 'bp', 60), w2 = W('w2', 1_700_100_000_000, 'sq', 80);
+  const b = boot(seed({ workouts: [w1], deletedWorkouts: ['w2'] }), { preHist: [jclone(w1), jclone(w2)] });
+  await b.run('histReady');
+  assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.workouts.map(w=>w.id))')), ['w1']);
+  assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1']);
+  assert.deepEqual(JSON.parse(b.store.get('gym')).deletedWorkouts, ['w2']);
+});
+
+test('startup: workouts in both IDB and localStorage are not duplicated; IDB-only ones are kept; newer edit wins', async () => {
+  const w1 = W('w1', 1_700_000_000_000, 'bp', 60), w2 = W('w2', 1_700_100_000_000, 'sq', 80), w3 = W('w3', 1_700_200_000_000, 'dl', 100);
+  const w2edited = Object.assign(jclone(w2), { updatedAt: 1_700_300_000_000, notes: 'edited' });
+  const b = boot(seed({ workouts: [w1, w2edited] }), { preHist: [jclone(w1), jclone(w2), jclone(w3)] });
+  await b.run('histReady');
+  const ids = JSON.parse(b.run('JSON.stringify(S.workouts.map(w=>w.id))'));
+  assert.deepEqual(ids, ['w1', 'w2', 'w3']);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.equal(b.run('S.workouts[1].notes'), 'edited');
+  assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1', 'w2', 'w3']);
+  assert.deepEqual(b.run('JSON.stringify(mergeHist([{id:"a",end:2}],[{id:"a",end:1}],[]))'), '[{"id":"a","end":2}]');
 });
