@@ -11,7 +11,7 @@ const DICT2=[
 ['Далее','Next','Tālāk'],['Составить программу','Build my program','Sastādīt programmu'],['Пропустить','Skip','Izlaist'],
 ['Программа строится по научным данным (раздел «Научная основа»). Ответы хранятся только на этом устройстве.','The program is based on scientific evidence (see “Science”). Your answers are stored only on this device.','Programma balstīta zinātniskos datos (sadaļa “Zinātniskais pamats”). Atbildes tiek glabātas tikai šajā ierīcē.'],
 ['Моя программа:','My program:','Mana programma:'],
-['ДЕМО','DEMO','DEMO'],['Закрыть','Close','Aizvērt'],['Мой Зал Premium','My Gym Premium','Mana zāle Premium'],
+['ДЕМО','DEMO','DEMO'],['Закрыть','Close','Aizvērt'],['GymCaptain Premium','GymCaptain Premium','GymCaptain Premium'],
 ['Все программы по целям','All goal-based programs','Visas mērķu programmas'],['Полная библиотека: 68 упражнений с 3D-видео','Full library: 68 exercises with 3D videos','Pilna bibliotēka: 68 vingrinājumi ar 3D video'],
 ['Графики прогресса и расчётный 1ПМ','Progress charts and estimated 1RM','Progresa grafiki un aprēķinātais 1MA'],['Замеры тела, фото и ИМТ','Body measurements, photos and BMI','Ķermeņa mērījumi, foto un ĶMI'],
 ['ИИ-советы (скоро)','AI tips (coming soon)','MI padomi (drīzumā)'],['Год — €29,99','Year — €29.99','Gads — €29,99'],['≈ €2,50 в месяц · 7 дней бесплатно','≈ €2.50 per month · 7 days free','≈ €2,50 mēnesī · 7 dienas bez maksas'],

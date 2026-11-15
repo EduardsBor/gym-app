@@ -339,8 +339,8 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
     const r = D.find(x => x[0] === ru); assert.ok(r && r[1] && r[2], ru);
   }
   assert.equal(D.some(x => /Пора прибавить|Попробовать 14/.test(x[0])), false);
-  assert.equal(b.run('PREM_NAME'), 'Мой Зал Premium');
-  assert.match(html, /Мой Зал Premium/);
+  assert.equal(b.run('PREM_NAME'), 'GymCaptain Premium');
+  assert.match(html, /GymCaptain Premium/);
   // after the demo the subtitle changes; during/before it stays the 14-day line
   demo(b, 'free');
   b.run('paywall("")');
@@ -353,5 +353,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v54'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v55'/); assert.match(sw, /'premium\.js','features\.js'/);
 });
