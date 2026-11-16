@@ -33,7 +33,7 @@
 [['Ляг на скамью, гантели над грудью на прямых руках, ладони друг к другу.','Не двигая плечами, согни локти и медленно опусти гантели к вискам.','Локти смотрят вверх и не разъезжаются в стороны.','Разогни руки до прямых, без рывка.'],['Локти уходят в стороны или к лицу.','Плечи двигаются вместе с предплечьями.','Слишком тяжёлые гантели и удар по голове.'],'При ограничении «плечи» — лёгкий вес; при боли замени на разгибание на блоке или узкие отжимания.'],
 [['Lie on a bench, dumbbells over the chest on straight arms, palms facing.','Without moving the upper arms, bend the elbows and slowly lower the dumbbells toward your temples.','Keep the elbows pointing up, not flaring.','Straighten the arms fully, without jerking.'],['Elbows flaring or drifting toward the face.','The upper arms moving with the forearms.','Dumbbells too heavy, risking a hit to the head.'],'With a shoulder limitation go light; if it hurts, switch to pushdowns or close push-ups.'],
 [['Apgulies uz sola, hanteles virs krūtīm uz taisnām rokām, plaukstas viena pret otru.','Nekustinot augšdelmus, saliec elkoņus un lēni nolaid hanteles pie deniņiem.','Elkoņi vērsti uz augšu, neizplešas.','Iztaisno rokas līdz galam, bez rāviena.'],['Elkoņi izplešas vai iet uz seju.','Augšdelmi kustas līdzi apakšdelmiem.','Pārāk smagas hanteles un sitiens pa galvu.'],'Ar plecu ierobežojumu — viegls svars; ja sāp, aizvieto ar bloka spiešanu vai šaurajiem atspiedieniem.']],
-['walk-brisk','Быстрая ходьба (улица или на месте)','Кардио','gdb|','Brisk walk (outdoors or on the spot)','Ātra iešana (ārā vai uz vietas)',
+['walk-brisk','Быстрая ходьба (улица или на месте)','Кардио','db|','Brisk walk (outdoors or on the spot)','Ātra iešana (ārā vai uz vietas)',
 ['Сердце и сосуды, мышцы ног','—','Кардио без тренажёра: быстрая ходьба на улице или энергичная ходьба на месте дома.'],
 ['Heart and circulation, leg muscles','—','Cardio without a machine: brisk walking outdoors or energetic walking on the spot at home.'],
 ['Sirds un asinsvadi, kāju muskuļi','—','Kardio bez trenažiera: ātra iešana ārā vai enerģiska iešana uz vietas mājās.'],
@@ -200,6 +200,8 @@ const PLACE_VARIANTS={
 // Обратная карта: id для места -> прежний id (время подхода, одно движение на день).
 const PLACE_BASE={};Object.keys(PLACE_VARIANTS).forEach(b=>Object.values(PLACE_VARIANTS[b]).forEach(v=>{PLACE_BASE[v]=b}));
 const placeHas=(id,place)=>{const m=META[id];return !m||m.split('|')[0].includes(place)};
+// D-221: быстрая ходьба без ролика — только дом (d) и свой вес (b), не зал.
+function walkBriskPlaceOk(place){return place==='d'||place==='b'}
 // Вариант упражнения для места; null — если прежний id сам подходит месту или варианта нет.
 function placeVariant(id,place){const v=PLACE_VARIANTS[id];if(!v||!place||placeHas(id,place))return null;const x=v[place];return x&&placeHas(x,place)?x:null}
 
@@ -281,7 +283,7 @@ if(typeof save==='function'&&migrateV12c())save();
 
 // ---------------------------------------------------------------------------------------------
 // D-215 (C-109, принято Claude 14.11.2026): в приложении только упражнения с роликом MoveKit.
-// Без ролика остаются только быстрая ходьба (walk-brisk) и дыхание лёжа (cd_breath).
+// Без ролика остаются только быстрая ходьба (walk-brisk, только дом/свой вес, D-221) и дыхание лёжа (cd_breath).
 // Скрытые карточки убраны из библиотеки, списков «добавить», замен ⇄ и генератора.
 // Названия, тексты и метки скрытых карточек остаются: история и старые планы показывают их имена.
 const HIDDEN=new Set(["chest-supported-1db","smith-split-squat","smith-rdl","standing-single-leg-curl","negative-pullup",

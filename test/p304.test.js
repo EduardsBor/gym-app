@@ -158,8 +158,8 @@ function P(id, name, places, at, preset) {
   return o;
 }
 
-test('P-304: cache is moyzal-v64; equipProfile is free; video stays gated', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v64'/);
+test('P-304: cache is moyzal-v65; equipProfile is free; video stays gated', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v65'/);
   assert.equal(read('sw.js').includes("C='moyzal-v59'"), false);
   const b = boot(seed());
   assert.equal(b.run('FEATURES.equipProfile'), 'free');

@@ -59,7 +59,7 @@ test('per-place ids exist with the right place labels, cards and their v1.2c cli
   const ids = arr(run('EX.map(e => e.id)'));
   assert.equal(new Set(ids).size, ids.length);
   const meta = arr(run('META'));
-  assert.deepEqual(NEW.map(id => meta[id]), ['gd|', 'gdb|', 'gdb|', 'gd|p', 'gdb|']);
+  assert.deepEqual(NEW.map(id => meta[id]), ['gd|', 'gdb|', 'gdb|', 'gd|p', 'db|']);
   assert.equal(meta['mk-standing-calf-raise-machine'], 'g|');
   assert.equal(meta['mk-dumbbell-step-up-low'], 'gd|');
   assert.equal(meta['mk-ez-bar-skullcrusher'], 'g|p');
@@ -206,5 +206,5 @@ test('place.js is loaded after cd.js and before the plan builder, and is precach
   assert.ok(i('cd.js') >= 0 && i('cd.js') < i('place.js') && i('place.js') < i('prog.js') && i('place.js') < i('plan.js'));
   const sw = read('sw.js');
   assert.match(sw, /'place\.js'/);
-  assert.match(sw, /const C='moyzal-v64'/);
+  assert.match(sw, /const C='moyzal-v65'/);
 });

@@ -48,11 +48,17 @@ const NO_CLIP_OK = new Set(['walk-brisk', 'cd_breath']);
 const C109 = JSON.parse(read('test/fixtures/c109-decisions.json'));
 const HIDE = C109.hide.concat(['cd_lat', 'cd_quad', 'cd_xbody']);
 
-test('every visible library card has a MoveKit clip for each of its places (except brisk walk and lying breath)', () => {
+test('every visible library card has a MoveKit clip for each of its places (except brisk walk at home/bodyweight and lying breath)', () => {
   const { run } = boot();
   const ex = arr(run('EX.map(e => e.id)'));
   const meta = arr(run('META'));
   assert.equal(ex.length, 170);
+  assert.equal(meta['walk-brisk'], 'db|');
+  assert.equal((meta['cd_breath'] || '').split('|')[0].includes('g'), true);
+  assert.equal(run('clipOk("walk-brisk", "g")'), false);
+  assert.equal(run('clipOk("walk-brisk", "d")'), true);
+  assert.equal(run('clipOk("walk-brisk", "b")'), true);
+  assert.equal(run('clipOk("cd_breath", "g")'), true);
   for (const id of ex) {
     if (NO_CLIP_OK.has(id)) continue;
     const places = (meta[id] || 'gdb|').split('|')[0];

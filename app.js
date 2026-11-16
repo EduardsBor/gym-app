@@ -219,7 +219,9 @@ function catalog(){$('#title').textContent='Готовые программы';c
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
- const L=altCands(cur),good=L.filter(e=>okEx(e.id,a)),other=L.filter(e=>!okEx(e.id,a));
+ const place=a.place||'g';
+ const L=altCands(cur).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b')));
+ const good=L.filter(e=>okEx(e.id,a)),other=L.filter(e=>!okEx(e.id,a));
  m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">Альтернативы на те же мышцы</p>
  ${good.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join('')}
  ${other.length?`<p class="mut">Другое оборудование или риск при ограничениях:</p>`+other.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left;opacity:.6" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}</div>`;
