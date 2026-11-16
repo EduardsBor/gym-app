@@ -199,8 +199,8 @@ test('D-222: built-in privacy policy mentions Sentry and first_workout in RU, EN
   assert.equal(/сейчас не подключено|not connected yet|vēl nav pieslēgts/i.test(legal), false);
 });
 
-test('D-222: sw is moyzal-v66; changelog; LV strings only in docs/LV-NEW-D222.md; hooks present; not via Sentry', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v66'/);
+test('D-222: sw is moyzal-v67; changelog; LV strings only in docs/LV-NEW-D222.md; hooks present; not via Sentry', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v67'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-222/);
   assert.match(log, /first_workout/);

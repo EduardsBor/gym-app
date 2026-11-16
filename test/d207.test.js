@@ -255,9 +255,9 @@ test('clearLocalData removes gym, the history backup and the IndexedDB database'
   assert.equal(b.idb.has('moyzal'), false);
 });
 
-test('service worker cache is moyzal-v66 and still precaches app.js and sync.js', () => {
+test('service worker cache is moyzal-v67 and still precaches app.js and sync.js', () => {
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v66'/);
+  assert.match(sw, /const C='moyzal-v67'/);
   assert.equal(sw.includes("C='moyzal-v62'"), false);
   assert.match(sw, /'app\.js'/);
   assert.match(sw, /'sync\.js'/);
