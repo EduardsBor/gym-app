@@ -154,8 +154,8 @@ test('saved Strength 30-min program keeps working unchanged: opens, shows workou
   assert.equal(saved.next, 1);
 });
 
-test('D-220: sw moyzal-v66, changelog, LV strings only in docs/LV-NEW-D220.md, no Helms/Refalo/Bell', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v66'/);
+test('D-220: sw moyzal-v67, changelog, LV strings only in docs/LV-NEW-D220.md, no Helms/Refalo/Bell', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v67'/);
   assert.match(read('CHANGELOG.md'), /D-220/);
   const lv = read('docs/LV-NEW-D220.md');
   assert.ok(lv.includes(NOTE) && lv.includes(MIN45));

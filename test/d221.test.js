@@ -168,8 +168,8 @@ test('D-221: gym trainer templates do not use walk-brisk; home and bodyweight pr
   assert.equal(run('workOk("walk-brisk", {place: "d", level: "nov", lim: [], gear: []}, new Set())'), true);
 });
 
-test('D-221: sw is moyzal-v66 and changelog mentions D-221', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v66'/);
+test('D-221: sw is moyzal-v67 and changelog mentions D-221', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v67'/);
   assert.match(read('CHANGELOG.md'), /D-221/);
   assert.equal(read('sw.js').includes("C='moyzal-v64'"), false);
 });
