@@ -67,6 +67,8 @@
     delete p.ownerPremium;delete p.active;delete p.tEnd;delete p.ownerUid;
     // D-217: install_id остаётся только на устройстве, чтобы анонимные события нельзя было связать с аккаунтом.
     delete p.installId;
+    // D-222: флаг first_workout тоже только на устройстве.
+    delete p.azFirstWo;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
     if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
@@ -121,7 +123,7 @@
     if(rev) S.healthConsentRevokedAt=new Date(rev).toISOString();
   }
   function applyRemoteFresh(R){
-    const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId;
+    const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId,azFirst=S.azFirstWo;
     const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
     const az=S.consentAnalytics,lang=S.lang,LL=localLimits(),ds=S.demoStart;
     Object.keys(R).forEach(k=>{S[k]=R[k]});
@@ -131,6 +133,8 @@
     if(keepActive) S.active=keepActive;
     if(keepTEnd) S.tEnd=keepTEnd;
     if(installId) S.installId=installId;
+    if(azFirst) S.azFirstWo=azFirst;
+    seedFirstWorkoutFlag();
     if(az&&!S.consentAnalytics) S.consentAnalytics=az;
     if(lang&&!S.lang) S.lang=lang;
     applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
@@ -181,6 +185,7 @@
     if(keepTEnd) S.tEnd=keepTEnd;
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
     S.updatedAt=Math.max(S.updatedAt||0,remoteAt||0,Date.now());
+    seedFirstWorkoutFlag();
   }
   async function pushNow(){
     if(!sb||!user) return;
@@ -236,16 +241,48 @@
     const pr={};Object.entries(props||{}).forEach(([k,v])=>{if(!/^(user_?id|uid|email)$/i.test(k)) pr[k]=v});
     return {name,install_id:S.installId,props:pr};
   }
+  function isFinishedWorkout(w){
+    return !!(w&&(w.items||[]).some(it=>(it.sets||[]).some(s=>s&&s.done)));
+  }
+  function hasFinishedWorkout(){
+    return ((S.workouts)||[]).some(isFinishedWorkout);
+  }
+  function firstWorkoutProps(){
+    const place=(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'';
+    const goal=S.goal||(S.prof&&S.prof.goal)||'';
+    const pr={};
+    if(place==='g'||place==='d'||place==='b') pr.place=place;
+    if(goal==='mass'||goal==='str'||goal==='loss'||goal==='fit') pr.goal=goal;
+    return pr;
+  }
+  // D-222: если в истории уже есть завершённая тренировка, только ставим флаг — событие не отправляем.
+  function seedFirstWorkoutFlag(){
+    if(S.azFirstWo) return;
+    if(hasFinishedWorkout()){S.azFirstWo=1;persistLocal()}
+  }
+  function mzOnWorkoutFinished(W){
+    if(S.azFirstWo) return;
+    if(!isFinishedWorkout(W)) return;
+    S.azFirstWo=1;persistLocal();
+    mzTrack('first_workout', firstWorkoutProps());
+  }
   async function mzTrack(name,props){
     if(!canTrack()||!READY||!sb) return;
     try{
       ensureMeta();
+      if(name==='first_workout'){
+        const allow={place:1,goal:1},pr={};
+        Object.entries(props||{}).forEach(([k,v])=>{if(allow[k]) pr[k]=v});
+        props=pr;
+      }
       await sb.from('events').insert(eventRow(name,props));
     }catch(e){}
   }
   window.mzTrack=mzTrack;
+  window.mzOnWorkoutFinished=mzOnWorkoutFinished;
   window.mzSignedIn=()=>!!user;
   function bootAnalytics(){
+    seedFirstWorkoutFlag();
     if(!canTrack()) return;
     ensureMeta();
     if(!S.azInstall){S.azInstall=Date.now();persistLocal();mzTrack('install')}
@@ -475,6 +512,7 @@
     stripAuthParams();
     adoptLS();
     if(ensureMeta()) persistLocal();
+    seedFirstWorkoutFlag();
     bootAnalytics();
     if(user) sync();
     window.addEventListener('online',()=>{if(user) sync()});

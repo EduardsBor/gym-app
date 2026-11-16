@@ -143,5 +143,5 @@ function awEquipSave(){const num=v=>+String(v).replace(',','.'),list=v=>String(v
 const _awMore=more;more=function(){_awMore();const aw=$('#aw');const card=aw&&aw.closest?aw.closest('.card'):null;if(!card)return;
  card.insertAdjacentHTML('afterend',awEquipHTML());$('#eqsave').onclick=awEquipSave};
 // P-305b: demo paywall moments (premium.js) — only after the workout is saved, never mid-set; not over the summary sheet.
-function awMoment(W){if(typeof premMarkDemo==='function'){premMarkDemo(W);save()}if(typeof premMoment!=='function')return;
+function awMoment(W){if(typeof premMarkDemo==='function'){premMarkDemo(W);save()}if(typeof mzOnWorkoutFinished==='function')mzOnWorkoutFinished(W);if(typeof premMoment!=='function')return;
  setTimeout(()=>{const m=$('#modal');if(S.active||(m&&m.classList&&!m.classList.contains('hidden')))return;premMoment()},800)}
