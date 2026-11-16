@@ -10,6 +10,12 @@
     "@capacitor/android": "8.6.2",
     "@capacitor/cli": "8.6.2",
     "@capacitor/core": "8.6.2",
-    "@capacitor/local-notifications": "^8.3.1"
+    "@capacitor/local-notifications": "^8.3.1",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@sentry/browser": "10.76.2",
+    "@sentry/capacitor": "4.6.0",
+    "@sentry/core": "10.76.2"
   }
 }

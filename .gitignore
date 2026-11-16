@@ -30,3 +30,7 @@ keystore.properties
 Thumbs.db
 *.swp
 .idea/
+
+# A-504: generated Sentry config may contain the DSN. Never commit it.
+# www/ is already ignored; this also covers a copy accidentally written at the repo root.
+sentry-config.js

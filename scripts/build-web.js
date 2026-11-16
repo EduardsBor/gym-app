@@ -38,6 +38,7 @@ const FILES = [
   'tech.js',
   'warm.js',
   'notify.js',
+  'sentry.js',
   'icon-192.png',
   'icon-512.png',
   'icon.svg',
@@ -81,4 +82,48 @@ for (const d of DIRS) {
   copyDir(s, path.join(dest, d));
 }
 
-console.log('www/ ready (' + FILES.length + ' root files + ' + DIRS.join(', ') + ')');
+const SentryBuild = require('../sentry.js');
+const esbuild = require('esbuild');
+
+function appRelease() {
+  let ver = '1.0', cache = 'unknown';
+  try {
+    const m = fs.readFileSync(path.join(root, 'app.js'), 'utf8').match(/APP_VERSION\s*=\s*'([^']+)'/);
+    if (m) ver = m[1];
+  } catch (e) {}
+  try {
+    const m = fs.readFileSync(path.join(root, 'sw.js'), 'utf8').match(/const C='([^']+)'/);
+    if (m) cache = m[1];
+  } catch (e) {}
+  return ver + '+' + cache;
+}
+
+function writeSentryArtifacts() {
+  const dsn = process.env.GC_SENTRY_DSN || '';
+  const environment = process.env.GC_SENTRY_ENV === 'production' ? 'production' : 'debug';
+  const release = appRelease();
+  const enabled = !!SentryBuild.validateDsn(dsn);
+  fs.writeFileSync(path.join(dest, 'sentry-config.js'), SentryBuild.makeConfigJs({ dsn, environment, release }));
+  esbuild.buildSync({
+    absWorkingDir: root,
+    entryPoints: [path.join(__dirname, 'sentry-sdk-entry.js')],
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    outfile: path.join(dest, 'vendor', 'sentry-sdk.js'),
+    alias: { '@capacitor/core': path.join(__dirname, 'capacitor-runtime.js') },
+    logLevel: 'warning'
+  });
+  const indexPath = path.join(dest, 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  const tags = '<script src="sentry-config.js"></script><script src="vendor/sentry-sdk.js"></script><script src="sentry.js"></script>';
+  if (!html.includes('src="sentry.js"')) {
+    if (html.includes('<body>')) html = html.replace('<body>', '<body>' + tags);
+    else html = tags + html;
+    fs.writeFileSync(indexPath, html);
+  }
+  return enabled;
+}
+
+const sentryOn = writeSentryArtifacts();
+console.log('www/ ready (' + FILES.length + ' root files + ' + DIRS.join(', ') + '; sentry ' + (sentryOn ? 'enabled' : 'disabled') + ')');
