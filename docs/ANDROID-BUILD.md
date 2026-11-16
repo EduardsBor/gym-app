@@ -75,7 +75,7 @@ cd android
 
 **DSN в репозиторий не кладётся** (правило Эдуарда: ключи и токены в файлы не записывать). Скрипт `npm run build:web` читает переменную окружения `GC_SENTRY_DSN` и пишет gitignored файл `www/sentry-config.js`. Этот файл — только выход сборки, его нельзя коммитить и нельзя копировать в корень репозитория. Если переменная пустая или значение не похоже на DSN, Sentry просто выключен.
 
-Для release-сборки задайте `GC_SENTRY_ENV=production` (по умолчанию `debug`). Имя release в Sentry: `versionName` + имя кэша service worker (например `1.0+moyzal-v65`).
+Для release-сборки задайте `GC_SENTRY_ENV=production` (по умолчанию `debug`). Имя release в Sentry: `versionName` + имя кэша service worker (например `1.0+moyzal-v66`).
 
 ```bash
 # Клиентский DSN проекта gymcaptain-android (организация gymcaptain, регион EU).

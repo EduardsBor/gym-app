@@ -271,7 +271,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
   if(!doneItems.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;
   const snap=typeof healthSnap==='function'?healthSnap(A):null;A.end=snap?snap.end:Date.now();if(A.warm)A.warmDone=A.warm.c.filter(Boolean).length;delete A.warm;if(A.cool){A.coolDone=A.cool.c.filter(Boolean).length;delete A.cool}A.items=doneItems;
   if(snap&&typeof applyHealthFields==='function')applyHealthFields(A,summarizeHealth(snap,typeof healthProfile==='function'?healthProfile():{}));
-  delete A.hrSamples;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);toast('Тренировка сохранена 💪');go('history');if(typeof showWorkoutSummary==='function')showWorkoutSummary(A);else prSummary(A)}}
+  delete A.hrSamples;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();if(typeof mzOnWorkoutFinished==='function')mzOnWorkoutFinished(A);stopTimer();clearInterval(durInt);toast('Тренировка сохранена 💪');go('history');if(typeof showWorkoutSummary==='function')showWorkoutSummary(A);else prSummary(A)}}
 function prNotes(A){const L=[];(A&&A.items||[]).forEach(it=>(it.sets||[]).forEach(s=>{if(s&&s.pr&&s.prInfo)L.push([exBy(it.exId).name,s.prInfo])}));
  const seen=new Set(),out=[];L.forEach(p=>{const k=p[0]+'\0'+(p[1].t||'');if(seen.has(k))return;seen.add(k);out.push(p)});return out}
 function prNotesHTML(L){if(!L||!L.length)return'';const t=L.length===1?'🏆 Новый рекорд':'🏆 Новые рекорды';
