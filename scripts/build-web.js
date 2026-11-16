@@ -41,6 +41,7 @@ const FILES = [
   'sentry.js',
   'icon-192.png',
   'icon-512.png',
+  'icon-512-maskable.png',
   'icon.svg',
   'beep3.wav',
   'tick.wav'
