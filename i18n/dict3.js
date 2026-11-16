@@ -298,4 +298,11 @@ const DICT3=[
 // D-220 (C-111): 30-minute workouts. LV needs native review (docs/LV-NEW-D220.md).
 ['Для «Силы» минимум 45 мин','For “Strength” the minimum is 45 min','«Spēkam» minimums ir 45 min'],
 ['Экспресс: рост медленнее, для максимума — 45+ мин','Express: slower progress, for maximum results — 45+ min','Ekspress: progress lēnāks, maksimālam rezultātam — 45+ min'],
+// A-503: Android notifications (rest timer, workout reminders). LV needs native review (docs/LV-NEW-A503.md).
+['Уведомления','Notifications','Paziņojumi'],
+['Напоминать о тренировке','Remind me to work out','Atgādināt par treniņu'],
+['Разрешить точное время','Allow exact timing','Atļaut precīzu laiku'],
+['Уведомления выключены в настройках Android. Таймер отдыха работает только в открытом приложении.','Notifications are turned off in Android settings. The rest timer only works while the app is open.','Paziņojumi ir izslēgti Android iestatījumos. Atpūtas taimeris darbojas tikai atvērtā lietotnē.'],
+['Точное время выключено в Android: сигнал отдыха может прийти с опозданием.','Exact timing is off in Android: the rest alert may arrive late.','Precīzais laiks Android ir izslēgts: atpūtas signāls var pienākt ar nokavēšanos.'],
+['GymCaptain покажет уведомление, когда закончится отдых (даже при выключенном экране), и напомнит о тренировке, если ты включишь напоминания. Разрешить уведомления?','GymCaptain will notify you when your rest is over (even with the screen off) and remind you to work out if you turn reminders on. Allow notifications?','GymCaptain paziņos, kad atpūta beigusies (arī ar izslēgtu ekrānu), un atgādinās par treniņu, ja ieslēgsi atgādinājumus. Atļaut paziņojumus?'],
 ]

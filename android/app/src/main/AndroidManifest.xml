@@ -38,4 +38,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- A-503: rest-timer + workout reminder notifications (Android 13+ runtime permission, asked in-app on first use) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- A-503: exact rest-timer alarm if the user allows it; otherwise the plugin falls back to an inexact alarm.
+         USE_EXACT_ALARM is deliberately NOT used (Play policy: only alarm-clock/calendar apps). See docs/ANDROID-BUILD.md -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>

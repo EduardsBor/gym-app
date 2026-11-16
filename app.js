@@ -303,12 +303,12 @@ function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true
 let tEnd=0,tInt,lastWarn=-1;
 const soundOn=()=>S.sound!==false;
 function endSignal(){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
-function startTimer(sec){armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt()}
+function startTimer(sec){armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
 function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
  if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
-function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
-document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt()});$('#tstop').onclick=()=>stopTimer();
+function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
+document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)});$('#tstop').onclick=()=>stopTimer();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
 const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};
@@ -597,6 +597,7 @@ function more(){$('#title').textContent='Ещё';
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
  <p class="mut">iPhone: выключи беззвучный режим (переключатель сбоку) и не блокируй экран — иначе звук таймера может не прозвучать. Громкость — кнопками телефона.</p></div>
+ ${typeof ntfCardHTML==='function'?ntfCardHTML():''}
  <div class="card"><b>Тренировка</b><label class="li"><span class="grow">🏋️ Подставлять последний вес</span><input type="checkbox" id="aw" style="width:28px;min-height:28px" ${S.autoW!==false?'checked':''}></label><p class="mut">Вес и повторы подставляются из прошлой тренировки с этим упражнением (серым). Можно изменить; ✓ сохраняет то, что видно.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
  <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${esc(S.restOverride||'')}"><span class="mut">сек</span></div></div>
@@ -608,7 +609,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="expcsv">⬇ Экспорт CSV (история тренировок)</button><p class="mut" style="font-size:12px;margin:4px 0 8px">Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта.</p><button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
- $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};
+ $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};

@@ -37,6 +37,7 @@ const FILES = [
   'sync.js',
   'tech.js',
   'warm.js',
+  'notify.js',
   'icon-192.png',
   'icon-512.png',
   'icon.svg',
