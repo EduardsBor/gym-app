@@ -52,7 +52,7 @@ test('every visible library card has a MoveKit clip for each of its places (exce
   const { run } = boot();
   const ex = arr(run('EX.map(e => e.id)'));
   const meta = arr(run('META'));
-  assert.equal(ex.length, 170);
+  assert.equal(ex.length, 175);
   assert.equal(meta['walk-brisk'], 'db|');
   assert.equal((meta['cd_breath'] || '').split('|')[0].includes('g'), true);
   assert.equal(run('clipOk("walk-brisk", "g")'), false);

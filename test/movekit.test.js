@@ -68,8 +68,8 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   })()`);
   // 132 + 25 (v1.2c: 22 new clips, ht-db/ht-bw on glute-bridge, scap-pullup on scapular-pull-up).
   // + 11 D-215 library cards (12 files: wrist-curl has a home file in MOVEKIT_PLACE).
-  assert.equal(report.keys, 168);
-  assert.equal(report.files, 152 + 12);
+  assert.equal(report.keys, 173); // +5 C-112 b_nobar
+  assert.equal(report.files, 152 + 12 + 5);
   assert.equal(run('movekitFile("bp")'), 'barbell-bench-press.mp4');
   assert.equal(run('movekitFile("pu")'), 'push-up.mp4');
   assert.equal(run('movekitFile("mk-barbell-deadlift")'), 'barbell-deadlift.mp4');
@@ -80,7 +80,7 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   assert.equal(report.unmatched.includes('bp'), false);
   assert.equal(report.oldAnim.includes('mk-barbell-deadlift'), false);
   assert.equal(report.oldAnim.includes('bp'), false);
-  assert.equal(report.mapped.length + report.unmatched.length, 168);
+  assert.equal(report.mapped.length + report.unmatched.length, 173);
   const bp = run('animMedia("bp")');
   const pu = run('animMedia("pu")');
   const dl = run('animMedia("mk-barbell-deadlift")');
@@ -105,7 +105,7 @@ test('map covers known exercises and leaves the rest on the old clip', () => {
   assert.equal(run('animMedia("chest-supported-2db")').includes('anim3d/'), false);
   assert.equal(report.oldAnim.length, 0);
   const names = run('Object.keys(MOVEKIT).map(movekitPosterName)');
-  assert.equal(new Set(names).size, 164);
+  assert.equal(new Set(names).size, 169);
   assert.equal(names.every(n => /^[a-z0-9.-]+\.jpg$/.test(n)), true);
   assert.equal(run('movekitPosterName("bp")'), 'barbell-bench-press.jpg');
   assert.equal(run('movekitPosterName("mk-barbell-deadlift")'), 'barbell-deadlift.jpg');

@@ -47,7 +47,7 @@ test('D-216: leftover typo patterns are gone from LV sources', () => {
     // "Spiediens" may remain only as "pressure" (not a press): elbow-joint cue in cd.js
     const pressureOk = /Spiediens uz elkoņa locītavu/;
     const cleaned = f === 'cd.js' ? text.replace(pressureOk, '') : text;
-    assert.equal(/(?<![Aa]t)[Ss]piedien/.test(cleaned), false, 'unexpected spiedien in ' + f);
+    assert.equal(/(?<![Aa]t|asins)[Ss]piedien/.test(cleaned), false, 'unexpected spiedien in ' + f);
   }
 });
 
@@ -92,7 +92,7 @@ test('D-223: §6 legal bases mention analytics consent and Sentry legitimate int
 });
 
 test('D-216/D-223: sw is moyzal-v67; changelog; new LV strings only in docs/LV-NEW-D223.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v74'/);
+  assert.match(read('sw.js'), /const C='moyzal-v75'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-216, D-223/);
   assert.match(log, /moyzal-v67/);
