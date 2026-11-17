@@ -31,3 +31,11 @@ test('each b_nobar card maps to its MoveKit file name, never a URL', () => {
 test('towel isometric curl is logged in seconds', () => {
   assert.match(read('features.js'), /id==='towel-iso-curl'\|\|\/plank\|планка\/i/);
 });
+
+test('Claude text fixes: no technical unit note, LV muscle name and core wording', () => {
+  const src = read('place.js');
+  assert.equal(src.includes('unit sec'), false);
+  assert.equal(src.includes('puspleveņainais'), false);
+  assert.ok(src.includes('pusplēvainais muskulis'));
+  assert.ok(src.includes('līdzsvaro vēdera preses'));
+});

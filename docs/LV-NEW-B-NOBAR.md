@@ -24,7 +24,7 @@
 
 - Galvenie: Muguras iztaisnotājmuskuļi
 - Papildu: Lielais sēžas muskulis, augšstilba mugurējā virsma, deltveida muskuļa mugurējā daļa, trapecveida muskuļa vidusdaļa un apakšdaļa
-- Kāpēc: Stiprina muguras iztaisnotājus un sēžas muskuļus bez inventāra; līdzsvaro preses un spiešanas vingrinājumus, palīdz noturēt taisnu muguru pietupienos un slīpumos.
+- Kāpēc: Stiprina muguras iztaisnotājus un sēžas muskuļus bez inventāra; līdzsvaro vēdera preses un spiešanas vingrinājumus, palīdz noturēt taisnu muguru pietupienos un slīpumos.
 - Tehnika: Apgulies uz vēdera, rokas izstieptas uz priekšu, kājas taisnas gūžu platumā, skats uz grīdu. / Izelpā vienlaikus pacel rokas, krūtis un kājas dažus centimetrus, sasprindzinot sēžas muskuļus; noturi 1–2 s. / Lēni nolaid rokas un kājas uz grīdas, atslābsti 1 s un atkārto.
 - Kļūdas: Galvas atmešana atpakaļ. / Rāvieni un šūpošanās, nevis kontrolēta pacelšana ar noturēšanu. / Pārmērīgs jostas izliekums augstuma dēļ.
 - Amplitūda: Neliela: rokas un kājas paceļas 5–15 cm no grīdas, bez sāpēm jostasvietā. Vilkmē (vilkme ≥ spiešana) neieskaita — tas ir muguras iztaisnotāju darbs. Ar ierobežojumu "mugura" — neizpildīt vai samazināt amplitūdu (pamīšus roka/kāja).
@@ -36,11 +36,11 @@
 - Kāpēc: Bicepsa slodze bez inventāra: roka velk dvieli uz augšu, kāja vai otra roka to notur — muskulis strādā statiski (noturēšana). Intensitāti nosaka vilkšanas spēks.
 - Tehnika: Stāvus uzkāp uz dvieļa vidus ar vienu pēdu (vai sēdus piespied to pie grīdas ar pēdu); satver galus ar plaukstām uz augšu, elkoņi piespiesti sāniem un saliekti apmēram 90° leņķī. / Velc dvieli uz augšu kā saliekot rokas ar apmēram 70–100 % no maksimālā spēka; dvielis neļauj rokai kustēties. Elpo vienmērīgi, neaizturi elpu. / Noturi sasprindzinājumu 10–20 s, vienmērīgi atslābsti, atpūties un atkārto.
 - Kļūdas: Elpas aizturēšana un sasprindzināšanās. / Elkoņi aiziet uz priekšu vai sāniem no ķermeņa. / Rāviens sākumā, nevis vienmērīga sasprindzinājuma palielināšana.
-- Amplitūda: Kustības nav — izometrija (noturēšana). Elkoņa leņķis apmēram 90°; pa piegājieniem var mainīt leņķus 60°, 90° un 120°. Noturēšanas vingrinājums: programmā — sekundes (unit sec, 10–20 s). Ar paaugstinātu asinsspiedienu — mērens sasprindzinājums, bez sasprindzināšanās.
+- Amplitūda: Kustības nav — izometrija (noturēšana). Elkoņa leņķis apmēram 90°; pa piegājieniem var mainīt leņķus 60°, 90° un 120°. Noturēšanas vingrinājums: programmā — sekundes, 10–20 s. Ar paaugstinātu asinsspiedienu — mērens sasprindzinājums, bez sasprindzināšanās.
 
 ## towel-leg-curl — Kāju saliekšana ar dvieli
 
-- Galvenie: Augšstilba mugurējā virsma (augšstilba bicepss, pusdzīslainais, puspleveņainais muskulis)
+- Galvenie: Augšstilba mugurējā virsma (augšstilba bicepss, pusdzīslainais, pusplēvainais muskulis)
 - Papildu: Lielais sēžas muskulis, ikru muskuļi
 - Kāpēc: Kāju saliekšana bez trenažiera: papēži slīd pa grīdu uz dvieļa no sēžas tilta pozīcijas. Noslogo augšstilba mugurējo virsmu ceļa saliekšanā, ko pietupieni un tilti nenodrošina.
 - Tehnika: Apgulies uz muguras uz gludas grīdas, papēži uz salocīta dvieļa, ceļi saliekti, rokas gar ķermeni; pacel iegurni sēžas tiltā — taisna līnija no pleciem līdz ceļiem. / Turot iegurni paceltu, izelpā lēni aizslidini papēžus uz priekšu līdz gandrīz taisnām kājām. / Pievelc papēžus atpakaļ pie sēžas ar augšstilba mugurējo virsmu, nenolaižot iegurni; atkārto.
