@@ -297,7 +297,7 @@ const PHR=['Сила растёт — так держать!','Ты сильне
 function celebrate(name,info){const d=document.createElement('div');d.id='prov';d.innerHTML=`<canvas id="conf"></canvas><div class="prbox"><div style="font-size:64px">🏆</div><h2>Новый личный рекорд!</h2><h3>${esc(name)}</h3>
  <div class="mut">${info.t}</div><div class="prcmp"><span class="mut"><s>${info.o}</s></span> → <b class="pr">${info.n}</b></div><p>${PHR[Math.floor(Math.random()*PHR.length)]}</p><button class="pri full" id="prok">Супер!</button></div>`;
  document.body.append(d);d.querySelector('#prok').onclick=()=>d.remove();confetti(d.querySelector('#conf'))}
-function confetti(c){const W=c.width=innerWidth,H=c.height=innerHeight,x=c.getContext('2d'),cols=['#ff6b35','#ffc83d','#2ecc71','#3da5ff','#ff4d8d','#fff'];
+function confetti(c){const W=c.width=innerWidth,H=c.height=innerHeight,x=c.getContext('2d'),cols=['--acc','--gold','--ok','--info','--pink','--txt'].map(cssVar);
  const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H*.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:Math.random()*6.3,s:5+Math.random()*7,c:cols[Math.floor(Math.random()*6)]}));
  let f=0;(function step(){if(!c.isConnected||f++>260)return;x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.r+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});requestAnimationFrame(step)})()}
 function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true)}
@@ -397,11 +397,11 @@ function progress(){$('#title').textContent='Прогресс';const wo=histWork
  if(showCh){const sel=$('#pex');if(sel)sel.onchange=e=>{pEx=e.target.value;progress()};app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{pM=b.dataset.m;progress()});
   const series=pts.filter(p=>pM!=='r'||p.r!=null).map(p=>[p.d,p[pM]]);const c=$('#ch');if(c)chart(c,series)}}
 function chart(c,data){const dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);
- x.font='12px system-ui';x.fillStyle='#8b93a3';if(!data.length)return;const ys=data.map(d=>d[1]),mn=Math.min(...ys)*.95,mx=Math.max(...ys)*1.05||1,P=34;
+ x.font='12px system-ui';x.fillStyle=cssVar('--mut');if(!data.length)return;const ys=data.map(d=>d[1]),mn=Math.min(...ys)*.95,mx=Math.max(...ys)*1.05||1,P=34;
  const X=i=>P+(data.length<2?(W-2*P)/2:i*(W-P-14)/(data.length-1)),Y=v=>H-24-(v-mn)/(mx-mn||1)*(H-44);
- x.strokeStyle='#333a47';[0,.5,1].forEach(f=>{const v=mn+(mx-mn)*f;x.beginPath();x.moveTo(P,Y(v));x.lineTo(W-8,Y(v));x.stroke();x.fillText(Math.round(v),4,Y(v)+4)});
- x.strokeStyle='#ff6b35';x.lineWidth=3;x.beginPath();data.forEach((d,i)=>i?x.lineTo(X(i),Y(d[1])):x.moveTo(X(i),Y(d[1])));x.stroke();
- x.fillStyle='#ff6b35';data.forEach((d,i)=>{x.beginPath();x.arc(X(i),Y(d[1]),4,0,7);x.fill()});x.fillStyle='#8b93a3';
+ x.strokeStyle=cssVar('--line');[0,.5,1].forEach(f=>{const v=mn+(mx-mn)*f;x.beginPath();x.moveTo(P,Y(v));x.lineTo(W-8,Y(v));x.stroke();x.fillText(Math.round(v),4,Y(v)+4)});
+ x.strokeStyle=cssVar('--acc');x.lineWidth=3;x.beginPath();data.forEach((d,i)=>i?x.lineTo(X(i),Y(d[1])):x.moveTo(X(i),Y(d[1])));x.stroke();
+ x.fillStyle=cssVar('--acc');data.forEach((d,i)=>{x.beginPath();x.arc(X(i),Y(d[1]),4,0,7);x.fill()});x.fillStyle=cssVar('--mut');
  [0,data.length-1].forEach(i=>{const dt=new Date(data[i][0]);x.fillText(dt.getDate()+'.'+(dt.getMonth()+1),Math.min(X(i)-10,W-40),H-6)})}
 // ---------- История
 let calM=new Date();calM.setDate(1);
@@ -527,34 +527,34 @@ function bodyForm(e){const isNew=!e;e=e||{id:'b'+Date.now(),date:new Date().toIS
   if(isNew)S.body.push(e);save();m.classList.add('hidden');toast('Замер сохранён');body()};
  if($('#bdel'))$('#bdel').onclick=async()=>{if(!confirm('Удалить замер вместе с фото?'))return;for(const k of e.photos)await idb.del(k);S.body=S.body.filter(x=>x.id!==e.id);S.deletedBody=(S.deletedBody||[]).concat(e.id);save();m.classList.add('hidden');body()}}
 // ---------- Где мерить (иллюстрации — собственные SVG)
-const FIG=`<g fill="#3a4252" stroke="#6b7590" stroke-width="1.5" stroke-linejoin="round">
+const FIG=`<g stroke-width="1.5" stroke-linejoin="round" style="fill:var(--fig);stroke:var(--fig-line)">
 <path d="M56 86 Q40 92 38 122 L32 182 Q30 212 33 240 Q38 246 44 241 Q45 212 48 184 L57 132 Z"/><path d="M144 86 Q160 92 162 122 L168 182 Q170 212 167 240 Q162 246 156 241 Q155 212 152 184 L143 132 Z"/>
 <path d="M63 246 L99 252 L98 300 Q96 328 95 350 L93 398 L73 400 L72 350 Q67 326 65 300 Z"/><path d="M137 246 L101 252 L102 300 Q104 328 105 350 L107 398 L127 400 L128 350 Q133 326 135 300 Z"/>
 <path d="M70 80 Q100 74 130 80 L144 86 Q151 94 146 112 L138 150 Q132 170 131 180 Q137 202 140 224 L139 252 Q100 262 61 252 L60 224 Q63 202 69 180 Q68 170 62 150 L54 112 Q49 94 56 86 Z"/>
 <rect x="90" y="58" width="20" height="24" rx="6"/><ellipse cx="100" cy="38" rx="21" ry="26"/></g>
-<circle cx="100" cy="190" r="2" fill="#6b7590"/>`;
-const tape=(cx,cy,rx,lbl)=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${Math.max(3,rx/9)}" fill="none" stroke="#ff6b35" stroke-width="3.5"/>${lbl?`<circle cx="${cx+rx+12}" cy="${cy}" r="8" fill="#ff6b35"/><text x="${cx+rx+12}" y="${cy+4}" font-size="10" font-weight="700" text-anchor="middle" fill="#fff">${lbl}</text>`:''}`;
+<circle cx="100" cy="190" r="2" style="fill:var(--fig-line)"/>`;
+const tape=(cx,cy,rx,lbl)=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${Math.max(3,rx/9)}" fill="none" stroke-width="3.5" style="stroke:var(--acc)"/>${lbl?`<circle cx="${cx+rx+12}" cy="${cy}" r="8" style="fill:var(--acc)"/><text x="${cx+rx+12}" y="${cy+4}" font-size="10" font-weight="700" text-anchor="middle" style="fill:var(--on-acc)">${lbl}</text>`:''}`;
 const TP={neck:[100,74,12],chest:[100,112,46],waist:[100,168,33],belly:[100,190,33],hips:[100,232,40],thigh:[81,268,17],calf:[83,338,12]};
-const svgWrap=(inner,vb='-20 0 240 420')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" class="gsvg"><rect width="100%" height="100%" fill="#14171d"/>${inner}</svg>`;
-const scaleSvg=pct=>svgWrap(FIG+`<rect x="58" y="398" width="84" height="14" rx="4" fill="#2b313d" stroke="#ff6b35" stroke-width="2.5"/><rect x="86" y="401" width="28" height="8" rx="2" fill="#ff6b35"/><text x="100" y="408" font-size="7" text-anchor="middle" fill="#fff" font-weight="700">${pct?'%':'кг'}</text>`,'-20 0 240 420');
-const ARM=svgWrap(`<g fill="#3a4252" stroke="#6b7590" stroke-width="1.5" stroke-linejoin="round">
+const svgWrap=(inner,vb='-20 0 240 420')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" class="gsvg"><rect width="100%" height="100%" style="fill:var(--fig-bg)"/>${inner}</svg>`;
+const scaleSvg=pct=>svgWrap(FIG+`<rect x="58" y="398" width="84" height="14" rx="4" stroke-width="2.5" style="fill:var(--card2);stroke:var(--acc)"/><rect x="86" y="401" width="28" height="8" rx="2" style="fill:var(--acc)"/><text x="100" y="408" font-size="7" text-anchor="middle" font-weight="700" style="fill:var(--on-acc)">${pct?'%':'кг'}</text>`,'-20 0 240 420');
+const ARM=svgWrap(`<g stroke-width="1.5" stroke-linejoin="round" style="fill:var(--fig);stroke:var(--fig-line)">
 <path d="M14 40 Q40 20 70 40 L70 190 L14 190 Z"/>
 <path d="M136 64 Q130 30 140 4 L172 2 Q178 40 172 96 Z"/><circle cx="156" cy="-4" r="17"/>
 <path d="M40 58 Q100 18 158 54 Q176 66 172 92 Q166 108 146 108 Q100 116 44 112 Z"/><circle cx="44" cy="80" r="30"/></g>
-<ellipse cx="102" cy="72" rx="8" ry="38" fill="none" stroke="#ff6b35" stroke-width="3.5"/>
-<text x="0" y="150" font-size="10" fill="#cfd5e0">Рука согнута под 90°, бицепс напряжён;</text><text x="0" y="164" font-size="10" fill="#cfd5e0">лента — в самом широком месте</text>`,'-6 -26 220 200');
+<ellipse cx="102" cy="72" rx="8" ry="38" fill="none" stroke-width="3.5" style="stroke:var(--acc)"/>
+<text x="0" y="150" font-size="10" style="fill:var(--fig-txt)">Рука согнута под 90°, бицепс напряжён;</text><text x="0" y="164" font-size="10" style="fill:var(--fig-txt)">лента — в самом широком месте</text>`,'-6 -26 220 200');
 const GUIDE={
 weight:['Вес','Утром, сразу после туалета, до еды и питья, без одежды (или в одном белье). Всегда на одних и тех же весах, стоящих на ровном твёрдом полу. Вес колеблется день ко дню на 0,5–1,5 кг из-за воды и еды — смотри на тренд за недели, а не на один замер.',()=>scaleSvg()],
 fat:['% жира','Измеряй одним и тем же способом и прибором (весы-анализатор, калипер, DEXA) и в одинаковых условиях: утром, натощак, после туалета, до тренировки. Биоимпедансные весы сильно зависят от количества воды в теле — важна динамика, а не точное число.',()=>scaleSvg(1)],
 neck:['Шея','Сразу ниже кадыка (гортани), лента перпендикулярно оси шеи (слегка наклонена вперёд-вниз). Смотри прямо, плечи опущены, шею не напрягай.',()=>svgWrap(FIG+tape(...TP.neck))],
 chest:['Грудь','Горизонтально на уровне сосков, лента проходит под мышками и по лопаткам. Руки опущены вдоль тела, замер — в конце обычного спокойного выдоха.',()=>svgWrap(FIG+tape(...TP.chest))],
-waist:['Талия','Посередине между нижним ребром и верхним краем подвздошной кости (тазовой косточки) — по протоколу ВОЗ. Стоя, ноги вместе, руки расслаблены, живот не втягивай; замер в конце обычного выдоха.',()=>svgWrap(FIG+tape(...TP.waist)+`<line x1="130" y1="152" x2="150" y2="152" stroke="#ffc83d" stroke-dasharray="3 2"/><text x="152" y="155" font-size="8" fill="#ffc83d">нижнее ребро</text><line x1="133" y1="186" x2="150" y2="186" stroke="#ffc83d" stroke-dasharray="3 2"/><text x="152" y="189" font-size="8" fill="#ffc83d">край таза</text>`)],
+waist:['Талия','Посередине между нижним ребром и верхним краем подвздошной кости (тазовой косточки) — по протоколу ВОЗ. Стоя, ноги вместе, руки расслаблены, живот не втягивай; замер в конце обычного выдоха.',()=>svgWrap(FIG+tape(...TP.waist)+`<line x1="130" y1="152" x2="150" y2="152" stroke-dasharray="3 2" style="stroke:var(--gold)"/><text x="152" y="155" font-size="8" style="fill:var(--gold)">нижнее ребро</text><line x1="133" y1="186" x2="150" y2="186" stroke-dasharray="3 2" style="stroke:var(--gold)"/><text x="152" y="189" font-size="8" style="fill:var(--gold)">край таза</text>`)],
 belly:['Живот','Горизонтально на уровне пупка. Стоя, живот расслаблен (не втягивай и не надувай), замер в конце обычного выдоха.',()=>svgWrap(FIG+tape(...TP.belly))],
 hips:['Бёдра (таз)','По самой выступающей части ягодиц, лента строго горизонтально. Стопы вместе, ягодицы расслаблены. Удобно мерить перед зеркалом боком.',()=>svgWrap(FIG+tape(...TP.hips))],
 biceps:['Бицепс','Правая рука (всегда одна и та же): согни руку под 90° и напряги бицепс; мерь в самом широком месте, лента перпендикулярно плечевой кости. Если хочешь мерить расслабленную руку — тоже можно, но всегда одинаково.',()=>ARM],
 thigh:['Бедро','Правая нога (всегда одна и та же): сразу под ягодичной складкой, в самом широком месте бедра. Стой прямо, вес равномерно на обе ноги, мышцы расслаблены.',()=>svgWrap(FIG+tape(...TP.thigh))],
 calf:['Икра','Правая нога: в самом широком месте икроножной мышцы. Стоя, вес на обе ноги, икра расслаблена.',()=>svgWrap(FIG+tape(...TP.calf))]};
-const OVERVIEW=()=>svgWrap(FIG+Object.entries(TP).map(([k,t],i)=>tape(t[0],t[1],t[2],i+1)).join('')+`<g font-size="9" fill="#cfd5e0">${Object.keys(TP).map((k,i)=>`<text x="-16" y="${300+i*14}">${i+1} ${GUIDE[k][0]}</text>`).join('')}</g>`);
+const OVERVIEW=()=>svgWrap(FIG+Object.entries(TP).map(([k,t],i)=>tape(t[0],t[1],t[2],i+1)).join('')+`<g font-size="9" style="fill:var(--fig-txt)">${Object.keys(TP).map((k,i)=>`<text x="-16" y="${300+i*14}">${i+1} ${GUIDE[k][0]}</text>`).join('')}</g>`);
 const TIPS='<b>Общие правила</b><ul style="margin:6px 0;padding-left:18px"><li>Мягкая сантиметровая лента: плотно прилегает к коже, но не сдавливает.</li><li>Лента горизонтальна (параллельно полу), не перекручена.</li><li>Всегда в одно время дня (лучше утром), в расслабленном состоянии, не после тренировки.</li><li>Мерь 2 раза и запиши среднее; если разница больше 1 см — третий замер.</li><li>Одна и та же сторона тела для рук и ног.</li><li>Достаточно раз в неделю или раз в 2 недели.</li></ul>';
 const GSRC='<p class="mut" style="font-size:12px">Талия: World Health Organization (2011). Waist circumference and waist–hip ratio: report of a WHO expert consultation, Geneva, 8–11 December 2008. Geneva: WHO.</p>';
 function guide(k){let d=$('#gd');if(!d){d=document.createElement('div');d.id='gd';document.body.append(d)}const g=k?GUIDE[k]:null;
@@ -594,7 +594,7 @@ function cleanImport(d){
 // ---------- Ещё
 function libCountText(){const n=(typeof EX!=='undefined'&&EX.length)||0;const n10=n%10,n100=n%100;const w=(n10===1&&n100!==11)?'упражнение':(n10>=2&&n10<=4&&(n100<10||n100>=20))?'упражнения':'упражнений';return n+' '+w+': 3D-анимация, техника, твоя история'}
 function more(){$('#title').textContent='Ещё';
- app.innerHTML=`<button class="full card libbig" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full card" id="sci" style="text-align:left">🔬 Научная основа программ</button>
+ app.innerHTML=`<button class="full card libbig" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full card" id="sci" style="text-align:left">🔬 Научная основа программ</button>${typeof themeCardHTML==='function'?themeCardHTML():''}
  <div class="card"><b>Звук и экран</b>
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
@@ -611,7 +611,7 @@ function more(){$('#title').textContent='Ещё';
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="expcsv">⬇ Экспорт CSV (история тренировок)</button><p class="mut" style="font-size:12px;margin:4px 0 8px">Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта.</p><button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
- $('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
+ if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};

@@ -75,7 +75,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
   if(s.to&&s.to!==it.exId)L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
- if(it.pain)L.push(`<span style="color:#e5484d">Боль: без прибавки, вес оставь тем же. Замени упражнение ⇄; если боль повторяется — снизь вес на 10 % или обратись к врачу</span>`);
+ if(it.pain)L.push(`<span style="color:var(--danger)">Боль: без прибавки, вес оставь тем же. Замени упражнение ⇄; если боль повторяется — снизь вес на 10 % или обратись к врачу</span>`);
  return`<div class="row" style="align-items:flex-start;margin:4px 0"><div class="awsug mut grow" style="font-size:13px">${L.join('<br>')}</div><button class="sm ${it.pain?'danger':''}" data-awpain="${i}" title="Боль">🤕 Боль</button></div>`}
 function awFeelHTML(it,i){if(!awCls(it.exId)||!it.sets.length||!it.sets.every(s=>s.done))return'';
  return`<div class="row awfeel" style="margin-top:6px"><span class="mut grow">Как прошло? <span style="font-size:12px">(необязательно)</span></span>${AW_FEELS.map(([k,t])=>`<button class="sm ${it.feel===k?'ok':''}" data-awfeel="${i},${k}">${t}</button>`).join('')}</div>`}

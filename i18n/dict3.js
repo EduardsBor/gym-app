@@ -305,4 +305,11 @@ const DICT3=[
 ['Уведомления выключены в настройках Android. Таймер отдыха работает только в открытом приложении.','Notifications are turned off in Android settings. The rest timer only works while the app is open.','Paziņojumi ir izslēgti Android iestatījumos. Atpūtas taimeris darbojas tikai atvērtā lietotnē.'],
 ['Точное время выключено в Android: сигнал отдыха может прийти с опозданием.','Exact timing is off in Android: the rest alert may arrive late.','Precīzais laiks Android ir izslēgts: atpūtas signāls var pienākt ar nokavēšanos.'],
 ['GymCaptain покажет уведомление, когда закончится отдых (даже при выключенном экране), и напомнит о тренировке, если ты включишь напоминания. Разрешить уведомления?','GymCaptain will notify you when your rest is over (even with the screen off) and remind you to work out if you turn reminders on. Allow notifications?','GymCaptain paziņos, kad atpūta beigusies (arī ar izslēgtu ekrānu), un atgādinās par treniņu, ja ieslēgsi atgādinājumus. Atļaut paziņojumus?'],
+['Оформление','Appearance','Noformējums'],
+['Классика','Classic','Klasiskā'],
+['Капитан','Captain','Kapteinis'],
+['Светлая','Light','Gaišā'],
+['Океан','Ocean','Okeāns'],
+['Ягода','Berry','Oga'],
+['Тема хранится только на этом устройстве.','The theme is saved only on this device.','Tēma tiek saglabāta tikai šajā ierīcē.'],
 ]
