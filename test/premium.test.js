@@ -356,5 +356,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v72'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v73'/); assert.match(sw, /'premium\.js','features\.js'/);
 });

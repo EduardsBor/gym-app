@@ -39,9 +39,7 @@ test('D-216: leftover typo patterns are gone from LV sources', () => {
     [/[Čč]etrgalvu/, 'Četrgalvu']
   ];
   for (const f of LV_SOURCES) {
-    let text = read(f);
-    // B-410 approved LV policy uses "1AM" as the Latvian expansion of 1RM; do not alter that legal wording.
-    if (f === 'legal.js') text = text.replace(/aptuvenu 1AM \(vienu atkārtojumu maksimumu\)/, '');
+    const text = read(f);
     for (const [re, label] of forbidden) {
       const m = text.match(re);
       assert.equal(m, null, `${label} in ${f}: ${m && m[0]}`);
@@ -94,7 +92,7 @@ test('D-223: §6 legal bases mention analytics consent and Sentry legitimate int
 });
 
 test('D-216/D-223: sw is moyzal-v67; changelog; new LV strings only in docs/LV-NEW-D223.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v72'/);
+  assert.match(read('sw.js'), /const C='moyzal-v73'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-216, D-223/);
   assert.match(log, /moyzal-v67/);
