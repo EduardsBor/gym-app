@@ -323,6 +323,7 @@ const DICT3=[
 ['Пропустить тренировку','Skip workout','Izlaist treniņu'],
 ['Выбери, что дальше.','Choose what to do next.','Izvēlies, kas tālāk.'],
 ['Тренировка перенесена','Workout postponed','Treniņš pārcelts'],
+['Неделя','Week','Nedēļa'],['Верх тела','Upper body','Ķermeņa augšdaļa'],['Низ тела','Lower body','Ķermeņa apakšdaļa'],['Всё тело','Full body','Viss ķermenis'],['Жимовая','Push','Spiešanas'],['Тяговая','Pull','Vilkšanas'],['разгрузка','deload','atslodze'],['Нажми на тренировку, чтобы открыть упражнения.','Tap a workout to see its exercises.','Pieskaries treniņam, lai redzētu vingrinājumus.'],['Нажми на тренировку, чтобы открыть и изменить её.','Tap a workout to open and edit it.','Pieskaries treniņam, lai to atvērtu un mainītu.'],['трен.','workouts','treniņi'],['нед.','wk','ned.'],
 ['Тренировка','Workout','Treniņš'],
 ]
 

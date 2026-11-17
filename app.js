@@ -197,16 +197,20 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
  app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
  $('#tocat').onclick=e=>{e.preventDefault();go('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+GOALS[Q.goal],desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
  if($('#qback'))$('#qback').onclick=()=>go('program')}
+function dayWeek(d){if(d&&d.week)return d.week;const m=/^Неделя (\d+)/.exec(d&&d.name||'');return m?+m[1]:0}
+function dayTitle(d){return String(d&&d.name||'').replace(/^Неделя \d+ · /,'')}
+function weekHead(days,di){const w=dayWeek(days[di]);return w&&(di===0||dayWeek(days[di-1])!==w)?`<h3 style="margin:16px 0 6px">Неделя ${w}</h3>`:''}
+function progSummary(days){const t=[...new Set(days.map(d=>dayWeek(d)?dayTitle(d).replace(/ \(разгрузка\)$/,''):d.name))];const w=new Set(days.map(dayWeek).filter(Boolean)).size;return(w?w+' нед. · ':'')+t.join(' · ')}
 let PV=null;
 function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
- ${gen.days.map((d,di)=>`<div class="card"><h3>День ${di+1}: ${esc(d.name)} <span class="mut" style="font-weight:400">≈ ${dayMin(d,a)} мин</span></h3>${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,a).min} мин</span></summary>${warmHTML(warmPlan(d,a))}</details>`}${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span>${altCands(it.exId).length?`<button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button>`:''}</div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}</div>`).join('')}
+ ${gen.days.length>4?'<p class="mut">Нажми на тренировку, чтобы открыть упражнения.</p>':''}${gen.days.map((d,di)=>`${weekHead(gen.days,di)}<details class="card dayc"${gen.days.length<=4||di===PV.open?' open':''} data-di="${di}"><summary><b>${di+1}. ${esc(dayWeek(d)?dayTitle(d):d.name)}</b> <span class="mut">≈ ${dayMin(d,a)} мин · ${d.items.length} упражн.</span></summary>${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,a).min} мин</span></summary>${warmHTML(warmPlan(d,a))}</details>`}${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span>${altCands(it.exId).length?`<button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button>`:''}</div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}</details>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
- app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;renderPreview()})});
+ app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;PV.open=+di;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
   S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
@@ -216,7 +220,7 @@ function catalog(){$('#title').textContent='Готовые программы';c
  const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
  app.innerHTML=`${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN))}
  <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card"><h3>${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
- <div class="mut" style="font-size:13px">${generate(c.a).days.map(d=>esc(d.name)).join(' · ')}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
+ <div class="mut" style="font-size:13px">${esc(progSummary(generate(c.a).days))}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
  <button class="full" id="toq" style="margin-bottom:20px">🧩 Подобрать по анкете</button>`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(CATALOG.find(c=>c.id===b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
@@ -240,7 +244,7 @@ let TSEL=null;function today(sel){$('#title').textContent='Сегодня';if(se
  app.innerHTML=`<div class="card"><div class="mut">${GOALS[S.goal]} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
  ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>`}${d.items.map(it=>`<div class="li">${animShot(it.exId)}<div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span></div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}
  <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button></div>
- <h2>Или выбрать другой день</h2>${S.program.map((p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${i===sel?'👁 ':''}${esc(p.name)}</button>`).join('')}`;
+ <h2>Или выбрать другой день</h2>${(()=>{const btn=(p,i)=>`<button class="full" style="margin:4px 0" data-i="${i}">${i===sel?'👁 ':''}${esc(dayWeek(p)?dayTitle(p):p.name)}</button>`;if(!S.program.some(dayWeek))return S.program.map(btn).join('');const wk={};S.program.forEach((p,i)=>{(wk[dayWeek(p)]=wk[dayWeek(p)]||[]).push(i)});const cur=dayWeek(S.program[sel]);return Object.keys(wk).map(w=>`<details class="card dayc"${+w===cur?' open':''}><summary><b>Неделя ${w}</b> <span class="mut">${wk[w].length} трен.</span></summary>${wk[w].map(i=>btn(S.program[i],i)).join('')}</details>`).join('')})()}`;
  $('#start').onclick=()=>startW(sel);const tb=$('#tback');if(tb)tb.onclick=()=>today();app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
 function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
  items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
@@ -334,19 +338,20 @@ let wl=null;async function wake(){try{if(S.active&&S.wake!==false&&'wakeLock'in 
 setInterval(wake,3000);
 
 // ---------- Программа
+let PRG_OPEN=-1;
 function program(){$('#title').textContent='Программа';
  app.innerHTML=`<div class="card"><h3>${esc(S.progName||'Моя программа')}</h3><div>${tags(S.prof)}</div><button class="pri full" style="margin-top:10px" id="chg">🧩 Подобрать заново (анкета)</button><button class="full" style="margin-top:8px" id="cat">📚 Каталог готовых программ</button><button class="full" style="margin-top:8px" id="plib">📚 Библиотека упражнений</button><button class="full" style="margin-top:8px" id="sci">🔬 Научная основа</button></div>
  ${S.why?`<details class="card"><summary><b>Почему программа построена так</b></summary>${S.why.map(([t])=>`<p style="margin:6px 0">• ${esc(t)}</p>`).join('')}<p class="mut">Источники — в разделе «Научная основа».</p></details>`:''}
- ${S.program.map((d,di)=>`<div class="card"><div class="row"><input value="${esc(d.name)}" data-dn="${di}"></div>
+ ${S.program.length>4?'<p class="mut">Нажми на тренировку, чтобы открыть и изменить её.</p>':''}${S.program.map((d,di)=>`${weekHead(S.program,di)}<details class="card dayc"${S.program.length<=4||di===PRG_OPEN?' open':''} data-pd="${di}"><summary><b>${di+1}. ${esc(dayWeek(d)?dayTitle(d):d.name)}</b> <span class="mut">${d.items.length} упражн.</span></summary><div class="row"><input value="${esc(d.name)}" data-dn="${di}"></div>
  ${d.items.map((it,ii)=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:60%">${esc(exBy(it.exId).name)}</div>${techBtn(it.exId)}
  ${altCands(it.exId).length?`<button class="sm" data-swp="${di},${ii}">⇄</button>`:''}<button class="sm" data-up="${di},${ii}">↑</button><button class="sm" data-dn2="${di},${ii}">↓</button><button class="sm" data-x="${di},${ii}">✕</button>
  <div class="row full" style="width:100%;font-size:13px"><label class="grow">Подходы<input type="number" value="${esc(it.sets)}" data-e="${di},${ii},sets"></label><label class="grow">Повт. от<input type="number" value="${esc(it.min)}" data-e="${di},${ii},min"></label><label class="grow">до<input type="number" value="${esc(it.max)}" data-e="${di},${ii},max"></label><label class="grow">Отдых, с<input type="number" value="${esc(it.rest)}" data-e="${di},${ii},rest"></label></div></div>`).join('')}
- <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></div>`).join('')}
+ <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></details>`).join('')}
  <div class="card"><b>Подходов на группу мышц в неделю</b><div style="margin-top:6px">${volBadges()}</div><div class="mut" style="margin-top:6px">Ориентир для роста мышц: 10–20 подходов (Schoenfeld 2017).</div></div>`;
  $('#chg').onclick=()=>{Q=null;go('quiz')};$('#cat').onclick=()=>go('catalog');$('#plib').onclick=()=>go('library');
  app.querySelectorAll('[data-swp]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.swp.split(',');const it=S.program[di].items[ii];swapModal(it.exId,S.prof,id=>{it.exId=id;save();program()})});
  $('#sci').onclick=()=>go('science');
- app.querySelectorAll('[data-dn]').forEach(i=>i.onchange=()=>{S.program[i.dataset.dn].name=i.value;save()});
+ app.querySelectorAll('[data-pd]').forEach(x=>x.ontoggle=()=>{if(x.open)PRG_OPEN=+x.dataset.pd});app.querySelectorAll('[data-dn]').forEach(i=>i.onchange=()=>{S.program[i.dataset.dn].name=i.value;save()});
  app.querySelectorAll('[data-e]').forEach(i=>i.onchange=()=>{const[d,k,f]=i.dataset.e.split(',');S.program[d].items[k][f]=+i.value;save();program()});
  const mv=(a,d)=>{const[di,ii]=a.split(',').map(Number),L=S.program[di].items,j=ii+d;if(j<0||j>=L.length)return;[L[ii],L[j]]=[L[j],L[ii]];save();program()};
  app.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(b.dataset.up,-1));app.querySelectorAll('[data-dn2]').forEach(b=>b.onclick=()=>mv(b.dataset.dn2,1));

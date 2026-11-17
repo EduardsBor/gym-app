@@ -246,16 +246,19 @@ function attachWarmCool(shellDays,workout,dayIdx){
   return{wu,cd};
 }
 
+const DAY_RU={U1:'Верх тела A',U2:'Верх тела B',L1:'Низ тела A',L2:'Низ тела B',FA:'Всё тело A',FB:'Всё тело B',FC:'Всё тело C',PU:'Жимовая A',PL:'Тяговая A',LG:'Ноги A',PU2:'Жимовая B',PL2:'Тяговая B',LG2:'Ноги B'};
+function blockDayName(w){const t=DAY_RU[w.day_code]||('Тренировка '+w.n);return w.week?('Неделя '+w.week+' · '+t+(w.deload?' (разгрузка)':'')):t}
 function planFromBlock(block,a){
   const b=unwrapBlock(block);
   const shell=warmCoolShell(b,a||{});
   const dayIdx=blockDayIndex(b);
   const days=(b.workouts||[]).map(w=>{
     const wc=attachWarmCool(shell,w,dayIdx);
-    const day={name:'Тренировка '+w.n,items:blockLimSwap((w.items||[]).map(itemFromBlock),a)};
+    const day={name:blockDayName(w),items:blockLimSwap((w.items||[]).map(itemFromBlock),a)};
     if(wc.wu)day.wu=wc.wu;
     if(wc.cd)day.cd=wc.cd;
     if(w.est_min!=null)day.est=w.est_min;
+    if(w.week)day.week=w.week;
     return day;
   });
   return{

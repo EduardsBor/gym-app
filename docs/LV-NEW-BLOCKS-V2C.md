@@ -10,3 +10,9 @@
 | 60–70 мин (с разминкой и заминкой) | 60–70 min (with warm-up and cool-down) | 60–70 min (ar iesildīšanos un atdzišanu) |
 
 «atdzišanu» взято как в существующей строке «Reālais laiks ar iesildīšanos un atdzišanu:».
+
+## D-227 (список тренировок)
+- Nedēļa; Ķermeņa augšdaļa; Ķermeņa apakšdaļa; Viss ķermenis; Spiešanas; Vilkšanas; atslodze; treniņi
+- Pieskaries treniņam, lai redzētu vingrinājumus.
+- Pieskaries treniņam, lai to atvērtu un mainītu.
+- нед. → ned.
