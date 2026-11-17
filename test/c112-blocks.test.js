@@ -103,8 +103,8 @@ test('C-112: workouts are taken from the block in order and are not generated', 
   const firstSample = S0.workouts[0].items.map(it => it.exId);
   const resolved = run(`(${JSON.stringify(firstSample)}).map(resolveExId)`);
   assert.deepEqual(plan.days[0].items.map(it => it.exId), resolved);
-  assert.equal(plan.days[0].name, 'Тренировка 1');
-  assert.equal(plan.days[35].name, 'Тренировка 36');
+  assert.match(plan.days[0].name, /^Неделя 1 · (Всё тело|Верх тела|Низ тела|Жимовая|Тяговая|Ноги) [ABC]/);
+  assert.match(plan.days[35].name, /^Неделя \d+ · /);
   const w12 = S0.workouts[11].items.map(it => it.exId);
   assert.deepEqual(plan.days[11].items.map(it => it.exId), run(`(${JSON.stringify(w12)}).map(resolveExId)`));
   // Sets come from the file, not from the weekly template generator.
@@ -246,7 +246,7 @@ test('C-112: default migration keeps old state; block fields travel with the pro
 });
 
 test('C-112: cache is moyzal-v74; blocks.js and the sample JSON are precached; changelog and LV doc exist', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v77'/);
+  assert.match(read('sw.js'), /const C='moyzal-v78'/);
   assert.match(read('sw.js'), /blocks\.js/);
   assert.match(read('sw.js'), /data\/blocks\/mass_nov_3_g_b36\.json/);
   assert.match(read('index.html'), /<script src="blocks\.js"><\/script>/);
