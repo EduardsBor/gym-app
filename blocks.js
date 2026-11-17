@@ -1,9 +1,11 @@
 'use strict';
 // C-112: program blocks. Workouts come from data/blocks/*.json in order; they are not generated.
-const BLOCK_FILES=['data/blocks/mass_nov_3_g_b36.json'];
+// Files are loaded on demand (one block, the one the questionnaire picked); the service worker keeps it for offline use.
+const BLOCK_FILES=[];
 const BLOCKS={};
-// Questionnaire → block id. Almost empty; the v2 sample is listed here but used only when the feature flag is on.
-const BLOCK_MAP={'mass_nov_3_g':'mass_nov_3_g_b36'};
+// Questionnaire key goal_level_days_place → block id (blocks-v2c, 240 blocks, Claude 17.11.2026).
+// place: g | d | b_bar | b_nobar (bodyweight asks «Есть турник?»).
+const BLOCK_MAP={"mass_nov_2_g":"mass_nov_2_g_b32","mass_nov_2_d":"mass_nov_2_d_b32","mass_nov_2_b_bar":"mass_nov_2_b_bar_b32","mass_nov_2_b_nobar":"mass_nov_2_b_nobar_b32","mass_nov_3_g":"mass_nov_3_g_b36","mass_nov_3_d":"mass_nov_3_d_b36","mass_nov_3_b_bar":"mass_nov_3_b_bar_b36","mass_nov_3_b_nobar":"mass_nov_3_b_nobar_b36","mass_nov_4_g":"mass_nov_4_g_b36","mass_nov_4_d":"mass_nov_4_d_b36","mass_nov_4_b_bar":"mass_nov_4_b_bar_b36","mass_nov_4_b_nobar":"mass_nov_4_b_nobar_b36","mass_nov_5_g":"mass_nov_5_g_b35","mass_nov_5_d":"mass_nov_5_d_b35","mass_nov_5_b_bar":"mass_nov_5_b_bar_b35","mass_nov_5_b_nobar":"mass_nov_5_b_nobar_b35","mass_nov_6_g":"mass_nov_6_g_b36","mass_nov_6_d":"mass_nov_6_d_b36","mass_nov_6_b_bar":"mass_nov_6_b_bar_b36","mass_nov_6_b_nobar":"mass_nov_6_b_nobar_b36","mass_mid_2_g":"mass_mid_2_g_b32","mass_mid_2_d":"mass_mid_2_d_b32","mass_mid_2_b_bar":"mass_mid_2_b_bar_b32","mass_mid_2_b_nobar":"mass_mid_2_b_nobar_b32","mass_mid_3_g":"mass_mid_3_g_b36","mass_mid_3_d":"mass_mid_3_d_b36","mass_mid_3_b_bar":"mass_mid_3_b_bar_b36","mass_mid_3_b_nobar":"mass_mid_3_b_nobar_b36","mass_mid_4_g":"mass_mid_4_g_b36","mass_mid_4_d":"mass_mid_4_d_b36","mass_mid_4_b_bar":"mass_mid_4_b_bar_b36","mass_mid_4_b_nobar":"mass_mid_4_b_nobar_b36","mass_mid_5_g":"mass_mid_5_g_b35","mass_mid_5_d":"mass_mid_5_d_b35","mass_mid_5_b_bar":"mass_mid_5_b_bar_b35","mass_mid_5_b_nobar":"mass_mid_5_b_nobar_b35","mass_mid_6_g":"mass_mid_6_g_b36","mass_mid_6_d":"mass_mid_6_d_b36","mass_mid_6_b_bar":"mass_mid_6_b_bar_b36","mass_mid_6_b_nobar":"mass_mid_6_b_nobar_b36","mass_adv_2_g":"mass_adv_2_g_b32","mass_adv_2_d":"mass_adv_2_d_b32","mass_adv_2_b_bar":"mass_adv_2_b_bar_b32","mass_adv_2_b_nobar":"mass_adv_2_b_nobar_b32","mass_adv_3_g":"mass_adv_3_g_b36","mass_adv_3_d":"mass_adv_3_d_b36","mass_adv_3_b_bar":"mass_adv_3_b_bar_b36","mass_adv_3_b_nobar":"mass_adv_3_b_nobar_b36","mass_adv_4_g":"mass_adv_4_g_b36","mass_adv_4_d":"mass_adv_4_d_b36","mass_adv_4_b_bar":"mass_adv_4_b_bar_b36","mass_adv_4_b_nobar":"mass_adv_4_b_nobar_b36","mass_adv_5_g":"mass_adv_5_g_b35","mass_adv_5_d":"mass_adv_5_d_b35","mass_adv_5_b_bar":"mass_adv_5_b_bar_b35","mass_adv_5_b_nobar":"mass_adv_5_b_nobar_b35","mass_adv_6_g":"mass_adv_6_g_b36","mass_adv_6_d":"mass_adv_6_d_b36","mass_adv_6_b_bar":"mass_adv_6_b_bar_b36","mass_adv_6_b_nobar":"mass_adv_6_b_nobar_b36","str_nov_2_g":"str_nov_2_g_b32","str_nov_2_d":"str_nov_2_d_b32","str_nov_2_b_bar":"str_nov_2_b_bar_b32","str_nov_2_b_nobar":"str_nov_2_b_nobar_b32","str_nov_3_g":"str_nov_3_g_b36","str_nov_3_d":"str_nov_3_d_b36","str_nov_3_b_bar":"str_nov_3_b_bar_b36","str_nov_3_b_nobar":"str_nov_3_b_nobar_b36","str_nov_4_g":"str_nov_4_g_b36","str_nov_4_d":"str_nov_4_d_b36","str_nov_4_b_bar":"str_nov_4_b_bar_b36","str_nov_4_b_nobar":"str_nov_4_b_nobar_b36","str_nov_5_g":"str_nov_5_g_b35","str_nov_5_d":"str_nov_5_d_b35","str_nov_5_b_bar":"str_nov_5_b_bar_b35","str_nov_5_b_nobar":"str_nov_5_b_nobar_b35","str_nov_6_g":"str_nov_6_g_b36","str_nov_6_d":"str_nov_6_d_b36","str_nov_6_b_bar":"str_nov_6_b_bar_b36","str_nov_6_b_nobar":"str_nov_6_b_nobar_b36","str_mid_2_g":"str_mid_2_g_b32","str_mid_2_d":"str_mid_2_d_b32","str_mid_2_b_bar":"str_mid_2_b_bar_b32","str_mid_2_b_nobar":"str_mid_2_b_nobar_b32","str_mid_3_g":"str_mid_3_g_b36","str_mid_3_d":"str_mid_3_d_b36","str_mid_3_b_bar":"str_mid_3_b_bar_b36","str_mid_3_b_nobar":"str_mid_3_b_nobar_b36","str_mid_4_g":"str_mid_4_g_b36","str_mid_4_d":"str_mid_4_d_b36","str_mid_4_b_bar":"str_mid_4_b_bar_b36","str_mid_4_b_nobar":"str_mid_4_b_nobar_b36","str_mid_5_g":"str_mid_5_g_b35","str_mid_5_d":"str_mid_5_d_b35","str_mid_5_b_bar":"str_mid_5_b_bar_b35","str_mid_5_b_nobar":"str_mid_5_b_nobar_b35","str_mid_6_g":"str_mid_6_g_b36","str_mid_6_d":"str_mid_6_d_b36","str_mid_6_b_bar":"str_mid_6_b_bar_b36","str_mid_6_b_nobar":"str_mid_6_b_nobar_b36","str_adv_2_g":"str_adv_2_g_b32","str_adv_2_d":"str_adv_2_d_b32","str_adv_2_b_bar":"str_adv_2_b_bar_b32","str_adv_2_b_nobar":"str_adv_2_b_nobar_b32","str_adv_3_g":"str_adv_3_g_b36","str_adv_3_d":"str_adv_3_d_b36","str_adv_3_b_bar":"str_adv_3_b_bar_b36","str_adv_3_b_nobar":"str_adv_3_b_nobar_b36","str_adv_4_g":"str_adv_4_g_b36","str_adv_4_d":"str_adv_4_d_b36","str_adv_4_b_bar":"str_adv_4_b_bar_b36","str_adv_4_b_nobar":"str_adv_4_b_nobar_b36","str_adv_5_g":"str_adv_5_g_b35","str_adv_5_d":"str_adv_5_d_b35","str_adv_5_b_bar":"str_adv_5_b_bar_b35","str_adv_5_b_nobar":"str_adv_5_b_nobar_b35","str_adv_6_g":"str_adv_6_g_b36","str_adv_6_d":"str_adv_6_d_b36","str_adv_6_b_bar":"str_adv_6_b_bar_b36","str_adv_6_b_nobar":"str_adv_6_b_nobar_b36","loss_nov_2_g":"loss_nov_2_g_b32","loss_nov_2_d":"loss_nov_2_d_b32","loss_nov_2_b_bar":"loss_nov_2_b_bar_b32","loss_nov_2_b_nobar":"loss_nov_2_b_nobar_b32","loss_nov_3_g":"loss_nov_3_g_b36","loss_nov_3_d":"loss_nov_3_d_b36","loss_nov_3_b_bar":"loss_nov_3_b_bar_b36","loss_nov_3_b_nobar":"loss_nov_3_b_nobar_b36","loss_nov_4_g":"loss_nov_4_g_b36","loss_nov_4_d":"loss_nov_4_d_b36","loss_nov_4_b_bar":"loss_nov_4_b_bar_b36","loss_nov_4_b_nobar":"loss_nov_4_b_nobar_b36","loss_nov_5_g":"loss_nov_5_g_b35","loss_nov_5_d":"loss_nov_5_d_b35","loss_nov_5_b_bar":"loss_nov_5_b_bar_b35","loss_nov_5_b_nobar":"loss_nov_5_b_nobar_b35","loss_nov_6_g":"loss_nov_6_g_b36","loss_nov_6_d":"loss_nov_6_d_b36","loss_nov_6_b_bar":"loss_nov_6_b_bar_b36","loss_nov_6_b_nobar":"loss_nov_6_b_nobar_b36","loss_mid_2_g":"loss_mid_2_g_b32","loss_mid_2_d":"loss_mid_2_d_b32","loss_mid_2_b_bar":"loss_mid_2_b_bar_b32","loss_mid_2_b_nobar":"loss_mid_2_b_nobar_b32","loss_mid_3_g":"loss_mid_3_g_b36","loss_mid_3_d":"loss_mid_3_d_b36","loss_mid_3_b_bar":"loss_mid_3_b_bar_b36","loss_mid_3_b_nobar":"loss_mid_3_b_nobar_b36","loss_mid_4_g":"loss_mid_4_g_b36","loss_mid_4_d":"loss_mid_4_d_b36","loss_mid_4_b_bar":"loss_mid_4_b_bar_b36","loss_mid_4_b_nobar":"loss_mid_4_b_nobar_b36","loss_mid_5_g":"loss_mid_5_g_b35","loss_mid_5_d":"loss_mid_5_d_b35","loss_mid_5_b_bar":"loss_mid_5_b_bar_b35","loss_mid_5_b_nobar":"loss_mid_5_b_nobar_b35","loss_mid_6_g":"loss_mid_6_g_b36","loss_mid_6_d":"loss_mid_6_d_b36","loss_mid_6_b_bar":"loss_mid_6_b_bar_b36","loss_mid_6_b_nobar":"loss_mid_6_b_nobar_b36","loss_adv_2_g":"loss_adv_2_g_b32","loss_adv_2_d":"loss_adv_2_d_b32","loss_adv_2_b_bar":"loss_adv_2_b_bar_b32","loss_adv_2_b_nobar":"loss_adv_2_b_nobar_b32","loss_adv_3_g":"loss_adv_3_g_b36","loss_adv_3_d":"loss_adv_3_d_b36","loss_adv_3_b_bar":"loss_adv_3_b_bar_b36","loss_adv_3_b_nobar":"loss_adv_3_b_nobar_b36","loss_adv_4_g":"loss_adv_4_g_b36","loss_adv_4_d":"loss_adv_4_d_b36","loss_adv_4_b_bar":"loss_adv_4_b_bar_b36","loss_adv_4_b_nobar":"loss_adv_4_b_nobar_b36","loss_adv_5_g":"loss_adv_5_g_b35","loss_adv_5_d":"loss_adv_5_d_b35","loss_adv_5_b_bar":"loss_adv_5_b_bar_b35","loss_adv_5_b_nobar":"loss_adv_5_b_nobar_b35","loss_adv_6_g":"loss_adv_6_g_b36","loss_adv_6_d":"loss_adv_6_d_b36","loss_adv_6_b_bar":"loss_adv_6_b_bar_b36","loss_adv_6_b_nobar":"loss_adv_6_b_nobar_b36","fit_nov_2_g":"fit_nov_2_g_b32","fit_nov_2_d":"fit_nov_2_d_b32","fit_nov_2_b_bar":"fit_nov_2_b_bar_b32","fit_nov_2_b_nobar":"fit_nov_2_b_nobar_b32","fit_nov_3_g":"fit_nov_3_g_b36","fit_nov_3_d":"fit_nov_3_d_b36","fit_nov_3_b_bar":"fit_nov_3_b_bar_b36","fit_nov_3_b_nobar":"fit_nov_3_b_nobar_b36","fit_nov_4_g":"fit_nov_4_g_b36","fit_nov_4_d":"fit_nov_4_d_b36","fit_nov_4_b_bar":"fit_nov_4_b_bar_b36","fit_nov_4_b_nobar":"fit_nov_4_b_nobar_b36","fit_nov_5_g":"fit_nov_5_g_b35","fit_nov_5_d":"fit_nov_5_d_b35","fit_nov_5_b_bar":"fit_nov_5_b_bar_b35","fit_nov_5_b_nobar":"fit_nov_5_b_nobar_b35","fit_nov_6_g":"fit_nov_6_g_b36","fit_nov_6_d":"fit_nov_6_d_b36","fit_nov_6_b_bar":"fit_nov_6_b_bar_b36","fit_nov_6_b_nobar":"fit_nov_6_b_nobar_b36","fit_mid_2_g":"fit_mid_2_g_b32","fit_mid_2_d":"fit_mid_2_d_b32","fit_mid_2_b_bar":"fit_mid_2_b_bar_b32","fit_mid_2_b_nobar":"fit_mid_2_b_nobar_b32","fit_mid_3_g":"fit_mid_3_g_b36","fit_mid_3_d":"fit_mid_3_d_b36","fit_mid_3_b_bar":"fit_mid_3_b_bar_b36","fit_mid_3_b_nobar":"fit_mid_3_b_nobar_b36","fit_mid_4_g":"fit_mid_4_g_b36","fit_mid_4_d":"fit_mid_4_d_b36","fit_mid_4_b_bar":"fit_mid_4_b_bar_b36","fit_mid_4_b_nobar":"fit_mid_4_b_nobar_b36","fit_mid_5_g":"fit_mid_5_g_b35","fit_mid_5_d":"fit_mid_5_d_b35","fit_mid_5_b_bar":"fit_mid_5_b_bar_b35","fit_mid_5_b_nobar":"fit_mid_5_b_nobar_b35","fit_mid_6_g":"fit_mid_6_g_b36","fit_mid_6_d":"fit_mid_6_d_b36","fit_mid_6_b_bar":"fit_mid_6_b_bar_b36","fit_mid_6_b_nobar":"fit_mid_6_b_nobar_b36","fit_adv_2_g":"fit_adv_2_g_b32","fit_adv_2_d":"fit_adv_2_d_b32","fit_adv_2_b_bar":"fit_adv_2_b_bar_b32","fit_adv_2_b_nobar":"fit_adv_2_b_nobar_b32","fit_adv_3_g":"fit_adv_3_g_b36","fit_adv_3_d":"fit_adv_3_d_b36","fit_adv_3_b_bar":"fit_adv_3_b_bar_b36","fit_adv_3_b_nobar":"fit_adv_3_b_nobar_b36","fit_adv_4_g":"fit_adv_4_g_b36","fit_adv_4_d":"fit_adv_4_d_b36","fit_adv_4_b_bar":"fit_adv_4_b_bar_b36","fit_adv_4_b_nobar":"fit_adv_4_b_nobar_b36","fit_adv_5_g":"fit_adv_5_g_b35","fit_adv_5_d":"fit_adv_5_d_b35","fit_adv_5_b_bar":"fit_adv_5_b_bar_b35","fit_adv_5_b_nobar":"fit_adv_5_b_nobar_b35","fit_adv_6_g":"fit_adv_6_g_b36","fit_adv_6_d":"fit_adv_6_d_b36","fit_adv_6_b_bar":"fit_adv_6_b_bar_b36","fit_adv_6_b_nobar":"fit_adv_6_b_nobar_b36"};
 
 function unwrapBlock(raw){if(!raw||typeof raw!=='object')return null;return raw.block&&typeof raw.block==='object'?raw.block:raw}
 
@@ -14,7 +16,13 @@ function registerBlock(raw){
   return b;
 }
 
-function getBlock(id){return id&&BLOCKS[id]||null}
+function fetchBlockFile(id){
+  if(!/^[a-z0-9_]+$/.test(String(id||''))||typeof XMLHttpRequest==='undefined')return null;
+  try{const x=new XMLHttpRequest();x.open('GET','data/blocks/'+id+'.json',false);x.send();
+    if(x.status>=200&&x.status<300&&x.responseText)return registerBlock(JSON.parse(x.responseText));}catch(e){}
+  return null;
+}
+function getBlock(id){if(!id)return null;return BLOCKS[id]||fetchBlockFile(id)||null}
 
 function blocksEnabled(){
   try{
@@ -22,19 +30,28 @@ function blocksEnabled(){
     const m=/[?&]blocks=(0|1)\b/.exec(search);
     const ls=typeof localStorage!=='undefined'?localStorage:null;
     if(m){
-      if(m[1]==='1'){if(ls)ls.setItem('gc_blocks','1');return true}
+      if(m[1]==='0'){if(ls)ls.setItem('gc_blocks','0');return false}
       if(ls)ls.removeItem('gc_blocks');
-      return false;
+      return true;
     }
-    return !!(ls&&ls.getItem('gc_blocks')==='1');
-  }catch(e){return false}
+    return !(ls&&ls.getItem('gc_blocks')==='0');
+  }catch(e){return true}
 }
 
 function blockIdForProfile(a){
   if(!a||!blocksEnabled())return null;
-  const key=[a.goal,a.level,a.days,a.place].join('_');
+  const key=blockKey(a);
   return BLOCK_MAP[key]||null;
 }
+
+function blockPlace(a){
+  if(!a)return'g';
+  if(a.place!=='b')return a.place||'g';
+  return(a.bar===true||a.bar==='1'||a.bar===1)?'b_bar':'b_nobar';
+}
+function blockKey(a){return[a.goal,a.level,a.days,blockPlace(a)].join('_')}
+
+function blockWarmRef(block){return block&&(block.warmup||block.warmup_cooldown_from)}
 
 function parseWarmTemplate(ref, fallbackLen){
   const fb=fallbackLen||75;
@@ -90,8 +107,8 @@ function validateBlock(raw,ctx){
   if(!Array.isArray(block.workouts)||!block.workouts.length)errors.push('workouts must be a non-empty array');
   const hasEx=ctx&&ctx.exerciseIds?id=>ctx.exerciseIds.has(id)||catalogHasEx(id):catalogHasEx;
   const templates=ctx&&ctx.templateKeys?ctx.templateKeys:(typeof PROG!=='undefined'&&PROG.T?new Set(Object.keys(PROG.T)):null);
-  const warm=parseWarmTemplate(block.warmup_cooldown_from,block.len||75);
-  if(!warm.template)errors.push('warmup_cooldown_from must reference a template');
+  const warm=parseWarmTemplate(blockWarmRef(block),block.len||75);
+  if(!warm.template)errors.push('warmup (or warmup_cooldown_from) must reference a template');
   else if(templates&&!templates.has(warm.template))errors.push('warmup template not found: '+warm.template);
   else if(!templates&&typeof PROG!=='undefined'&&PROG.T&&!PROG.T[warm.template])errors.push('warmup template not found: '+warm.template);
   (block.workouts||[]).forEach((w,i)=>{
@@ -168,12 +185,40 @@ function goNextLevel(state,block){
 
 function itemFromBlock(it){
   const row={exId:resolveExId(it.exId),sets:+it.sets,min:+it.min,max:+it.max,rest:+it.rest};
+  if(it.cardio){row.cardio=1;row.sets=1;row.rest=0;return row}  // cardio finish: min/max are minutes
   if(it.unit==='sec'||it.sec)row.sec=1;
   return row;
 }
 
+// Limitations (back / knees / shoulders): swap inside the block for a trainer alternative of the same main muscles.
+function blockLimOk(id,a){
+  const lim=(a&&a.lim)||[];if(!lim.length)return true;
+  const m=typeof META!=='undefined'&&META[id];if(!m)return true;
+  const r=String(m).split('|')[1]||'';return!lim.some(l=>r.includes(l));
+}
+function blockLimSwap(items,a){
+  if(!a||!(a.lim||[]).length)return items;
+  const used=new Set(items.map(i=>i.exId));
+  return items.map(it=>{
+    if(it.cardio||blockLimOk(it.exId,a))return it;
+    const alts=(typeof ALT!=='undefined'&&ALT[it.exId])||[];
+    const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
+    const place=a.place||'g';
+    const ok=alts.find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&same(it.exId,x)&&(typeof eqAvail!=='function'||eqAvail(x,place)));
+    if(!ok)return it;
+    used.add(ok);return Object.assign({},it,{exId:ok,swapped:1});
+  });
+}
+
+// day_code → template day index: codes in order of first appearance follow the template rotation (FA,FB,FC / U1,L1,U2,L2 / PU,PL,LG,…).
+function blockDayIndex(block){
+  const idx={};let n=0;
+  (block.workouts||[]).forEach(w=>{const c=w&&w.day_code;if(c&&!(c in idx))idx[c]=n++});
+  return idx;
+}
+
 function warmCoolShell(block,a){
-  const ref=parseWarmTemplate(block.warmup_cooldown_from,block.len||75);
+  const ref=parseWarmTemplate(blockWarmRef(block),block.len||75);
   const key=ref.template;
   const len=ref.len||block.len||75;
   if(!key||typeof planFromTemplate!=='function')return[];
@@ -189,9 +234,10 @@ function warmCoolShell(block,a){
   return p&&p.days||[];
 }
 
-function attachWarmCool(shellDays,workout){
-  const label=String(workout.day_label||'A').toUpperCase();
-  const idx=Math.max(0,'ABCDE'.indexOf(label));
+function attachWarmCool(shellDays,workout,dayIdx){
+  let idx;
+  if(dayIdx&&workout.day_code&&workout.day_code in dayIdx)idx=dayIdx[workout.day_code];
+  else{const label=String(workout.day_label||'A').toUpperCase();idx=Math.max(0,'ABCDE'.indexOf(label))}
   const src=shellDays[idx]||shellDays[0]||{};
   const first=workout.items&&workout.items[0]?resolveExId(workout.items[0].exId):null;
   const wu=src.wu?JSON.parse(JSON.stringify(src.wu)):null;
@@ -203,9 +249,10 @@ function attachWarmCool(shellDays,workout){
 function planFromBlock(block,a){
   const b=unwrapBlock(block);
   const shell=warmCoolShell(b,a||{});
+  const dayIdx=blockDayIndex(b);
   const days=(b.workouts||[]).map(w=>{
-    const wc=attachWarmCool(shell,w);
-    const day={name:'Тренировка '+w.n,items:(w.items||[]).map(itemFromBlock)};
+    const wc=attachWarmCool(shell,w,dayIdx);
+    const day={name:'Тренировка '+w.n,items:blockLimSwap((w.items||[]).map(itemFromBlock),a)};
     if(wc.wu)day.wu=wc.wu;
     if(wc.cd)day.cd=wc.cd;
     if(w.est_min!=null)day.est=w.est_min;

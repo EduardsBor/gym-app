@@ -99,6 +99,7 @@ test('new Strength mid/adv program with 30 min is built as 45; novice Strength a
 
 test('quiz: Strength advanced hides 30 min, auto-uses 45 and shows the note; Mass mid 30 shows the Express label', () => {
   const b = boot({ lang: 'ru', goal: 'mass', days: 3, next: 0, obDone: 1, workouts: [], custom: [], body: [] });
+  b.run('localStorage.setItem("gc_blocks","0")'); // C-112: blocks show a fixed 60–70 min; the old length picker is behind gc_blocks=0
   b.run('Q={goal:"str",sex:"m",level:"adv",days:4,len:30,place:"g",prio:[],lim:[]};quiz()');
   let html = b.run('app.innerHTML');
   assert.equal(b.run('Q.len'), 45);
@@ -155,7 +156,7 @@ test('saved Strength 30-min program keeps working unchanged: opens, shows workou
 });
 
 test('D-220: sw moyzal-v67, changelog, LV strings only in docs/LV-NEW-D220.md, no Helms/Refalo/Bell', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v76'/);
+  assert.match(read('sw.js'), /const C='moyzal-v77'/);
   assert.match(read('CHANGELOG.md'), /D-220/);
   const lv = read('docs/LV-NEW-D220.md');
   assert.ok(lv.includes(NOTE) && lv.includes(MIN45));

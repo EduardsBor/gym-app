@@ -1,5 +1,10 @@
 // Stage 2 strings: account, sync, analytics. [ru, en, lv] — LV needs native review.
 const DICT3=[
+// C-112 blocks-v2c questionnaire (LV for Claude: docs/LV-NEW-BLOCKS-V2C.md)
+['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
+['Да','Yes','Jā'],
+['Нет','No','Nē'],
+['60–70 мин (с разминкой и заминкой)','60–70 min (with warm-up and cool-down)','60–70 min (ar iesildīšanos un atdzišanu)'],
 ['☁️ Аккаунт и синхронизация','☁️ Account and sync','☁️ Konts un sinhronizācija'],
 ['Без входа данные только на этом устройстве','Without signing in, data stays only on this device','Bez ieiešanas dati paliek tikai šajā ierīcē'],
 ['Без входа всё остаётся только на этом устройстве. После входа программа, история, рекорды и настройки копируются в облако (серверы в ЕС) и не затирают то, что уже есть.','Without signing in, everything stays only on this device. After you sign in, your program, history, records and settings are copied to the cloud (EU servers) and do not overwrite what is already there.','Bez ieiešanas viss paliek tikai šajā ierīcē. Pēc ieiešanas programma, vēsture, rekordi un iestatījumi tiek kopēti mākonī (ES serveri) un nepārraksta to, kas jau ir.'],

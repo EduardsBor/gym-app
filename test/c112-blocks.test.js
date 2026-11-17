@@ -10,6 +10,7 @@ const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const samplePath = path.join(root, 'data/blocks/mass_nov_3_g_b36.json');
 const sample = JSON.parse(read('data/blocks/mass_nov_3_g_b36.json'));
+const S0 = sample.block || sample; // blocks-v2c files are the block itself
 
 function boot(opts) {
   const store = new Map();
@@ -56,7 +57,7 @@ function boot(opts) {
   return { run: code => vm.runInContext(code, ctx), store };
 }
 
-test('C-112: validator accepts the v2 sample; all exercise ids and the warmup template exist', () => {
+test('C-112: validator accepts the v2c block; all exercise ids and the warmup template exist', () => {
   const { run } = boot();
   run(`this._sample = ${JSON.stringify(sample)}`);
   const r = run('validateBlock(_sample)');
@@ -66,27 +67,28 @@ test('C-112: validator accepts the v2 sample; all exercise ids and the warmup te
   assert.equal(r.warmup.template, 'mass_nov_3_g');
   assert.equal(r.warmup.len, 75);
   assert.equal(r.end_actions.repeat, true);
-  assert.equal(r.end_actions.next_level, null);
+  assert.equal(r.end_actions.next_level, 'mass_mid_3_g_b36');
+  assert.ok(Object.values(run('BLOCK_MAP')).includes(r.end_actions.next_level));
 });
 
 test('C-112: validator rejects a missing field, an unknown exercise id, and a missing template', () => {
   const { run } = boot();
   const badId = JSON.parse(JSON.stringify(sample));
-  badId.block.workouts[0].items[0].exId = 'not-a-real-exercise';
+  (badId.block||badId).workouts[0].items[0].exId = 'not-a-real-exercise';
   run(`this._bad = ${JSON.stringify(badId)}`);
   const a = run('validateBlock(_bad)');
   assert.equal(a.ok, false);
   assert.ok(a.errors.some(e => /not-a-real-exercise/.test(e)), a.errors.join('; '));
 
   const noItems = JSON.parse(JSON.stringify(sample));
-  noItems.block.workouts[0].items = [];
+  (noItems.block||noItems).workouts[0].items = [];
   run(`this._empty = ${JSON.stringify(noItems)}`);
   const b = run('validateBlock(_empty)');
   assert.equal(b.ok, false);
   assert.ok(b.errors.some(e => /items/.test(e)), b.errors.join('; '));
 
   const noT = JSON.parse(JSON.stringify(sample));
-  noT.block.warmup_cooldown_from = 'templates.does_not_exist_xyz (len 75)';
+  (noT.block||noT).warmup = { template: 'does_not_exist_xyz', len: 75 };
   run(`this._nt = ${JSON.stringify(noT)}`);
   const c = run('validateBlock(_nt)');
   assert.equal(c.ok, false);
@@ -98,16 +100,16 @@ test('C-112: workouts are taken from the block in order and are not generated', 
   const plan = run('planFromBlock(getBlock("mass_nov_3_g_b36"), {goal:"mass",level:"nov",days:3,place:"g",len:75})');
   assert.equal(plan.days.length, 36);
   assert.equal(plan.blockId, 'mass_nov_3_g_b36');
-  const firstSample = sample.block.workouts[0].items.map(it => it.exId);
+  const firstSample = S0.workouts[0].items.map(it => it.exId);
   const resolved = run(`(${JSON.stringify(firstSample)}).map(resolveExId)`);
   assert.deepEqual(plan.days[0].items.map(it => it.exId), resolved);
   assert.equal(plan.days[0].name, 'Тренировка 1');
   assert.equal(plan.days[35].name, 'Тренировка 36');
-  const w12 = sample.block.workouts[11].items.map(it => it.exId);
+  const w12 = S0.workouts[11].items.map(it => it.exId);
   assert.deepEqual(plan.days[11].items.map(it => it.exId), run(`(${JSON.stringify(w12)}).map(resolveExId)`));
   // Sets come from the file, not from the weekly template generator.
-  assert.equal(plan.days[0].items[0].sets, sample.block.workouts[0].items[0].sets);
-  assert.equal(plan.days[0].items[0].min, sample.block.workouts[0].items[0].min);
+  assert.equal(plan.days[0].items[0].sets, S0.workouts[0].items[0].sets);
+  assert.equal(plan.days[0].items[0].min, S0.workouts[0].items[0].min);
   assert.ok(plan.days[0].wu, 'warmup from the 75-min template');
   assert.ok(plan.days[0].cd, 'cooldown from the 75-min template');
 });
@@ -141,7 +143,8 @@ test('C-112: repeat resets the index; next_level switches only when an id is set
   const out = run(`(() => {
     const b = JSON.parse(JSON.stringify(getBlock('mass_nov_3_g_b36')));
     const Sx = { block: { id: b.id, next: blockWorkoutCount(b) }, next: blockWorkoutCount(b) };
-    // v2 lists next_level without an id — must not switch
+    // without a next_level id it must not switch
+    b.end_actions = { repeat: true };
     const noId = goNextLevel(Sx, b);
     const still = Sx.block.id;
     repeatBlock(Sx);
@@ -159,28 +162,66 @@ test('C-112: repeat resets the index; next_level switches only when an id is set
   assert.equal(out.next, 0);
 });
 
-test('C-112: without the flag the current program generator is unchanged; the flag uses the v2 sample for mass/nov/3/g', () => {
-  const off = boot();
-  const on = boot({ ls: { gc_blocks: '1' } });
+test('C-112: blocks are on by default and cover every questionnaire key; gc_blocks=0 keeps the old generator', () => {
+  const on = boot();
+  const off = boot({ ls: { gc_blocks: '0' } });
   const q = '{goal:"mass",level:"nov",days:3,place:"g",len:75,sex:"m",prio:[],lim:[]}';
   const a = off.run(`generate(${q})`);
-  const b = on.run(`generate(${q})`);
   const tpl = off.run(`planFromTemplate(${q})`);
-  assert.equal(a.days.length, tpl.days.length);
-  assert.deepEqual(a.days.map(d => d.name), tpl.days.map(d => d.name));
-  assert.ok(!a.blockId);
   assert.equal(off.run('blocksEnabled()'), false);
-  assert.equal(b.days.length, 36);
+  assert.ok(!a.blockId);
+  assert.deepEqual(a.days.map(d => d.name), tpl.days.map(d => d.name));
+  assert.equal(on.run('blocksEnabled()'), true);
+  const b = on.run(`generate(${q})`);
   assert.equal(b.blockId, 'mass_nov_3_g_b36');
-  assert.equal(b.days[0].name, 'Тренировка 1');
-  // A profile with no mapping still uses the generator even with the flag on.
-  const other = on.run('generate({goal:"fit",level:"nov",days:3,place:"g",len:60,sex:"m",prio:[],lim:[]})');
-  assert.ok(!other.blockId);
-  assert.ok(other.days.length < 36);
-  // ?blocks=1 also turns the flag on
-  const qon = boot({ search: '?blocks=1' });
-  assert.equal(qon.run('blocksEnabled()'), true);
-  assert.equal(qon.store.get('gc_blocks'), '1');
+  assert.equal(b.days.length, 36);
+  const keys = Object.keys(on.run('BLOCK_MAP'));
+  assert.equal(keys.length, 240);
+  for (const g of ['mass', 'str', 'loss', 'fit']) for (const l of ['nov', 'mid', 'adv']) for (const d of [2, 3, 4, 5, 6])
+    for (const pl of ['g', 'd', 'b_bar', 'b_nobar']) {
+      const k = [g, l, d, pl].join('_');
+      assert.ok(keys.includes(k), k);
+      assert.ok(fs.existsSync(path.join(root, 'data/blocks', on.run('BLOCK_MAP')[k] + '.json')), k);
+    }
+  // bodyweight: «Есть турник?» picks b_bar / b_nobar; default is no bar
+  assert.match(on.run('blockIdForProfile({goal:"fit",level:"mid",days:4,place:"b",bar:"1"})'), /^fit_mid_4_b_bar_/);
+  assert.match(on.run('blockIdForProfile({goal:"fit",level:"mid",days:4,place:"b",bar:"0"})'), /^fit_mid_4_b_nobar_/);
+  assert.match(on.run('blockIdForProfile({goal:"fit",level:"mid",days:4,place:"b"})'), /^fit_mid_4_b_nobar_/);
+  const qoff = boot({ search: '?blocks=0' });
+  assert.equal(qoff.run('blocksEnabled()'), false);
+  assert.equal(qoff.store.get('gc_blocks'), '0');
+});
+
+test('C-112: every block validates, next_level points to a real block, warmup by day_code, cardio finish in minutes', () => {
+  const { run } = boot();
+  const ids = Object.values(run('BLOCK_MAP'));
+  const bad = run(`(() => { const out = []; for (const id of Object.values(BLOCK_MAP)) { const b = getBlock(id); const r = validateBlock(b);
+    if (!r.ok) out.push(id + ': ' + r.errors.slice(0, 2).join('; ')); const nl = normalizeEndActions(b.end_actions).next_level; if (nl && !getBlock(nl)) out.push(id + ' next ' + nl); } return out; })()`);
+  assert.deepEqual(JSON.parse(JSON.stringify(bad)), []);
+  assert.ok(ids.length === 240);
+  const r = run(`(() => { const b = getBlock(BLOCK_MAP.mass_mid_4_g); const idx = blockDayIndex(b); const p = planFromBlock(b, {goal:'mass',level:'mid',days:4,place:'g'});
+    const w = b.workouts; const i5 = w.findIndex((x, i) => i > 0 && x.day_code === w[0].day_code);
+    return { idx, codes: w.slice(0, 4).map(x => x.day_code), same: JSON.stringify(p.days[0].cd) === JSON.stringify(p.days[i5].cd), wu: !!p.days[0].wu, cd: !!p.days[0].cd }; })()`);
+  assert.deepEqual([...r.codes], ['U1', 'L1', 'U2', 'L2']);
+  assert.deepEqual(JSON.parse(JSON.stringify(r.idx)), { U1: 0, L1: 1, U2: 2, L2: 3 });
+  assert.equal(r.wu, true); assert.equal(r.cd, true); assert.equal(r.same, true);
+  const c = run(`(() => { for (const id of Object.values(BLOCK_MAP)) { const b = getBlock(id); for (const w of b.workouts) { const it = w.items.find(i => i.cardio); if (it) { const row = itemFromBlock(it); return { row, txt: setTxt(row) }; } } } })()`);
+  assert.equal(c.row.cardio, 1); assert.equal(c.row.sets, 1); assert.equal(c.row.rest, 0);
+  assert.match(c.txt, /мин$/);
+});
+
+test('C-112: limitations swap inside the block to a same-muscle alternative without the risk flag', () => {
+  const { run } = boot();
+  const out = run(`(() => { const b = getBlock(BLOCK_MAP.mass_mid_3_g); const p0 = planFromBlock(b, {goal:'mass',level:'mid',days:3,place:'g',lim:[]});
+    const p1 = planFromBlock(b, {goal:'mass',level:'mid',days:3,place:'g',lim:['s']});
+    let risky0 = 0, risky1 = 0, swapped = 0, sameGroup = true;
+    p0.days.forEach((d, i) => d.items.forEach((it, j) => { const ok0 = blockLimOk(it.exId, {lim:['s']}); if (!ok0) risky0++;
+      const it1 = p1.days[i].items[j]; if (!blockLimOk(it1.exId, {lim:['s']})) risky1++; if (it1.swapped) { swapped++; if (exBy(it1.exId).group !== exBy(it.exId).group) sameGroup = false; } }));
+    return { risky0, risky1, swapped, sameGroup }; })()`);
+  assert.ok(out.risky0 > 0, 'sample has back-risky exercises');
+  assert.ok(out.swapped > 0);
+  assert.ok(out.risky1 < out.risky0);
+  assert.equal(out.sameGroup, true);
 });
 
 test('C-112: default migration keeps old state; block fields travel with the program in the sync payload', () => {
@@ -205,7 +246,7 @@ test('C-112: default migration keeps old state; block fields travel with the pro
 });
 
 test('C-112: cache is moyzal-v74; blocks.js and the sample JSON are precached; changelog and LV doc exist', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v76'/);
+  assert.match(read('sw.js'), /const C='moyzal-v77'/);
   assert.match(read('sw.js'), /blocks\.js/);
   assert.match(read('sw.js'), /data\/blocks\/mass_nov_3_g_b36\.json/);
   assert.match(read('index.html'), /<script src="blocks\.js"><\/script>/);
