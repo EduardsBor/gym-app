@@ -12,17 +12,17 @@
 «atdzišanu» взято как в существующей строке «Reālais laiks ar iesildīšanos un atdzišanu:».
 
 ## D-227 (список тренировок)
-- Nedēļa; Ķermeņa augšdaļa; Ķermeņa apakšdaļa; Viss ķermenis; Spiešanas; Vilkšanas; atslodze; treniņi
+- Nedēļa; Ķermeņa augšdaļa; Ķermeņa apakšdaļa; Viss ķermenis; Spiešana; Vilkšana; atslodze; treniņi
 - Pieskaries treniņam, lai redzētu vingrinājumus.
 - Pieskaries treniņam, lai to atvērtu un mainītu.
 - нед. → ned.
 
 ## D-228 (описания каталога от Тренера)
-- Tiem, kas tikai sāk iet uz sporta zāli. Trīs reizes nedēļā trenējat visu ķermeni un mierīgi apgūstat galveno vingrinājumu tehniku, bet slodze pieaug pakāpeniski. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
+- Tiem, kas tikai sāk iet uz sporta zāli. Trīs reizes nedēļā trenējies visu ķermeni un mierīgi apgūsti galveno vingrinājumu tehniku, bet slodze pieaug pakāpeniski. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
 - Tiem, kas jau trenējas un vēlas palielināt muskuļu masu. Četri treniņi nedēļā: divas dienas ķermeņa augšdaļai, divas kājām, tāpēc katrs muskulis strādā divreiz nedēļā. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Pieredzējušiem, kas gatavi trenēties 6 dienas nedēļā maksimālai muskuļu augšanai. Dienas mainās: krūtis un pleci, mugura, kājas, un tā divi apļi nedēļā. 36 treniņi, apmēram 6 nedēļas, katrs 60–70 minūtes.
 - Tiem, kas vēlas palielināt muskuļu masu, bet uz zāli var iet tikai trīs reizes nedēļā. Katrs treniņš strādā ar visu ķermeni. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
-- Tiem, kas vēlas kļūt stiprāki pietupienā, svara stieņa celšanā guļus un vilkmē. Trīs treniņi nedēļā: smagi svari, maz atkārtojumu un ilga atpūta starp pieejām. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
+- Tiem, kas vēlas kļūt stiprāki pietupienā, spiešanā guļus un vilkmē. Trīs treniņi nedēļā: smagi svari, maz atkārtojumu un ilga atpūta starp pieejām. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
 - Pieredzējušiem, kas vēlas pacelt vairāk. Četras dienas nedēļā: divas ķermeņa augšdaļai, divas kājām, ar uzsvaru uz galvenajiem smagajiem vingrinājumiem. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Tiem, kas vēlas zaudēt taukus un saglabāt muskuļus. Četri treniņi nedēļā: spēka vingrinājumi, beigās kardio. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Svara zaudēšana iesācējiem
