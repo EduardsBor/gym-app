@@ -26,10 +26,10 @@ test('D-226: §3.5 names the first completed workout in RU, EN and LV; LV has 1R
   assert.equal(/\b1AM\b/.test(lv), false);
 });
 
-test('D-226: first_workout stays in code; sw is moyzal-v73; changelog', () => {
+test('D-226: first_workout stays in code; sw is moyzal-v74; changelog', () => {
   assert.match(read('sync.js'), /mzTrack\('first_workout'/);
-  assert.match(read('sw.js'), /const C='moyzal-v73'/);
+  assert.match(read('sw.js'), /const C='moyzal-v74'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-226/);
-  assert.match(log, /moyzal-v73/);
+  assert.match(log, /moyzal-v74/);
 });

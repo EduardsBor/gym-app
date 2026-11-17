@@ -55,7 +55,7 @@
   }
   // Отпечаток программы: по его изменению ставим отдельную метку времени progAt,
   // чтобы правка настроек на одном устройстве не затирала новую программу с другого.
-  function progSigOf(){try{return JSON.stringify([S.program||null,S.prof||null,S.progName||null])}catch(e){return ''}}
+  function progSigOf(){try{return JSON.stringify([S.program||null,S.prof||null,S.progName||null,S.block||null])}catch(e){return ''}}
   let progSig=progSigOf();
   // Локальные данные принадлежат другому аккаунту (вход сменили на этом устройстве).
   function foreignData(){return !!(user&&S.ownerUid&&S.ownerUid!==user.id&&hasLocalData())}
@@ -168,7 +168,7 @@
     if(typeof eqEnsure==='function') eqEnsure();
     // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
     const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
-    ['program','progName','why','prof','goal','days'].forEach(k=>{
+    ['program','progName','why','prof','goal','days','block'].forEach(k=>{
       const v=progLocal?(S[k]!==undefined?S[k]:R[k]):(R[k]!==undefined?R[k]:S[k]);
       if(v!==undefined) S[k]=v;
     });
