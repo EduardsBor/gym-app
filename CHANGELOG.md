@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- C-112 (b_nobar, правки Claude): в `towel-iso-curl` убрано техническое «unit sec» (RU/EN/LV); LV «puspleveņainais» → «pusplēvainais muskulis»; LV супермен «preses» → «vēdera preses». sw `moyzal-v76`.
+
 - C-112 (b_nobar): 5 новых карточек для дома и своего веса без турника — тяга полотенца в дверном проёме `towel-row`, тяга рюкзака `backpack-row`, супермен `superman`, изометрия бицепса с полотенцем `towel-iso-curl` (в секундах), сгибание ног со скольжением `towel-leg-curl`; тексты Тренера RU/EN/LV, ролики MoveKit по именам файлов. Блоки v2b не подключены. sw `moyzal-v75`.
 
 - C-112 (часть 2): движок программ-блоков. Блок — JSON в `data/blocks/`, тренировки строго по порядку, пропуск не сдвигает индекс, после последней — «Повторить блок» / «Следующий уровень». Образец v2 только под флагом `gc_blocks=1` или `?blocks=1`. sw `moyzal-v74`.
