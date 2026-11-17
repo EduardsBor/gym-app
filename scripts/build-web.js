@@ -14,6 +14,7 @@ const dest = path.join(root, 'www');
 const FILES = [
   'index.html',
   'style.css',
+  'theme.js',
   'manifest.json',
   'sw.js',
   'supabase-config.js',
