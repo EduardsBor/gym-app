@@ -8,6 +8,11 @@
 // Posters in a long list are signed only once they are near the viewport, a few at a time.
 
 const MOVEKIT = {
+  "towel-row": "towel-doorframe-row.mp4",
+  "backpack-row": "backpack-row.mp4",
+  "superman": "supermans.mp4",
+  "towel-iso-curl": "towel-isometric-curls.mp4",
+  "towel-leg-curl": "towel-slide-leg-curl.mp4",
   "bp": "barbell-bench-press.mp4",
   "dbp": "dumbbell-bench-press.mp4",
   "ibp": "barbell-incline-bench-press.mp4",

@@ -170,7 +170,7 @@ let TE=null;
 function tplAll(){return Array.isArray(S.templates)?S.templates:[]}
 function tplGet(id){return tplAll().find(t=>t&&t.id===id)||null}
 function tplNewId(){return('t'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)).slice(0,20)}
-function isSecEx(id){if(typeof isCardio==='function'&&isCardio(id))return false;const n=((typeof exBy==='function'&&exBy(id).name)||'')+' '+id;return/plank|планка/i.test(n)}
+function isSecEx(id){if(typeof isCardio==='function'&&isCardio(id))return false;const n=((typeof exBy==='function'&&exBy(id).name)||'')+' '+id;return id==='towel-iso-curl'||/plank|планка/i.test(n)}
 function tplDefaults(id){const cardio=typeof isCardio==='function'&&isCardio(id);
  if(cardio)return{exId:id,sets:1,min:10,max:20,rest:0};
  if(isSecEx(id))return{exId:id,sets:3,min:20,max:45,rest:60,sec:1};
