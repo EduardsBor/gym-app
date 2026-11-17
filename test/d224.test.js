@@ -34,7 +34,7 @@ test('D-224: LV name of straight-arm-pulldown is Taisno roku vilkšana blokā; i
 test('D-224: LV analītika spelling in legal.js and dict3.js; typo forms gone', () => {
   const legal = read('legal.js');
   const dict3 = read('i18n/dict3.js');
-  assert.match(legal, /Anonīmo analītiku var ieslēgt/);
+  assert.match(legal, /Analītika ir <b>pseidonimizēta<\/b>/);
   assert.equal(/[Aa]nalitik(?!ī)/.test(legal), false);
   assert.match(dict3, /Anonīma analītika/);
   assert.match(dict3, /Analītika ieslēgta/);
@@ -44,7 +44,7 @@ test('D-224: LV analītika spelling in legal.js and dict3.js; typo forms gone', 
 });
 
 test('D-224: sw is moyzal-v70; changelog; new LV strings only in docs/LV-NEW-D224.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v70'/);
+  assert.match(read('sw.js'), /const C='moyzal-v71'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-224/);
   assert.match(log, /moyzal-v69/);

@@ -86,7 +86,7 @@ details summary{cursor:pointer;min-height:30px}
 .vlock .mkposter.mkwide{width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:var(--media-bg);flex:none}
 .vlock .mkposter.mkwide img{width:100%;height:100%;object-fit:contain;background:var(--media-bg);border-radius:12px;opacity:1}
 .consent ul{padding-left:18px}.consent li{margin:4px 0}
-.legal h3{margin:16px 0 6px}.legal p,.legal li{line-height:1.45}
+.legal h3{margin:16px 0 6px}.legal h4{margin:12px 0 6px}.legal p,.legal li{line-height:1.45}.legal ul,.legal ol{padding-left:18px;margin:6px 0 12px}.legal table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}.legal th,.legal td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
 .plan{padding:10px 14px}.pwsheet .opt{padding:10px}
 .opts.c4{grid-template-columns:repeat(2,1fr)}
 .wu.done{opacity:.55}.wu .grow>div:first-child{font-weight:500}details.wud{margin:6px 0 8px;padding:6px 10px;border:1px solid var(--line);border-radius:10px}details.wud summary{padding:4px 0}

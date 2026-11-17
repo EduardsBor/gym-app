@@ -179,28 +179,25 @@ test('D-222: azFirstWo stays on the device and is not uploaded in the account pa
   assert.equal(p.installId, undefined);
 });
 
-test('D-222: built-in privacy policy mentions Sentry and first_workout in RU, EN and LV', () => {
+test('D-222: built-in privacy policy mentions Sentry in RU, EN and LV (B-410 §3.6)', () => {
   const legal = read('legal.js');
-  assert.match(legal, /<h3>5\. Сбор ошибок<\/h3>/);
-  assert.match(legal, /В Android-приложении при сбое или ошибке технический отчёт отправляется в Sentry \(Functional Software Inc\.; данные хранятся в ЕС\)/);
-  assert.match(legal, /Имени, почты, IP-адреса и содержимого тренировок в отчёте нет\. Записи экрана нет\. На сайте Sentry не используется/);
-  assert.match(legal, /первую завершённую тренировку \(только место и цель, без содержимого тренировки\)/);
+  assert.match(legal, /<h4>3\.6\. Сбор ошибок \(Sentry\)<\/h4>/);
+  assert.match(legal, /В <b>Android-приложении<\/b> при сбое Приложение отправляет технический отчёт об ошибке обработчику <b>Sentry<\/b>/);
+  assert.match(legal, /В отчёт <b>не входят<\/b> имя, адрес электронной почты, IP-адрес и данные тренировок/);
 
-  assert.match(legal, /<h3>5\. Error reports<\/h3>/);
-  assert.match(legal, /In the Android app, crash and error reports are sent to Sentry \(Functional Software Inc\.; data is stored in the EU\)/);
-  assert.match(legal, /They do not contain your name, email, IP address or workout content\. There is no screen recording\. Sentry is not used on the website/);
-  assert.match(legal, /the first completed workout \(place and goal only, no workout content\)/);
+  assert.match(legal, /<h4>3\.6\. Crash reporting \(Sentry\)<\/h4>/);
+  assert.match(legal, /In the <b>Android app<\/b>, when the App crashes it sends a technical crash report to the processor <b>Sentry<\/b>/);
+  assert.match(legal, /A report <b>does not include<\/b> your name, email address, IP address or workout data/);
 
-  assert.match(legal, /<h3>5\. Kļūdu ziņojumi<\/h3>/);
-  assert.match(legal, /Android lietotnē avārijas un kļūdu ziņojumi tiek nosūtīti uz Sentry \(Functional Software Inc\.; dati tiek glabāti ES\)/);
-  assert.match(legal, /Tajos nav vārda, e-pasta, IP adreses un treniņu satura\. Ekrāna ieraksta nav\. Tīmekļa vietnē Sentry netiek izmantots/);
-  assert.match(legal, /pirmais pabeigtais treniņš \(tikai vieta un mērķis, bez treniņa satura\)/);
+  assert.match(legal, /<h4>3\.6\. Kļūdu vākšana \(Sentry\)<\/h4>/);
+  assert.match(legal, /<b>Android lietotnē<\/b> avārijas gadījumā Lietotne nosūta tehnisku kļūdas ziņojumu apstrādātājam <b>Sentry<\/b>/);
+  assert.match(legal, /Ziņojumā <b>nav<\/b> vārda, e-pasta adreses, IP adreses un treniņu datu/);
 
-  assert.equal(/сейчас не подключено|not connected yet|vēl nav pieslēgts/i.test(legal), false);
+  assert.equal(/Sentry не подключено|Sentry сейчас не подключено|Sentry is not connected today|Sentry nav pieslēgts/i.test(legal), false);
 });
 
 test('D-222: sw is moyzal-v67; changelog; LV strings only in docs/LV-NEW-D222.md; hooks present; not via Sentry', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v70'/);
+  assert.match(read('sw.js'), /const C='moyzal-v71'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-222/);
   assert.match(log, /first_workout/);

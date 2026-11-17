@@ -39,7 +39,9 @@ test('D-216: leftover typo patterns are gone from LV sources', () => {
     [/[Čč]etrgalvu/, 'Četrgalvu']
   ];
   for (const f of LV_SOURCES) {
-    const text = read(f);
+    let text = read(f);
+    // B-410 approved LV policy uses "1AM" as the Latvian expansion of 1RM; do not alter that legal wording.
+    if (f === 'legal.js') text = text.replace(/aptuvenu 1AM \(vienu atkārtojumu maksimumu\)/, '');
     for (const [re, label] of forbidden) {
       const m = text.match(re);
       assert.equal(m, null, `${label} in ${f}: ${m && m[0]}`);
@@ -79,20 +81,20 @@ test('D-216: key approved terms are present in LV', () => {
 test('D-223: §6 legal bases mention analytics consent and Sentry legitimate interest in RU, EN and LV', () => {
   const legal = read('legal.js');
   assert.match(legal, /<h3>6\. Правовые основания \(GDPR\)<\/h3>/);
-  assert.match(legal, /Анонимная аналитика — на основании вашего согласия \(ст\. 6\(1\)\(a\)\)\. Согласие можно отозвать в «Ещё»\./);
-  assert.match(legal, /Отчёты об ошибках Sentry в Android-приложении — законный интерес: исправлять сбои \(ст\. 6\(1\)\(f\)\)\./);
+  assert.match(legal, /аналитика — по отдельному согласию в «Ещё»/);
+  assert.match(legal, /разбор сбоев, в том числе отчёты об ошибках Sentry в Android-приложении \(чтобы исправлять сбои\)/);
 
   assert.match(legal, /<h3>6\. Legal bases \(GDPR\)<\/h3>/);
-  assert.match(legal, /Anonymous analytics — on the basis of your consent \(Art\. 6\(1\)\(a\)\)\. You can withdraw consent under “More”\./);
-  assert.match(legal, /Sentry error reports in the Android app — legitimate interest: fixing crashes \(Art\. 6\(1\)\(f\)\)\./);
+  assert.match(legal, /analytics — with a separate consent under “More”/);
+  assert.match(legal, /investigating failures, including Sentry crash reports in the Android app \(to fix crashes\)/);
 
   assert.match(legal, /<h3>6\. Tiesiskais pamats \(VDAR\)<\/h3>/);
-  assert.match(legal, /Anonīmā analītika — pamatojoties uz jūsu piekrišanu \(6\. panta 1\. punkta a\) apakšpunkts\)\. Piekrišanu var atsaukt sadaļā “Vēl”\./);
-  assert.match(legal, /Sentry kļūdu ziņojumi Android lietotnē — leģitīmās intereses: avāriju labošana \(6\. panta 1\. punkta f\) apakšpunkts\)\./);
+  assert.match(legal, /analītika — ar atsevišķu piekrišanu sadaļā “Vēl”/);
+  assert.match(legal, /traucējumu noskaidrošana, arī Sentry avāriju ziņojumi Android lietotnē \(lai labotu avārijas\)/);
 });
 
 test('D-216/D-223: sw is moyzal-v67; changelog; new LV strings only in docs/LV-NEW-D223.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v70'/);
+  assert.match(read('sw.js'), /const C='moyzal-v71'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-216, D-223/);
   assert.match(log, /moyzal-v67/);
