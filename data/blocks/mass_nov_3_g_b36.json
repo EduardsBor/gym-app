@@ -1,0 +1,3021 @@
+{
+  "block": {
+    "id": "mass_nov_3_g_b36",
+    "title": "Масса: старт в зале — 36 тренировок, 60–70 мин",
+    "goal": "mass",
+    "level": "nov",
+    "place": "g",
+    "days_per_week": 3,
+    "len": 75,
+    "duration_label": "60–70 мин",
+    "duration_range_min": [
+      60,
+      70
+    ],
+    "len_note": "len 75 — слот библиотеки для разминки/заминки; сама тренировка 60–70 мин",
+    "status": "draft v2 (C-112, 17.11.2026): 60–70 мин",
+    "rules": "ACSM 2009 + дополнения (acsm2009-rules.md v2, progression-rules v2)",
+    "show_pct1rm": false,
+    "warmup_cooldown_from": "templates.mass_nov_3_g (len 75: warm 11.2, cool 7.5 мин)",
+    "phases": [
+      {
+        "n": 1,
+        "name": "Освоение",
+        "workouts": [
+          1,
+          12
+        ]
+      },
+      {
+        "n": 2,
+        "name": "База",
+        "workouts": [
+          13,
+          24
+        ]
+      },
+      {
+        "n": 3,
+        "name": "Развитие",
+        "workouts": [
+          25,
+          36
+        ]
+      }
+    ],
+    "deload_rule": "нет плановой разгрузки (новичок, progression-rules §8)",
+    "approved_exceptions": {
+      "assisted-pullup": "8–12 повт., противовес подбирается под диапазон (Эдуард 17.11)"
+    },
+    "workouts": [
+      {
+        "n": 1,
+        "week": 1,
+        "phase": 1,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 63.4,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 2,
+        "week": 1,
+        "phase": 1,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 61.9,
+        "items": [
+          {
+            "exId": "rdl-db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch-incline",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "step",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 3,
+        "week": 1,
+        "phase": 1,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 63.2,
+        "items": [
+          {
+            "exId": "gsq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "chest-supported-2db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 4,
+        "week": 2,
+        "phase": 1,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 63.4,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 5,
+        "week": 2,
+        "phase": 1,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 61.9,
+        "items": [
+          {
+            "exId": "rdl-db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch-incline",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "step",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 6,
+        "week": 2,
+        "phase": 1,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 63.2,
+        "items": [
+          {
+            "exId": "gsq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "chest-supported-2db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 7,
+        "week": 3,
+        "phase": 1,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 62.2,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 8,
+        "week": 3,
+        "phase": 1,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 61.9,
+        "items": [
+          {
+            "exId": "rdl-db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch-incline",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ote",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 9,
+        "week": 3,
+        "phase": 1,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 63.4,
+        "items": [
+          {
+            "exId": "gsq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "chest-supported-2db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 10,
+        "week": 4,
+        "phase": 1,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 62.2,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "bc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 11,
+        "week": 4,
+        "phase": 1,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 61.9,
+        "items": [
+          {
+            "exId": "rdl-db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "mch-incline",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 12,
+        "week": 4,
+        "phase": 1,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 63.4,
+        "items": [
+          {
+            "exId": "gsq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "chest-supported-2db",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 13,
+        "week": 5,
+        "phase": 2,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 67.0,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 14,
+        "week": 5,
+        "phase": 2,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 65.7,
+        "items": [
+          {
+            "exId": "rdl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dsp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "step",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 15,
+        "week": 5,
+        "phase": 2,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 67.2,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "idb",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ote",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 16,
+        "week": 6,
+        "phase": 2,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 67.0,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 17,
+        "week": 6,
+        "phase": 2,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 65.7,
+        "items": [
+          {
+            "exId": "rdl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dsp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "step",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 18,
+        "week": 6,
+        "phase": 2,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 67.2,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "idb",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "bc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 19,
+        "week": 7,
+        "phase": 2,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 65.7,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "skull",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 20,
+        "week": 7,
+        "phase": 2,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 65.5,
+        "items": [
+          {
+            "exId": "rdl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dsp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "bc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 21,
+        "week": 7,
+        "phase": 2,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 68.5,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "idb",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 22,
+        "week": 8,
+        "phase": 2,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 65.7,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 23,
+        "week": 8,
+        "phase": 2,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 65.5,
+        "items": [
+          {
+            "exId": "rdl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dsp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 24,
+        "week": 8,
+        "phase": 2,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 68.5,
+        "items": [
+          {
+            "exId": "lp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "idb",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "cr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 25,
+        "week": 9,
+        "phase": 3,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 68.0,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ibp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "assisted-pullup",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "skull",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "mk-rkc-plank",
+            "sets": 2,
+            "min": 10,
+            "max": 20,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 26,
+        "week": 9,
+        "phase": 3,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 68.7,
+        "items": [
+          {
+            "exId": "dl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ohp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bss",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 27,
+        "week": 9,
+        "phase": 3,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 68.7,
+        "items": [
+          {
+            "exId": "hack-squat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ote",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 28,
+        "week": 10,
+        "phase": 3,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 68.9,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ibp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "assisted-pullup",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 29,
+        "week": 10,
+        "phase": 3,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 68.7,
+        "items": [
+          {
+            "exId": "dl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ohp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bss",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "bc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 30,
+        "week": 10,
+        "phase": 3,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 68.7,
+        "items": [
+          {
+            "exId": "hack-squat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lat",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ht",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 31,
+        "week": 11,
+        "phase": 3,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 67.2,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ibp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "assisted-pullup",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cru",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 32,
+        "week": 11,
+        "phase": 3,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 68.9,
+        "items": [
+          {
+            "exId": "dl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ohp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "bc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 33,
+        "week": 11,
+        "phase": 3,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 66.5,
+        "items": [
+          {
+            "exId": "hack-squat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "ote",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "mk-rkc-plank",
+            "sets": 2,
+            "min": 10,
+            "max": 20,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      },
+      {
+        "n": 34,
+        "week": 12,
+        "phase": 3,
+        "day_label": "A",
+        "deload": false,
+        "est_min": 67.2,
+        "items": [
+          {
+            "exId": "sq",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ibp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "assisted-pullup",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "le",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "fp",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-overhead-extension",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "calf",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "cable-crunch",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 35,
+        "week": 12,
+        "phase": 3,
+        "day_label": "B",
+        "deload": false,
+        "est_min": 68.9,
+        "items": [
+          {
+            "exId": "dl",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "ohp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "row",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "lun",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lr",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "seated-calf",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "dbug",
+            "sets": 2,
+            "min": 10,
+            "max": 15,
+            "rest": 60,
+            "role": "a"
+          }
+        ]
+      },
+      {
+        "n": 36,
+        "week": 12,
+        "phase": 3,
+        "day_label": "C",
+        "deload": false,
+        "est_min": 67.4,
+        "items": [
+          {
+            "exId": "hack-squat",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "bp",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "dbr",
+            "sets": 3,
+            "min": 8,
+            "max": 12,
+            "rest": 90,
+            "role": "c"
+          },
+          {
+            "exId": "straight-arm-pulldown",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "lc",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "rfly",
+            "sets": 3,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "hc",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "tpd",
+            "sets": 2,
+            "min": 10,
+            "max": 12,
+            "rest": 60,
+            "role": "a"
+          },
+          {
+            "exId": "pl",
+            "sets": 2,
+            "min": 20,
+            "max": 45,
+            "rest": 60,
+            "role": "a",
+            "unit": "sec"
+          }
+        ]
+      }
+    ],
+    "end_actions": [
+      "repeat",
+      "next_level"
+    ]
+  }
+}

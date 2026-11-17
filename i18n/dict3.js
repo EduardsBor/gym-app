@@ -312,4 +312,12 @@ const DICT3=[
 ['Океан','Ocean','Okeāns'],
 ['Ягода','Berry','Oga'],
 ['Тема хранится только на этом устройстве.','The theme is saved only on this device.','Tēma tiek saglabāta tikai šajā ierīcē.'],
+['Повторить блок','Repeat the block','Atkārtot bloku'],
+['Следующий уровень','Next level','Nākamais līmenis'],
+['Блок завершён','Block complete','Bloks pabeigts'],
+['Пропустить тренировку','Skip workout','Izlaist treniņu'],
+['Выбери, что дальше.','Choose what to do next.','Izvēlies, kas tālāk.'],
+['Тренировка перенесена','Workout postponed','Treniņš pārcelts'],
+['Тренировка','Workout','Treniņš'],
 ]
+
