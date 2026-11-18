@@ -4,6 +4,13 @@ const DICT3=[
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],
+// D-229 accent blocks (LV for Claude: docs/LV-NEW-BLOCKS-PRIORITY.md)
+['Акцент','Focus','Uzsvars'],
+['Руки','Arms','Rokas'],
+['Акцент «Спина» пока есть только для: масса, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.','The “Back” focus is so far available only for: muscle, intermediate level, 4 workouts a week, gym. The base program is shown.','Uzsvars «Mugura» pagaidām ir pieejams tikai variantam: masa, vidējs līmenis, 4 treniņi nedēļā, zāle. Parādīta pamata programma.'],
+['Акцент «Руки» пока есть только для: масса, средний уровень, 5 тренировок в неделю, зал. Показана базовая программа.','The “Arms” focus is so far available only for: muscle, intermediate level, 5 workouts a week, gym. The base program is shown.','Uzsvars «Rokas» pagaidām ir pieejams tikai variantam: masa, vidējs līmenis, 5 treniņi nedēļā, zāle. Parādīta pamata programma.'],
+['Акцент «Ягодицы и ноги» пока есть только для: масса, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.','The “Glutes and legs” focus is so far available only for: muscle, intermediate level, 4 workouts a week, gym. The base program is shown.','Uzsvars «Sēžas muskuļi un kājas» pagaidām ir pieejams tikai variantam: masa, vidējs līmenis, 4 treniņi nedēļā, zāle. Parādīta pamata programma.'],
+['Акцент «Пресс» пока есть только для: похудение, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.','The “Abs” focus is so far available only for: fat loss, intermediate level, 4 workouts a week, gym. The base program is shown.','Uzsvars «Prese» pagaidām ir pieejams tikai variantam: svara zaudēšana, vidējs līmenis, 4 treniņi nedēļā, zāle. Parādīta pamata programma.'],
 ['60–70 мин (с разминкой и заминкой)','60–70 min (with warm-up and cool-down)','60–70 min (ar iesildīšanos un atdzišanu)'],
 ['☁️ Аккаунт и синхронизация','☁️ Account and sync','☁️ Konts un sinhronizācija'],
 ['Без входа данные только на этом устройстве','Without signing in, data stays only on this device','Bez ieiešanas dati paliek tikai šajā ierīcē'],

@@ -41,8 +41,16 @@ function blocksEnabled(){
 function blockIdForProfile(a){
   if(!a||!blocksEnabled())return null;
   const key=blockKey(a);
-  return BLOCK_MAP[key]||null;
+  const acc=blockAcc(a);
+  return(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||null;
 }
+// D-229: accent (blocks-priority-v2, Claude 17.11.2026). Key {base}_pr_{muscle}; no block → base block. Sex is not used.
+// next_level of an accent block is the base advanced block (no advanced accent blocks yet), so the accent is dropped there.
+const PRIO_BLOCK_MAP={"mass_mid_4_g_pr_back":"mass_mid_4_g_pr_back_b36","mass_mid_5_g_pr_arms":"mass_mid_5_g_pr_arms_b35","mass_mid_4_g_pr_glutes":"mass_mid_4_g_pr_glutes_b36","loss_mid_4_g_pr_abs":"loss_mid_4_g_pr_abs_b36"};
+const ACC_RU={back:'Спина',arms:'Руки',glutes:'Ягодицы и ноги',abs:'Пресс'};
+const ACC_ONLY={back:'Акцент «Спина» пока есть только для: масса, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.',arms:'Акцент «Руки» пока есть только для: масса, средний уровень, 5 тренировок в неделю, зал. Показана базовая программа.',glutes:'Акцент «Ягодицы и ноги» пока есть только для: масса, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.',abs:'Акцент «Пресс» пока есть только для: похудение, средний уровень, 4 тренировки в неделю, зал. Показана базовая программа.'};
+function blockAcc(a){const v=a&&a.acc;return v&&ACC_RU[v]?v:null}
+function blockAccNote(a){const acc=blockAcc(a);if(!acc||!blocksEnabled())return null;return PRIO_BLOCK_MAP[blockKey(a)+'_pr_'+acc]?null:ACC_ONLY[acc]}
 
 function blockPlace(a){
   if(!a)return'g';
@@ -367,7 +375,7 @@ ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>�
       if(blocksEnabled()){
         const id=blockIdForProfile(a);
         const b=id&&getBlock(id);
-        if(b)return planFromBlock(b,a);
+        if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;return p}
       }
       return orig(a);
     };

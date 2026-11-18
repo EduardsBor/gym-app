@@ -182,14 +182,14 @@ function quizLenOld(grp){return`${(typeof lenOff==='function'&&lenOff(Q,LENS[len
 function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){Q.len=70;Q.lenLabel='60–70 мин';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">60–70 мин (с разминкой и заминкой)</p>`}delete Q.lenLabel;return quizLenOld(grp)}
 
 const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" data-k="${k}" data-v="${v}">${label}</button>`;
-function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{})};if(Q.bar==null)Q.bar='0';
+function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{})};if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
  const grp=(t,k,opts,multi)=>`<h2>${t}</h2><div class="chips">${opts.map(([v,l])=>chip(k,v,l,multi?Q[k].includes(v):String(Q[k])===String(v))).join('')}</div>`;
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ Сила'],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
  ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
  ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${quizLen(grp)}
  ${grp('Где тренируешься','place',[['g','🏢 Зал'],['d','🏠 Дом с гантелями'],['b','🤸 Свой вес']])}${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
- ${grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
+ ${typeof blocksEnabled==='function'&&blocksEnabled()?(Q.prio=[],grp('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']])):grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
  ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}
  <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${S.program?'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>':''}`;
  app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
@@ -214,7 +214,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
   S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
-const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.lenLabel||a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
+const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.lenLabel||a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+ACC_RU[a.acc]]:[]),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF;
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
  const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
@@ -594,7 +594,7 @@ function cleanImport(d){
   if(d.prof==null)d.prof={goal:d.goal,sex:'m',level:'mid',days:+d.days||3,len:60,place:'g',prio:[],lim:[]}}
  else if(d.goal!=null)throw 0;
  if(d.prof!=null){const p=d.prof;if(!isO(p)||!GOALS[p.goal]||!LVN[p.level]||!PLN[p.place])throw 0;
-  p.days=+p.days||3;p.len=+p.len||60;p.sex=p.sex==='f'?'f':'m';p.prio=arr(p.prio).filter(g=>str(g)&&g in PRIO_SLOT);p.lim=arr(p.lim).filter(l=>str(l)&&l in LIMN)}
+  p.days=+p.days||3;p.len=+p.len||60;p.sex=p.sex==='f'?'f':'m';p.prio=arr(p.prio).filter(g=>str(g)&&g in PRIO_SLOT);p.lim=arr(p.lim).filter(l=>str(l)&&l in LIMN);if(p.acc!=null&&!['none','back','arms','glutes','abs'].includes(p.acc))p.acc='none'}
  if(d.why!=null)d.why=arr(d.why).filter(w=>Array.isArray(w)&&str(w[0])).map(w=>[w[0],arr(w[1]).filter(str)]);
  ['height','weightKg','age','restOverride','next','days'].forEach(k=>{if(d[k]!=null)d[k]=+d[k]||0});
  if(d.progName!=null)d.progName=String(d.progName);
