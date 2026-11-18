@@ -44,7 +44,7 @@ test('D-224: LV analītika spelling in legal.js and dict3.js; typo forms gone', 
 });
 
 test('D-224: sw is moyzal-v70; changelog; new LV strings only in docs/LV-NEW-D224.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v80'/);
+  assert.match(read('sw.js'), /const C='moyzal-v81'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-224/);
   assert.match(log, /moyzal-v69/);
