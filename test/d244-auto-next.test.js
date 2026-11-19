@@ -96,3 +96,29 @@ test('D-244: warm-up row moves on too; the last exercise returns to the workout 
   assert.equal(run('EXS'), null);
   assert.ok(run('!!S.active'), 'workout stays open for «Завершить»');
 });
+
+test('D-245: exercise screen — rest lives only in the circle (bottom bar hidden), −15/+15/✕ work on the shared timer; other screens keep the bar', () => {
+  const { run, app } = withProgram();
+  run('document.body.classList={_s:new Set(),toggle(c,on){on?this._s.add(c):this._s.delete(c)},contains(c){return this._s.has(c)}}');
+  run('exOpen("m",0)');
+  assert.ok(run('document.body.classList.contains("exv")'));
+  assert.match(read('style.css'), /body\.exv #timer\{display:none!important\}/);
+  assert.match(app(), /<div class="exrestw"><button class="excirc" id="exrest"[^>]*><b id="exrt">/);
+  assert.match(app(), /id="exm15"[^>]*>−15<\/button><button class="sm" id="exp15"[^>]*>\+15<\/button><button class="sm" id="exskip"/);
+  run('$("#exw").value="20";$("#exr").value="10";exLog()');
+  const t0 = run('tEnd');
+  assert.ok(t0 > Date.now());
+  run('$("#exp15").onclick()');
+  assert.equal(run('tEnd') - t0, 15000);
+  run('$("#exm15").onclick()');
+  assert.equal(run('tEnd'), t0);
+  // auto-next keeps the running rest; the next exercise circle reads the same tEnd
+  const plan = run('S.active.items[0].ns');
+  for (let k = 1; k < plan; k++) run('$("#exw").value="20";$("#exr").value="10";exLog()');
+  assert.equal(run('exList()[EXS.pos].i'), 1);
+  assert.ok(run('tEnd') > Date.now());
+  run('$("#exskip").onclick()');
+  assert.equal(run('tEnd'), 0);
+  run('go("today")');
+  assert.equal(run('document.body.classList.contains("exv")'), false);
+});

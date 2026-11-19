@@ -331,7 +331,9 @@ function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=f
  if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
 function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
-document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>{tEnd+=b.dataset.t*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)});$('#tstop').onclick=()=>stopTimer();
+// D-245: one place to shift the running rest (bottom bar and the exercise-screen circle)
+function timerAdd(sec){if(!tEnd)return;tEnd+=sec*1000;armAudio(Math.max(0,(tEnd-Date.now())/1000));S.tEnd=tEnd;save();lastWarn=-1;tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
+document.querySelectorAll('#timer [data-t]').forEach(b=>b.onclick=()=>timerAdd(+b.dataset.t));$('#tstop').onclick=()=>stopTimer();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
 const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};
