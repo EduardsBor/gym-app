@@ -43,7 +43,7 @@ test('rest notification: wall-clock end time, channel, text by language', () => 
   assert.equal(n.channelId, N.CH_REST);
   assert.equal(n.title, 'Отдых закончен — следующий подход');
   assert.equal(N.restNotification(now + 90000, 'en', now).title, 'Rest is over — next set');
-  assert.equal(N.restNotification(now + 90000, 'lv', now).title, 'Atpūta beigusies — nākamā pieeja');
+  assert.equal(N.restNotification(now + 90000, 'lv', now).title, 'Atpūta beigusies — nākamais piegājiens');
   assert.equal(N.restNotification(now + 90000, 'xx', now).title, 'Отдых закончен — следующий подход');
   assert.equal(N.restNotification(now + 100, 'ru', now), null, 'already over -> nothing');
   assert.equal(N.restNotification(0, 'ru', now), null);

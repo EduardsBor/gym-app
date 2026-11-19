@@ -22,7 +22,7 @@
 - Tiem, kas jau trenējas un vēlas palielināt muskuļu masu. Četri treniņi nedēļā: divas dienas ķermeņa augšdaļai, divas kājām, tāpēc katrs muskulis strādā divreiz nedēļā. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Pieredzējušiem, kas gatavi trenēties 6 dienas nedēļā maksimālai muskuļu augšanai. Dienas mainās: krūtis un pleci, mugura, kājas, un tā divi apļi nedēļā. 36 treniņi, apmēram 6 nedēļas, katrs 60–70 minūtes.
 - Tiem, kas vēlas palielināt muskuļu masu, bet uz zāli var iet tikai trīs reizes nedēļā. Katrs treniņš strādā ar visu ķermeni. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
-- Tiem, kas vēlas kļūt stiprāki pietupienā, spiešanā guļus un vilkmē. Trīs treniņi nedēļā: smagi svari, maz atkārtojumu un ilga atpūta starp pieejām. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
+- Tiem, kas vēlas kļūt stiprāki pietupienā, spiešanā guļus un vilkmē. Trīs treniņi nedēļā: smagi svari, maz atkārtojumu un ilga atpūta starp piegājieniem. 36 treniņi, apmēram 12 nedēļas, katrs 60–70 minūtes.
 - Pieredzējušiem, kas vēlas pacelt vairāk. Četras dienas nedēļā: divas ķermeņa augšdaļai, divas kājām, ar uzsvaru uz galvenajiem smagajiem vingrinājumiem. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Tiem, kas vēlas zaudēt taukus un saglabāt muskuļus. Četri treniņi nedēļā: spēka vingrinājumi, beigās kardio. 36 treniņi, apmēram 9 nedēļas, katrs 60–70 minūtes.
 - Svara zaudēšana iesācējiem
