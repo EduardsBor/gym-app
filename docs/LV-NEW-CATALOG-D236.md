@@ -5,6 +5,6 @@
 | RU | EN | LV |
 |---|---|---|
 | 🧩 Подобрать программу под себя | 🧩 Find a program for me | 🧩 Piemeklēt programmu sev |
-| Ответьте на несколько вопросов | Answer a few questions | Atbildiet uz dažiem jautājumiem |
+| ~~Ответьте на несколько вопросов~~ | ~~Answer a few questions~~ | ~~Atbildiet uz dažiem jautājumiem~~ — **удалено (D-237), проверка не нужна** |
 
 Прежняя строка «🧩 Собрать свою программу» (D-234) больше нигде не показывается; её перевод в словаре оставлен без изменений.
