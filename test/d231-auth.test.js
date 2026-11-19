@@ -254,3 +254,31 @@ test('Body screen: height without a weight measurement asks for a weight, no hei
   assert.match(r2.run('document.querySelector("#app").innerHTML'), /Укажи рост — посчитаем ИМТ\./);
   assert.match(read('i18n/dict3.js'), /\['Добавь замер с весом — посчитаем ИМТ\.','[^']+','[^']+'\]/);
 });
+
+test('Body «Мои данные»: height and weight in one card; weight updates today\'s measurement only; BMI with a colour label', async () => {
+  const CH = { v: 1, at: '2026-11-19' };
+  const today = new Date().toISOString().slice(0, 10);
+  const r = boot(seed({ height: 180, consentHealth: CH, body: [{ id: 'b1', date: today, photos: [], waist: 80, weight: '' }, { id: 'b0', date: '2026-01-01', photos: [], weight: 90 }] }));
+  r.run('chart=()=>{};body()');
+  let h = r.run('document.querySelector("#app").innerHTML');
+  assert.match(h, /id="mydata"[\s\S]*id="hgt"[\s\S]*id="wgt"/);
+  assert.ok(h.indexOf('id="mydata"') < h.indexOf('id="badd"'));
+  assert.match(h, /\+ Новый замер \(обхваты, фото\)/);
+  r.run('bodySetWeight("72.5");body()');
+  assert.equal(r.run('S.body.length'), 2);
+  const e = r.run(`S.body.find(x=>x.id==="b1")`);
+  assert.equal(e.weight, 72.5); assert.equal(e.waist, 80);
+  h = r.run('document.querySelector("#app").innerHTML');
+  assert.match(h, /ИМТ: <b>22\.4<\/b> <span class="badge" id="bmit" data-bmi="ok"/);
+  r.run('bodySetWeight("110");body()');
+  assert.match(r.run('document.querySelector("#app").innerHTML'), /id="bmit" data-bmi="danger"/);
+  assert.equal(r.run('bodySetWeight("abc")'), null);
+  // no measurement today → a new one with only the weight
+  const r2 = boot(seed({ height: 170, consentHealth: CH, body: [{ id: 'b0', date: '2026-01-01', photos: [], weight: 90, hips: 100 }] }));
+  r2.run('bodySetWeight("80")');
+  assert.equal(r2.run('S.body.length'), 2);
+  const n = r2.run('S.body[1]');
+  assert.equal(n.date, today); assert.equal(n.weight, 80); assert.equal(n.hips, undefined);
+  assert.equal(r2.run('S.body[0].weight'), 90);
+  assert.match(read('i18n/dict3.js'), /\['Мои данные','My data','Mani dati'\]/);
+});
