@@ -634,8 +634,7 @@ function more(){$('#title').textContent='Профиль';
  app.innerHTML=`${S.program&&S.program.length?progRowHTML():''}${typeof themeCardHTML==='function'?themeCardHTML():''}
  <div class="card"><b>Звук и экран</b>
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
- <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
- <p class="mut">iPhone: выключи беззвучный режим (переключатель сбоку) и не блокируй экран — иначе звук таймера может не прозвучать. Громкость — кнопками телефона.</p></div>
+ <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label></div>
  ${typeof ntfCardHTML==='function'?ntfCardHTML():''}
  <div class="card"><b>Тренировка</b><label class="li"><span class="grow">🏋️ Подставлять последний вес</span><input type="checkbox" id="aw" style="width:28px;min-height:28px" ${S.autoW!==false?'checked':''}></label><p class="mut">Вес и повторы подставляются из прошлой тренировки с этим упражнением (серым). Можно изменить; ✓ сохраняет то, что видно.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
