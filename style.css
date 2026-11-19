@@ -138,3 +138,5 @@ body.exv #timer{display:none!important}
 .exrestc{display:flex;gap:4px;margin-top:6px}.exrestc[hidden]{display:none}.exrestc .sm{min-height:30px;padding:0 7px;font-size:13px}
 .excircs{align-items:flex-start}
 .excirc{flex:0 0 auto;width:min(28vw,110px);height:min(28vw,110px);aspect-ratio:auto}.exrestw{flex:0 0 auto;width:min(28vw,110px)}.exrestw .excirc{width:100%}
+/* D-254: pain warning in exercise descriptions — own callout, theme danger colours */
+.painw{background:var(--danger-bg);color:var(--txt);border-left:4px solid var(--danger);border-radius:10px;padding:10px 12px;margin:14px 0 8px;font-size:15px;line-height:1.4}
