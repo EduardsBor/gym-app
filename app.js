@@ -172,11 +172,13 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2600)}
 let view='today';
 // D-247: no «Программа» tab — program/catalog/quiz/preview live under «Тренировки», library/science under «Профиль» → «Справка».
-const NAV_OF={program:'today',catalog:'today',quiz:'today',preview:'today',library:'more',science:'more'};let PEDIT=null;
+// D-251: program change lives in «Профиль» (Eduards: «Смена программы тут не нужна»), so catalog/quiz/preview highlight «Профиль».
+const NAV_OF={program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'};let PEDIT=null;
 function go(v){if(v!=='program')PEDIT=null;view=v;const nv=NAV_OF[v]||v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===nv));render();scrollTo(0,0)}
 function progRowHTML(){return`<div class="card row" id="progrow" style="align-items:center;padding:10px 14px"><span class="grow"><span class="mut" style="font-size:13px">Программа</span><br><b>${esc(S.progName||'Моя программа')}</b></span><button class="sm" id="pchg">Сменить</button></div>`}
 function editDay(di){PEDIT=di;go('program')}
-function todayProgBind(sel){const c=$('#pchg');if(c)c.onclick=()=>go('catalog');const e=$('#tedit');if(e)e.onclick=()=>editDay(sel)}
+function progRowBind(){const c=$('#pchg');if(c)c.onclick=()=>go('catalog')}
+function todayProgBind(sel){const e=$('#tedit');if(e)e.onclick=()=>editDay(sel)}
 const TEDIT_HTML='<button class="full" id="tedit" style="margin-top:8px">✏️ Изменить</button>';
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
@@ -259,7 +261,7 @@ function dayListHTML(sel){if(!S.program||!S.program.length)return'';const btn=(p
 function dayListBind(){app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
 let TSEL=null;function today(sel){$('#title').textContent='Тренировки';if(!S.program||!S.program.length)return catalog();if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d0=S.program[sel],d=typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0,mins=dayMin(d);
  const wk=S.workouts.filter(w=>Date.now()-w.start<7*864e5).length;
- app.innerHTML=`${progRowHTML()}<div class="card"><div class="mut">${goalName(S.goal,S.prof&&S.prof.place)} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
+ app.innerHTML=`<div class="card"><div class="mut">${goalName(S.goal,S.prof&&S.prof.place)} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
  ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>`}${d.items.map((it,ii)=>`<div class="li exo" data-exo="m,${ii}">${animShot(it.exId)}<div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span></div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}
  <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button>${TEDIT_HTML}</div>
  ${dayListHTML(sel)}`;
@@ -629,7 +631,7 @@ function cleanImport(d){
 // ---------- Профиль (was «Ещё», D-248)
 function libCountText(){const n=(typeof EX!=='undefined'&&EX.length)||0;const n10=n%10,n100=n%100;const w=(n10===1&&n100!==11)?'упражнение':(n10>=2&&n10<=4&&(n100<10||n100>=20))?'упражнения':'упражнений';return n+' '+w+': 3D-анимация, техника, твоя история'}
 function more(){$('#title').textContent='Профиль';
- app.innerHTML=`${typeof themeCardHTML==='function'?themeCardHTML():''}
+ app.innerHTML=`${S.program&&S.program.length?progRowHTML():''}${typeof themeCardHTML==='function'?themeCardHTML():''}
  <div class="card"><b>Звук и экран</b>
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
@@ -650,7 +652,7 @@ function more(){$('#title').textContent='Профиль';
  if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
- $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
+ $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');progRowBind();$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=cleanImport(JSON.parse(await e.target.files[0].text()));if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
