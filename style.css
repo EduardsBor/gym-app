@@ -132,3 +132,9 @@ header:has(+#app .catc) #title{font-size:28px;font-weight:800;letter-spacing:-.3
 .dayb.done{color:var(--mut)}
 /* D-239: open workout in the list — whole button in the accent colour (all themes via --acc/--on-acc) */
 .dayb.pri.sel{background:var(--acc);color:var(--on-acc);font-weight:800;border-color:var(--acc)}
+/* D-245: exercise screen — rest only in the «Отдых» circle; small −15 / +15 / ✕ under it while running */
+body.exv #timer{display:none!important}
+.exrestw{flex:1 1 0;display:flex;flex-direction:column;align-items:center;max-width:110px}.exrestw .excirc{width:100%;flex:0 0 auto}
+.exrestc{display:flex;gap:4px;margin-top:6px}.exrestc[hidden]{display:none}.exrestc .sm{min-height:30px;padding:0 7px;font-size:13px}
+.excircs{align-items:flex-start}
+.excirc{flex:0 0 auto;width:min(28vw,110px);height:min(28vw,110px);aspect-ratio:auto}.exrestw{flex:0 0 auto;width:min(28vw,110px)}.exrestw .excirc{width:100%}
