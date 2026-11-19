@@ -66,7 +66,7 @@ test('D-229: accent picks the accent block; every accent block file validates', 
   assert.equal(run(`blockIdForProfile(${prof()})`), 'mass_mid_4_g_b36');
   const map = run('PRIO_BLOCK_MAP');
   assert.equal(Object.keys(map).length, 4);
-  assert.equal(Object.keys(run('BLOCK_MAP')).length, 240);
+  assert.equal(Object.keys(run('BLOCK_MAP')).length, 180);
   for (const [k, id] of Object.entries(map)) {
     assert.ok(fs.existsSync(path.join(root, 'data/blocks', id + '.json')), id);
     const r = run(`validateBlock(getBlock(${JSON.stringify(id)}))`);

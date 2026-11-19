@@ -176,12 +176,13 @@ test('C-112: blocks are on by default and cover every questionnaire key; gc_bloc
   assert.equal(b.blockId, 'mass_nov_3_g_b36');
   assert.equal(b.days.length, 36);
   const keys = Object.keys(on.run('BLOCK_MAP'));
-  assert.equal(keys.length, 240);
+  assert.equal(keys.length, 180); // blocks-v2d: g, b_bar, b_nobar (D-236)
   for (const g of ['mass', 'str', 'loss', 'fit']) for (const l of ['nov', 'mid', 'adv']) for (const d of [2, 3, 4, 5, 6])
     for (const pl of ['g', 'd', 'b_bar', 'b_nobar']) {
       const k = [g, l, d, pl].join('_');
-      assert.ok(keys.includes(k), k);
-      assert.ok(fs.existsSync(path.join(root, 'data/blocks', on.run('BLOCK_MAP')[k] + '.json')), k);
+      const map = pl === 'd' ? on.run('LEGACY_D_BLOCK_MAP') : on.run('BLOCK_MAP');
+      assert.ok(map[k], k);
+      assert.ok(fs.existsSync(path.join(root, 'data/blocks', map[k] + '.json')), k);
     }
   // bodyweight: «Есть турник?» picks b_bar / b_nobar; default is no bar
   assert.match(on.run('blockIdForProfile({goal:"fit",level:"mid",days:4,place:"b",bar:"1"})'), /^fit_mid_4_b_bar_/);
@@ -198,7 +199,7 @@ test('C-112: every block validates, next_level points to a real block, warmup by
   const bad = run(`(() => { const out = []; for (const id of Object.values(BLOCK_MAP)) { const b = getBlock(id); const r = validateBlock(b);
     if (!r.ok) out.push(id + ': ' + r.errors.slice(0, 2).join('; ')); const nl = normalizeEndActions(b.end_actions).next_level; if (nl && !getBlock(nl)) out.push(id + ' next ' + nl); } return out; })()`);
   assert.deepEqual(JSON.parse(JSON.stringify(bad)), []);
-  assert.ok(ids.length === 240);
+  assert.ok(ids.length === 180);
   const r = run(`(() => { const b = getBlock(BLOCK_MAP.mass_mid_4_g); const idx = blockDayIndex(b); const p = planFromBlock(b, {goal:'mass',level:'mid',days:4,place:'g'});
     const w = b.workouts; const i5 = w.findIndex((x, i) => i > 0 && x.day_code === w[0].day_code);
     return { idx, codes: w.slice(0, 4).map(x => x.day_code), same: JSON.stringify(p.days[0].cd) === JSON.stringify(p.days[i5].cd), wu: !!p.days[0].wu, cd: !!p.days[0].cd }; })()`);
@@ -246,7 +247,7 @@ test('C-112: default migration keeps old state; block fields travel with the pro
 });
 
 test('C-112: cache is moyzal-v74; blocks.js and the sample JSON are precached; changelog and LV doc exist', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v87'/);
+  assert.match(read('sw.js'), /const C='moyzal-v88'/);
   assert.match(read('sw.js'), /blocks\.js/);
   assert.match(read('sw.js'), /data\/blocks\/mass_nov_3_g_b36\.json/);
   assert.match(read('index.html'), /<script src="blocks\.js"><\/script>/);
