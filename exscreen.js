@@ -65,7 +65,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  <div class="excircs"><div class="excirc"><b>${esc(inf.rng)}</b><span>${esc(inf.cap)}</span></div><div class="exrestw"><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button><div class="exrestc" id="exrc" hidden><button class="sm" id="exm30" aria-label="−30 с">−30</button><button class="sm" id="exp30" aria-label="+30 с">+30</button><button class="sm" id="exskip" aria-label="Пропустить отдых">✕</button></div></div><div class="excirc ${inf.plan&&inf.done>=inf.plan?'exdone':''}" id="exsets"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
  ${e.src==='m'?`<div class="exlog row">${inf.noW?'':`<label class="grow">Килограммы<input id="exw" type="number" inputmode="decimal" step="0.5" value="${esc(nx.w==null?'':nx.w)}"></label>`}<label class="grow">${inf.unit==='min'?'Минуты':inf.unit==='sec'?'Секунды':'Повторы'}<input id="exr" type="number" inputmode="numeric" value="${esc(nx.r==null?'':nx.r)}"></label><button class="pri exadd" id="exadd" aria-label="Записать подход">+</button></div>
  <button class="linkb" id="excm">${EXS.cm?'✎ '+esc(EXS.cm):'Добавить комментарий к подходу'}</button>`:`<button class="pri full" id="exadd" style="margin-top:12px">+ <span>Подход выполнен</span></button>`}
- ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.filter(s=>s.done).map((s,k)=>`<div class="li"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}</div>`).join('')}`:''}
+ ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.map((s,j)=>[s,j]).filter(([s])=>s.done).map(([s,j],k)=>`<div class="li exsetr" data-es="${j}"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}<button class="sm" data-es="${j}" aria-label="Изменить подход">✏️</button></div>`).join('')}`:''}
  ${id?`<h3 style="margin-top:14px">История</h3>${exHist(id)}`:''}
  <div class="row" style="margin:16px 0"><button class="grow" id="exprev" ${EXS.pos?'':'disabled'}>← <span>Предыдущее</span></button><button class="grow" id="exnext" ${EXS.pos<L.length-1?'':'disabled'}><span>Следующее</span> →</button></div>`;
  const v=app.querySelector('#exv video.a3d');if(v&&typeof startAnim==='function')startAnim(v);
@@ -76,7 +76,26 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  $('#exprev').onclick=()=>{if(EXS.pos>0){EXS.pos--;EXS.cm='';exView();scrollTo(0,0)}};$('#exnext').onclick=()=>{if(EXS.pos<L.length-1){EXS.pos++;EXS.cm='';exView();scrollTo(0,0)}};
  const upd=()=>{const el=document.getElementById('exrt');if(!el){clearInterval(exInt);return}const left=tEnd?Math.ceil((tEnd-Date.now())/1000):0;el.textContent=left>0?exClock(left):(inf.rest?exClock(inf.rest):'—');const b=document.getElementById('exrest');if(b)b.classList.toggle('run',left>0);const rc=document.getElementById('exrc');if(rc)rc.hidden=!(left>0)};upd();exInt=setInterval(upd,500);
  // D-245: on this screen the «Отдых» circle is the only rest countdown (shared tEnd); the bottom bar is hidden via body.exv
+ app.querySelectorAll('[data-es]').forEach(r=>r.onclick=ev=>{if(ev&&ev.stopPropagation)ev.stopPropagation();exEditSet(e.i,+r.dataset.es)});
  const m=$('#exm30'),pl=$('#exp30'),sk=$('#exskip');if(m)m.onclick=()=>{timerAdd(-30);upd()};if(pl)pl.onclick=()=>{timerAdd(30);upd()};if(sk)sk.onclick=()=>{stopTimer();upd()};exBody(true)}
+// D-255 (Eduards: «Нужно опцию удалить запись, и редактировать»): a logged set on «Сегодня» can be edited (weight, reps, comment) or deleted.
+// Sets live in S.active until «Завершить»; S.active is device-local (not synced), so a deleted set cannot come back from the cloud.
+function exSetSave(i,j,v){const A=S.active,it=A&&A.items[i],s=it&&it.sets[j];if(!s||!s.done)return false;const num=x=>x===''||x==null?'':+String(x).replace(',','.');
+ const w=num(v.w),r=num(v.r);if(!exNoW(it.exId,it)&&w!==''&&!(w>=0))return false;if(r!==''&&!(r>=0))return false;
+ if(!exNoW(it.exId,it)&&w!=='')s.w=w;if(r!=='')s.r=r;const cm=String(v.cm||'').trim().slice(0,200);if(cm)s.cm=cm;else delete s.cm;checkPR(it.exId,s);save();return true}
+function exSetDel(i,j){const A=S.active,it=A&&A.items[i],s=it&&it.sets[j];if(!s||!s.done)return false;it.sets.splice(j,1);
+ const plan=it.ns||0;if(it.sets.length<plan)it.sets.push({w:s.w,r:s.r,done:false,pf:true});save();return true}
+function exEditSet(i,j){const A=S.active,it=A&&A.items[i],s=it&&it.sets[j];if(!s||!s.done)return;const m=$('#modal'),noW=exNoW(it.exId,it),c=isCardio(it.exId);
+ const n=it.sets.slice(0,j+1).filter(x=>x.done).length;
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Подход ${n}</h2><button id="esx" aria-label="Закрыть">✕</button></div>
+ <div class="row" style="margin-top:10px">${noW?'':`<label class="grow">Килограммы<input id="esw" type="number" inputmode="decimal" step="0.5" value="${esc(s.w)}"></label>`}<label class="grow">${c?'Минуты':it.sec?'Секунды':'Повторы'}<input id="esr" type="number" inputmode="numeric" value="${esc(s.r)}"></label></div>
+ <label class="mut" style="display:block;margin-top:8px">Комментарий к подходу<input id="escm" maxlength="200" value="${esc(s.cm||'')}"></label>
+ <button class="pri full" id="essave" style="margin-top:12px">Сохранить</button>
+ <button class="danger full" id="esdel" style="margin-top:8px">🗑 Удалить подход</button></div>`;
+ m.classList.remove('hidden');const close=()=>{m.classList.add('hidden');m.innerHTML=''};
+ $('#esx').onclick=close;m.onclick=ev=>{if(ev.target===m)close()};
+ $('#essave').onclick=()=>{const ok=exSetSave(i,j,{w:$('#esw')?$('#esw').value:'',r:$('#esr').value,cm:$('#escm').value});if(!ok){toast('Проверь вес и повторы');return}close();toast('Подход изменён');exView()};
+ $('#esdel').onclick=()=>{if(!confirm('Удалить подход?'))return;exSetDel(i,j);close();toast('Подход удалён');exView()}}
 function exBody(on){const b=typeof document!=='undefined'&&document.body;if(b&&b.classList)b.classList.toggle('exv',!!on)}
 (function exHook(){const _r=render;render=function(){if(view!=='ex'){exStop();exBody(false)}if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
  if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('click',ev=>{const t=ev.target;if(!t||!t.closest)return;if(t.closest('button,input,a,summary,label,select,textarea'))return;const r=t.closest('[data-exo]');if(!r||view==='ex')return;const[src,i]=String(r.dataset.exo).split(',');ev.preventDefault();exOpen(src,+i)})})();
