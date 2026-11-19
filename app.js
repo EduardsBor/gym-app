@@ -142,7 +142,7 @@ if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:6
 let saveWarnAt=0;
 function save(){if(S_RO)return;
  try{localStorage.setItem('gym',JSON.stringify(S))}
- catch(e){if(Date.now()-saveWarnAt>30000){saveWarnAt=Date.now();toast('⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Ещё».')}return}
+ catch(e){if(Date.now()-saveWarnAt>30000){saveWarnAt=Date.now();toast('⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Профиле».')}return}
  if(typeof saveHistory==='function')try{saveHistory()}catch(e){}
  if(typeof requestPersist==='function')try{requestPersist()}catch(e){}
  if(window.mzOnSave)try{window.mzOnSave()}catch(e){}}
@@ -171,7 +171,7 @@ function histWorkouts(){return typeof histList==='function'?histList():((typeof 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2600)}
 let view='today';
-// D-247: no «Программа» tab — program/catalog/quiz/preview live under «Тренировки», library/science under «Ещё».
+// D-247: no «Программа» tab — program/catalog/quiz/preview live under «Тренировки», library/science under «Профиль» → «Справка».
 const NAV_OF={program:'today',catalog:'today',quiz:'today',preview:'today',library:'more',science:'more'};let PEDIT=null;
 function go(v){if(v!=='program')PEDIT=null;view=v;const nv=NAV_OF[v]||v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===nv));render();scrollTo(0,0)}
 function progRowHTML(){return`<div class="card row" id="progrow" style="align-items:center;padding:10px 14px"><span class="grow"><span class="mut" style="font-size:13px">Программа</span><br><b>${esc(S.progName||'Моя программа')}</b></span><button class="sm" id="pchg">Сменить</button></div>`}
@@ -626,10 +626,10 @@ function cleanImport(d){
  if(d.progName!=null)d.progName=String(d.progName);
  delete d.active;delete d.tEnd;
  return d}
-// ---------- Ещё
+// ---------- Профиль (was «Ещё», D-248)
 function libCountText(){const n=(typeof EX!=='undefined'&&EX.length)||0;const n10=n%10,n100=n%100;const w=(n10===1&&n100!==11)?'упражнение':(n10>=2&&n10<=4&&(n100<10||n100>=20))?'упражнения':'упражнений';return n+' '+w+': 3D-анимация, техника, твоя история'}
-function more(){$('#title').textContent='Ещё';
- app.innerHTML=`<button class="full card libbig" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full card" id="sci" style="text-align:left">🔬 Научная основа программ</button>${typeof themeCardHTML==='function'?themeCardHTML():''}
+function more(){$('#title').textContent='Профиль';
+ app.innerHTML=`${typeof themeCardHTML==='function'?themeCardHTML():''}
  <div class="card"><b>Звук и экран</b>
  <label class="li"><span class="grow">🔊 Звуковой сигнал таймера</span><input type="checkbox" id="snd" style="width:28px;min-height:28px" ${S.sound!==false?'checked':''}></label>
  <label class="li"><span class="grow">💡 Не гасить экран во время тренировки</span><input type="checkbox" id="wk" style="width:28px;min-height:28px" ${S.wake!==false?'checked':''}></label>
@@ -645,7 +645,8 @@ function more(){$('#title').textContent='Ещё';
  </div>
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="expcsv">⬇ Экспорт CSV (история тренировок)</button><p class="mut" style="font-size:12px;margin:4px 0 8px">Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта.</p><button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
- <button class="danger full" id="reset">Сбросить все данные</button><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
+ <button class="danger full" id="reset">Сбросить все данные</button>
+ <div class="card" id="helpc"><b>Справка</b><button class="full card libbig" style="margin-top:8px" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full" id="sci" style="text-align:left;margin-top:8px">🔬 Научная основа программ</button></div><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
  if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};

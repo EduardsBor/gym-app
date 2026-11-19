@@ -375,14 +375,14 @@ function statusLine(status) {
 function healthPanelHTML(s) {
   s = s || {};
   var phrase = s.kcal == null ? '—' : hesc(kcalPhrase(s.kcal));
-  var hint = s.kcal == null ? '<div class="mut">Укажи вес в «Ещё»</div>' : '';
+  var hint = s.kcal == null ? '<div class="mut">Укажи вес в «Профиле»</div>' : '';
   return '<div class="card" id="healthcard"><div class="mut">Энергия</div><b id="kcal" style="font-size:18px">' + phrase + '</b>' + hint + '</div>';
 }
 function healthDetailHTML(w) {
   if (!w) return '';
   var h = readWorkoutHealth(w);
   var dur = w.end && w.start ? fmtDur(w.end - w.start) : '';
-  var kcal = h.kcal == null ? '<b>—</b><div class="mut">Укажи вес в «Ещё»</div>' : '<b>' + hesc(kcalPhrase(h.kcal)) + '</b>';
+  var kcal = h.kcal == null ? '<b>—</b><div class="mut">Укажи вес в «Профиле»</div>' : '<b>' + hesc(kcalPhrase(h.kcal)) + '</b>';
   var why = h.kcalSource === 'hr'
     ? 'По пульсу (формула Keytel и др., 2005). Где сигнала не было — по MET.'
     : (h.kcal != null ? 'По длительности и типу нагрузки (MET), без пульса.' : '');
@@ -396,7 +396,7 @@ function healthDetailHTML(w) {
         return '<div class="zrow"><span class="zlab">' + ZONE_LABELS[i] + '</span><span class="zbar"><i class="z' + (i + 1) + '" style="width:' + pct + '%"></i></span><span class="mut">' + fmtZone(sec) + '</span></div>';
       }).join('') + (h.hr.hrMax ? '<div class="mut" style="margin-top:6px">Макс. пульс ' + h.hr.hrMax + ' = 208 − 0,7×возраст</div>' : '');
     } else {
-      hrBlock += '<p class="mut">Укажи возраст в «Ещё», чтобы посчитать пять зон.</p>';
+      hrBlock += '<p class="mut">Укажи возраст в «Профиле», чтобы посчитать пять зон.</p>';
     }
   }
   if (!dur && h.kcal == null && !hrBlock) return '';
@@ -492,7 +492,7 @@ function maybeAskWeight() {
   if (!m) return;
   _prompt = 'weight';
   m.classList.remove('hidden');
-  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Вес для оценки калорий</h2><button id="hclose" type="button">✕</button></div><p class="mut">Один раз и необязательно. Килограммы, можно пропустить. Потом вес меняется в «Ещё».</p><label class="mut">Вес тела, кг<input id="hkg" type="number" inputmode="decimal" step="0.1" min="30" max="300" value="' + hesc(suggestedWeight()) + '"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
+  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Вес для оценки калорий</h2><button id="hclose" type="button">✕</button></div><p class="mut">Один раз и необязательно. Килограммы, можно пропустить. Потом вес меняется в «Профиле».</p><label class="mut">Вес тела, кг<input id="hkg" type="number" inputmode="decimal" step="0.1" min="30" max="300" value="' + hesc(suggestedWeight()) + '"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
   var saveBtn = m.querySelector('#hsave'), skip = m.querySelector('#hskip'), close = m.querySelector('#hclose');
   if (saveBtn) saveBtn.onclick = function () {
     var v = m.querySelector('#hkg') ? m.querySelector('#hkg').value : '';
@@ -513,7 +513,7 @@ function maybeAskAge() {
   if (!m) return;
   _prompt = 'age';
   m.classList.remove('hidden');
-  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Возраст для пульса</h2><button id="hclose" type="button">✕</button></div><p class="mut">Нужен для калорий по пульсу и пяти зон (макс. пульс = 208 − 0,7×возраст). Можно пропустить. Потом возраст меняется в «Ещё».</p><label class="mut">Возраст<input id="hage" type="number" inputmode="numeric" min="14" max="100"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
+  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Возраст для пульса</h2><button id="hclose" type="button">✕</button></div><p class="mut">Нужен для калорий по пульсу и пяти зон (макс. пульс = 208 − 0,7×возраст). Можно пропустить. Потом возраст меняется в «Профиле».</p><label class="mut">Возраст<input id="hage" type="number" inputmode="numeric" min="14" max="100"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
   var saveBtn = m.querySelector('#hsave'), skip = m.querySelector('#hskip'), close = m.querySelector('#hclose');
   if (saveBtn) saveBtn.onclick = function () {
     var v = m.querySelector('#hage') ? m.querySelector('#hage').value : '';
