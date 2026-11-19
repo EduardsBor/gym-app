@@ -252,7 +252,7 @@ function cdRows(cd) {
   return rows;
 }
 function rowsHTML(rows, chk, attr) {
-  return rows.map((it, i) => `<div class="li wu${chk && chk[i] ? ' done' : ''}">${chk ? `<button class="sm ${chk[i] ? 'ok' : ''}" data-${attr}="${i}" aria-label="Готово">✓</button>` : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut" style="max-width:42%;text-align:right">${esc(it.d)}</span></div>`).join('');
+  return rows.map((it, i) => `<div class="li wu exo${chk && chk[i] ? ' done' : ''}" data-exo="${attr === 'cd' ? 'c' : 'w'},${i}">${chk ? `<button class="sm ${chk[i] ? 'ok' : ''}" data-${attr}="${i}" aria-label="Готово">✓</button>` : ''}${it.id && typeof animShot === 'function' ? animShot(it.id) : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort === 'function' && exShort(it.d) !== it.d && it.d ? `<div class="mut" style="font-size:12px">${esc(it.d)}</div>` : ''}${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut" style="white-space:nowrap">${esc(typeof exShort === 'function' ? exShort(it.d) : it.d)}</span></div>`).join('');
 }
 function wuHTML(wu, chk) {
   const rows = wuRows(wu), n = chk ? chk.filter(Boolean).length : 0, all = chk && n === rows.length;

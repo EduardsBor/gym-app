@@ -111,3 +111,20 @@ input[type=checkbox],input[type=radio]{accent-color:var(--acc)}
 header:has(+#app .catc) #title{font-size:28px;font-weight:800;letter-spacing:-.3px}
 .catc .catn{font-size:20px;font-weight:800;color:var(--acc);line-height:1.25;margin:0 0 8px}
 #catfirst{font-size:15px;margin:2px 0 10px}
+/* D-235: exercise screen */
+.exo{cursor:pointer}
+.exhead{gap:8px;margin:2px 0 10px}.exhead b{font-size:17px}
+.exvid{position:relative;border-radius:16px;overflow:hidden;background:var(--img-bg);min-height:220px;display:flex;align-items:center;justify-content:center}
+.exvid video.a3d{width:100%;max-height:52vh;display:block;object-fit:contain;margin:0}
+.exnov{padding:80px 0}
+.exside{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:10px}
+.exico{width:44px;height:44px;min-height:44px;border-radius:50%;padding:0;font-size:18px;display:flex;align-items:center;justify-content:center;background:var(--card2);border:1px solid var(--line)}
+.exname{font-size:22px;font-weight:800;margin:14px 0 4px}
+.exrec{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.excircs{display:flex;justify-content:space-between;gap:10px;margin:16px 0}
+.excirc{flex:1 1 0;aspect-ratio:1;max-width:110px;border-radius:50%;border:3px solid var(--acc);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;background:var(--card);min-height:0}
+.excirc b{font-size:22px;line-height:1.1}.excirc span{font-size:11px;color:var(--mut);line-height:1.2;margin-top:3px}
+.excirc.ok{border-color:var(--ok)}.excirc.run{border-color:var(--gold)}
+.exlog{align-items:flex-end;gap:8px}.exlog label{font-size:13px;color:var(--mut)}
+.exadd{width:56px;height:52px;font-size:28px;padding:0;flex:0 0 auto}
+.linkb{background:none;border:0;color:var(--acc);padding:8px 0;min-height:0;text-align:left;width:auto}
