@@ -320,7 +320,7 @@
     const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:appUrl()}});
     if(error) return msg(friendly(error));
     if(data.session){user=data.session.user;await afterAuth()}
-    else msg('Проверь почту и подтверди аккаунт, затем вернись сюда и войди с паролем');
+    else{const box=$('#mzotpbox');if(box) box.classList.remove('hidden');msg('Письмо отправлено. Нажми ссылку или введи код из письма')} // D-218: the confirm email carries a 6-digit code (verifyOtp type email)
   }
   async function doLogin(){
     if(!sb) return msg('Облако недоступно');
