@@ -12,6 +12,8 @@ const DICT3=[
 ['Норма по ВОЗ: 18,5–24,9. При большой мышечной массе ИМТ может быть завышен.','WHO normal range: 18.5–24.9. With a lot of muscle mass, BMI can be overstated.','PVO norma: 18,5–24,9. Ja ir liela muskuļu masa, ĶMI var būt paaugstināts.'],
 // Body screen: height set, no weight yet (LV for Claude: docs/LV-NEW-ONBOARDING.md)
 ['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
+// D-233 Google sign-in (LV for Claude: docs/LV-NEW-GOOGLE.md)
+['Новый аккаунт создастся автоматически','A new account is created automatically','Jauns konts tiks izveidots automātiski'],
 // D-232 session kept (LV for Claude: docs/LV-NEW-SESSION.md)
 ['Вход…','Signing in…','Ieiešana…'],
 ['Проверь почту и подтверди аккаунт, затем вернись сюда и войди с паролем','Check your email and confirm the account, then come back here and sign in with your password','Pārbaudi e-pastu un apstiprini kontu, tad atgriezies šeit un ieej ar paroli'],
