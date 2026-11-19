@@ -244,3 +244,13 @@ test('D-231: without the cloud config the app does not lock (no gate)', async ()
   r.run('view="today";render()');
   assert.notEqual(r.run('view'), 'auth');
 });
+
+test('Body screen: height without a weight measurement asks for a weight, no height keeps the old text', async () => {
+  const r = boot(seed({ height: 180, body: [], consentHealth: { v: 1, at: '2026-11-19' } }));
+  r.run('body()');
+  assert.match(r.run('document.querySelector("#app").innerHTML'), /Добавь замер с весом — посчитаем ИМТ\./);
+  const r2 = boot(seed({ body: [], consentHealth: { v: 1, at: '2026-11-19' } }));
+  r2.run('delete S.height;body()');
+  assert.match(r2.run('document.querySelector("#app").innerHTML'), /Укажи рост — посчитаем ИМТ\./);
+  assert.match(read('i18n/dict3.js'), /\['Добавь замер с весом — посчитаем ИМТ\.','[^']+','[^']+'\]/);
+});

@@ -4,6 +4,8 @@ const DICT3=[
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],
+// Body screen: height set, no weight yet (LV for Claude: docs/LV-NEW-ONBOARDING.md)
+['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
 // D-231 sign-in at start (LV for Claude: docs/LV-NEW-AUTH.md)
 ['Вход','Sign in','Ieiešana'],
 ['Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.','Sign in or create an account: your program, history and records will be saved in the cloud. Data already on this device will not be lost.','Ieej vai izveido kontu: programma, vēsture un rekordi tiks saglabāti mākonī. Dati, kas jau ir šajā ierīcē, nepazudīs.'],

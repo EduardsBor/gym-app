@@ -13,6 +13,8 @@
 | Дом (без инвентаря) | Home (no equipment) | Mājas (bez inventāra) |
 | Дом — без инвентаря, желательно турник. | Home — no equipment, a pull-up bar is recommended. | Mājas — bez inventāra, vēlams pievilkšanās stienis. |
 | Без инвентаря, желательно турник | No equipment, a pull-up bar is recommended | Bez inventāra, vēlams pievilkšanās stienis |
+| Добавь замер с весом — посчитаем ИМТ. | Add a measurement with your weight and we will calculate your BMI. | Pievieno mērījumu ar svaru — aprēķināsim ĶMI. |
 
+«ĶMI» — как в существующей строке «Укажи рост — посчитаем ИМТ.».
 «pievilkšanās stienis» и «bez inventāra» — как в существующих строках.
 «Gatavās programmas» взято из существующей строки «Готовые программы».
