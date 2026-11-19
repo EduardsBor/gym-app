@@ -97,7 +97,6 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
  <div class="card"><b>🤖 ИИ-советы</b> <span class="badge">скоро · Premium</span><p class="mut" style="margin:4px 0 0">Персональные подсказки по прогрессу. Пока не подключено — данные никуда не отправляются.</p></div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
- <div class="card"><b>Профили оборудования</b><p class="mut" style="margin:4px 0 8px">Зал и дом: переключение на экране «Сегодня». В профиле — доступные места (зал, дом с гантелями, без инвентаря).</p><button class="full" id="eqmore">Настроить профили</button></div>
  <div class="card"><b>🛡️ Конфиденциальность и данные</b>
  <div class="li"><span class="grow">Согласие на данные о теле</span><span class="mut">${S.consentHealth?'дано '+new Date(S.consentHealth.at).toLocaleDateString(LOC):'не дано'}</span></div>
  ${S.consentHealth?'<button class="full sm" id="cwd">Отозвать согласие</button>':''}
@@ -150,7 +149,8 @@ function premFreeToday(){$('#title').textContent='Сегодня';
  <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес и видео техники — по подписке. Разминка и заминка — бесплатно в каждой тренировке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
  if(typeof tplMount==='function')tplMount(app);$('#fstart').onclick=premStartFree}
 const _pwv=workoutView;workoutView=function(){if(typeof S!=='undefined'&&S&&S.active)refreshDiaryWarmCool(S.active);return _pwv()};
-const _ptoday=today;today=function(sel){if(!can('programs')){premFreeToday();if(typeof eqMountToday==='function')eqMountToday(sel);return}_ptoday(sel);if(typeof tplMount==='function')tplMount(app);if(typeof eqMountToday==='function')eqMountToday(sel);
+const _ptoday=today;// D-235: «Сегодня» with a program is the finished workout window — no «Мои шаблоны» and no «Профиль оборудования» here (Eduards 19.11). Template data stays in S.templates; equipment is chosen only in «Собрать свою программу».
+today=function(sel){if(!can('programs')){premFreeToday();return}_ptoday(sel);
  const st=premState();let hide=false;try{hide=localStorage.getItem('gymSignOffer')==='1'}catch(e){}
  if(st.tier==='trial'&&!premFirstWorkout()&&!hide&&!(typeof mzSignedIn==='function'&&mzSignedIn())&&app.insertAdjacentHTML){
   app.insertAdjacentHTML('afterbegin','<div class="card offer" id="sgoffer"><b>🔐 Войди в аккаунт</b><p class="mut" style="margin:4px 0 8px">14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа.</p><div class="row"><button class="pri grow" id="sgin">Войти</button><button class="grow" id="sgno">Не сейчас</button></div></div>');
