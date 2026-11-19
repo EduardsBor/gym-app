@@ -3,6 +3,8 @@
 (function(){
   const CFG=window.MZ_SB||(typeof MZ_SB!=='undefined'?MZ_SB:null);const READY=!!(CFG&&CFG.url&&CFG.anon&&window.supabase&&supabase.createClient);
   let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,syncing=false;
+  const AUTH_FLAG='gc_auth';
+  function markAuthed(){try{if(user) localStorage.setItem(AUTH_FLAG,user.id||'1')}catch(e){}}
 
   function appUrl(){
     try{const u=new URL(location.href);return u.origin+u.pathname.replace(/index\.html$/,'')}
@@ -291,6 +293,7 @@
   }
 
   async function afterAuth(){
+    markAuthed();
     if(foreignData()){
       if(confirm('На этом устройстве сохранены данные другого аккаунта. Объединить их с этим аккаунтом?\n\nОК — объединить. Отмена — выйти, данные останутся как есть.')) S.ownerUid=user.id;
       else{await doLogout();return}
@@ -299,6 +302,7 @@
     await sync();
     toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
     if(view==='more') more();
+    if(view==='auth') go('today');
   }
   function creds(){
     return {email:($('#mzemail')&&$('#mzemail').value||'').trim(),password:($('#mzpass')&&$('#mzpass').value)||''};
@@ -356,6 +360,7 @@
   async function doLogout(){
     try{await sb.auth.signOut()}catch(e){}
     user=null;status='off';
+    try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
     toast('Выход выполнен. Данные на этом устройстве на месте');
     if(view==='more') more();
   }
@@ -378,6 +383,7 @@
     // На случай, если signOut не сработал (аккаунт уже удалён): убираем сохранённую сессию вручную.
     try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
     user=null;status='off';
+    try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
     return res;
   }
   window.mzDeleteCloud=mzDeleteCloud;
@@ -450,6 +456,45 @@
     const st=$('#mzst');if(st) st.textContent=statusText();
   }
 
+  // D-231 (Eduards 19.11): sign-in is required at start. Supabase keeps the session in localStorage, so after one
+  // sign-in the app opens offline without signing in again. Local data is kept and merged by sync() after sign-in.
+  let offlineSkip=false;
+  function storedSession(){
+    try{
+      const ls=localStorage;if(ls.getItem(AUTH_FLAG)) return true;
+      for(let i=0;i<(ls.length|0);i++){const k=ls.key(i);if(k&&/^sb-.+-auth-token$/.test(k)) return true}
+    }catch(e){}
+    return false;
+  }
+  function needAuth(){return READY&&!user&&!offlineSkip&&!storedSession()}
+  async function doGoogle(){
+    if(!sb) return msg('Облако недоступно');
+    msg('…');
+    const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:appUrl()}});
+    if(error) msg(friendly(error));
+  }
+  function authView(){
+    view='auth';
+    $('#title').textContent='Вход';$('#nav').classList.add('hidden');
+    const off=typeof navigator!=='undefined'&&navigator.onLine===false;
+    app.innerHTML=`<div class="card" id="mzgate"><h2 style="margin-top:0">Вход</h2><p class="mut" style="margin:0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p>
+      ${CFG&&CFG.googleAuth?'<button class="pri full" id="mzgoogle" style="margin-top:12px">Войти через Google</button>':''}</div>
+      ${accountHTML()}
+      ${off?`<div class="card"><p class="mut" style="margin-top:0">Нет сети. Войти можно, когда появится интернет.</p>${hasLocalData()?'<button class="full" id="mzoffline">Продолжить без входа (нет сети)</button>':''}</div>`:''}`;
+    bindAccount();
+    if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
+    if($('#mzoffline')) $('#mzoffline').onclick=()=>{offlineSkip=true;go('today')};
+  }
+  window.mzNeedAuth=needAuth;
+  if(typeof render==='function'){
+    const _render=render;
+    render=function(){
+      if(needAuth()&&view!=='legal') return authView();
+      if(view==='auth') view='today';
+      return _render();
+    };
+  }
+
   if(typeof more==='function'){const _more=more;more=function(){_more();inject()}}
   if(typeof wipeAll==='function'){
     wipeAll=async function(){
@@ -499,6 +544,7 @@
     });
     sb.auth.onAuthStateChange(async(ev,session)=>{
       user=session&&session.user||null;
+      if(user) markAuthed();
       if(ev==='PASSWORD_RECOVERY'){
         const np=prompt('Новый пароль (не короче 6 символов)');
         if(np&&np.length>=6){
@@ -514,7 +560,7 @@
     if(ensureMeta()) persistLocal();
     seedFirstWorkoutFlag();
     bootAnalytics();
-    if(user) sync();
+    if(user){markAuthed();if(view==='auth') afterAuth();else sync()}
     window.addEventListener('online',()=>{if(user) sync()});
   }
   init();

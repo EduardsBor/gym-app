@@ -4,6 +4,20 @@ const DICT3=[
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],
+// Body screen «Мои данные» (LV for Claude: docs/LV-NEW-ONBOARDING.md)
+['Мои данные','My data','Mani dati'],
+['Рост, см','Height, cm','Augums, cm'],
+['Вес, кг','Weight, kg','Svars, kg'],
+['+ Новый замер (обхваты, фото)','+ New measurement (girths, photos)','+ Jauns mērījums (apkārtmēri, foto)'],
+['Норма по ВОЗ: 18,5–24,9. При большой мышечной массе ИМТ может быть завышен.','WHO normal range: 18.5–24.9. With a lot of muscle mass, BMI can be overstated.','PVO norma: 18,5–24,9. Ja ir liela muskuļu masa, ĶMI var būt paaugstināts.'],
+// Body screen: height set, no weight yet (LV for Claude: docs/LV-NEW-ONBOARDING.md)
+['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
+// D-231 sign-in at start (LV for Claude: docs/LV-NEW-AUTH.md)
+['Вход','Sign in','Ieiešana'],
+['Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.','Sign in or create an account: your program, history and records will be saved in the cloud. Data already on this device will not be lost.','Ieej vai izveido kontu: programma, vēsture un rekordi tiks saglabāti mākonī. Dati, kas jau ir šajā ierīcē, nepazudīs.'],
+['Войти через Google','Sign in with Google','Ieiet ar Google'],
+['Нет сети. Войти можно, когда появится интернет.','No network. You can sign in when the internet is back.','Nav tīkla. Ieiet varēsi, kad būs internets.'],
+['Продолжить без входа (нет сети)','Continue without signing in (no network)','Turpināt bez ieiešanas (nav tīkla)'],
 // D-230 onboarding: ready programs first (LV for Claude: docs/LV-NEW-ONBOARDING.md)
 ['Тренажёрный зал','Gym','Trenažieru zāle'],
 ['🏢 Тренажёрный зал','🏢 Gym','🏢 Trenažieru zāle'],
