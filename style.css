@@ -130,3 +130,5 @@ header:has(+#app .catc) #title{font-size:28px;font-weight:800;letter-spacing:-.3
 .linkb{background:none;border:0;color:var(--acc);padding:8px 0;min-height:0;text-align:left;width:auto}
 /* D-238: done workouts in the list */
 .dayb.done{color:var(--mut)}
+/* D-239: open workout in the list — whole button in the accent colour (all themes via --acc/--on-acc) */
+.dayb.pri.sel{background:var(--acc);color:var(--on-acc);font-weight:800;border-color:var(--acc)}

@@ -79,12 +79,17 @@ test('D-238: done workouts get ✓; tapping another workout opens it and it can 
   let h = app();
   assert.match(h, /class="full dayb done"[^>]*data-i="0">✓ /);
   assert.match(h, /class="full dayb done"[^>]*data-i="1">✓ /);
-  assert.match(h, /class="full dayb"[^>]*data-i="2">👁 /);
+  // D-239: no eye icon; the open workout is the whole accent-coloured button
+  assert.doesNotMatch(h, /👁/);
+  assert.match(h, /class="full dayb pri sel"[^>]*data-i="2" aria-current="true">Всё тело/);
+  assert.equal((h.match(/dayb[^"]*pri sel/g) || []).length, 1);
+  assert.match(read('style.css'), /\.dayb\.pri\.sel\{background:var\(--acc\);color:var\(--on-acc\);font-weight:800/);
   assert.match(h, /<span class="mut">2\/3 трен\./);
   run('today(5)');
   h = app();
   assert.match(h, /Выбранный день/);
   assert.match(h, /id="tback"/);
+  assert.match(h, /class="full dayb pri sel"[^>]*data-i="5"/);
   assert.doesNotMatch(h, /id="blk-skip"/);
   assert.equal(run('TSEL'), 5);
   assert.equal(run('exDay().sel'), 5); // exercise screen follows the opened workout
