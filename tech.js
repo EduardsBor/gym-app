@@ -86,7 +86,8 @@ function techModal(id){const t=TECH[id];if(!t)return;let m=document.getElementBy
  <h3>Как выполнять</h3><ol>${t[0].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
  ${t[1]&&t[1].length?`<h3>Частые ошибки</h3><ul>${t[1].map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}
  ${t[2]?`<h3>Безопасность</h3><p>⚠️ ${esc(t[2])}</p>`:''}
- <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM 2009 + дополнения). При боли прекрати упражнение.</p></div>`;
+ <p class="painw" role="note">🛑 <b>При боли прекрати упражнение.</b></p>
+ <p class="mut" style="font-size:12px">Общие рекомендации по технике (ACSM 2009 + дополнения).</p></div>`;
  const v=m.querySelector('video.a3d');startAnim(v);
  const close=()=>{m.className='hidden';const x=m.querySelector('video.a3d');if(x)stopAnim(x)};m.querySelector('#tc').onclick=close;m.onclick=ev=>{if(ev.target===m)close()}}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-ti]');if(b){ev.stopPropagation();ev.preventDefault();window._wf=!!b.dataset.wf;techModal(b.dataset.ti)}},true);

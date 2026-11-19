@@ -133,7 +133,7 @@ test('D-225: theme.js loads early; switcher in «Ещё»; local only; free; pre
   assert.equal(/premium|isPro|mzTrack|sb\.|supabase/i.test(th), false, 'free, no analytics, no cloud');
   for (const f of ['sync.js', 'app.js', 'csv.js', 'features.js', 'premium.js']) assert.equal(read(f).includes('gc_theme'), false, f);
   assert.match(th, /SystemBars/);
-  assert.match(read('sw.js'), /const C='moyzal-v107'/);
+  assert.match(read('sw.js'), /const C='moyzal-v108'/);
   assert.match(read('sw.js'), /'style\.css','theme\.js'/);
   assert.match(read('scripts/build-web.js'), /'theme\.js'/);
   const man = JSON.parse(read('manifest.json'));
