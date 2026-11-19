@@ -138,3 +138,4 @@ body.exv #timer{display:none!important}
 .exrestc{display:flex;gap:4px;margin-top:6px}.exrestc[hidden]{display:none}.exrestc .sm{min-height:30px;padding:0 7px;font-size:13px}
 .excircs{align-items:flex-start}
 .excirc{flex:0 0 auto;width:min(28vw,110px);height:min(28vw,110px);aspect-ratio:auto}.exrestw{flex:0 0 auto;width:min(28vw,110px)}.exrestw .excirc{width:100%}
+.exsetr{cursor:pointer}.exsetr .sm{min-height:32px;padding:4px 8px}
