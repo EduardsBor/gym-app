@@ -44,7 +44,7 @@ let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
 const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса','Набрать мышцы'],['str','🏋️ Сила','Поднимать больше'],['loss','🔥 Похудение','Снизить жир, сохранить мышцы']]],
  ['level','Какой у тебя опыт?',[['nov','Новичок','Меньше 6 месяцев регулярных тренировок'],['mid','Средний','6 месяцев – 2 года'],['adv','Опытный','Больше 2 лет']]],
  ['days','Сколько тренировок в неделю?',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']]],
- ['place','Где тренируешься?',[['g','🏢 Зал','Тренажёры, штанга, гантели'],['d','🏠 Дом с гантелями','Гантели и скамья'],['b','🤸 Без инвентаря','Свой вес (желательно турник)']]],
+ ['place','Где тренируешься?',[['g','🏢 Тренажёрный зал','Тренажёры, штанга, гантели'],['b','🏠 Дом','Без инвентаря, желательно турник']]],
  ['len','Сколько времени готов тратить на тренировку?',[[30,'⏱ ~30 мин','Коротко: только базовые упражнения'],[45,'⏱ ~45 мин','База + немного изоляции'],[60,'⏱ ~60 мин','Полноценная тренировка'],[75,'⏱ 75+ мин','Максимум объёма']]]];
 // Recommended session length for the chosen frequency: weekly volume (Schoenfeld 2017) ÷ sessions, same duration formula as generate().
 function recLen(a){const P=prmOf(a.goal||'mass',a.level),per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+(a.goal==='str'?3:a.goal==='loss'?1:2)+sets*(40+rest)/60);
@@ -66,7 +66,7 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
   preview({name:'Моя программа: '+GOALS[a.goal],desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
  $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(c.a)}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};go('onb')}
+function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};if(OB.place==='d')OB.place='g';go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
@@ -122,7 +122,7 @@ let LG=null;function legal(k,back){LG={k,back};go('legal')}
 function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textContent=L[0];
  app.innerHTML=`<div data-noi18n><div class="card draft">${L[1]}</div>${L[2]}</div><button class="full" id="lgb" style="margin:12px 0 20px">← Назад</button>`;$('#lgb').onclick=()=>go(LG.back||'more')}
 // ---- Router additions
-const _render=render;render=function(){if(view==='onb')return onb();if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view))return onb();_render()};
+const _render=render;render=function(){if(view==='onb')return onb();if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view)){view='catalog';$('#nav').classList.add('hidden');return catalog()}_render()}  // D-230: first run opens ready programs;
 // ---- Exercise card: 1RM chart is Premium
 const _exCard=exCard;exCard=function(id){_exCard(id);if(can('oneRM'))return;document.querySelectorAll('#exc svg.spark').forEach(s=>{const p=s.nextElementSibling;s.outerHTML='<button class="full sm" data-pw="Графики и расчётный 1ПМ — по подписке">🔒 График 1ПМ — по подписке</button>';if(p&&p.tagName==='P')p.remove()})};
 // ---- P-305b programs: trainer programs (questionnaire, catalog) are a subscription feature; the questionnaire itself is open.

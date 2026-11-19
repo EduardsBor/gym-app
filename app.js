@@ -41,7 +41,7 @@ loss:{nov:{c:[2,10,12,60],a:[2,12,15,60]},mid:{c:[3,8,12,90],a:[3,12,15,60]},adv
 fit:{nov:{c:[2,8,12,60],a:[2,12,15,60]},mid:{c:[3,8,12,90],a:[3,12,15,60]},adv:{c:[3,6,12,90],a:[3,12,20,60]}}};
 function prmOf(goal,level){const g=PRM[goal]||PRM.fit;return g[level]||g.mid}
 const prmMe=()=>prmOf(S.goal||'fit',S.prof&&S.prof.level);
-const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Зал',d:'Дом с гантелями',b:'Свой вес'};
+const LV={nov:0,mid:1,adv:2},LVN={nov:'Новичок',mid:'Средний',adv:'Опытный'},PLN={g:'Тренажёрный зал',d:'Дом с гантелями',b:'Дом (без инвентаря)'};
 const LIMN={s:'спина',k:'колени',p:'плечи'};
 const eqOk=(id,a)=>eqAvail(id,eqPlacesOf(a));
 const itemTime=it=>isCardio(it.exId)?it.max*60:it.sets*(40+it.rest),WARM=5,dayMin=(d,a)=>d.est?Math.round(d.est):Math.round(d.items.reduce((t,i)=>t+itemTime(i),0)/60+WARM+rampN(d,a||(typeof S!=='undefined'&&S.prof)||{}));
@@ -124,7 +124,6 @@ const CATALOG=[
 ['Сила: Верх / Низ','Для опытных, кто хочет поднимать больше. Четыре дня в неделю: два на верх тела, два на ноги, с упором на основные тяжёлые упражнения. 36 тренировок, около 9 недель, по 60–70 минут.',{goal:'str',level:'adv',days:4,len:90,place:'g'}],
 ['Рельеф 4×','Для тех, кто хочет сбросить жир и сохранить мышцы. Четыре тренировки в неделю: силовые упражнения, в конце кардио. 36 тренировок, около 9 недель, по 60–70 минут.',{goal:'loss',level:'mid',days:4,len:60,place:'g'}],
 ['Похудение для начинающих','Для новичков, кто хочет похудеть и привыкнуть к залу. Три тренировки в неделю на всё тело, в конце кардио. 36 тренировок, около 12 недель, по 60–70 минут.',{goal:'loss',level:'nov',days:3,len:60,place:'g'}],
-['Дом с гантелями','Для тех, кто хочет набрать мышцы дома: нужны гантели, скамья и резинка. Четыре тренировки в неделю, два дня на верх, два на низ. 36 тренировок, около 9 недель, по 60–70 минут.',{goal:'mass',level:'mid',days:4,len:60,place:'d'}],
 ['Свой вес','Для начинающих, кто тренируется без оборудования. Турник не обязателен: если его нет, программа подберёт упражнения без него. Три тренировки в неделю на всё тело. 36 тренировок, около 12 недель, по 60–70 минут.',{goal:'fit',level:'nov',days:3,len:45,place:'b'}],
 ['Широкая спина','Приоритет спины: доп. объём на тяги.',{goal:'mass',level:'mid',days:4,len:75,place:'g',prio:['Спина']}],
 ['Объёмные руки','Приоритет бицепса и трицепса.',{goal:'mass',level:'mid',days:5,len:60,place:'g',prio:['Бицепс','Трицепс']}],
@@ -171,7 +170,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 let view='today';
 function go(v){view=v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view))return quiz();
+function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
  if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){quiz()}
@@ -188,17 +187,19 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ Сила'],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
  ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
  ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${quizLen(grp)}
- ${grp('Где тренируешься','place',[['g','🏢 Зал'],['d','🏠 Дом с гантелями'],['b','🤸 Свой вес']])}${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
+ ${Q.place==='d'?(Q.place='g',''):''}${grp('Где тренируешься','place',[['g','🏢 Тренажёрный зал'],['b','🏠 Дом']])}<p class="mut" id="qhome" style="margin-top:0">Дом — без инвентаря, желательно турник.</p>${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
  ${typeof blocksEnabled==='function'&&blocksEnabled()?(Q.prio=[],grp('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']])):grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
  ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}
- <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${S.program?'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>':''}`;
+ <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${S.program?'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>':'<button class="full" id="qcat" style="margin-bottom:16px">← Готовые программы</button>'}`;
  app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
  $('#tocat').onclick=e=>{e.preventDefault();go('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+GOALS[Q.goal],desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
- if($('#qback'))$('#qback').onclick=()=>go('program')}
+ if($('#qback'))$('#qback').onclick=()=>go('program');if($('#qcat'))$('#qcat').onclick=()=>go('catalog')}
 function dayWeek(d){if(d&&d.week)return d.week;const m=/^Неделя (\d+)/.exec(d&&d.name||'');return m?+m[1]:0}
 function dayTitle(d){return String(d&&d.name||'').replace(/^Неделя \d+ · /,'')}
 function weekHead(days,di){const w=dayWeek(days[di]);return w&&(di===0||dayWeek(days[di-1])!==w)?`<h3 style="margin:16px 0 6px">Неделя ${w}</h3>`:''}
 function progSummary(days){const t=[...new Set(days.map(d=>dayWeek(d)?dayTitle(d).replace(/ \(разгрузка\)$/,''):d.name))];const w=new Set(days.map(dayWeek).filter(Boolean)).size;return(w?w+' нед. · ':'')+t.join(' · ')}
+// D-230 (Эдуард 19.11): дом только без инвентаря — «Дом с гантелями» (place d) скрыт; d-блоки остаются для старых профилей:
+// ['Дом с гантелями','Для тех, кто хочет набрать мышцы дома: нужны гантели, скамья и резинка. Четыре тренировки в неделю, два дня на верх, два на низ. 36 тренировок, около 9 недель, по 60–70 минут.',{goal:'mass',level:'mid',days:4,len:60,place:'d'}]
 // D-228: «Здоровая спина» и «Бережно к коленям» скрыты до отдельных блоков Тренера без запрещённых упражнений:
 // ['Здоровая спина','Укрепление здоровья без осевой нагрузки на позвоночник.',{goal:'fit',level:'nov',days:2,len:45,place:'g',lim:['s']}], ['Бережно к коленям','Без глубоких приседов и выпадов.',{goal:'fit',level:'mid',days:3,len:45,place:'g',lim:['k']}]
 let PV=null;
@@ -215,13 +216,13 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
   S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
 const tags=a=>[GOALS[a.goal],LVN[a.level],a.days+'×/нед',a.lenLabel||a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+ACC_RU[a.acc]]:[]),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
-function catalog(){$('#title').textContent='Готовые программы';const F=catF;
+function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
  const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
- app.innerHTML=`${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN))}
+ app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN).filter(([k])=>k!=='d'))}
  <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card"><h3>${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
  <div class="mut" style="font-size:13px">${esc(progSummary(generate(c.a).days))}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
- <button class="full" id="toq" style="margin-bottom:20px">🧩 Подобрать по анкете</button>`;
+ ${first?'<button class="pri full big" id="toq" style="margin:8px 0 20px;padding:16px;font-size:18px">🧩 Подобрать программу самому</button>':'<button class="full" id="toq" style="margin-bottom:20px">🧩 Подобрать по анкете</button>'}`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(CATALOG.find(c=>c.id===b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];

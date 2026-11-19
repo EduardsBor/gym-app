@@ -4,6 +4,16 @@ const DICT3=[
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],
+// D-230 onboarding: ready programs first (LV for Claude: docs/LV-NEW-ONBOARDING.md)
+['Тренажёрный зал','Gym','Trenažieru zāle'],
+['🏢 Тренажёрный зал','🏢 Gym','🏢 Trenažieru zāle'],
+['Выбери готовую программу или подбери свою по анкете.','Choose a ready-made program or build your own with the questionnaire.','Izvēlies gatavu programmu vai izveido savu pēc anketas.'],
+['🧩 Подобрать программу самому','🧩 Build my own program','🧩 Izveidot programmu pašam'],
+['← Готовые программы','← Ready-made programs','← Gatavās programmas'],
+['🏠 Дом','🏠 Home','🏠 Mājas'],
+['Дом (без инвентаря)','Home (no equipment)','Mājas (bez inventāra)'],
+['Дом — без инвентаря, желательно турник.','Home — no equipment, a pull-up bar is recommended.','Mājas — bez inventāra, vēlams pievilkšanās stienis.'],
+['Без инвентаря, желательно турник','No equipment, a pull-up bar is recommended','Bez inventāra, vēlams pievilkšanās stienis'],
 // D-229 accent blocks (LV for Claude: docs/LV-NEW-BLOCKS-PRIORITY.md)
 ['Акцент','Focus','Uzsvars'],
 ['Руки','Arms','Rokas'],
