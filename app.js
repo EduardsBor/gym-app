@@ -223,9 +223,9 @@ function catalog(){$('#title').textContent='Готовые программы';c
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
  const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
  app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN).filter(([k])=>k!=='d'))}
- <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card"><h3>${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
+ <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card catc"><h3 class="catn">${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
  <div class="mut" style="font-size:13px">${esc(progSummary(generate(c.a).days))}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
- ${first?'<button class="pri full big" id="toq" style="margin:8px 0 20px;padding:16px;font-size:18px">🧩 Подобрать программу самому</button>':'<button class="full" id="toq" style="margin-bottom:20px">🧩 Подобрать по анкете</button>'}`;
+ <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Собрать свою программу</button>`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(CATALOG.find(c=>c.id===b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];

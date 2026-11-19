@@ -59,7 +59,11 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
   assert.equal(run('view'), 'catalog');
   const h = app();
   assert.match(h, /id="catfirst"/);
-  assert.match(h, /class="pri full big" id="toq"[^>]*>🧩 Подобрать программу самому</);
+  // D-234: own program only at the bottom, after all ready programs, as a secondary button
+  assert.match(h, /class="full" id="toq"[^>]*>🧩 Собрать свою программу</);
+  assert.ok(h.indexOf('id="toq"') > h.lastIndexOf('data-c="'));
+  assert.equal((h.match(/id="toq/g) || []).length, 1);
+  assert.match(h, /<h3 class="catn">/);
   assert.equal((h.match(/data-c="c\d+"/g) || []).length, run('CATALOG.length'));
   assert.equal(run('CATALOG.length'), 13); // «Дом с гантелями» hidden (Eduards 19.11)
 });
@@ -81,8 +85,8 @@ test('D-230: questionnaire from the first run can go back to the catalog; pickin
 test('D-230: existing user with a program keeps the normal screens and old button', () => {
   const { run, app } = boot();
   run('S.goal="mass";S.days=4;S.program=[{name:"A",items:[]}];catalog()');
-  assert.doesNotMatch(app(), /catfirst|Подобрать программу самому/);
-  assert.match(app(), /Подобрать по анкете/);
+  assert.doesNotMatch(app(), /catfirst/);
+  assert.match(app(), /Собрать свою программу/);
 });
 
 test('D-230: «Зал» → «Тренажёрный зал» with RU/EN/LV; LV follows D-216', () => {
