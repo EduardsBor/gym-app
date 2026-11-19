@@ -181,7 +181,13 @@ function progRowBind(){const c=$('#pchg');if(c)c.onclick=()=>go('catalog')}
 function todayProgBind(sel){const e=$('#tedit');if(e)e.onclick=()=>editDay(sel)}
 const TEDIT_HTML='<button class="full" id="tedit" style="margin-top:8px">✏️ Изменить</button>';
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-function render(){$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
+// D-256 (Eduards: «Таймер тренировки общий добавь. Верху где то. Возле часов.»): total workout time in the header on every screen
+// while a workout runs. Computed from S.active.start (survives reload, background, screen lock); hidden without a workout.
+function wclockFmt(s){s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=String(s%60).padStart(2,'0');return h?h+':'+String(m).padStart(2,'0')+':'+x:String(m).padStart(2,'0')+':'+x}
+function wclockTick(){const el=typeof document!=='undefined'&&document.getElementById&&document.getElementById('wclock');if(!el)return;const A=typeof S!=='undefined'&&S&&S.active;
+ if(!A||!A.start){el.hidden=true;el.textContent='';return}el.hidden=false;el.textContent='⏱ '+wclockFmt((Date.now()-A.start)/1000)}
+setInterval(wclockTick,1000);if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('visibilitychange',wclockTick);
+function render(){wclockTick();$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
  if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){quiz()}
