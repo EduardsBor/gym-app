@@ -213,5 +213,5 @@ test('D-233: after the Google return (?code=) — «Вход…», then the read
   for (let i = 0; i < 30; i++) await tick();
   assert.equal(r.run('view'), 'catalog');
   assert.equal(r.store.get('gc_auth'), USER.id);
-  assert.match(r.html(), /Собрать свою программу/);
+  assert.match(r.html(), /Подобрать программу под себя/);
 });
