@@ -48,7 +48,17 @@ function exLog(){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')
   let k=it.sets.findIndex(s=>!s.done);if(k<0){const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});k=it.sets.length-1}
   const s=it.sets[k];if(!noW&&wv!=='')s.w=wv;else if(noW&&s.w==='')s.w=0;if(rv!=='')s.r=rv;if(EXS.cm){s.cm=EXS.cm.slice(0,200);EXS.cm=''}setDone(it,k)}
  else{const box=e.src==='w'?A.warm:A.cool;if(!box)return;const inf=exInfo(e);box.n=box.n||[];box.n[e.i]=(box.n[e.i]||0)+1;if(box.n[e.i]>=inf.plan)box.c[e.i]=true;startTimer(inf.rest)}
- save();exView()}
+ save();
+ // D-244: planned sets done -> after the rest timer (or «Далее» / ×) open the next exercise; last one -> back to the workout with «Завершить»
+ const L2=exList(),e2=L2[EXS.pos],i2=e2&&exInfo(e2);
+ if(i2&&i2.plan&&i2.done===i2.plan){EXS.pend=EXS.pos<L2.length-1?{to:EXS.pos+1,name:exName(L2[EXS.pos+1])}:{done:1};if(!tEnd)return exAdvance()}
+ exView()}
+function exName(e){return e.src==='m'?exBy(e.id).name:e.r.n}
+function exAdvance(){const p=EXS&&EXS.pend;if(!p)return;EXS.pend=null;exBar();if(p.done){exStop();EXS=null;go('today');toast('Тренировка выполнена 💪 Нажми «Завершить»');return}EXS.pos=p.to;EXS.cm='';exView();scrollTo(0,0)}
+// rest bar: «Далее: <name>» + button while the next exercise is pending
+function exBar(){const t=typeof document!=='undefined'&&document.getElementById&&document.getElementById('timer');if(!t||!t.querySelector)return;const sm=t.querySelector('small');let nb=document.getElementById('tnext');
+ const p=view==='ex'&&EXS&&EXS.pend;if(p&&!nb&&t.insertAdjacentHTML){const x=t.querySelector('#tstop');if(x&&x.insertAdjacentHTML)x.insertAdjacentHTML('beforebegin','<button id="tnext" class="sm">Далее</button>');nb=document.getElementById('tnext');if(nb)nb.onclick=()=>stopTimer()}
+ if(nb&&nb.style)nb.style.display=p?'':'none';if(sm&&sm.classList)sm.classList.toggle('tnx',!!p);if(sm)sm.innerHTML=p?(p.done?'<span>Тренировка выполнена</span>':'<span>Далее</span>: <span>'+esc(p.name)+'</span>'):'Отдых'}
 function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';return render()}
  if(EXS.pos>=L.length)EXS.pos=L.length-1;const e=L[EXS.pos];EXS.src=e.src;EXS.i=e.i;EXS.id=e.id;const A=S.active,inf=exInfo(e),id=e.id,ex=id?exBy(id):{name:e.r.n,group:''};
  const grp=e.src==='w'?'Разминка':e.src==='c'?'Заминка':ex.group,name=e.src==='m'?ex.name:e.r.n,it=e.src==='m'?(A?A.items[e.i]:e.it):null;
@@ -57,18 +67,19 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  app.innerHTML=`<div class="exhead row"><button class="sm" id="exback" aria-label="Назад">←</button><b class="grow">${(()=>{const sec=L.filter(x=>x.src===e.src);return(sec.indexOf(e)+1)+'/'+sec.length})()} <span>${esc(grp)}</span></b>${A?'':'<button class="pri sm" id="exgo">Начать</button>'}</div>
  <div class="exvid" id="exv">${id&&typeof animMedia==='function'?animMedia(id)||'<div class="exnov mut">Видео пока нет</div>':'<div class="exnov mut">Видео пока нет</div>'}<div class="exside">${e.src==='m'&&altCands(id).length?'<button class="exico" id="exsw" aria-label="Заменить">⇄</button>':''}${id&&TECH[id]?`<button class="exico" data-ti="${id}" aria-label="Техника">ⓘ</button>`:''}</div></div>
  <h2 class="exname">${esc(name)}</h2>${e.src==='m'?(()=>{const r=exRecW(e);return r?`<div class="mut exrec"><span>${r}</span><button class="linkb" id="exrwi" aria-label="Как считается вес">ⓘ</button></div>`:''})():`<div class="mut exrec"><span>${esc(inf.dose||'')}</span>${e.r.x?` · <span>${esc(e.r.x)}</span>`:''}</div>`}
- <div class="excircs"><div class="excirc"><b>${esc(inf.rng)}</b><span>${esc(inf.cap)}</span></div><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button><div class="excirc ${inf.plan&&inf.done>=inf.plan?'ok':''}"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
+ <div class="excircs"><div class="excirc"><b>${esc(inf.rng)}</b><span>${esc(inf.cap)}</span></div><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button><div class="excirc ${inf.plan&&inf.done>=inf.plan?'exdone':''}" id="exsets"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
  ${e.src==='m'?`<div class="exlog row">${inf.noW?'':`<label class="grow">Килограммы<input id="exw" type="number" inputmode="decimal" step="0.5" value="${esc(nx.w==null?'':nx.w)}"></label>`}<label class="grow">${inf.unit==='min'?'Минуты':inf.unit==='sec'?'Секунды':'Повторы'}<input id="exr" type="number" inputmode="numeric" value="${esc(nx.r==null?'':nx.r)}"></label><button class="pri exadd" id="exadd" aria-label="Записать подход">+</button></div>
  <button class="linkb" id="excm">${EXS.cm?'✎ '+esc(EXS.cm):'Добавить комментарий к подходу'}</button>`:`<button class="pri full" id="exadd" style="margin-top:12px">+ <span>Подход выполнен</span></button>`}
  ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.filter(s=>s.done).map((s,k)=>`<div class="li"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}</div>`).join('')}`:''}
  ${id?`<h3 style="margin-top:14px">История</h3>${exHist(id)}`:''}
  <div class="row" style="margin:16px 0"><button class="grow" id="exprev" ${EXS.pos?'':'disabled'}>← <span>Предыдущее</span></button><button class="grow" id="exnext" ${EXS.pos<L.length-1?'':'disabled'}><span>Следующее</span> →</button></div>`;
  const v=app.querySelector('#exv video.a3d');if(v&&typeof startAnim==='function')startAnim(v);
- $('#exback').onclick=()=>{exStop();EXS=null;go('today')};const g=$('#exgo');if(g)g.onclick=exStart;
+ $('#exback').onclick=()=>{exStop();EXS.pend=null;exBar();EXS=null;go('today')};const g=$('#exgo');if(g)g.onclick=exStart;
  $('#exadd').onclick=exLog;const ri=$('#exrwi');if(ri)ri.onclick=()=>toast('Вес — из авто-веса программы и твоих прошлых подходов');const rb=$('#exrest');if(rb)rb.onclick=()=>{if(inf.rest)startTimer(inf.rest)};
  const cm=$('#excm');if(cm)cm.onclick=()=>{const t=prompt('Комментарий к подходу',EXS.cm||'');if(t!=null){EXS.cm=String(t).trim();exView()}};
  const sw=$('#exsw');if(sw)sw.onclick=()=>swapModal(id,S.prof,nid=>{if(A){const x=A.items[e.i];x.exId=nid;const l=S.autoW!==false?lastSets(nid,A.id):null;x.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p}})}else{const{sel}=exDay();const pi=S.program[sel]&&S.program[sel].items[e.i];if(pi)pi.exId=nid}save();exView()});
- $('#exprev').onclick=()=>{if(EXS.pos>0){EXS.pos--;EXS.cm='';exView();scrollTo(0,0)}};$('#exnext').onclick=()=>{if(EXS.pos<L.length-1){EXS.pos++;EXS.cm='';exView();scrollTo(0,0)}};
- const upd=()=>{const el=document.getElementById('exrt');if(!el){clearInterval(exInt);return}const left=tEnd?Math.ceil((tEnd-Date.now())/1000):0;el.textContent=left>0?exClock(left):(inf.rest?exClock(inf.rest):'—');const b=document.getElementById('exrest');if(b)b.classList.toggle('run',left>0)};upd();exInt=setInterval(upd,500)}
-(function exHook(){const _r=render;render=function(){if(view!=='ex')exStop();if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
+ $('#exprev').onclick=()=>{if(EXS.pos>0){EXS.pend=null;EXS.pos--;EXS.cm='';exView();scrollTo(0,0)}};$('#exnext').onclick=()=>{if(EXS.pos<L.length-1){EXS.pend=null;EXS.pos++;EXS.cm='';exView();scrollTo(0,0)}};
+ const upd=()=>{const el=document.getElementById('exrt');if(!el){clearInterval(exInt);return}const left=tEnd?Math.ceil((tEnd-Date.now())/1000):0;el.textContent=left>0?exClock(left):(inf.rest?exClock(inf.rest):'—');const b=document.getElementById('exrest');if(b)b.classList.toggle('run',left>0)};upd();exInt=setInterval(upd,500);exBar()}
+(function exHook(){const _st=stopTimer;stopTimer=function(keep){_st(keep);if(view==='ex'&&EXS&&EXS.pend&&S.active)exAdvance();else exBar()};
+ const _r=render;render=function(){if(view!=='ex'){exStop();exBar()}if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
  if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('click',ev=>{const t=ev.target;if(!t||!t.closest)return;if(t.closest('button,input,a,summary,label,select,textarea'))return;const r=t.closest('[data-exo]');if(!r||view==='ex')return;const[src,i]=String(r.dataset.exo).split(',');ev.preventDefault();exOpen(src,+i)})})();
