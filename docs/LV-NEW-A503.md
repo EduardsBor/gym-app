@@ -8,7 +8,7 @@
 4. Уведомления выключены в настройках Android. Таймер отдыха работает только в открытом приложении. → Notifications are turned off in Android settings. The rest timer only works while the app is open. → Paziņojumi ir izslēgti Android iestatījumos. Atpūtas taimeris darbojas tikai atvērtā lietotnē.
 5. Точное время выключено в Android: сигнал отдыха может прийти с опозданием. → Exact timing is off in Android: the rest alert may arrive late. → Precīzais laiks Android ir izslēgts: atpūtas signāls var pienākt ar nokavēšanos.
 6. GymCaptain покажет уведомление, когда закончится отдых (даже при выключенном экране), и напомнит о тренировке, если ты включишь напоминания. Разрешить уведомления? → GymCaptain will notify you when your rest is over (even with the screen off) and remind you to work out if you turn reminders on. Allow notifications? → GymCaptain paziņos, kad atpūta beigusies (arī ar izslēgtu ekrānu), un atgādinās par treniņu, ja ieslēgsi atgādinājumus. Atļaut paziņojumus?
-7. Отдых закончен — следующий подход → Rest is over — next set → Atpūta beigusies — nākamā pieeja
+7. Отдых закончен — следующий подход → Rest is over — next set → Atpūta beigusies — nākamais piegājiens
 8. Вернись к тренировке в GymCaptain → Back to your workout in GymCaptain → Atgriezies pie treniņa GymCaptain
 9. Время тренировки → Workout time → Laiks treniņam
 10. Сегодня по плану тренировка в GymCaptain → A workout is planned for today in GymCaptain → Šodien plānā ir treniņš GymCaptain

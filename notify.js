@@ -9,7 +9,7 @@
   const TXT = {
     ru: { restT: 'Отдых закончен — следующий подход', restB: 'Вернись к тренировке в GymCaptain', remT: 'Время тренировки', remB: 'Сегодня по плану тренировка в GymCaptain', chRest: 'Таймер отдыха', chRem: 'Напоминания о тренировке' },
     en: { restT: 'Rest is over — next set', restB: 'Back to your workout in GymCaptain', remT: 'Workout time', remB: 'A workout is planned for today in GymCaptain', chRest: 'Rest timer', chRem: 'Workout reminders' },
-    lv: { restT: 'Atpūta beigusies — nākamā pieeja', restB: 'Atgriezies pie treniņa GymCaptain', remT: 'Laiks treniņam', remB: 'Šodien plānā ir treniņš GymCaptain', chRest: 'Atpūtas taimeris', chRem: 'Treniņu atgādinājumi' }
+    lv: { restT: 'Atpūta beigusies — nākamais piegājiens', restB: 'Atgriezies pie treniņa GymCaptain', remT: 'Laiks treniņam', remB: 'Šodien plānā ir treniņš GymCaptain', chRest: 'Atpūtas taimeris', chRem: 'Treniņu atgādinājumi' }
   };
   const txt = (lang, k) => (TXT[lang] || TXT.ru)[k];
   // JS Date.getDay() (0=Sun..6=Sat) -> Capacitor Weekday (1=Sun..7=Sat)
