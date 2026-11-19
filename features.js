@@ -78,7 +78,7 @@ const _body=body;body=function(){$('#title').textContent='Тело';if(!S.consen
   const c=app.querySelector('[data-bm]'),card=c&&c.closest&&c.closest('.card');if(card)card.insertAdjacentHTML('beforeend','<button class="full sm" style="margin-top:8px" data-pw="Обхваты тела и тренды — по подписке">🔒 Обхваты — по подписке</button>')}};
 function consentView(){$('#title').textContent='Согласие';app.innerHTML=`<div class="card consent"><div style="font-size:34px">🛡️</div><h2 style="margin-top:4px">Данные о здоровье</h2>
  <p>Вес, обхваты, процент жира, рост и фото тела — это <b>данные о здоровье</b>. По GDPR (ст. 9) их можно обрабатывать только с твоего явного согласия.</p>
- <ul><li>На этом устройстве данные хранятся в браузере.</li><li>Если войдёшь в аккаунт, программа, история и настройки синхронизируются с облаком в ЕС (Supabase). Замеры тела — только при этом согласии. Фото тела остаются на устройстве и в облако не загружаются.</li><li>Используются только чтобы показать твои графики и прогресс.</li><li>Согласие можно отозвать, а данные — экспортировать или удалить в «Ещё».</li><li>Анонимную аналитику можно включить отдельно в «Ещё».</li></ul>
+ <ul><li>На этом устройстве данные хранятся в браузере.</li><li>Если войдёшь в аккаунт, программа, история и настройки синхронизируются с облаком в ЕС (Supabase). Замеры тела — только при этом согласии. Фото тела остаются на устройстве и в облако не загружаются.</li><li>Используются только чтобы показать твои графики и прогресс.</li><li>Согласие можно отозвать, а данные — экспортировать или удалить в «Профиле».</li><li>Анонимную аналитику можно включить отдельно в «Профиле».</li></ul>
  <label class="li"><input type="checkbox" id="cs" style="width:28px;min-height:28px"><span class="grow">Я даю явное согласие на хранение и обработку моих данных о теле в этом приложении.</span></label>
  <button class="pri full" id="csok" disabled>Согласен — продолжить</button><button class="full" id="cspol" style="margin-top:8px">Политика конфиденциальности</button></div>
  <p class="mut">Без согласия раздел «Тело» не сохраняет никаких данных. Остальные функции работают как обычно.</p>`;
@@ -103,7 +103,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- ver.insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+APP_VERSION;
+ (app.querySelector('#helpc')||ver).insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+APP_VERSION;
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');

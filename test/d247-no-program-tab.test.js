@@ -59,10 +59,10 @@ function withProgram() {
 }
 
 
-test('D-247: bottom menu is Тренировки · Прогресс · История · Тело · Ещё', () => {
+test('D-247: bottom menu is Тренировки · Прогресс · История · Тело · Профиль (D-248)', () => {
   const nav = /<nav id="nav">([\s\S]*?)<\/nav>/.exec(read('index.html'))[1];
   assert.deepEqual([...nav.matchAll(/data-v="(\w+)"/g)].map(m => m[1]), ['today', 'progress', 'history', 'body', 'more']);
-  assert.deepEqual([...nav.matchAll(/<span>([^<]+)<\/span>/g)].map(m => m[1]), ['Тренировки', 'Прогресс', 'История', 'Тело', 'Ещё']);
+  assert.deepEqual([...nav.matchAll(/<span>([^<]+)<\/span>/g)].map(m => m[1]), ['Тренировки', 'Прогресс', 'История', 'Тело', 'Профиль']);
 });
 
 test('D-247: «Тренировки» starts with the program row; «Сменить» opens the catalog (ready programs first, «Подобрать» last)', () => {
@@ -137,4 +137,19 @@ test('D-247: new strings have EN in the dictionary; LV doc exists', () => {
   for (const [ru, en] of [['Сменить', 'Change'], ['✏️ Изменить', '✏️ Edit'], ['Изменить тренировку', 'Edit workout'], ['← Тренировки', '← Workouts'], ['📋 Посмотреть программу', '📋 View program']])
     assert.ok(d.includes(`['${ru}','${en}',`), ru);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-NO-PROGRAM-TAB.md')));
+});
+
+test('D-248: «Ещё» → «Профиль» 👤; library + science in the «Справка» block at the bottom; hints point to «Профиль»', () => {
+  assert.match(read('index.html'), /<button data-v="more">👤<span>Профиль<\/span><\/button>/);
+  const m = read('app.js'), more = m.slice(m.indexOf('function more(){'), m.indexOf('function library(){'));
+  assert.match(more, /\$\('#title'\)\.textContent='Профиль'/);
+  const help = more.indexOf('id="helpc"><b>Справка</b>');
+  assert.ok(help > more.indexOf('id="reset"') && help < more.indexOf('id="lib"') && more.indexOf('id="lib"') < more.indexOf('id="sci"') && more.indexOf('id="sci"') < more.indexOf('Версия ${APP_VERSION}'));
+  assert.match(read('features.js'), /\(app\.querySelector\('#helpc'\)\|\|ver\)\.insertAdjacentHTML\('beforebegin',html\)/);
+  const d = read('i18n/dict3.js');
+  assert.ok(d.includes("['Профиль','Profile','Profils']") && d.includes("['Справка','Help & info','Uzziņas']"));
+  assert.ok(d.includes("'Iesildīšanās un atdzišana'") && !d.includes('atsildīšanās'));
+  for (const f of ['app.js', 'health.js', 'i18n/dict2.js', 'i18n/dict3.js']) assert.doesNotMatch(read(f), /в «Ещё»|“More”|“Vēl”/, f);
+  assert.doesNotMatch(read('features.js'), /в «Ещё»\./);
+  assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-PROFILE-TAB.md')));
 });
