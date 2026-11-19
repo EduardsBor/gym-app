@@ -117,14 +117,14 @@ test('D-235: logging a set on the exercise screen writes into S.active.items[].s
   assert.match(app(), /Рекомендуемый вес/);
 });
 
-test('D-235: «Программа» card — catalog first (primary), own program second (secondary)', () => {
+test('D-235/D-247: program choice = catalog first, «Подобрать программу под себя» last; «Программа» screen has no choice buttons', () => {
   const { run, app } = withProgram();
-  run('program()');
-  const h = app();
-  assert.ok(h.indexOf('id="cat"') < h.indexOf('id="chg"'));
-  assert.match(h, /class="pri full big"[^>]*id="cat">📚 Каталог готовых программ</);
-  assert.match(h, /class="full"[^>]*id="chg">🧩 Подобрать программу под себя</);
-  assert.doesNotMatch(h, /Подобрать заново \(анкета\)|Собрать свою программу/);
-  assert.match(h, /id="chg">🧩 Подобрать программу под себя</); // D-236
-  assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
+  run('go("catalog")');
+  let h = app();
+  assert.ok(h.indexOf('data-c="') < h.indexOf('id="toq"'));
+  assert.match(h, /id="toq"[^>]*>🧩 Подобрать программу под себя</);
+  assert.doesNotMatch(h, /Подобрать заново \(анкета\)|Собрать свою программу|Ответьте на несколько вопросов|btncap/);
+  run('go("program")');
+  h = app();
+  assert.doesNotMatch(h, /id="cat"|id="chg"|id="plib"|id="sci"/);
 });
