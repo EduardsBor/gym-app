@@ -138,3 +138,6 @@ body.exv #timer{display:none!important}
 .exrestc{display:flex;gap:4px;margin-top:6px}.exrestc[hidden]{display:none}.exrestc .sm{min-height:30px;padding:0 7px;font-size:13px}
 .excircs{align-items:flex-start}
 .excirc{flex:0 0 auto;width:min(28vw,110px);height:min(28vw,110px);aspect-ratio:auto}.exrestw{flex:0 0 auto;width:min(28vw,110px)}.exrestw .excirc{width:100%}
+/* D-256: total workout timer in the header */
+#top{display:flex;align-items:center;gap:8px}#top #title{flex:1;min-width:0}
+.wclock{flex:0 0 auto;font-weight:700;font-size:15px;line-height:1;padding:7px 10px;border-radius:999px;background:var(--card2);color:var(--txt);font-variant-numeric:tabular-nums;white-space:nowrap}.wclock[hidden]{display:none}
