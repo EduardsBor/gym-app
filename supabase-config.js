@@ -5,6 +5,6 @@
 window.MZ_SB={
   url:'https://krrhwuldkwkkcegxhyqq.supabase.co',
   anon:'sb_publishable_iKxrc976-ufo7srmdBMENQ_7j8WbY1a',
-  // D-231: «Войти через Google» стоит за флагом, пока провайдер Google не включён в Supabase (callback: https://krrhwuldkwkkcegxhyqq.supabase.co/auth/v1/callback).
-  googleAuth:false
+  // D-231/D-233: «Войти через Google» — провайдер Google включён в Supabase 19.11 (false — скрыть кнопку) (callback: https://krrhwuldkwkkcegxhyqq.supabase.co/auth/v1/callback).
+  googleAuth:true
 };

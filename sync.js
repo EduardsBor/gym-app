@@ -484,8 +484,9 @@
     view='auth';
     $('#title').textContent='Вход';$('#nav').classList.add('hidden');
     const off=typeof navigator!=='undefined'&&navigator.onLine===false;
-    app.innerHTML=`<div class="card" id="mzgate"><h2 style="margin-top:0">Вход</h2><p class="mut" style="margin:0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p>
-      ${CFG&&CFG.googleAuth?'<button class="pri full" id="mzgoogle" style="margin-top:12px">Войти через Google</button>':''}</div>
+    app.innerHTML=`<div class="card" id="mzgate"><h2 style="margin-top:0">Вход</h2>
+      ${CFG&&CFG.googleAuth?'<button class="pri full" id="mzgoogle" style="margin:4px 0 0;padding:16px;font-size:18px;font-weight:700">Войти через Google</button><p class="mut" id="mzgnote" style="margin:6px 0 12px;text-align:center">Новый аккаунт создастся автоматически</p>':''}
+      <p class="mut" style="margin:0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p></div>
       ${accountHTML()}
       ${off?`<div class="card"><p class="mut" style="margin-top:0">Нет сети. Войти можно, когда появится интернет.</p>${hasLocalData()?'<button class="full" id="mzoffline">Продолжить без входа (нет сети)</button>':''}</div>`:''}`;
     bindAccount();

@@ -185,7 +185,7 @@ test('D-231: first start without a session shows the sign-in screen first (Googl
   assert.doesNotMatch(r.html(), /mzgoogle/);
   assert.equal(r.run('mzNeedAuth()'), true);
   assert.equal(r.run('MZ_SB.googleAuth'), undefined);
-  assert.match(read('supabase-config.js'), /googleAuth:false/);
+  assert.match(read('supabase-config.js'), /googleAuth:(true|false)/);
 });
 
 test('D-231: «Войти через Google» uses signInWithOAuth(google) with redirect to the site when the flag is on', async () => {
