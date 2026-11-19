@@ -12,6 +12,12 @@ const DICT3=[
 ['Норма по ВОЗ: 18,5–24,9. При большой мышечной массе ИМТ может быть завышен.','WHO normal range: 18.5–24.9. With a lot of muscle mass, BMI can be overstated.','PVO norma: 18,5–24,9. Ja ir liela muskuļu masa, ĶMI var būt paaugstināts.'],
 // Body screen: height set, no weight yet (LV for Claude: docs/LV-NEW-ONBOARDING.md)
 ['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
+// D-236 blocks-v2d: home strength label + equipment notes (LV for Claude: docs/LV-NEW-BLOCKS-V2D.md)
+['Сила и контроль тела','Strength & Body Control','Spēks un ķermeņa kontrole'],
+['🏋️ Сила и контроль тела','🏋️ Strength & Body Control','🏋️ Spēks un ķermeņa kontrole'],
+['Нужен стул или скамья для обратных отжиманий.','You need a chair or bench for bench dips.','Vajadzīgs krēsls vai soliņš tricepsa atspiešanās vingrinājumam.'],
+['Нужен стул или скамья для обратных отжиманий, для австралийских подтягиваний — низкая перекладина или прочный стол.','You need a chair or bench for bench dips, and a low bar or a sturdy table for inverted rows.','Vajadzīgs krēsls vai soliņš tricepsa atspiešanās vingrinājumam, horizontālajai pievilkšanai — zems stienis vai stabils galds.'],
+['Нужен стул или скамья для обратных отжиманий, для австралийских подтягиваний — низкая перекладина или прочный стол, для скандинавских сгибаний — опора для ног.','You need a chair or bench for bench dips, a low bar or a sturdy table for inverted rows, and something to anchor your feet for Nordic curls.','Vajadzīgs krēsls vai soliņš tricepsa atspiešanās vingrinājumam, horizontālajai pievilkšanai — zems stienis vai stabils galds, skandināvu saliekšanai — atbalsts kājām.'],
 // D-234 legal page links on the sign-in screen (LV for Claude: docs/LV-NEW-LEGAL-PAGES.md)
 ['Конфиденциальность','Privacy','Privātums'],
 ['Условия','Terms','Noteikumi'],
