@@ -69,7 +69,7 @@ stair:['Сердечно-сосудистая система','Ягодичны�
 jump:['Сердечно-сосудистая система','Икры, плечи','Простое кардио без оборудования для разминки и интервалов.'],
 "mk-incline-treadmill-walk":["ягодичные, бицепс бедра, икры (лёгкое кардио)","—","Лёгкое кардио: быстрая ходьба на дорожке с наклоном."]
 };
-const LQ={q:'',g:'',p:''},EQN={g:'🏢 Зал',d:'🏠 Дом с гантелями',b:'🤸 Без инвентаря'},EQI={g:'🏢',d:'🏠',b:'🤸'},RSK={s:'спину',k:'колени',p:'плечи'};
+const LQ={q:'',g:'',p:''},EQN={g:'🏢 Тренажёрный зал',d:'🏠 Дом с гантелями',b:'🤸 Без инвентаря'},EQI={g:'🏢',d:'🏠',b:'🤸'},RSK={s:'спину',k:'колени',p:'плечи'};
 // P-302: library filters. Muscle = e.group; equipment = META place (g/d/b). Missing META defaults to gdb (shown in every place filter) — do not invent types.
 function libMeta(id){return (typeof META!=='undefined'&&META[id])||'gdb|'}
 function libPlace(id){return String(libMeta(id).split('|')[0]||'')}
