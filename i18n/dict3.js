@@ -14,7 +14,6 @@ const DICT3=[
 ['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
 // D-244 auto next exercise (LV for Claude: docs/LV-NEW-AUTO-NEXT.md)
 ['Тренировка выполнена 💪 Нажми «Завершить»','Workout done 💪 Tap «Finish»','Treniņš pabeigts 💪 Nospied “Pabeigt”'],
-['Тренировка выполнена','Workout done','Treniņš pabeigts'],
 // D-235 exercise screen (LV for Claude: docs/LV-NEW-EXERCISE-SCREEN.md)
 ['Начать','Start','Sākt'],
 ['Видео пока нет','No video yet','Video vēl nav'],

@@ -132,5 +132,3 @@ header:has(+#app .catc) #title{font-size:28px;font-weight:800;letter-spacing:-.3
 .dayb.done{color:var(--mut)}
 /* D-239: open workout in the list — whole button in the accent colour (all themes via --acc/--on-acc) */
 .dayb.pri.sel{background:var(--acc);color:var(--on-acc);font-weight:800;border-color:var(--acc)}
-/* D-244: «Далее: …» in the rest bar, max 2 lines */
-#timer small.tnx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:170px;line-height:1.25}

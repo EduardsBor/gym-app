@@ -1,5 +1,5 @@
 'use strict';
-// D-244: auto next exercise after the planned sets (after rest / «Далее» / ×), last one -> workout with «Завершить»; sets-done circle shows the number.
+// D-244: right after the planned sets the next exercise opens (rest timer keeps running); last one -> workout with «Завершить»; sets-done circle shows the number.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -67,38 +67,31 @@ test('D-244: sets-done circle shows «1/N» and does not use the .ok button clas
   assert.match(read('style.css'), /\.excirc\{color:var\(--txt\)\}\.excirc\.exdone\{border-color:var\(--ok\)\}/);
 });
 
-test('D-244: after the planned sets the rest runs, then the next exercise opens', () => {
+test('D-244: right after the last planned set the next exercise opens; the rest timer keeps running', () => {
   const { run } = withProgram();
   run('exOpen("m",0)');
   const plan = run('exDay().d.items[0].sets');
-  for (let k = 0; k < plan; k++) run('$("#exw").value="20";$("#exr").value="10";exLog()');
-  assert.equal(run('S.active.items[0].sets.filter(s=>s.done).length'), plan);
-  assert.ok(run('tEnd') > Date.now(), 'rest timer still starts after the last set');
-  assert.equal(run('EXS.pend.to'), run('EXS.pos') + 1);
-  assert.equal(run('EXS.pend.name'), run('exBy(S.active.items[1].exId).name'));
   const pos = run('EXS.pos');
-  run('stopTimer()'); // rest over / «Далее» / ×
+  for (let k = 0; k < plan - 1; k++) run('$("#exw").value="20";$("#exr").value="10";exLog()');
+  assert.equal(run('EXS.pos'), pos, 'stays while sets remain');
+  run('$("#exw").value="20";$("#exr").value="10";exLog()');
+  assert.equal(run('S.active.items[0].sets.filter(s=>s.done).length'), plan);
   assert.equal(run('view'), 'ex');
   assert.equal(run('EXS.pos'), pos + 1);
   assert.equal(run('JSON.stringify([exList()[EXS.pos].src,exList()[EXS.pos].i])'), '["m",1]');
-  assert.equal(run('EXS.pend'), null);
+  assert.ok(run('tEnd') > Date.now(), 'rest timer still running on the next exercise');
 });
 
-test('D-244: manual prev/next cancels the pending jump; the last exercise returns to the workout', () => {
+test('D-244: warm-up row moves on too; the last exercise returns to the workout with «Завершить»', () => {
   const { run } = withProgram();
   run('exOpen("w",0)');
-  run('exLog()'); // warm-up row: 1 planned set -> pending
-  assert.ok(run('!!EXS.pend'));
-  run('$("#exprev").onclick&&0;$("#exnext").onclick()');
-  assert.equal(run('EXS.pend'), null);
+  run('exLog()'); // warm-up row: 1 planned set
+  assert.equal(run('JSON.stringify([exList()[EXS.pos].src,exList()[EXS.pos].i])'), '["w",1]');
   const last = run('exList().length-1');
   run(`EXS.pos=${last};exView()`);
-  const e = JSON.parse(run('JSON.stringify(exList()[EXS.pos])'));
-  assert.equal(e.src, 'c');
+  assert.equal(run('exList()[EXS.pos].src'), 'c');
   const n = run('exInfo(exList()[EXS.pos]).plan');
   for (let k = 0; k < n; k++) run('exLog()');
-  assert.deepEqual(JSON.parse(run('JSON.stringify(EXS.pend)')), { done: 1 });
-  run('stopTimer()');
   assert.equal(run('view'), 'today');
   assert.equal(run('EXS'), null);
   assert.ok(run('!!S.active'), 'workout stays open for «Завершить»');
