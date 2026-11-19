@@ -39,7 +39,22 @@ function exRecW(e){if(e.src!=='m')return'';const it=e.it;if(exNoW(e.id,it))retur
 function exHist(id){const out=[];const W=histWorkouts();for(let i=W.length-1;i>=0&&out.length<3;i--){const w=W[i];if(S.active&&w.id===S.active.id)continue;const it=(w.items||[]).find(x=>x.exId===id);const L=it?it.sets.filter(s=>s.done):[];if(!L.length)continue;
   out.push(`<div class="li"><span class="mut" style="min-width:64px">${esc(new Date(w.start).toLocaleDateString(typeof LOC!=='undefined'?LOC:'ru'))}</span><span class="grow">${L.map(s=>esc((+s.w?s.w+' × ':'')+s.r)).join(' · ')}</span></div>`)}
  return out.length?out.join(''):'<p class="mut">Пока нет записей.</p>'}
-function exOpen(src,i){const L=exList();const pos=L.findIndex(e=>e.src===src&&e.i===i);if(pos<0)return;EXS={pos,src,i,id:L[pos].id,cm:''};go('ex')}
+function exOpen(src,i){const L=exList();const pos=L.findIndex(e=>e.src===src&&e.i===i);if(pos<0)return;EXS={pos,src,i,id:L[pos].id,cm:'',ret:uiSnap()};go('ex');
+ try{if(typeof history!=='undefined'&&history.pushState)history.pushState({gcEx:1},'')}catch(e){}}
+// D-258 (Eduards: «Когда открываешь упражнение детально и возвращаешься назад - нужно чтобы экран остался там же»):
+// remember view, scroll, selected day and open <details> before opening the exercise; restore them on ←, swipe or browser back.
+function uiSnap(){const ds=typeof app!=='undefined'&&app&&app.querySelectorAll?[...app.querySelectorAll('details')].map(d=>!!d.open):[];
+ return{v:typeof view!=='undefined'&&view!=='ex'?view:'today',y:typeof scrollY==='number'?scrollY:0,sel:typeof TSEL!=='undefined'?TSEL:null,open:ds}}
+function keepScroll(y){if(!(y>0)||typeof scrollTo!=='function')return;let n=0,stop=false;const off=()=>{stop=true};
+ const ev=['touchstart','wheel','keydown'];if(typeof addEventListener==='function')ev.forEach(k=>addEventListener(k,off,{once:true,passive:true}));
+ const f=()=>{if(stop)return;scrollTo(0,y);if(++n<25&&Math.abs((typeof scrollY==='number'?scrollY:y)-y)>1)setTimeout(f,n<4?16:80);else if(typeof removeEventListener==='function')ev.forEach(k=>removeEventListener(k,off))};
+ f();if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{if(!stop)scrollTo(0,y)});
+ // late (lazy) images change the height: re-apply once each loads during the first second
+ const t0=Date.now();if(typeof app!=='undefined'&&app&&app.querySelectorAll)app.querySelectorAll('img').forEach(im=>{if(!im.complete&&im.addEventListener)im.addEventListener('load',()=>{if(!stop&&Date.now()-t0<1500)scrollTo(0,y)},{once:true})})}
+function uiRestore(r){if(!r)return;if(r.v==='today'&&!S.active&&r.sel!=null&&r.sel!==TSEL&&typeof today==='function')today(r.sel);
+ const ds=app&&app.querySelectorAll?[...app.querySelectorAll('details')]:[];if(r.open&&ds.length===r.open.length)ds.forEach((d,k)=>{d.open=r.open[k]});keepScroll(r.y)}
+function exBack(){const r=EXS&&EXS.ret;exStop();EXS=null;go(r&&r.v||'today');uiRestore(r)}
+if(typeof addEventListener==='function')addEventListener('popstate',()=>{if(view==='ex'&&EXS)exBack()});
 function exStop(){clearInterval(exInt);exInt=null;const v=app&&app.querySelector&&app.querySelector('#exv video.a3d');if(v&&typeof stopAnim==='function')stopAnim(v)}
 function exStart(){const{sel}=exDay();if(S.active)return;startW(sel);const L=exList();let p=L.findIndex(e=>e.src===EXS.src&&e.id===EXS.id);if(p<0)p=Math.min(EXS.pos,L.length-1);EXS.pos=p;EXS.src=L[p].src;EXS.i=L[p].i;view='ex';exView()}
 function exLog(){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')?num($('#exw').value):'',rv=$('#exr')?num($('#exr').value):'';
@@ -69,7 +84,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  ${id?`<h3 style="margin-top:14px">История</h3>${exHist(id)}`:''}
  <div class="row" style="margin:16px 0"><button class="grow" id="exprev" ${EXS.pos?'':'disabled'}>← <span>Предыдущее</span></button><button class="grow" id="exnext" ${EXS.pos<L.length-1?'':'disabled'}><span>Следующее</span> →</button></div>`;
  const v=app.querySelector('#exv video.a3d');if(v&&typeof startAnim==='function')startAnim(v);
- $('#exback').onclick=()=>{exStop();EXS=null;go('today')};const g=$('#exgo');if(g)g.onclick=exStart;
+ $('#exback').onclick=()=>{try{if(typeof history!=='undefined'&&history.state&&history.state.gcEx){history.back();return}}catch(e){}exBack()};const g=$('#exgo');if(g)g.onclick=exStart;
  $('#exadd').onclick=exLog;const ri=$('#exrwi');if(ri)ri.onclick=()=>toast('Вес — из авто-веса программы и твоих прошлых подходов');const rb=$('#exrest');if(rb)rb.onclick=()=>{if(inf.rest)startTimer(inf.rest)};
  const cm=$('#excm');if(cm)cm.onclick=()=>{const t=prompt('Комментарий к подходу',EXS.cm||'');if(t!=null){EXS.cm=String(t).trim();exView()}};
  const sw=$('#exsw');if(sw)sw.onclick=()=>swapModal(id,S.prof,nid=>{if(A){const x=A.items[e.i];x.exId=nid;const l=S.autoW!==false?lastSets(nid,A.id):null;x.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p}})}else{const{sel}=exDay();const pi=S.program[sel]&&S.program[sel].items[e.i];if(pi)pi.exId=nid}save();exView()});
