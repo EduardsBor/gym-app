@@ -45,7 +45,6 @@ const DICT3=[
 // D-236 questionnaire button (Claude 19.11; LV: docs/LV-NEW-CATALOG-D236.md)
 ['🧩 Подобрать программу под себя','🧩 Find a program for me','🧩 Piemeklēt programmu sev'],
 ['Подобрать программу под себя','Find a program for me','Piemeklēt programmu sev'],
-['Ответьте на несколько вопросов','Answer a few questions','Atbildiet uz dažiem jautājumiem'],
 ['Не нашёл подходящую?','Didn\'t find the right one?','Neatradi piemērotu?'],
 // D-236 blocks-v2d: home strength label + equipment notes (LV for Claude: docs/LV-NEW-BLOCKS-V2D.md)
 ['Сила и контроль тела','Strength & Body Control','Spēks un ķermeņa kontrole'],

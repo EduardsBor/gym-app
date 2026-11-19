@@ -125,5 +125,6 @@ test('D-235: «Программа» card — catalog first (primary), own progra
   assert.match(h, /class="pri full big"[^>]*id="cat">📚 Каталог готовых программ</);
   assert.match(h, /class="full"[^>]*id="chg">🧩 Подобрать программу под себя</);
   assert.doesNotMatch(h, /Подобрать заново \(анкета\)|Собрать свою программу/);
-  assert.match(h, /id="chg">🧩 Подобрать программу под себя<\/button><p class="mut btncap"[^>]*>Ответьте на несколько вопросов</); // D-236
+  assert.match(h, /id="chg">🧩 Подобрать программу под себя</); // D-236
+  assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
 });

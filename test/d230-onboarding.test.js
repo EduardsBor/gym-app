@@ -64,7 +64,8 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
   assert.ok(h.indexOf('id="toq"') > h.lastIndexOf('data-c="'));
   assert.equal((h.match(/id="toq/g) || []).length, 1);
   assert.match(h, /<h3 class="catn">/);
-  assert.match(h, /Не нашёл подходящую\?<\/p><button class="full" id="toq"[^>]*>🧩 Подобрать программу под себя<\/button><p class="mut btncap"[^>]*>Ответьте на несколько вопросов</); // D-236
+  assert.match(h, /Не нашёл подходящую\?<\/p><button class="full" id="toq"[^>]*>🧩 Подобрать программу под себя</); // D-236
+  assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
   assert.equal((h.match(/data-c="c\d+"/g) || []).length, run('CATALOG.length'));
   assert.equal(run('CATALOG.length'), 13); // «Дом с гантелями» hidden (Eduards 19.11)
 });
