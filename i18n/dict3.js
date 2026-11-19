@@ -4,6 +4,12 @@ const DICT3=[
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],
+// D-231 sign-in at start (LV for Claude: docs/LV-NEW-AUTH.md)
+['Вход','Sign in','Ieiešana'],
+['Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.','Sign in or create an account: your program, history and records will be saved in the cloud. Data already on this device will not be lost.','Ieej vai izveido kontu: programma, vēsture un rekordi tiks saglabāti mākonī. Dati, kas jau ir šajā ierīcē, nepazudīs.'],
+['Войти через Google','Sign in with Google','Ieiet ar Google'],
+['Нет сети. Войти можно, когда появится интернет.','No network. You can sign in when the internet is back.','Nav tīkla. Ieiet varēsi, kad būs internets.'],
+['Продолжить без входа (нет сети)','Continue without signing in (no network)','Turpināt bez ieiešanas (nav tīkla)'],
 // D-230 onboarding: ready programs first (LV for Claude: docs/LV-NEW-ONBOARDING.md)
 ['Тренажёрный зал','Gym','Trenažieru zāle'],
 ['🏢 Тренажёрный зал','🏢 Gym','🏢 Trenažieru zāle'],
