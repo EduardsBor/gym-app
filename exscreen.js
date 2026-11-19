@@ -48,7 +48,12 @@ function exLog(){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')
   let k=it.sets.findIndex(s=>!s.done);if(k<0){const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});k=it.sets.length-1}
   const s=it.sets[k];if(!noW&&wv!=='')s.w=wv;else if(noW&&s.w==='')s.w=0;if(rv!=='')s.r=rv;if(EXS.cm){s.cm=EXS.cm.slice(0,200);EXS.cm=''}setDone(it,k)}
  else{const box=e.src==='w'?A.warm:A.cool;if(!box)return;const inf=exInfo(e);box.n=box.n||[];box.n[e.i]=(box.n[e.i]||0)+1;if(box.n[e.i]>=inf.plan)box.c[e.i]=true;startTimer(inf.rest)}
- save();exView()}
+ save();
+ // D-244 (Eduards 19.11): planned sets done -> open the next exercise right away (warm-up -> main -> cool-down); the rest bar keeps running.
+ // Last exercise -> back to the workout with «Завершить».
+ const L2=exList(),e2=L2[EXS.pos],i2=e2&&exInfo(e2);
+ if(i2&&i2.plan&&i2.done===i2.plan){if(EXS.pos<L2.length-1){EXS.pos++;EXS.cm='';exView();scrollTo(0,0);return}exStop();EXS=null;go('today');toast('Тренировка выполнена 💪 Нажми «Завершить»');return}
+ exView()}
 function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';return render()}
  if(EXS.pos>=L.length)EXS.pos=L.length-1;const e=L[EXS.pos];EXS.src=e.src;EXS.i=e.i;EXS.id=e.id;const A=S.active,inf=exInfo(e),id=e.id,ex=id?exBy(id):{name:e.r.n,group:''};
  const grp=e.src==='w'?'Разминка':e.src==='c'?'Заминка':ex.group,name=e.src==='m'?ex.name:e.r.n,it=e.src==='m'?(A?A.items[e.i]:e.it):null;
@@ -57,7 +62,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  app.innerHTML=`<div class="exhead row"><button class="sm" id="exback" aria-label="Назад">←</button><b class="grow">${(()=>{const sec=L.filter(x=>x.src===e.src);return(sec.indexOf(e)+1)+'/'+sec.length})()} <span>${esc(grp)}</span></b>${A?'':'<button class="pri sm" id="exgo">Начать</button>'}</div>
  <div class="exvid" id="exv">${id&&typeof animMedia==='function'?animMedia(id)||'<div class="exnov mut">Видео пока нет</div>':'<div class="exnov mut">Видео пока нет</div>'}<div class="exside">${e.src==='m'&&altCands(id).length?'<button class="exico" id="exsw" aria-label="Заменить">⇄</button>':''}${id&&TECH[id]?`<button class="exico" data-ti="${id}" aria-label="Техника">ⓘ</button>`:''}</div></div>
  <h2 class="exname">${esc(name)}</h2>${e.src==='m'?(()=>{const r=exRecW(e);return r?`<div class="mut exrec"><span>${r}</span><button class="linkb" id="exrwi" aria-label="Как считается вес">ⓘ</button></div>`:''})():`<div class="mut exrec"><span>${esc(inf.dose||'')}</span>${e.r.x?` · <span>${esc(e.r.x)}</span>`:''}</div>`}
- <div class="excircs"><div class="excirc"><b>${esc(inf.rng)}</b><span>${esc(inf.cap)}</span></div><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button><div class="excirc ${inf.plan&&inf.done>=inf.plan?'ok':''}"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
+ <div class="excircs"><div class="excirc"><b>${esc(inf.rng)}</b><span>${esc(inf.cap)}</span></div><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button><div class="excirc ${inf.plan&&inf.done>=inf.plan?'exdone':''}" id="exsets"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
  ${e.src==='m'?`<div class="exlog row">${inf.noW?'':`<label class="grow">Килограммы<input id="exw" type="number" inputmode="decimal" step="0.5" value="${esc(nx.w==null?'':nx.w)}"></label>`}<label class="grow">${inf.unit==='min'?'Минуты':inf.unit==='sec'?'Секунды':'Повторы'}<input id="exr" type="number" inputmode="numeric" value="${esc(nx.r==null?'':nx.r)}"></label><button class="pri exadd" id="exadd" aria-label="Записать подход">+</button></div>
  <button class="linkb" id="excm">${EXS.cm?'✎ '+esc(EXS.cm):'Добавить комментарий к подходу'}</button>`:`<button class="pri full" id="exadd" style="margin-top:12px">+ <span>Подход выполнен</span></button>`}
  ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.filter(s=>s.done).map((s,k)=>`<div class="li"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}</div>`).join('')}`:''}
