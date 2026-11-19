@@ -263,7 +263,7 @@ test('free forever after the demo: diary, sets, previous weight and reps, pain, 
   assert.deepEqual(JSON.parse(b.run('JSON.stringify(S.active.items[0].sets.map(s=>[s.w,s.r]))')), [[60, 10], [60, 10], [60, 9]]);
   assert.equal(b.run('S.active.items[0].sug'), null);
   const h = b.run('awSugHTML(Object.assign(S.active.items[0],{pain:true}),0)');
-  assert.match(h, /Боль/); assert.equal(/Авто-вес|↑|↓/.test(h), false);
+  assert.doesNotMatch(h, /Боль|🤕|data-awpain/); assert.equal(/Авто-вес|↑|↓/.test(h), false); // D-257
   // finishing keeps the planned day and history
   b.run('const A=S.active;A.items[0].sets.forEach(s=>s.done=true);A.end=Date.now();S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;S.active=null');
   assert.equal(b.run('S.next'), next0);
@@ -356,5 +356,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v110'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v112'/); assert.match(sw, /'premium\.js','features\.js'/);
 });
