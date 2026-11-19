@@ -6,7 +6,7 @@ const AW_FEELS=[['easy','легко'],['ok','нормально'],['hard','тя�
 const AW_NOTE={inc:'↑ Прибавка: верх диапазона 2 тренировки подряд',inc_big:'↑ Прибавка: верх диапазона 2 тренировки подряд. Шаг снаряда большой: если в первый раз не выйдет нижняя граница — это не промах',
  top1:'Верх диапазона во всех подходах: ещё одна такая тренировка — и прибавка',grace:'Недобор на новом весе не засчитан как промах (первая тренировка после большого шага)',cal_up:'↑ Калибровка: сразу прибавка',cal_down:'↓ Калибровка: вес −10 %',
  miss1:'Промах в прошлый раз: вес тот же',miss2:'Два промаха подряд: на один подход меньше',miss3:'Три промаха подряд: вес −10 %, прогрессия заново',
- pain:'В прошлый раз была боль: без прибавки, вес тот же. Можно заменить упражнение ⇄',pain2:'Боль две тренировки подряд: снизь вес на 10 % или замени упражнение ⇄. Если боль не проходит — обратись к врачу',break14:'После перерыва 2+ недели: вес −10 %',
+break14:'После перерыва 2+ недели: вес −10 %',
  break28:'После перерыва 4+ недели: вес −20 %, запас на 1 повтор больше',deload_scheduled:'Разгрузка: подходов вдвое меньше, вес тот же',
  deload_early:'Разгрузка: подходов вдвое меньше, вес −10 %',time_up:'↑ Цель удержания выше',time_down:'↓ Цель удержания ниже',hold_max:'Максимум удержания',ladder:'Пора усложнить'};
 const AW_MOD={tempo:'Усложнение: опускание 3–4 с',pause:'Усложнение: пауза 2 с в нижней точке',load:'Усложнение: рюкзак с грузом',
@@ -72,11 +72,12 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
   const parts=[];if(s.weight!=null&&c.eq!=='time')parts.push(`${awFmt(s.weight)} <span>${u}</span>`);if(s.target!=null)parts.push(`${s.target} <span>${c.eq==='time'?'с':'повт.'}</span>`);
   if(parts.length)L.push(`<b>🎯 <span>Авто-вес</span>: ${parts.join(' × ')}</b>`);
   if(s.rir&&c.eq!=='time')L.push(`<span>Запас</span> ${s.rir[0]}–${s.rir[1]} <span>повт.</span>`);
-  if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same')L.push(`<span>${AW_NOTE[s.note]}</span>`);
+  if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
   if(s.to&&s.to!==it.exId)L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
- if(it.pain)L.push(`<span style="color:var(--danger)">Боль: без прибавки, вес оставь тем же. Замени упражнение ⇄; если боль повторяется — снизь вес на 10 % или обратись к врачу</span>`);
- return`<div class="row" style="align-items:flex-start;margin:4px 0"><div class="awsug mut grow" style="font-size:13px">${L.join('<br>')}</div><button class="sm ${it.pain?'danger':''}" data-awpain="${i}" title="Боль">🤕 Боль</button></div>`}
+ // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
+ // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
+ return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
 function awFeelHTML(it,i){if(!awCls(it.exId)||!it.sets.length||!it.sets.every(s=>s.done))return'';
  return`<div class="row awfeel" style="margin-top:6px"><span class="mut grow">Как прошло? <span style="font-size:12px">(необязательно)</span></span>${AW_FEELS.map(([k,t])=>`<button class="sm ${it.feel===k?'ok':''}" data-awfeel="${i},${k}">${t}</button>`).join('')}</div>`}
 
@@ -92,8 +93,6 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
   const c=awCls(it.exId);if(!c)return;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i));
   const add=card.querySelector('[data-add]');if(add)add.closest('.row').insertAdjacentHTML('beforebegin',awFeelHTML(it,i))});
- app.querySelectorAll('[data-awpain]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awpain];it.pain=!it.pain;
-  save();const y=scrollY;workoutView();scrollTo(0,y)});
  app.querySelectorAll('[data-awfeel]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.awfeel.split(',');const it=A.items[+i];it.feel=it.feel===k?undefined:k;save();const y=scrollY;workoutView();scrollTo(0,y)});
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to)return;
   it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}

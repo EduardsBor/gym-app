@@ -26,7 +26,7 @@ function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(
  <p style="text-align:center;margin:4px 0"><b>${sub}</b></p>${stx}
  ${reason?`<p class="mut" style="text-align:center">${esc(reason)}</p>`:''}
  <ul class="pwlist"><li>Программы тренера по анкете</li><li>Авто-вес, разгрузка и возврат после перерыва</li><li>Видео техники</li><li>Графики, рекорды и 1ПМ</li><li>Объём по мышцам и обхваты тела</li></ul>
- <p class="mut" style="font-size:12px"><b>Всегда бесплатно:</b> свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, «Боль» и ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела, разминка и заминка.</p>
+ <p class="mut" style="font-size:12px"><b>Всегда бесплатно:</b> свой дневник тренировок, запись подходов, прошлый вес и повторы, вся история, ограничения, синхронизация, экспорт CSV, удаление аккаунта, вес тела, разминка и заминка.</p>
  <button class="plan ${plan==='y'?'sel':''}" data-pl="y"><span class="grow"><b>Год — €29,99</b><br><span class="mut">≈ €2,50/мес</span></span></button>
  <button class="plan ${plan==='m'?'sel':''}" data-pl="m"><span class="grow"><b>Месяц — €4,99</b><br><span class="mut">Отмена в любой момент</span></span></button>
  <button class="pri full" id="pwbuy" style="margin-top:12px">Оформить подписку</button>
