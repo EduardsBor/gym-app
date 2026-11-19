@@ -65,13 +65,20 @@ test('D-247: bottom menu is Тренировки · Прогресс · Исто
   assert.deepEqual([...nav.matchAll(/<span>([^<]+)<\/span>/g)].map(m => m[1]), ['Тренировки', 'Прогресс', 'История', 'Тело', 'Профиль']);
 });
 
-test('D-247: «Тренировки» starts with the program row; «Сменить» opens the catalog (ready programs first, «Подобрать» last)', () => {
+test('D-251: no «Программа / Сменить» card on «Тренировки» (block and plain); it lives at the top of «Профиль» and opens the catalog', () => {
   const { run, app } = withProgram();
   let h = app();
-  assert.ok(h.indexOf('id="progrow"') < h.indexOf('id="start"'));
-  assert.match(h, new RegExp('<b>' + run('S.progName').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</b></span><button class="sm" id="pchg">Сменить</button>'));
+  assert.match(h, /id="start"/);
+  assert.doesNotMatch(h, /id="progrow"|id="pchg"|Сменить/);
   run('delete S.block;today(0)');
-  assert.match(app(), /id="pchg"/);
+  assert.match(app(), /id="start"/);
+  assert.doesNotMatch(app(), /id="progrow"|id="pchg"/);
+  const m = read('app.js'), more = m.slice(m.indexOf('function more(){'), m.indexOf('function library(){'));
+  assert.match(more, /app\.innerHTML=`\$\{S\.program&&S\.program\.length\?progRowHTML\(\):''\}/);
+  assert.match(more, /progRowBind\(\)/);
+  assert.doesNotMatch(read('blocks.js'), /progRowHTML/);
+  run('app.innerHTML=progRowHTML();progRowBind()');
+  assert.match(app(), new RegExp('<b>' + run('S.progName').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</b></span><button class="sm" id="pchg">Сменить</button>'));
   run('$("#pchg").onclick()');
   assert.equal(run('view'), 'catalog');
   h = app();
@@ -116,7 +123,7 @@ test('D-247: old route to the program tab still works (full program, back to «�
   run('$("#pback").onclick()');
   assert.equal(run('view'), 'today');
   assert.match(read('app.js'), /\$\('#qback'\)\.onclick=\(\)=>go\('catalog'\)/);
-  assert.match(read('app.js'), /NAV_OF=\{program:'today',catalog:'today',quiz:'today',preview:'today',library:'more',science:'more'\}/);
+  assert.match(read('app.js'), /NAV_OF=\{program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'\}/);
 });
 
 test('D-247: «Ещё» has the exercise library and science; free users can still view the program', () => {
