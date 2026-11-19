@@ -160,3 +160,10 @@ test('D-248: «Ещё» → «Профиль» 👤; library + science in the «
   assert.doesNotMatch(read('features.js'), /в «Ещё»\./);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-PROFILE-TAB.md')));
 });
+
+test('D-252: «Звук и экран» has the two toggles and no iPhone silent-mode hint (all languages)', () => {
+  const m = read('app.js'), more = m.slice(m.indexOf('function more(){'), m.indexOf('function library(){'));
+  assert.match(more, /<b>Звук и экран<\/b>\s*<label class="li"><span class="grow">🔊 Звуковой сигнал таймера<\/span><input type="checkbox" id="snd"[^]*?<label class="li"><span class="grow">💡 Не гасить экран во время тренировки<\/span><input type="checkbox" id="wk"[^>]*><\/label><\/div>/);
+  for (const f of ['app.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'notify.js', 'exscreen.js', 'index.html'])
+    assert.doesNotMatch(read(f), /беззвучный режим|silent mode|kluso režīmu/, f);
+});
