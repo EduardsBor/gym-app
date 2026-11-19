@@ -247,7 +247,7 @@ test('C-112: default migration keeps old state; block fields travel with the pro
 });
 
 test('C-112: cache is moyzal-v74; blocks.js and the sample JSON are precached; changelog and LV doc exist', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v92'/);
+  assert.match(read('sw.js'), /const C='moyzal-v93'/);
   assert.match(read('sw.js'), /blocks\.js/);
   assert.match(read('sw.js'), /data\/blocks\/mass_nov_3_g_b36\.json/);
   assert.match(read('index.html'), /<script src="blocks\.js"><\/script>/);
