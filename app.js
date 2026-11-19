@@ -246,7 +246,7 @@ function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))retur
 // D-238: «Тренировки» tab = next/current workout card + every program workout by week (✓ done). One list for the plain and block programs.
 function dayDone(i){const p=S.program[i];if(!p)return false;if(typeof blockActive==='function'&&blockActive())return i<(S.block.next|0);
  return (S.workouts||[]).some(w=>w.dayIdx===i&&w.dayName===p.name&&Date.now()-w.start<7*864e5)}
-function dayListHTML(sel){if(!S.program||!S.program.length)return'';const btn=(p,i)=>`<button class="full dayb${dayDone(i)?' done':''}" style="margin:4px 0" data-i="${i}">${dayDone(i)?'✓ ':''}${i===sel?'👁 ':''}${esc(dayWeek(p)?dayTitle(p):p.name)}</button>`;
+function dayListHTML(sel){if(!S.program||!S.program.length)return'';const btn=(p,i)=>`<button class="full dayb${dayDone(i)?' done':''}${i===sel?' pri sel':''}" style="margin:4px 0" data-i="${i}"${i===sel?' aria-current="true"':''}>${dayDone(i)?'✓ ':''}${esc(dayWeek(p)?dayTitle(p):p.name)}</button>`;
  let h;if(!S.program.some(dayWeek))h=S.program.map(btn).join('');else{const wk={};S.program.forEach((p,i)=>{(wk[dayWeek(p)]=wk[dayWeek(p)]||[]).push(i)});const cur=dayWeek(S.program[sel]);
   h=Object.keys(wk).map(w=>{const n=wk[w].filter(dayDone).length;return`<details class="card dayc"${+w===cur?' open':''}><summary><b>Неделя ${w}</b> <span class="mut">${n?n+'/':''}${wk[w].length} трен.${n===wk[w].length?' ✓':''}</span></summary>${wk[w].map(i=>btn(S.program[i],i)).join('')}</details>`}).join('')}
  return`<h2>Все тренировки программы</h2>${h}`}
