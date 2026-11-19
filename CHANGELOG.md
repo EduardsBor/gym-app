@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- D-250 (v104, Эдуард 19.11): контакт в юр. текстах (legal.js, privacy.html, terms.html; RU/EN/LV) — support@gymcaptain.app вместо прежней почты Gmail.
 - D-218b (v103): из docs/D-218-SMTP-BREVO.md убран личный тестовый адрес и образец SMTP-логина; LV в письмах: «Apstiprini savu e-pastu lietotnei GymCaptain», «bez koda neviens nevar pieteikties».
 - D-218 (v102): шаблоны писем Supabase (подтверждение, вход, сброс) RU/EN/LV с 6-значным кодом — supabase/templates/, инструкция SMTP Brevo — docs/D-218-SMTP-BREVO.md; после регистрации открывается поле кода из письма.
 - D-249 (v101): юр. тексты (legal.js, privacy.html): вкладка «Ещё» / “More” / “Vēl” → «Профиль» / “Profile” / “Profils” (по 6 мест на язык); редакция от 19.11.2026; повторное согласие не требуется.
