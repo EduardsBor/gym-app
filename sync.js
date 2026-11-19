@@ -2,7 +2,7 @@
 // Stage 2: optional account, offline-first sync to Supabase (EU), opt-in analytics.
 (function(){
   const CFG=window.MZ_SB||(typeof MZ_SB!=='undefined'?MZ_SB:null);const READY=!!(CFG&&CFG.url&&CFG.anon&&window.supabase&&supabase.createClient);
-  let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,syncing=false;
+  let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,running=null,again=false;
   const AUTH_FLAG='gc_auth';
   // D-232: fixed storage key = the Supabase default for this project, so existing sessions stay valid across versions.
   const AUTH_KEY=(()=>{try{return 'sb-'+new URL(CFG.url).hostname.split('.')[0]+'-auth-token'}catch(e){return 'sb-gym-auth-token'}})();
@@ -218,21 +218,32 @@
     persistLocal();
     await pushNow();
   }
-  async function sync(){
-    if(!READY||!user||syncing) return;
-    if(typeof navigator!=='undefined'&&navigator.onLine===false){status='offline';paint();return}
-    if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return}
-    syncing=true;status='syncing';lastErr='';paint();
-    try{await pullAndMerge();status='ok';if(S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
-    catch(e){status='err';lastErr=friendly(e)}
-    syncing=false;paint();
+  // D-253 (Eduards: «Нужна автоматическая синхронизация»): sync runs by itself — on start, when the app becomes visible,
+  // 3 s after any saved change (workout finished/saved too), when the network is back, and every 5 min while open.
+  // One run at a time: a call during a run is queued once (again). Offline / network errors only show the offline note.
+  const isOffline=()=>typeof navigator!=='undefined'&&navigator.onLine===false;
+  const netErr=e=>!!e&&(e.name==='TypeError'||/failed to fetch|networkerror|load failed|network request failed|fetch/i.test(String(e.message||e)));
+  function sync(){
+    if(!READY||!user) return Promise.resolve();
+    if(running){again=true;return running}
+    if(isOffline()){status='offline';paint();return Promise.resolve()}
+    if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return Promise.resolve()}
+    status='syncing';lastErr='';paint();
+    running=(async()=>{
+      try{await pullAndMerge();status='ok';if(S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
+      catch(e){if(isOffline()||netErr(e))status='offline';else{status='err';lastErr=friendly(e)}}
+      running=null;paint();
+      if(again){again=false;return sync()}
+    })();
+    return running;
   }
+  const SYNC_DEBOUNCE=3000,SYNC_EVERY=5*60e3;
   function schedule(){
     if(!user) return;
     S.updatedAt=Date.now();
     persistLocal();
     clearTimeout(timer);
-    timer=setTimeout(()=>sync(),2000);
+    timer=setTimeout(()=>sync(),SYNC_DEBOUNCE);
   }
   window.mzOnSave=function(){
     const sg=progSigOf();if(sg!==progSig){progSig=sg;S.progAt=Date.now()}
@@ -361,6 +372,8 @@
     msg('Если аккаунт есть, отправили письмо для смены пароля');
   }
   async function doLogout(){
+    clearTimeout(timer);
+    if(user&&!isOffline()) await sync(); // D-253: last changes go to the cloud before signing out
     try{await sb.auth.signOut()}catch(e){}
     user=null;status='off';
     try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
@@ -407,8 +420,8 @@
       return `<div class="card" id="mzacc"><b>☁️ Аккаунт и синхронизация</b>
         <p class="mut" style="margin:4px 0">Вход: ${esc(user.email||'')}</p>
         <p class="mut" id="mzst">${esc(statusText())}</p>
-        <button class="pri full" id="mzsync">Синхронизировать сейчас</button>
-        <button class="full" id="mzout" style="margin-top:8px">Выйти</button>
+        <p class="mut" style="font-size:12px;margin:0 0 8px">Синхронизация автоматическая: при открытии приложения, после тренировки и изменений, при появлении сети.</p>
+        <button class="full" id="mzout">Выйти</button>
         <p class="mut" style="font-size:12px;margin-top:8px">Выход не удаляет данные на этом устройстве. Программа, история, рекорды и настройки копируются в облако в ЕС. Замеры тела — только при согласии. Фото тела остаются на устройстве.</p>
         ${azLab}</div>`;
     }
@@ -435,7 +448,6 @@
       if(e.target.checked) bootAnalytics();
       toast(e.target.checked?'Аналитика включена':'Аналитика выключена');
     };
-    if($('#mzsync')) $('#mzsync').onclick=()=>sync();
     if($('#mzout')) $('#mzout').onclick=doLogout;
     if($('#mzin')) $('#mzin').onclick=doLogin;
     if($('#mzup')) $('#mzup').onclick=doSignup;
@@ -579,6 +591,8 @@
       if(!user&&storedSession()){try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){}}
       if(user){markAuthed();sync()}
     });
+    if(typeof document!=='undefined'&&document.addEventListener) document.addEventListener('visibilitychange',()=>{if(user&&document.visibilityState==='visible')sync()});
+    setInterval(()=>{if(user&&!(typeof document!=='undefined'&&document.visibilityState==='hidden'))sync()},SYNC_EVERY);
   }
   init();
 })();
