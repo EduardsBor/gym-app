@@ -128,3 +128,5 @@ header:has(+#app .catc) #title{font-size:28px;font-weight:800;letter-spacing:-.3
 .exlog{align-items:flex-end;gap:8px}.exlog label{font-size:13px;color:var(--mut)}
 .exadd{width:56px;height:52px;font-size:28px;padding:0;flex:0 0 auto}
 .linkb{background:none;border:0;color:var(--acc);padding:8px 0;min-height:0;text-align:left;width:auto}
+/* D-238: done workouts in the list */
+.dayb.done{color:var(--mut)}

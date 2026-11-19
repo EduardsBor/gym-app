@@ -286,7 +286,10 @@ const DICT3=[
 ['Программа тренера по анкете — по подписке','Coach program from the questionnaire is part of the subscription','Trenera programma pēc anketas — ar abonementu'],
 ['🔐 Войди в аккаунт','🔐 Sign in','🔐 Ienāc kontā'],
 ['14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа.','14 days free, no card — counted from your first completed workout. With an account, the demo and your history are kept after a reinstall and on another device. You can also continue without signing in.','14 dienas bez maksas, bez kartes — skaitot no pirmā pabeigtā treniņa. Ar kontu demo un vēsture saglabāsies pēc pārinstalēšanas un citā ierīcē. Var turpināt arī bez ienākšanas.'],
-['Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Сегодня».','View only: coach programs are part of the subscription. Log your own workouts for free on the “Today” tab.','Tikai skatīšanai: trenera programmas — ar abonementu. Savus treniņus pieraksti bez maksas cilnē “Šodien”.'],
+['Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Тренировки».','View only: coach programs are part of the subscription. Log your own workouts for free on the “Workouts” tab.','Tikai skatīšanai: trenera programmas — ar abonementu. Savus treniņus pieraksti bez maksas cilnē “Treniņi”.'],
+// D-238 «Тренировки» tab (LV for Claude: docs/LV-NEW-WORKOUTS-TAB.md)
+['Тренировки','Workouts','Treniņi'],
+['Все тренировки программы','All program workouts','Visi programmas treniņi'],
 ['Объём по мышцам — по подписке','Volume per muscle is part of the subscription','Apjoms pa muskuļiem — ar abonementu'],
 ['🔒 Объём по мышцам — по подписке','🔒 Volume per muscle — subscription','🔒 Apjoms pa muskuļiem — ar abonementu'],
 ['Графики и рекорды','Charts and records','Grafiki un rekordi'],

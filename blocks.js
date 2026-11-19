@@ -341,29 +341,33 @@ function renderBlockEnd(b){
   };
 }
 
-function renderBlockToday(){
+function renderBlockToday(pick){
   const b=getBlock(S.block.id);
   if(!b)return false;
   migrateBlockState(S);
   if(blockIsComplete(S,b)){renderBlockEnd(b);return true}
-  const sel=S.block.next|0;
-  if(!S.program||!S.program[sel]){
+  const plan0=S.block.next|0;
+  if(!S.program||!S.program[plan0]){
     const plan=planFromBlock(b,S.prof||{});
     S.program=plan.days;
     if(b.title)S.progName=b.title;
   }
+  // D-238: another workout of the block can be opened from the list; the planned one stays S.block.next
+  const sel=pick!=null&&S.program[pick]?pick:plan0;if(typeof TSEL!=='undefined')TSEL=sel;
   const d0=S.program[sel];
   if(!d0)return false;
   const d=typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0;
   const mins=typeof dayMin==='function'?dayMin(d):(d.est||0);
   const total=blockWorkoutCount(b);
   const wk=(S.workouts||[]).filter(w=>Date.now()-w.start<7*864e5).length;
-  $('#title').textContent='Сегодня';
-  app.innerHTML=`<div class="card"><div class="mut">${(typeof goalName==='function'?goalName(S.goal,S.prof&&S.prof.place):GOALS[S.goal])||''} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days} · ${sel+1}/${total}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">По плану сегодня · ≈ ${mins} мин · ${d.items.length} упражн.</div>
+  $('#title').textContent='Тренировки';
+  app.innerHTML=`<div class="card"><div class="mut">${(typeof goalName==='function'?goalName(S.goal,S.prof&&S.prof.place):GOALS[S.goal])||''} · ${S.days}× в неделю · на этой неделе: ${wk}/${S.days} · ${sel+1}/${total}</div><h2 style="margin-top:6px">${esc(d.name)}</h2><div class="mut">${sel===plan0?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==plan0?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
 ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>`}${d.items.map((it,ii)=>`<div class="li exo" data-exo="m,${ii}">${typeof animShot==='function'?animShot(it.exId):''}<div class="grow">${esc(exBy(it.exId).name)}${typeof hint==='function'?hint(it):''}</div>${typeof techBtn==='function'?techBtn(it.exId):''}<span class="mut">${esc(typeof setTxt==='function'?setTxt(it):'')}</span></div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}
 <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button>
-<button class="full" id="blk-skip" style="margin-top:8px">Пропустить тренировку</button></div>`;
+${sel===plan0?'<button class="full" id="blk-skip" style="margin-top:8px">Пропустить тренировку</button>':''}</div>
+${typeof dayListHTML==='function'?dayListHTML(sel):''}`;
   const st=$('#start');if(st)st.onclick=()=>startW(sel);
+  const tb=$('#tback');if(tb)tb.onclick=()=>today();if(typeof dayListBind==='function')dayListBind();
   const sk=$('#blk-skip');if(sk)sk.onclick=()=>{skipBlockWorkout(S);if(typeof save==='function')save();if(typeof toast==='function')toast('Тренировка перенесена');if(typeof go==='function')go('today')};
   return true;
 }
@@ -385,7 +389,7 @@ ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>�
   if(typeof today==='function'){
     const orig=today;
     today=function(sel){
-      if(blockActive()&&!S.active){if(renderBlockToday())return}
+      if(blockActive()&&!S.active){if(renderBlockToday(sel))return}
       return orig(sel);
     };
   }

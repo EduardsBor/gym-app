@@ -144,7 +144,7 @@ function premStartFree(){if(S.active)return go('today');const n=(S.program&&S.pr
  // dayIdx = the day before the planned one, so finishing keeps S.next where it was
  const wc=diaryWarmCool([]);
  S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:n?((S.next||0)%n+n-1)%n:0,dayName:'Своя тренировка',notes:'',warm:wc.warm,cool:wc.cool,items:[]};save();go('today')}
-function premFreeToday(){$('#title').textContent='Сегодня';
+function premFreeToday(){$('#title').textContent='Тренировки';
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">📓 Мой дневник</h2><p class="mut">Записывай свои тренировки бесплатно: выбери упражнения из списка и вводи подходы — прошлый вес и повторы подставятся сами.</p><button class="pri full" id="fstart">▶ Начать свою тренировку</button></div>
  <div class="card"><b>📋 ${esc(S.progName||'Моя программа')}</b><p class="mut" style="margin:4px 0 8px">Программа тренера, авто-вес и видео техники — по подписке. Разминка и заминка — бесплатно в каждой тренировке. Последнюю программу можно посмотреть в разделе «Программа».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>`;
  if(typeof tplMount==='function')tplMount(app);$('#fstart').onclick=premStartFree}
@@ -159,7 +159,7 @@ today=function(sel){if(!can('programs')){premFreeToday();return}_ptoday(sel);
 const _pprogram=program;program=function(){_pprogram();if(can('programs')||!app.querySelectorAll)return;
  app.querySelectorAll('input[data-dn],input[data-e]').forEach(i=>{i.disabled=true});
  app.querySelectorAll('[data-swp],[data-up],[data-dn2],[data-x],[data-ad]').forEach(b=>b.remove());
- if(app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin','<div class="card"><p class="mut" style="margin:0 0 8px">Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Сегодня».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>')};
+ if(app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin','<div class="card"><p class="mut" style="margin:0 0 8px">Только просмотр: программы тренера — по подписке. Свои тренировки записывай бесплатно на вкладке «Тренировки».</p><button class="full sm" data-pw="Программа тренера по анкете — по подписке">🔒 Подробнее о подписке</button></div>')};
 const _pvol=volBadges;volBadges=function(){return can('muscleVolume')?_pvol():'<button class="full sm" data-pw="Объём по мышцам — по подписке">🔒 Объём по мышцам — по подписке</button>'};
 const _pprogress=progress;progress=function(){if(can('charts')||can('prs')||can('oneRM')||can('muscleVolume'))return _pprogress();$('#title').textContent='Прогресс';
  app.innerHTML=lockCard('Графики и рекорды','Графики, рекорды, 1ПМ и объём по мышцам — по подписке. Вся история тренировок бесплатно — в разделе «История».')};
