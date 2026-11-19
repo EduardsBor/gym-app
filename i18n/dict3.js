@@ -414,5 +414,5 @@ const DICT3=[
 ['Профиль','Profile','Profils'],['Справка','Help & info','Uzziņas'],
 // D-247 no «Программа» tab (LV for Claude: docs/LV-NEW-NO-PROGRAM-TAB.md)
 ['Сменить','Change','Mainīt'],['✏️ Изменить','✏️ Edit','✏️ Labot'],['Изменить тренировку','Edit workout','Labot treniņu'],['← Тренировки','← Workouts','← Treniņi'],['📋 Посмотреть программу','📋 View program','📋 Skatīt programmu'],
+['Завершить тренировку','Finish workout','Pabeigt treniņu'],
 ]
-
