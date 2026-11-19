@@ -79,20 +79,20 @@ test('D-216: key approved terms are present in LV', () => {
 test('D-223: §6 legal bases mention analytics consent and Sentry legitimate interest in RU, EN and LV', () => {
   const legal = read('legal.js');
   assert.match(legal, /<h3>6\. Правовые основания \(GDPR\)<\/h3>/);
-  assert.match(legal, /аналитика — по отдельному согласию в «Ещё»/);
+  assert.match(legal, /аналитика — по отдельному согласию в «Профиле»/);
   assert.match(legal, /разбор сбоев, в том числе отчёты об ошибках Sentry в Android-приложении \(чтобы исправлять сбои\)/);
 
   assert.match(legal, /<h3>6\. Legal bases \(GDPR\)<\/h3>/);
-  assert.match(legal, /analytics — with a separate consent under “More”/);
+  assert.match(legal, /analytics — with a separate consent under “Profile”/);
   assert.match(legal, /investigating failures, including Sentry crash reports in the Android app \(to fix crashes\)/);
 
   assert.match(legal, /<h3>6\. Tiesiskais pamats \(VDAR\)<\/h3>/);
-  assert.match(legal, /analītika — ar atsevišķu piekrišanu sadaļā “Vēl”/);
+  assert.match(legal, /analītika — ar atsevišķu piekrišanu sadaļā “Profils”/);
   assert.match(legal, /traucējumu noskaidrošana, arī Sentry avāriju ziņojumi Android lietotnē \(lai labotu avārijas\)/);
 });
 
 test('D-216/D-223: sw is moyzal-v67; changelog; new LV strings only in docs/LV-NEW-D223.md', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v100'/);
+  assert.match(read('sw.js'), /const C='moyzal-v101'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-216, D-223/);
   assert.match(log, /moyzal-v67/);

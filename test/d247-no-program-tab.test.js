@@ -149,7 +149,7 @@ test('D-248: «Ещё» → «Профиль» 👤; library + science in the «
   const d = read('i18n/dict3.js');
   assert.ok(d.includes("['Профиль','Profile','Profils']") && d.includes("['Справка','Help & info','Uzziņas']"));
   assert.ok(d.includes("'Iesildīšanās un atdzišana'") && !d.includes('atsildīšanās'));
-  for (const f of ['app.js', 'health.js', 'i18n/dict2.js', 'i18n/dict3.js']) assert.doesNotMatch(read(f), /в «Ещё»|“More”|“Vēl”/, f);
+  for (const f of ['app.js', 'health.js', 'i18n/dict2.js', 'i18n/dict3.js', 'legal.js', 'privacy.html']) assert.doesNotMatch(read(f), /в «Ещё»|“More”|“Vēl”/, f);
   assert.doesNotMatch(read('features.js'), /в «Ещё»\./);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-PROFILE-TAB.md')));
 });
