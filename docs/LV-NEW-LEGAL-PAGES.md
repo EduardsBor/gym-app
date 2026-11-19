@@ -9,3 +9,10 @@
 
 Новое предложение в legal.js (Privātuma politika, 3.1):
 - Var ieiet arī ar Google: tad Google mums nodod tikai vārdu, e-pasta adresi un profila foto — tie vajadzīgi, lai izveidotu kontu un atpazītu jūs, kad ieejat. Google paroli mēs nesaņemam un citus Google konta datus nepieprasām.
+
+## D-235 (заполнены поля, убран черновик) — LV-правки в legal.js
+- Datu pārzinis: Eduards Boroda (privātpersona, Latvija), kontakts: gymcaptain.app@gmail.com.
+- Lietotnes lietošanai vajadzīgs konts (ieiešana ar e-pastu vai ar Google). Dati tiek glabāti mākonī ES un jūsu ierīcē.
+- Dati tiek glabāti jūsu ierīcē un ES mākonī, kas piesaistīts jūsu kontam (skatīt Privātuma politiku).
+- Aktuālā versija būs pieejama sadaļā “Vēl” un https://eduardsbor.github.io/gym-app/privacy.html.
+- [Avots: …] → (Avots: …); пометки «[ПРОВЕРИТЬ …]» и абзацы про черновик / IK удалены (список открытых вопросов — docs/LEGAL-TODO.md).
