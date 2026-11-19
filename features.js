@@ -120,7 +120,7 @@ async function wipeAll(){if(!confirm('Удалить ВСЕ данные: тре
 // ---- Legal pages (drafts)
 let LG=null;function legal(k,back){LG={k,back};go('legal')}
 function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textContent=L[0];
- app.innerHTML=`<div data-noi18n><div class="card draft">${L[1]}</div>${L[2]}</div><button class="full" id="lgb" style="margin:12px 0 20px">← Назад</button>`;$('#lgb').onclick=()=>go(LG.back||'more')}
+ app.innerHTML=`<div data-noi18n>${L[1]?`<div class="card draft">${L[1]}</div>`:''}${L[2]}</div><button class="full" id="lgb" style="margin:12px 0 20px">← Назад</button>`;$('#lgb').onclick=()=>go(LG.back||'more')}
 // ---- Router additions
 const _render=render;render=function(){if(view==='onb')return onb();if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view)){view='catalog';$('#nav').classList.add('hidden');return catalog()}_render()}  // D-230: first run opens ready programs;
 // ---- Exercise card: 1RM chart is Premium

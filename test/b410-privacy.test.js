@@ -18,13 +18,13 @@ test('B-410: privacy policy has a Sentry section in RU, EN and LV; “Sentry н�
   assert.equal(/Sentry сейчас не подключено|Sentry is not connected today|Sentry nav pieslēgts/i.test(legal), false);
 });
 
-test('B-410: sw is moyzal-v71; changelog mentions it; policy date is 17.11.2026', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v86'/);
+test('B-410: sw is moyzal-v71; changelog mentions it; policy date is 19.11.2026 (D-235)', () => {
+  assert.match(read('sw.js'), /const C='moyzal-v87'/);
   const log = read('CHANGELOG.md');
   assert.match(log, /B-410/);
   assert.match(log, /moyzal-v71/);
   const legal = read('legal.js');
-  assert.match(legal, /Редакция от 17\.11\.2026/);
-  assert.match(legal, /Version of 17\.11\.2026/);
-  assert.match(legal, /Redakcija no 17\.11\.2026/);
+  assert.match(legal, /Редакция от 19\.11\.2026/);
+  assert.match(legal, /Version of 19\.11\.2026/);
+  assert.match(legal, /Redakcija no 19\.11\.2026/);
 });

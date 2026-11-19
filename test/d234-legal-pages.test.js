@@ -42,3 +42,20 @@ test('D-234: sign-in screen has small «Конфиденциальность · 
   assert.doesNotMatch(lv, /sērij/i);
   assert.doesNotMatch(lv.replace(/atspiedien|asinsspiedien/gi, ''), /spiedien/i);
 });
+
+test('D-235: owner and email filled in, no placeholders or draft marks, account sentence is current', () => {
+  const legal = read('legal.js');
+  for (const f of ['legal.js', 'privacy.html', 'terms.html']) {
+    const h = read(f);
+    assert.doesNotMatch(h, /\[\.\.\]|\[email\]|\[e-mail\]|\[e-pasts\]|\[Владелец\]|\[Owner\]|\[Īpašnieks\]|ПРОВЕРИТЬ|ЧЕРНОВИК|MELNRAKSTS|\bDRAFT\b/, f);
+    assert.ok(h.includes('gymcaptain.app@gmail.com'), f);
+  }
+  assert.ok(legal.includes('Eduards Boroda (частное лицо, Латвия)'));
+  assert.ok(legal.includes('Eduards Boroda (private individual, Latvia)'));
+  assert.ok(legal.includes('Eduards Boroda (privātpersona, Latvija)'));
+  assert.doesNotMatch(legal, /Аккаунт не обязателен|An account is not required|Konts nav obligāts/);
+  assert.match(legal, /Для использования Приложения нужен аккаунт \(вход по почте или через Google\)/);
+  assert.match(read('privacy.html'), /https:\/\/eduardsbor\.github\.io\/gym-app\/privacy\.html/);
+  assert.doesNotMatch(read('privacy.html'), /class="note"/);
+  assert.ok(fs.existsSync(path.join(root, 'docs/LEGAL-TODO.md')));
+});
