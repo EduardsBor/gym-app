@@ -4,6 +4,9 @@
   const CFG=window.MZ_SB||(typeof MZ_SB!=='undefined'?MZ_SB:null);const READY=!!(CFG&&CFG.url&&CFG.anon&&window.supabase&&supabase.createClient);
   let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,syncing=false;
   const AUTH_FLAG='gc_auth';
+  // D-232: fixed storage key = the Supabase default for this project, so existing sessions stay valid across versions.
+  const AUTH_KEY=(()=>{try{return 'sb-'+new URL(CFG.url).hostname.split('.')[0]+'-auth-token'}catch(e){return 'sb-gym-auth-token'}})();
+  let authReady=false;
   function markAuthed(){try{if(user) localStorage.setItem(AUTH_FLAG,user.id||'1')}catch(e){}}
 
   function appUrl(){
@@ -317,7 +320,7 @@
     const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:appUrl()}});
     if(error) return msg(friendly(error));
     if(data.session){user=data.session.user;await afterAuth()}
-    else msg('Проверь почту и подтверди аккаунт, затем войди');
+    else msg('Проверь почту и подтверди аккаунт, затем вернись сюда и войди с паролем');
   }
   async function doLogin(){
     if(!sb) return msg('Облако недоступно');
@@ -462,11 +465,15 @@
   function storedSession(){
     try{
       const ls=localStorage;if(ls.getItem(AUTH_FLAG)) return true;
-      for(let i=0;i<(ls.length|0);i++){const k=ls.key(i);if(k&&/^sb-.+-auth-token$/.test(k)) return true}
+      // A session saved by an older version (before the flag existed) also counts; remember it so a failed refresh never brings the sign-in back.
+      if(ls.getItem(AUTH_KEY)){ls.setItem(AUTH_FLAG,'1');return true}
     }catch(e){}
     return false;
   }
   function needAuth(){return READY&&!user&&!offlineSkip&&!storedSession()}
+  // Returning from an email link / OAuth: the session is still being restored — show «Вход…» instead of the form.
+  function authInUrl(){try{return /[?&](code|token_hash)=/.test(location.search||'')||/access_token=/.test(location.hash||'')}catch(e){return false}}
+  function authWaitView(){view='auth';$('#title').textContent='Вход';$('#nav').classList.add('hidden');app.innerHTML='<div class="card" id="mzwait"><p class="mut" style="margin:0">Вход…</p></div>'}
   async function doGoogle(){
     if(!sb) return msg('Облако недоступно');
     msg('…');
@@ -489,7 +496,7 @@
   if(typeof render==='function'){
     const _render=render;
     render=function(){
-      if(needAuth()&&view!=='legal') return authView();
+      if(needAuth()&&view!=='legal') return !authReady&&authInUrl()?authWaitView():authView();
       if(view==='auth') view='today';
       return _render();
     };
@@ -539,11 +546,13 @@
 
   async function init(){
     if(!READY){status='off';return}
+    storedSession(); // remember a saved session before Supabase may drop it after a failed refresh
     sb=supabase.createClient(CFG.url,CFG.anon,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce',storageKey:AUTH_KEY}
     });
     sb.auth.onAuthStateChange(async(ev,session)=>{
       user=session&&session.user||null;
+      // SIGNED_OUT after a failed refresh does NOT clear the sign-in flag: only «Выйти» and account deletion do.
       if(user) markAuthed();
       if(ev==='PASSWORD_RECOVERY'){
         const np=prompt('Новый пароль (не короче 6 символов)');
@@ -553,15 +562,21 @@
         }
       }
     });
-    const {data}=await sb.auth.getSession();
-    user=data&&data.session&&data.session.user||null;
+    // An expired access token is refreshed here with the refresh token; a network error keeps the saved session.
+    try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){user=null}
+    authReady=true;
     stripAuthParams();
     adoptLS();
     if(ensureMeta()) persistLocal();
     seedFirstWorkoutFlag();
     bootAnalytics();
     if(user){markAuthed();if(view==='auth') afterAuth();else sync()}
-    window.addEventListener('online',()=>{if(user) sync()});
+    else if(view==='auth'&&typeof render==='function') render();
+    // Started offline with a saved session: restore it in the background when the network is back.
+    window.addEventListener('online',async()=>{
+      if(!user&&storedSession()){try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){}}
+      if(user){markAuthed();sync()}
+    });
   }
   init();
 })();

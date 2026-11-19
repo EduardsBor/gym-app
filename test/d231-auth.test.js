@@ -200,7 +200,7 @@ test('D-231: «Войти через Google» uses signInWithOAuth(google) with 
 });
 
 test('D-231: a stored session (Supabase token or gc_auth) opens the app without signing in again, offline too', async () => {
-  for (const ls of [{ 'sb-krrhwuldkwkkcegxhyqq-auth-token': '{"x":1}' }, { gc_auth: USER.id }]) {
+  for (const ls of [{ 'sb-example-auth-token': '{"x":1}' }, { gc_auth: USER.id }]) {
     const r = bootA(undefined, { ls, offline: true });
     await go(r);
     assert.notEqual(r.run('view'), 'auth');
