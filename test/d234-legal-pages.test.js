@@ -48,7 +48,8 @@ test('D-235: owner and email filled in, no placeholders or draft marks, account 
   for (const f of ['legal.js', 'privacy.html', 'terms.html']) {
     const h = read(f);
     assert.doesNotMatch(h, /\[\.\.\]|\[email\]|\[e-mail\]|\[e-pasts\]|\[Владелец\]|\[Owner\]|\[Īpašnieks\]|ПРОВЕРИТЬ|ЧЕРНОВИК|MELNRAKSTS|\bDRAFT\b/, f);
-    assert.ok(h.includes('gymcaptain.app@gmail.com'), f);
+    assert.ok(h.includes('support@gymcaptain.app'), f); // D-250
+    assert.ok(!h.includes('gymcaptain.app@gmail.com'), f);
   }
   assert.ok(legal.includes('Eduards Boroda (частное лицо, Латвия)'));
   assert.ok(legal.includes('Eduards Boroda (private individual, Latvia)'));
