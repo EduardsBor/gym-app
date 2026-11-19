@@ -5,9 +5,9 @@
 | RU | EN | LV (предложение) |
 |---|---|---|
 | Код для входа в GymCaptain | Your GymCaptain sign-in code | Tavs GymCaptain pieteikšanās kods |
-| Подтверди почту для GymCaptain | Confirm your email for GymCaptain | Apstiprini savu e-pastu GymCaptain |
+| Подтверди почту для GymCaptain | Confirm your email for GymCaptain | Apstiprini savu e-pastu lietotnei GymCaptain |
 | Введи этот 6-значный код в приложении. Или нажми кнопку ниже. | Enter this 6-digit code in the app. Or tap the button below. | Ievadi šo 6 ciparu kodu lietotnē. Vai nospied pogu zemāk. |
-| Если ты не запрашивал(а) это письмо, просто удали его — без кода никто не войдёт. | … nobody can sign in without the code. | Ja tu šo vēstuli nepieprasīji, vienkārši izdzēs to — bez koda neviens nevar ieiet. |
+| Если ты не запрашивал(а) это письмо, просто удали его — без кода никто не войдёт. | … nobody can sign in without the code. | Ja tu šo vēstuli nepieprasīji, vienkārši izdzēs to — bez koda neviens nevar pieteikties. |
 | … — аккаунт не будет создан. | … — no account will be created. | … — konts netiks izveidots. |
 | Сброс пароля GymCaptain | GymCaptain password reset | GymCaptain paroles atiestatīšana |
 | Нажми кнопку ниже, чтобы задать новый пароль. | Tap the button below to set a new password. | Nospied pogu zemāk, lai iestatītu jaunu paroli. |

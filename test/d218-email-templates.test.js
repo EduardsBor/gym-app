@@ -34,3 +34,14 @@ test('D-218: after sign-up without a session the code field opens (verifyOtp typ
   assert.match(su, /else\{const box=\$\('#mzotpbox'\);if\(box\) box\.classList\.remove\('hidden'\);msg\('Письмо отправлено\. Нажми ссылку или введи код из письма'\)\}/);
   assert.match(s, /sb\.auth\.verifyOtp\(\{email,token,type:'email'\}\)/);
 });
+
+test('D-218b: no personal or login addresses in the D-218 files (public repo); LV wording per Claude', () => {
+  const files = ['supabase/templates/confirm_signup.html', 'supabase/templates/magic_link.html', 'supabase/templates/reset_password.html', 'docs/D-218-SMTP-BREVO.md', 'docs/LV-NEW-D218-EMAILS.md'];
+  for (const f of files) {
+    const emails = read(f).match(/[\w.%+-]+@[\w.-]+\.[a-z]{2,}/gi) || [];
+    assert.deepEqual(emails.filter(e => !/^(support|no-reply)@gymcaptain\.app$/i.test(e)), [], f);
+  }
+  assert.match(read('supabase/templates/confirm_signup.html'), /Apstiprini savu e-pastu lietotnei GymCaptain/);
+  assert.match(read('supabase/templates/magic_link.html'), /bez koda neviens nevar pieteikties/);
+  for (const f of files) assert.doesNotMatch(read(f), /nevar ieiet|e-pastu GymCaptain/, f);
+});

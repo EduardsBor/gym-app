@@ -12,7 +12,7 @@
 | Sender name | GymCaptain |
 | Host | smtp-relay.brevo.com |
 | Port | 587 |
-| Username | SMTP-логин из Brevo (SMTP & API → SMTP, вида …@smtp-brevo.com) |
+| Username | SMTP-логин из Brevo (SMTP & API → SMTP) — вводится только в дашборде, в репо не пишется |
 | Password | SMTP-ключ Brevo — вводит только Эдуард / браузерный шаг. В файлы, PR, чаты не попадает. |
 | Minimum interval per user | 60 секунд (по умолчанию) |
 
@@ -35,6 +35,6 @@
 - D-218: после регистрации с паролем (без сессии) тоже открывается поле кода — код из письма «Confirm signup» подтверждает и сразу входит.
 
 ## 5. Проверка доставки
-1. Регистрация нового адреса Gmail и Outlook (и eduardsboroda@mail.grokbot.com) → письмо во «Входящих», код работает.
+1. Регистрация нового тестового адреса Gmail и Outlook → письмо во «Входящих», код работает.
 2. В заголовках (Gmail: «Показать оригинал»; Outlook: «Просмотреть исходный текст»): `Authentication-Results: … dkim=pass header.d=gymcaptain.app`, `dmarc=pass (p=NONE) header.from=gymcaptain.app`; `spf=pass` будет по домену Brevo (Return-Path …brevo…) — это нормально, DMARC проходит через DKIM.
 3. Brevo → Transactional → Logs: статус Delivered.
