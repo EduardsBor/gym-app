@@ -289,6 +289,7 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  ${A.cool?`<div class="card wucard">${cdHTML(A.cool.cd,A.cool.c)}</div>`:''}
  <button class="full" id="addex">+ Добавить упражнение</button>
  <h2>Заметки</h2><textarea id="notes" rows="3" placeholder="Самочувствие, что получилось…">${esc(A.notes)}</textarea>
+ <button class="pri full" id="fin2" style="margin:16px 0 0;min-height:52px;font-size:17px">Завершить тренировку</button>
  <button class="danger full" id="cancel" style="margin:16px 0">Отменить тренировку</button>`;
  const tick=()=>{const e=$('#dur');if(e)e.textContent=fmtT(Math.floor((Date.now()-A.start)/1000));if(typeof healthTick==='function')healthTick()};tick();clearInterval(durInt);durInt=setInterval(tick,1000);if(typeof healthBind==='function')healthBind();
  app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;if(s.pf){s.pf=false;inp.closest('.set').classList.remove('pf')}save()});
@@ -302,6 +303,8 @@ function workoutView(){const A=S.active;$('#title').textContent=A.dayName;
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);go('today')}};
+ // D-259 (Eduards: «Завершить тренировку в конце должна быть.»): bottom button runs the same (wrapped) handler as the top «Завершить».
+ $('#fin2').onclick=()=>{const f=$('#fin');if(f&&f.onclick)f.onclick()};
  $('#fin').onclick=()=>{const doneItems=A.items.filter(it=>it.sets.some(s=>s.done)).map(it=>({...it,sets:it.sets.filter(s=>s.done)}));
   if(!doneItems.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;
   const snap=typeof healthSnap==='function'?healthSnap(A):null;A.end=snap?snap.end:Date.now();if(A.warm)A.warmDone=A.warm.c.filter(Boolean).length;delete A.warm;if(A.cool){A.coolDone=A.cool.c.filter(Boolean).length;delete A.cool}A.items=doneItems;
