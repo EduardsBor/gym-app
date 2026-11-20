@@ -271,7 +271,7 @@ test('D-265: bounce page, manifest intent-filter, plugins, SW', () => {
   assert.ok(pkg.devDependencies['@capacitor/browser'] && pkg.devDependencies['@capacitor/app']);
   assert.match(read('android/app/build.gradle'), /versionCode 3/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v123'/);
+  assert.match(sw, /const C='moyzal-v124'/);
   assert.match(sw, /privacy\|terms\|auth-callback/);
 });
 
