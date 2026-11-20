@@ -29,6 +29,7 @@ const FILES = [
   'health.js',
   'legal.js',
   'lib.js',
+  'nutrition.js',
   'movekit.js',
   'place.js',
   'plan.js',
