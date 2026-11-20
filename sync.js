@@ -487,9 +487,48 @@
   // Returning from an email link / OAuth: the session is still being restored — show «Вход…» instead of the form.
   function authInUrl(){try{return /[?&](code|token_hash)=/.test(location.search||'')||/access_token=/.test(location.hash||'')}catch(e){return false}}
   function authWaitView(){view='auth';$('#title').textContent='Вход';$('#nav').classList.add('hidden');app.innerHTML='<div class="card" id="mzwait"><p class="mut" style="margin:0">Вход…</p></div>'}
+  // D-265: Android app (Capacitor). Google forbids sign-in inside the app WebView, and the WebView used to hand the whole
+  // OAuth flow to the external browser — which returned to the website there (without the app's PKCE verifier), not to the app.
+  // Now: Google opens in an in-app Custom Tab; Supabase returns to the bounce page auth-callback.html on the site,
+  // which hands ?code= back to the app via app.gymcaptain://auth-callback; the app exchanges the code (PKCE) itself.
+  const NATIVE_CB='https://eduardsbor.github.io/gym-app/auth-callback.html';
+  const NATIVE_SCHEME='app.gymcaptain://auth-callback';
+  function capPlugin(n){try{const C=window.Capacitor;if(!C||typeof C.isNativePlatform!=='function'||!C.isNativePlatform())return null;return (C.Plugins&&C.Plugins[n])||null}catch(e){return null}}
+  function isNativeApp(){try{const C=window.Capacitor;return !!(C&&typeof C.isNativePlatform==='function'&&C.isNativePlatform())}catch(e){return false}}
+  let nativeCodeSeen='';
+  async function handleNativeAuthUrl(url){
+    if(!url||String(url).indexOf(NATIVE_SCHEME)!==0) return false;
+    let u;try{u=new URL(String(url).replace(/^app\.gymcaptain:\/\//,'https://app.gymcaptain/'))}catch(e){return false}
+    const B=capPlugin('Browser');if(B&&B.close){try{await B.close()}catch(e){}}
+    const hp=new URL('https://x/?'+(u.hash||'').replace(/^#/,'')).searchParams;
+    const code=u.searchParams.get('code');
+    const err=u.searchParams.get('error_description')||hp.get('error_description')||u.searchParams.get('error')||hp.get('error');
+    if(!code){if(err){if(view==='auth')msg(friendly(err));else toast(friendly(err))}return true}
+    if(code===nativeCodeSeen) return true;
+    nativeCodeSeen=code;
+    if(!sb) return true;
+    if(view==='auth') msg('…');
+    const {data,error}=await sb.auth.exchangeCodeForSession(code);
+    if(error){if(view==='auth')msg(friendly(error));else toast(friendly(error));return true}
+    user=data&&data.session&&data.session.user||data&&data.user||null;
+    if(user){markAuthed();await afterAuth()}
+    return true;
+  }
+  function bootNativeAuth(){
+    const A=capPlugin('App');if(!A) return;
+    try{if(A.addListener) A.addListener('appUrlOpen',e=>{handleNativeAuthUrl(e&&e.url)})}catch(e){}
+    try{if(A.getLaunchUrl) Promise.resolve(A.getLaunchUrl()).then(r=>{if(r&&r.url)handleNativeAuthUrl(r.url)}).catch(()=>{})}catch(e){}
+  }
   async function doGoogle(){
     if(!sb) return msg('Облако недоступно');
     msg('…');
+    if(isNativeApp()){
+      const B=capPlugin('Browser');
+      const {data,error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:NATIVE_CB,skipBrowserRedirect:!!B}});
+      if(error) return msg(friendly(error));
+      if(B&&data&&data.url){try{await B.open({url:data.url})}catch(e){msg(friendly(e))}}
+      return;
+    }
     const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:appUrl()}});
     if(error) msg(friendly(error));
   }
@@ -581,6 +620,7 @@
     try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){user=null}
     authReady=true;
     stripAuthParams();
+    bootNativeAuth();
     adoptLS();
     if(ensureMeta()) persistLocal();
     seedFirstWorkoutFlag();
