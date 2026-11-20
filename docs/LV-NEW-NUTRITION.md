@@ -8,11 +8,11 @@ UI virknes: «🥗 Питание под цель» → «🥗 Uzturs atbilstoš
 
 # Uzturs atbilstoši mērķim
 
-Uzturs neaizstāj treniņu, taču bez tā programmas mērķi sasniegt nevar. Zemāk ir īsas vadlīnijas veseliem pieaugušajiem: masas palielināšanai, svara samazināšanai un formas uzturēšanai. Tā nav ēdienkarte, nav “diēta” un nav ārstniecības plāns.
+Uzturs neaizstāj treniņu, taču bez tā programmas mērķi sasniegt nevar. Zemāk ir īsas vadlīnijas veseliem pieaugušajiem: masas palielināšanai, svara samazināšanai un formas uzturēšanai. Tas nav ēdienkarte, nav “diēta” un nav ārstēšanas plāns.
 
 ## Īsumā
 
-- Svara samazināšana: stabils deficīts aptuveni 250–500 kcal dienā un ne ātrāk kā 0,5–1% ķermeņa masas nedēļā. Masas palielināšana: neliels pārpalikums un pieaugums aptuveni 0,25–0,5% ķermeņa masas nedēļā.
+- Svara samazināšana: stabils deficīts aptuveni 250–500 kcal dienā un svara zudums ne straujāks par 0,5–1% no ķermeņa masas nedēļā. Masas palielināšana: neliels pārpalikums un pieaugums aptuveni 0,25–0,5% ķermeņa masas nedēļā.
 - Olbaltumvielas: 1,4–2,0 g/kg dienā (orientieris ap 1,6 g/kg); 0,3–0,4 g/kg vienā ēdienreizē, 3–5 ēdienreizes.
 - Pietiekami daudz ūdens; diennakts olbaltumvielu un enerģijas daudzums ir svarīgāks par “logu” tūlīt pēc treniņa.
 - No uztura bagātinātājiem ar spēcīgu pierādījumu bāzi: kreatīna monohidrāts 3–5 g katru dienu; kofeīns — sāc ar 2–3 mg/kg, ne vairāk kā 200 mg vienā reizē un 400 mg dienā.
@@ -22,15 +22,15 @@ Uzturs neaizstāj treniņu, taču bez tā programmas mērķi sasniegt nevar. Zem
 
 Svars mainās, kad enerģija no ēdiena un dzērieniem ilgstoši ir lielāka vai mazāka par patēriņu. Dažu dienu laikā skaitļi uz svariem “lēkā” ūdens un glikogēna dēļ — skaties uz tendenci 2–3 nedēļu laikā, labāk no rīta, vienādos apstākļos.
 
-Kā aptuveni atrast uzturēšanas līmeni: 2–3 nedēļas pieraksti savu ierasto uzturu un svaru. Ja svars gandrīz nemainās, tas ir tuvu tavam uzturēšanas līmenim. No tā arī sāc.
+Kā aptuveni atrast uzturēšanas kaloriju līmeni: 2–3 nedēļas pieraksti savu ierasto uzturu un svaru. Ja svars gandrīz nemainās, tas ir tuvu tavam uzturēšanas kaloriju līmenim. No tā arī sāc.
 
 - **Uzturēšana / vispārējā forma.** Ēd aptuveni patēriņa līmenī, lai svars būtu stabils.
 - **Svara samazināšana.** Vajadzīgs stabils deficīts. Praktisks ACSM/AND/DC (2016) orientieris: samazināt uzņemto enerģiju aptuveni par 250–500 kcal dienā no savas vajadzības (var arī nedaudz palielināt patēriņu). Pēc ISSN (2017, Aragon et al.): nezaudēt vairāk kā 1% ķermeņa masas nedēļā, orientieris **0,5–1,0% nedēļā**. Ātrāks zudums biežāk “apēd” muskuļus un tiek panests sliktāk. Galvenais svara samazināšanas faktors ir kaloriju deficīts uzturā; aktivitāte viena pati dod mērenu efektu.
-- **Masas palielināšana.** Vajadzīgs stabils neliels pārpalikums un spēka treniņi. Svara pieauguma orientieris — **0,25–0,5% ķermeņa masas nedēļā** (Iraki et al., 2019; iesācējiem un vidējā līmeņa trenētiem ārpus sezonas; pieredzējušiem — tuvāk apakšējai robežai). Piemērs: pie 70 kg svara tas ir aptuveni 0,2–0,35 kg nedēļā. Ja 2–3 nedēļu laikā svars neaug, pievieno nedaudz ēdiena. Liels pārpalikums biežāk dod lieku taukaudu, nevis tikai muskuļus.
+- **Masas palielināšana.** Vajadzīgs stabils neliels pārpalikums un spēka treniņi. Svara pieauguma orientieris — **0,25–0,5% ķermeņa masas nedēļā** (Iraki et al., 2019; iesācējiem un vidēja līmeņa trenētiem ārpussezonā; pieredzējušiem — tuvāk apakšējai robežai). Piemērs: pie 70 kg svara tas ir aptuveni 0,2–0,35 kg nedēļā. Ja 2–3 nedēļu laikā svars neaug, pievieno nedaudz ēdiena. Liels pārpalikums biežāk dod lieku taukaudu, nevis tikai muskuļus.
 
 ## Olbaltumvielas
 
-Pēc ISSN (2017) lielākajai daļai trenējošos pietiek ar **1,4–2,0 g olbaltumvielu uz kg ķermeņa masas dienā**. ACSM/AND/DC (2016) dod diapazonu **1,2–2,0 g/kg**, bet kaloriju deficītā iesaka turēties tuvāk **2,0 g/kg un vairāk**, lai labāk saglabātu muskuļus. Praktisks orientieris — **ap 1,6 g/kg**. Morton et al. (2018) metaanalīze parādīja beztauku masas pieauguma plato pie **1,62 g/kg** (95% TI 1,03–2,20); intervāla augšējo robežu **2,2 g/kg** autori iesaka kā praktiskus “griestus” tiem, kas vēlas maksimāli palielināt muskuļu masu. Piemērs: pie 70 kg svara ap 1,6 g/kg ir aptuveni 110 g olbaltumvielu dienā (pēc ISSN 1,4–2,0 g/kg — ap 100–140 g).
+Pēc ISSN (2017) lielākajai daļai to, kas trenējas, pietiek ar **1,4–2,0 g olbaltumvielu uz kg ķermeņa masas dienā**. ACSM/AND/DC (2016) dod diapazonu **1,2–2,0 g/kg**, bet kaloriju deficītā iesaka turēties tuvāk **2,0 g/kg un vairāk**, lai labāk saglabātu muskuļus. Praktisks orientieris — **ap 1,6 g/kg**. Morton et al. (2018) metaanalīze parādīja beztauku masas pieauguma plato pie **1,62 g/kg** (95% TI 1,03–2,20); intervāla augšējo robežu **2,2 g/kg** autori iesaka kā praktiskus “griestus” tiem, kas vēlas maksimāli palielināt muskuļu masu. Piemērs: pie 70 kg svara ap 1,6 g/kg ir aptuveni 110 g olbaltumvielu dienā (pēc ISSN 1,4–2,0 g/kg — ap 100–140 g).
 
 Stingrā deficītā trenētiem dažreiz vajag vairāk — līdz 2,3–3,1 g uz kg beztauku masas (ISSN, 2017).
 
@@ -40,12 +40,12 @@ Sadali olbaltumvielas pa dienu: **0,3–0,4 g/kg vienā ēdienreizē, 3–5 ēdi
 
 Ogļhidrāti ir galvenā degviela intensīvam darbam un glikogēna atjaunošanai. ACSM/AND/DC (2016), gramos uz kg dienā:
 
-- viegla vai prasmju slodze — 3–5 g/kg;
+- viegla slodze vai tehnikas treniņš — 3–5 g/kg;
 - mērena (ap 1 stundu dienā) — 5–7 g/kg;
 - augsta (1–3 stundas mērenas vai augstas intensitātes) — 6–10 g/kg;
 - ļoti augsta (vairāk nekā 4–5 stundas) — 8–12 g/kg.
 
-Lielākajai daļai lietotnes spēka programmu (ap 60–70 minūtēm, 2–6 dienas nedēļā) parasti pietiek ar diapazona apakšējo un vidējo daļu, aptuveni **3–7 g/kg**, atkarībā no apjoma un mērķa. 8–12 g/kg — ļoti lielam apjomam, biežāk izturībai. Pēc EFSA pieaugušajiem ogļhidrāti parasti veido **45–60% no uztura enerģijas**, šķiedrvielām orientieris ir **25 g dienā**.
+Lielākajai daļai lietotnes spēka programmu (ap 60–70 minūtes, 2–6 dienas nedēļā) parasti pietiek ar diapazona apakšējo un vidējo daļu, aptuveni **3–7 g/kg**, atkarībā no apjoma un mērķa. 8–12 g/kg — ļoti lielam apjomam, biežāk izturībai. Pēc EFSA pieaugušajiem ogļhidrāti parasti veido **45–60% no uztura enerģijas**, šķiedrvielām orientieris ir **25 g dienā**.
 
 Tauki vajadzīgi enerģijai, taukos šķīstošo vitamīnu uzsūkšanai un neaizstājamajām taukskābēm. EFSA: **20–35% no enerģijas**. ACSM neiesaka ilgstoši turēt taukus zem 20%. Ierobežo piesātinātos taukus: ACSM min sabiedrības orientieri **mazāk nekā 10% no enerģijas**; EFSA — cik vien iespējams zemāk pilnvērtīga uztura ietvaros. Neizņem taukus “līdz nullei” deficīta dēļ.
 
@@ -53,11 +53,11 @@ Tauki vajadzīgi enerģijai, taukos šķīstošo vitamīnu uzsūkšanai un neaiz
 
 Pēc EFSA adekvāta **kopējā** ūdens (dzērieni + ūdens ēdienā) uzņemšana ir aptuveni **2,0 l dienā sievietēm** un **2,5 l vīriešiem** mērenā temperatūrā un pie mērenas aktivitātes. Treniņā un karstumā vajag vairāk.
 
-Pirms treniņa, pēc ACSM/AND/DC (2016): **5–10 ml/kg 2–4 stundas iepriekš** (pie 70 kg — aptuveni 350–700 ml). Orientieris — gaišs urīns un laiks aiziet uz tualeti. Treniņa laikā dzer pēc slāpēm un nepieļauj svara zudumu vairāk par **2%** — tā jau ir dehidratācija, kas traucē slodzei. Pēc stipras svīšanas: aptuveni **1,25–1,5 l uz katru zaudēto kilogramu** svara. Nedzer litriem “uz priekšu” vienā reizē: ļoti liels ūdens daudzums īsā laikā ir bīstams (hiponatriēmija; pēc EFSA nieres izvada ne vairāk kā aptuveni 0,7–1,0 l stundā).
+Pirms treniņa, pēc ACSM/AND/DC (2016): **5–10 ml/kg 2–4 stundas iepriekš** (pie 70 kg — aptuveni 350–700 ml). Orientieris — gaišs urīns un regulāra urinēšana. Treniņa laikā dzer pēc slāpēm un nepieļauj svara zudumu vairāk par **2%** — tā jau ir dehidratācija, kas pasliktina sniegumu. Pēc stipras svīšanas: aptuveni **1,25–1,5 l uz katru zaudēto kilogramu** svara. Nedzer litriem “uz priekšu” vienā reizē: ļoti liels ūdens daudzums īsā laikā ir bīstams (hiponatriēmija; pēc EFSA nieres izvada ne vairāk kā aptuveni 0,7–1,0 l stundā).
 
 ## Ēšana pirms un pēc treniņa
 
-Galvenais ir diennakts olbaltumvielu un enerģijas norma, nevis “burvju 30 minūšu logs”. Pēc ISSN treniņa ietekme uz muskuļu olbaltumvielu sintēzi ilgst ilgi (ne mazāk kā 24 stundas) un ar laiku vājinās; labums ir gan no ēšanas pirms treniņa, gan pēc tā. Ja pirms treniņa jau bija normāla ēdienreize ar olbaltumvielām, steidzamība pēc tā ir mazāka.
+Galvenais ir diennakts olbaltumvielu un enerģijas norma, nevis “burvju 30 minūšu logs”. Pēc ISSN treniņa ietekme uz muskuļu olbaltumvielu sintēzi ilgst ilgi (ne mazāk kā 24 stundas) un ar laiku vājinās; labums ir gan no ēšanas pirms treniņa, gan pēc tā. Ja pirms treniņa jau bija normāla ēdienreize ar olbaltumvielām, ēst pēc treniņa nav tik steidzami.
 
 **Pirms.** Parasta ēdienreize 1–4 stundas iepriekš, ar olbaltumvielām un ogļhidrātiem, lai zālē būtu komfortabli. Ja ēdi nesen, atsevišķa ēdienreize “pirms zāles” nav obligāta. ACSM orientieris “1–4 g ogļhidrātu/kg 1–4 stundas pirms starta” attiecas uz slodzi, kas ilgāka par 60 minūtēm, un uz galvenajām sesijām, nevis uz katru treniņu zālē.
 
@@ -67,7 +67,7 @@ Galvenais ir diennakts olbaltumvielu un enerģijas norma, nevis “burvju 30 min
 
 Lielākajai daļai vitamīnu un minerālvielu komplekss nav vajadzīgs, ja uzturs ir daudzveidīgs un enerģijas pietiek (ACSM/AND/DC, 2016). Zemāk — divi uztura bagātinātāji ar labu pierādījumu bāzi. Tie neaizstāj treniņu un ēdienu un nav obligāti.
 
-**Kreatīna monohidrāts.** 3–5 g katru dienu (ISSN, 2017). Piesātināšana (ap 0,3 g/kg dienā, parasti porcijās, 5–7 dienas, pēc tam 3–5 g) ātrāk aizpilda krājumus muskuļos; bez piesātināšanas tāds pats līmenis tiek sasniegts aptuveni 3–4 nedēļās. Citas formas nav pierādījušas priekšrocības salīdzinājumā ar monohidrātu. Iespējams svara pieaugums par 0,6–1 kg ūdens dēļ muskuļos un diskomforts vēderā pie lielām vienreizējām devām. Veseliem pieaugušajiem, lietojot parastās devas, pārliecinošu datu par kaitējumu nav. Ja ir nieru slimības, grūtniecības vai zīdīšanas laikā un jebkuru šaubu gadījumā — vispirms ārsts. Bez speciālista ieteikuma nepārsniedz parastos 3–5 g dienā.
+**Kreatīna monohidrāts.** 3–5 g katru dienu (ISSN, 2017). Piesātināšana (ap 0,3 g/kg dienā, parasti sadalot porcijās, 5–7 dienas, pēc tam 3–5 g dienā) ātrāk aizpilda krājumus muskuļos; bez piesātināšanas tāds pats līmenis tiek sasniegts aptuveni 3–4 nedēļās. Citas formas nav pierādījušas priekšrocības salīdzinājumā ar monohidrātu. Iespējams svara pieaugums par 0,6–1 kg ūdens dēļ muskuļos un diskomforts vēderā pie lielām vienreizējām devām. Veseliem pieaugušajiem, lietojot parastās devas, pārliecinošu datu par kaitējumu nav. Nieru slimību gadījumā, grūtniecības vai zīdīšanas laikā, kā arī, ja ir šaubas, vispirms konsultējies ar ārstu. Bez speciālista ieteikuma nepārsniedz parastos 3–5 g dienā.
 
 **Kofeīns.** Sāc ar **2–3 mg/kg** aptuveni 60 minūtes pirms treniņa, **ne vairāk kā 200 mg vienā reizē un 400 mg dienā** no visiem avotiem (kafija, tēja, enerģijas dzērieni, uztura bagātinātāji) — tās ir EFSA (2015) robežas. Grūtniecības vai zīdīšanas laikā — līdz 200 mg dienā. Jau 100 mg vakarā var traucēt miegu. Piemērs: 70 kg × 2–3 mg/kg ≈ 140–210 mg; turies pie 200 mg vienā reizē.
 
@@ -76,16 +76,16 @@ Lielākajai daļai vitamīnu un minerālvielu komplekss nav vajadzīgs, ja uztur
 - Gaidīt svara samazināšanos tikai no treniņiem, bez kaloriju deficīta.
 - Pārāk liels deficīts un svara zudums ātrāk par 1% nedēļā.
 - Par maz olbaltumvielu, īpaši deficītā.
-- Ķert “30 minūšu logu” un tajā pašā laikā nesasniegt olbaltumvielu dienas normu.
+- Dzenāties pakaļ “30 minūšu logam” un tajā pašā laikā nesasniegt olbaltumvielu dienas normu.
 - Ilgstoši ēst ļoti maz tauku (zem 20% no enerģijas).
-- Krāt uztura bagātinātājus “masai” ēdiena, miega un progresijas zālē vietā.
-- Pārspīlēt ar kofeīnu no enerģijas dzērieniem un uztura bagātinātājiem virs 400 mg dienā.
-- Krist panikā par svaru uz svariem pēc kreatīna, sāļa ēdiena vai smaga treniņa — bieži tas ir ūdens.
+- Krāt uztura bagātinātājus “masai” ēdiena, miega un treniņu progresa vietā.
+- Pārspīlēt ar kofeīnu — virs 400 mg dienā (enerģijas dzērieni, uztura bagātinātāji).
+- Krist panikā par skaitli uz svariem pēc kreatīna lietošanas, sāļa ēdiena vai smaga treniņa — bieži tas ir ūdens.
 - Kopēt citu cilvēku stingras “diētas” no interneta.
 
 ## Svarīgi
 
-Šie ir vispārīgi ieteikumi veseliem pieaugušajiem, nevis medicīniska konsultācija un nevis individuāls uztura plāns. Ja ir slimības, ir vai ir bijuši ēšanas traucējumi, kā arī grūtniecības vai zīdīšanas laikā — vispirms vērsies pie ārsta vai dietologa. Ja deficīta laikā ir sāpes, pēkšņs vājums vai reibonis, apstājies un konsultējies. Teksts nesola rezultātu noteiktā laikā un neuzstāda diagnozes.
+Šie ir vispārīgi ieteikumi veseliem pieaugušajiem, nevis medicīniska konsultācija un nevis individuāls uztura plāns. Ja ir slimības, ir vai ir bijuši ēšanas traucējumi, kā arī grūtniecības vai zīdīšanas laikā — vispirms vērsies pie ārsta vai dietologa. Ja deficīta laikā ir sāpes, pēkšņs vājums vai reibonis, apstājies un konsultējies ar ārstu. Teksts nesola rezultātu noteiktā laikā un nenosaka diagnozes.
 
 ## Avoti
 
@@ -101,4 +101,4 @@ Lielākajai daļai vitamīnu un minerālvielu komplekss nav vajadzīgs, ja uztur
 10. EFSA NDA Panel. Scientific Opinion on Dietary Reference Values for water. *EFSA Journal.* 2010;8(3):1459. Kopsavilkums: EFSA, 2017 (2,0 / 2,5 l/dienā).
 11. EFSA NDA Panel. Scientific Opinion on the safety of caffeine. *EFSA Journal.* 2015;13(5):4102.
 
-Tekstā izmantotas arī publiskas normas, ko ACSM/AND/DC (2016) min pēc Dietary Guidelines for Americans (piesātinātie tauki < 10o enerģijas), un EFSA DRV ogļhidrātiem (45–60o enerģijas) un šķiedrvielām (25 g/dienā).
+Tekstā izmantotas arī publiskas normas, ko ACSM/AND/DC (2016) min pēc Dietary Guidelines for Americans (piesātinātie tauki < 10% no enerģijas), un EFSA DRV ogļhidrātiem (45–60% no enerģijas) un šķiedrvielām (25 g/dienā).

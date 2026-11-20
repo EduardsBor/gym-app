@@ -14,7 +14,7 @@ test('D-243: no «pieeja» in the meaning of a set left in app strings', () => {
     assert.deepEqual(bad, [], f);
   }
   const d3 = fs.readFileSync(path.join(root, 'i18n/dict3.js'), 'utf8');
-  for (const lv of ['Piegājieni izpildīti', 'Pierakstīt piegājienu', 'Pievienot komentāru piegājienam', 'Komentārs piegājienam', 'Piegājiens izpildīts', 'iepriekšējiem piegājieniem', 'Iesildošais piegājiens: ']) assert.ok(d3.includes(lv), lv);
+  for (const lv of ['Pierakstīt piegājienu', 'Pievienot komentāru piegājienam', 'Komentārs piegājienam', 'Piegājiens izpildīts', 'iepriekšējo piegājienu', 'Izpildītie piegājieni', 'Iesildošais piegājiens: ']) assert.ok(d3.includes(lv), lv);
   assert.match(fs.readFileSync(path.join(root, 'notify.js'), 'utf8'), /Atpūta beigusies — nākamais piegājiens/);
 });
 
