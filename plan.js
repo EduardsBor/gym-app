@@ -182,6 +182,7 @@ function planFromTemplate(a) {
     const cd = {
       cardio: cdCardioId && cdMin > 0 ? { id: cdCardioId, min: cdMin, note: 'лёгкий темп, пульс снижается' } : null,
       note: cdRaw[3] ? 'последние 2–3 мин кардио-блока — в лёгком темпе (это часть заминки)' : '',
+      pl: a.place || 'g',
       stretch: takeBlock(cdRaw[5], cdRaw[4][i], len, lim)
     };
     if (cardio) items.push(cardio);
@@ -247,12 +248,18 @@ function wuRows(wu) {
 function cdRows(cd) {
   const rows = [];
   if (cd.cardio) rows.push({ id: cd.cardio.id, n: exBy(cd.cardio.id).name, d: cd.cardio.min + ' мин', x: cd.cardio.note || '' });
-  else if (cd.note) rows.push({ id: '', n: 'Лёгкое кардио', d: '', x: cd.note });
+  else if (cd.note) {
+    // D-261 (Тренер): gym — light walk clip incline-treadmill-walk + caption; home (b_bar / b_nobar / d) — no clip, walk on the spot.
+    const pl = cd.pl || (typeof movekitPlace === 'function' ? movekitPlace() : 'g');
+    rows.push(pl === 'g'
+      ? { id: 'mk-incline-treadmill-walk', n: 'Лёгкое кардио', d: '', x: cd.note, c: 'Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке' }
+      : { id: '', n: 'Лёгкое кардио', d: '', x: cd.note, c: 'Ходьба на месте в лёгком темпе' });
+  }
   (cd.stretch || []).forEach(m => rows.push({ id: m.id, n: exBy(m.id).name, d: m.dose, x: '' }));
   return rows;
 }
 function rowsHTML(rows, chk, attr) {
-  return rows.map((it, i) => `<div class="li wu exo${chk && chk[i] ? ' done' : ''}" data-exo="${attr === 'cd' ? 'c' : 'w'},${i}">${chk ? `<button class="sm ${chk[i] ? 'ok' : ''}" data-${attr}="${i}" aria-label="Готово">✓</button>` : ''}${it.id && typeof animShot === 'function' ? animShot(it.id) : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort === 'function' && exShort(it.d) !== it.d && it.d ? `<div class="mut" style="font-size:12px">${esc(it.d)}</div>` : ''}${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut" style="white-space:nowrap">${esc(typeof exShort === 'function' ? exShort(it.d) : it.d)}</span></div>`).join('');
+  return rows.map((it, i) => `<div class="li wu exo${chk && chk[i] ? ' done' : ''}" data-exo="${attr === 'cd' ? 'c' : 'w'},${i}">${chk ? `<button class="sm ${chk[i] ? 'ok' : ''}" data-${attr}="${i}" aria-label="Готово">✓</button>` : ''}${it.id && typeof animShot === 'function' ? animShot(it.id) : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort === 'function' && exShort(it.d) !== it.d && it.d ? `<div class="mut" style="font-size:12px">${esc(it.d)}</div>` : ''}${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}${it.c ? `<div class="mut" style="font-size:12px">${esc(it.c)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut" style="white-space:nowrap">${esc(typeof exShort === 'function' ? exShort(it.d) : it.d)}</span></div>`).join('');
 }
 function wuHTML(wu, chk) {
   const rows = wuRows(wu), n = chk ? chk.filter(Boolean).length : 0, all = chk && n === rows.length;
