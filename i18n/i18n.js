@@ -5,6 +5,8 @@ const LANGS={ru:'Русский',en:'English',lv:'Latviešu'};
 const LANG=(()=>{try{const s=JSON.parse(localStorage.getItem('gym')||'null');if(s&&LANGS[s.lang])return s.lang}catch(e){}
  const n=(navigator.languages||[navigator.language||'']).map(x=>String(x).slice(0,2).toLowerCase()).find(x=>LANGS[x]);return n||'ru'})();
 const LOC={ru:'ru-RU',en:'en-GB',lv:'lv-LV'}[LANG];
+// LV workout-count noun: 1/21/31… → treniņš; 11–19 and *0 → treniņu; else treniņi.
+function lvTreninWord(n){n=Math.abs(parseInt(n,10)||0);const r=n%100;if((r>=11&&r<=19)||n%10===0)return'treniņu';if(n%10===1)return'treniņš';return'treniņi'}
 document.documentElement.lang=LANG;
 const CYR=/[А-Яа-яЁё]/;
 let TRM=null,TRE=null,TRX=null;
