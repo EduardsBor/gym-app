@@ -116,3 +116,26 @@ test('D-238: «Программа» has no «Почему программа п�
   assert.equal(run('$("#title").textContent'), 'Тренировки');
   assert.match(app(), /Мой дневник/);
 });
+
+test('D-269: main workout card has no «Неделя N ·» title and no this-week / program counters; list weeks and stored names stay', () => {
+  const { run, app } = withProgram();
+  const stored = run('S.program[S.block.next|0].name');
+  assert.match(stored, /^Неделя \d+ · /);
+  const title = run('dayTitle(S.program[S.block.next|0])');
+  assert.doesNotMatch(title, /^Неделя /);
+  const h = app();
+  const re = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert.match(h, new RegExp('<h2 style="margin-top:6px">' + re(title) + '</h2>'));
+  assert.doesNotMatch(h, /<h2 style="margin-top:6px">Неделя /);
+  assert.match(h, /× в неделю<\/div><h2 style="margin-top:6px">/);
+  assert.doesNotMatch(h, /на этой неделе/);
+  assert.doesNotMatch(h, / · \d+\/\d+<\/div><h2/);
+  assert.match(h, /<summary><b>Неделя 1<\/b>/);
+  run('$("#start").onclick()');
+  assert.equal(run('S.active.dayName'), stored);
+  run('S.active=null;delete S.block;today(0)');
+  const h2 = app();
+  assert.doesNotMatch(h2, /на этой неделе/);
+  assert.doesNotMatch(h2, /<h2 style="margin-top:6px">Неделя /);
+  assert.match(h2, /× в неделю<\/div><h2 style="margin-top:6px">/);
+});
