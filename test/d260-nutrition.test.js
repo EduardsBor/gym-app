@@ -38,3 +38,7 @@ test('D-260: wired into Профиль/Справка, nav, render, SW cache and
   assert.match(read('index.html'), /<script src="nutrition\.js"><\/script>/);
   assert.ok(read('i18n/dict3.js').includes("['🥗 Питание под цель','🥗 Nutrition for your goal','🥗 Uzturs atbilstoši mērķim']"));
 });
+
+test('D-260b: Android build copies nutrition.js into www/ (APK)', () => {
+  assert.match(read('scripts/build-web.js'), /'nutrition\.js'/);
+});
