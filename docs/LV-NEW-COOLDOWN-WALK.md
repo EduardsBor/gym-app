@@ -6,3 +6,9 @@
 |---|---|---|
 | Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке | No incline or a slight incline, at an easy pace; you can use the same machine as in the cardio block | Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; var izmantot to pašu trenažieri, kas kardio blokā |
 | Ходьба на месте в лёгком темпе | Walking on the spot at an easy pace | Soļošana uz vietas vieglā tempā |
+
+## Also (D-262, start screen before JS)
+
+| RU | EN | LV |
+|---|---|---|
+| Приложение для тренировок | Workout app | Treniņu lietotne |

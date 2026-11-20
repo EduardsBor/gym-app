@@ -91,3 +91,12 @@ test('D-261: generated gym/home programs carry the place on cd; blocks b_bar/b_n
   assert.ok(d3.includes("['Ходьба на месте в лёгком темпе','Walking on the spot at an easy pace','Soļošana uz vietas vieglā tempā']"));
   assert.match(read('exscreen.js'), /e\.r\.c\?`<p class="mut excap">/);
 });
+
+test('D-262: Google site verification file + meta; static visible «GymCaptain» brand before JS; not in SW cache', () => {
+  assert.equal(read('google914254ab977aacc4.html'), 'google-site-verification: google914254ab977aacc4.html');
+  const h = read('index.html');
+  assert.ok(h.includes('<meta name="google-site-verification" content="jK0M88x4hwSqmyX4sTSPZOGvDqMB8apIV6iRBgctSWw" />'));
+  assert.match(h, /<main id="app"><div class="gcboot"><h2>GymCaptain<\/h2><p>Приложение для тренировок<\/p><\/div><\/main>/);
+  assert.doesNotMatch(read('style.css'), /\.gcboot[^{]*\{[^}]*display:\s*none/);
+  assert.doesNotMatch(read('sw.js'), /google914254ab977aacc4/);
+});
