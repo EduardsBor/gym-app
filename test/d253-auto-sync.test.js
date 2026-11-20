@@ -202,11 +202,11 @@ test('D-253: saved changes are debounced (3 s, one run for many saves)', async (
   assert.equal(sel(r), before + 1);
 });
 
-test('D-253: visible / online / every 5 min trigger a sync; hidden does not', async () => {
+test('D-253: visible / hidden (D-253b) / online / every 5 min trigger a sync', async () => {
   const r = await signedIn();
   let n = sel(r);
   r.g.document.visibilityState = 'hidden'; r.g.__doc.visibilitychange.forEach(f => f()); await ticks();
-  assert.equal(sel(r), n);
+  assert.equal(sel(r), ++n, 'minimised → sync');
   r.g.__intervals.find(i => i.ms === 300000).fn(); await ticks();
   assert.equal(sel(r), n, 'no periodic sync while hidden');
   r.g.document.visibilityState = 'visible'; r.g.__doc.visibilitychange.forEach(f => f()); await ticks();
@@ -263,4 +263,31 @@ test('D-253: no «Синхронизировать сейчас»; «Выйти�
   const n2 = sel(r2);
   await r2.run('__mzLogout()');
   assert.equal(sel(r2), n2, 'offline: sign out without waiting for the cloud');
+});
+
+test('D-253b: pagehide syncs; hidden+pagehide together run once (+1 queued), pending debounce is dropped', async () => {
+  const r = await signedIn();
+  const n = sel(r);
+  r.g.__win.pagehide.forEach(f => f()); await ticks();
+  assert.equal(sel(r), n + 1);
+  let open; r.cloud.gate = new Promise(res => { open = res; });
+  const t0 = r.g.__timers.length;
+  r.run('save()');
+  r.g.document.visibilityState = 'hidden'; r.g.__doc.visibilitychange.forEach(f => f()); r.g.__win.pagehide.forEach(f => f());
+  await ticks();
+  assert.equal(sel(r), n + 2, 'no parallel run');
+  assert.ok(r.g.__timers.slice(t0).filter(t => t.ms === 3000).every(t => t.cleared), 'debounced sync cleared');
+  open(); await ticks(80);
+  assert.equal(sel(r), n + 3, 'one queued rerun only');
+});
+
+test('D-253b: hidden / pagehide without sign-in do nothing and stay silent', async () => {
+  const cloud = { inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] };
+  const r = bootA(seed(), { cloud });
+  await ticks();
+  const n = sel(r);
+  r.g.document.visibilityState = 'hidden';
+  (r.g.__doc.visibilitychange || []).forEach(f => f()); (r.g.__win.pagehide || []).forEach(f => f()); await ticks();
+  assert.equal(sel(r), n);
+  assert.equal(r.g.__alerts.length, 0);
 });

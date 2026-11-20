@@ -39,7 +39,7 @@ test('D-209: APP_VERSION is 1.0; stale 68 / version 30 texts are gone', () => {
   assert.equal(app.includes('Версия 30'), false);
   assert.equal(feat.includes('Версия 30'), false);
   assert.match(feat, /textContent='Версия '\+APP_VERSION/);
-  assert.match(sw, /const C='moyzal-v114'/);
+  assert.match(sw, /const C='moyzal-v115'/);
   assert.equal(sw.includes("C='moyzal-v59'"), false);
   assert.equal(lib.includes('20 базовых упражнений'), false);
   assert.match(gradle, /versionName "1\.0"/);
