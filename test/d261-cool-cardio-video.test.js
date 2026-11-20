@@ -59,7 +59,7 @@ function withProgram() {
 }
 const NOTE = 'последние 2–3 мин кардио-блока — в лёгком темпе (это часть заминки)';
 const CAP_G = 'Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке';
-const CAP_H = 'Ходьба на месте в лёгком темпе';
+const CAP_H = 'Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное';
 
 test('D-261: gym cool-down row shows incline-treadmill-walk with the exact caption', () => {
   const b = boot();
@@ -69,11 +69,11 @@ test('D-261: gym cool-down row shows incline-treadmill-walk with the exact capti
   assert.ok(b.run(`cdHTML({note:${JSON.stringify(NOTE)},pl:'g',stretch:[]})`).includes(CAP_G));
 });
 
-test('D-261: home rows (b / d) — no clip, «Ходьба на месте в лёгком темпе»; no w_march, walk-brisk unchanged', () => {
+test('D-261/D-264: home rows (b / d) — no clip, «Лёгкая ходьба»; no w_march, walk-brisk name unchanged', () => {
   const b = boot();
   for (const pl of ['b', 'd']) {
     const r = JSON.parse(b.run(`JSON.stringify(cdRows({note:${JSON.stringify(NOTE)},pl:'${pl}',stretch:[]})[0])`));
-    assert.deepEqual(r, { id: '', n: 'Лёгкое кардио', d: '', x: NOTE, c: CAP_H }, pl);
+    assert.deepEqual(r, { id: '', n: 'Лёгкая ходьба', d: '', x: NOTE, c: CAP_H }, pl);
   }
   assert.ok(!b.run('movekitFile("walk-brisk")'));
   assert.doesNotMatch(read('plan.js'), /w_march/);
@@ -87,8 +87,9 @@ test('D-261: generated gym/home programs carry the place on cd; blocks b_bar/b_n
   const h = JSON.parse(b.run(`JSON.stringify(planFromTemplate({goal:'mass',level:'nov',days:3,len:60,place:'b',sex:'m',prio:[],lim:[]}).days.map(d=>d.cd&&d.cd.pl))`));
   assert.ok(h.every(x => x === 'b'));
   const d3 = read('i18n/dict3.js');
-  assert.ok(d3.includes("'Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; var izmantot to pašu trenažieri, kas kardio blokā'"));
-  assert.ok(d3.includes("['Ходьба на месте в лёгком темпе','Walking on the spot at an easy pace','Soļošana uz vietas vieglā tempā']"));
+  assert.ok(d3.includes("'Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; vari izmantot to pašu trenažieri, ko izmantoji kardio blokā'"));
+  assert.ok(d3.includes("['Лёгкая ходьба','Easy walk','Viegla iešana']"));
+  assert.ok(d3.includes("['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga']"));
   assert.match(read('exscreen.js'), /e\.r\.c\?`<p class="mut excap">/);
 });
 
