@@ -94,3 +94,7 @@ cd android && ./gradlew assembleDebug
 
 В debug-сборке (когда `GC_SENTRY_ENV` не `production`) в консоли удалённой отладки Chrome доступны `__gcSentryTestCrash()` (неперехваченная JS-ошибка) и `__gcSentryTestNativeCrash()` (нативный краш, закрывает приложение). Вызывать только на тестовом телефоне, не с сайта.
 
+
+## Вход через Google в приложении (D-265)
+
+Google запрещает вход внутри WebView. Поэтому в Android-версии кнопка «Войти через Google» открывает Google во встроенной вкладке браузера (`@capacitor/browser`, Custom Tab). Supabase возвращает на страницу сайта `auth-callback.html` (адрес уже разрешён в Supabase), она передаёт `?code=` в приложение по ссылке `app.gymcaptain://auth-callback` (intent-filter в `AndroidManifest.xml`), приложение само обменивает код на сессию (PKCE, `exchangeCodeForSession`) через `@capacitor/app` `appUrlOpen`. Веб-версия (PWA) не изменилась. Сборка с этим входом: `versionCode` `3`.

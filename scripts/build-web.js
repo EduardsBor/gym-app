@@ -37,6 +37,8 @@ const FILES = [
   'prog.js',
   'progress.js',
   'sync.js',
+  'blocks.js',
+  'exscreen.js',
   'tech.js',
   'warm.js',
   'notify.js',
@@ -48,7 +50,7 @@ const FILES = [
   'beep3.wav',
   'tick.wav'
 ];
-const DIRS = ['i18n', 'vendor'];
+const DIRS = ['i18n', 'vendor', 'data'];
 
 function copyFile(src, dst) {
   fs.mkdirSync(path.dirname(dst), { recursive: true });

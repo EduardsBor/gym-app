@@ -1,0 +1,23 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>GymCaptain</title>
+<style>body{font-family:system-ui,sans-serif;background:#0f1115;color:#e8e8e8;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;text-align:center}main{padding:24px;max-width:420px}a.b{display:block;background:#2e7d32;color:#fff;text-decoration:none;font-size:18px;padding:16px;border-radius:12px;margin:20px 0}p{color:#aaa}</style></head>
+<body><main><h2 id="t">Вход выполнен</h2><a class="b" id="go" href="#">Вернуться в приложение</a><p id="n">Если приложение не открылось само, нажми кнопку.</p></main>
+<script>
+// D-265: bounce page for Google sign-in from the Android app. Supabase returns here (?code=…) inside the in-app browser tab;
+// the page hands the same query/hash to the app (app.gymcaptain://auth-callback), where the code is exchanged for a session.
+// No tokens are stored or sent anywhere by this page.
+(function(){
+  var L=((navigator.language||'ru')+'').slice(0,2),T={
+    en:['Signed in','Back to the app','If the app did not open by itself, tap the button.'],
+    lv:['Pieteikšanās izdevās','Atgriezties lietotnē','Ja lietotne neatvērās pati, nospied pogu.']
+  }[L];
+  if(T){document.documentElement.lang=L;document.getElementById('t').textContent=T[0];document.getElementById('go').textContent=T[1];document.getElementById('n').textContent=T[2]}
+  var q=(location.search||'').replace(/^\?/,''),h=(location.hash||'').replace(/^#/,'');
+  if(/(^|&)(access_token|refresh_token)=/.test(h)) h='';
+  var all=[q,h].filter(Boolean).join('&');
+  var intent='intent://auth-callback'+(all?'?'+all:'')+'#Intent;scheme=app.gymcaptain;package=app.gymcaptain;end';
+  var a=document.getElementById('go');a.href=intent;
+  if(/android/i.test(navigator.userAgent||'')) setTimeout(function(){location.href=intent},50);
+  else a.href='./';
+})();
+</script></body></html>
