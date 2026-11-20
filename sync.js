@@ -237,6 +237,7 @@
     })();
     return running;
   }
+  function syncNow(){clearTimeout(timer);return sync()}
   const SYNC_DEBOUNCE=3000,SYNC_EVERY=5*60e3;
   function schedule(){
     if(!user) return;
@@ -591,7 +592,9 @@
       if(!user&&storedSession()){try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){}}
       if(user){markAuthed();sync()}
     });
-    if(typeof document!=='undefined'&&document.addEventListener) document.addEventListener('visibilitychange',()=>{if(user&&document.visibilityState==='visible')sync()});
+    if(typeof document!=='undefined'&&document.addEventListener) document.addEventListener('visibilitychange',()=>{if(user&&(document.visibilityState==='visible'||document.visibilityState==='hidden'))syncNow()});
+    // D-253b: also when the app is minimised or closed (hidden / pagehide) — the same sync(), single-flight, silent without sign-in or network.
+    window.addEventListener('pagehide',()=>{if(user)syncNow()});
     setInterval(()=>{if(user&&!(typeof document!=='undefined'&&document.visibilityState==='hidden'))sync()},SYNC_EVERY);
   }
   init();

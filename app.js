@@ -173,7 +173,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 let view='today';
 // D-247: no «Программа» tab — program/catalog/quiz/preview live under «Тренировки», library/science under «Профиль» → «Справка».
 // D-251: program change lives in «Профиль» (Eduards: «Смена программы тут не нужна»), so catalog/quiz/preview highlight «Профиль».
-const NAV_OF={program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'};let PEDIT=null;
+const NAV_OF={program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'};NAV_OF.nutrition='more';let PEDIT=null;
 function go(v){if(v!=='program')PEDIT=null;view=v;const nv=NAV_OF[v]||v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===nv));render();scrollTo(0,0)}
 function progRowHTML(){return`<div class="card row" id="progrow" style="align-items:center;padding:10px 14px"><span class="grow"><span class="mut" style="font-size:13px">Программа</span><br><b>${esc(S.progName||'Моя программа')}</b></span><button class="sm" id="pchg">Сменить</button></div>`}
 function editDay(di){PEDIT=di;go('program')}
@@ -188,7 +188,7 @@ function wclockTick(){const el=typeof document!=='undefined'&&document.getElemen
  if(!A||!A.start){el.hidden=true;el.textContent='';return}el.hidden=false;el.textContent='⏱ '+wclockFmt((Date.now()-A.start)/1000)}
 setInterval(wclockTick,1000);if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('visibilitychange',wclockTick);
 function render(){wclockTick();$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
- if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,quiz,catalog,body}[view])()}
+ if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,nutrition:()=>nutrition(),quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){quiz()}
 let Q=null,catF={};
@@ -656,11 +656,11 @@ function more(){$('#title').textContent='Профиль';
  <div class="card"><b>Резервная копия</b><p class="mut">Все данные хранятся только на этом телефоне, в браузере. Периодически сохраняй копию.</p>
  <button class="full" id="expcsv">⬇ Экспорт CSV (история тренировок)</button><p class="mut" style="font-size:12px;margin:4px 0 8px">Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта.</p><button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <button class="danger full" id="reset">Сбросить все данные</button>
- <div class="card" id="helpc"><b>Справка</b><button class="full card libbig" style="margin-top:8px" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full" id="sci" style="text-align:left;margin-top:8px">🔬 Научная основа программ</button></div><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
+ <div class="card" id="helpc"><b>Справка</b><button class="full card libbig" style="margin-top:8px" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full" id="sci" style="text-align:left;margin-top:8px">🔬 Научная основа программ</button><button class="full" id="nut" style="text-align:left;margin-top:8px">🥗 Питание под цель</button></div><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${APP_VERSION}</p>`;
  if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
- $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');progRowBind();$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
+ $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');if($('#nut'))$('#nut').onclick=()=>go('nutrition');progRowBind();$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
  $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{try{const d=cleanImport(JSON.parse(await e.target.files[0].text()));if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};

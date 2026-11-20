@@ -415,4 +415,5 @@ const DICT3=[
 // D-247 no «Программа» tab (LV for Claude: docs/LV-NEW-NO-PROGRAM-TAB.md)
 ['Сменить','Change','Mainīt'],['✏️ Изменить','✏️ Edit','✏️ Labot'],['Изменить тренировку','Edit workout','Labot treniņu'],['← Тренировки','← Workouts','← Treniņi'],['📋 Посмотреть программу','📋 View program','📋 Skatīt programmu'],
 ['Завершить тренировку','Finish workout','Pabeigt treniņu'],
+['🥗 Питание под цель','🥗 Nutrition for your goal','🥗 Uzturs atbilstoši mērķim'],['Питание','Nutrition','Uzturs'],
 ]

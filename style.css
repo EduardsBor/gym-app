@@ -141,3 +141,4 @@ body.exv #timer{display:none!important}
 /* D-256: total workout timer in the header */
 #top{display:flex;align-items:center;gap:8px}#top #title{flex:1;min-width:0}
 .wclock{flex:0 0 auto;font-weight:700;font-size:15px;line-height:1;padding:7px 10px;border-radius:999px;background:var(--card2);color:var(--txt);font-variant-numeric:tabular-nums;white-space:nowrap}.wclock[hidden]{display:none}
+.nutart{line-height:1.5}.nutart h2{margin:4px 0 10px}.nutart h3{margin:18px 0 6px}.nutart ul,.nutart ol{padding-left:20px;margin:6px 0}.nutart li{margin:4px 0}.nsrc{font-size:13px;color:var(--mut,inherit)}
