@@ -247,13 +247,24 @@ function wuRows(wu) {
 }
 function cdRows(cd) {
   const rows = [];
-  if (cd.cardio) rows.push({ id: cd.cardio.id, n: exBy(cd.cardio.id).name, d: cd.cardio.min + ' мин', x: cd.cardio.note || '' });
-  else if (cd.note) {
-    // D-261 (Тренер): gym — light walk clip incline-treadmill-walk + caption; home (b_bar / b_nobar / d) — no clip, walk on the spot.
-    const pl = cd.pl || (typeof movekitPlace === 'function' ? movekitPlace() : 'g');
+  const pl = cd.pl || (typeof movekitPlace === 'function' ? movekitPlace() : 'g');
+  const CAP_G = 'Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке';
+  const CAP_H = 'Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное';
+  if (cd.cardio) {
+    const d = cd.cardio.min + ' мин', x = cd.cardio.note || '';
+    // D-264: gym spin-bike cooldown → same «Лёгкое кардио» row as D-261 (clip, caption, duration kept).
+    // Home walk-brisk in cooldown only → «Лёгкая ходьба»; the cardio-block name stays «Быстрая ходьба».
+    if (pl === 'g' && cd.cardio.id === 'mk-indoor-cycling-spin')
+      rows.push({ id: 'mk-incline-treadmill-walk', n: 'Лёгкое кардио', d, x, c: CAP_G });
+    else if (pl !== 'g' && cd.cardio.id === 'walk-brisk')
+      rows.push({ id: 'walk-brisk', n: 'Лёгкая ходьба', d, x, c: CAP_H });
+    else
+      rows.push({ id: cd.cardio.id, n: exBy(cd.cardio.id).name, d, x });
+  } else if (cd.note) {
+    // D-261 / D-264: gym — incline-treadmill-walk + caption; home — no clip, easy walk on the spot.
     rows.push(pl === 'g'
-      ? { id: 'mk-incline-treadmill-walk', n: 'Лёгкое кардио', d: '', x: cd.note, c: 'Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке' }
-      : { id: '', n: 'Лёгкое кардио', d: '', x: cd.note, c: 'Ходьба на месте в лёгком темпе' });
+      ? { id: 'mk-incline-treadmill-walk', n: 'Лёгкое кардио', d: '', x: cd.note, c: CAP_G }
+      : { id: '', n: 'Лёгкая ходьба', d: '', x: cd.note, c: CAP_H });
   }
   (cd.stretch || []).forEach(m => rows.push({ id: m.id, n: exBy(m.id).name, d: m.dose, x: '' }));
   return rows;

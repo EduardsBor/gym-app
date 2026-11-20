@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- D-264 (v117, Эдуард/Тренер): в зале в заминке велотренажёр (mk-indoor-cycling-spin) заменён на «Лёгкое кардио» с роликом incline-treadmill-walk (как D-261), длительность та же; дома в заминке «Лёгкая ходьба» (walk-brisk не переименован: в кардио-блоке остаётся «Быстрая ходьба»); LV-подпись: «vari izmantot to pašu trenažieri, ko izmantoji kardio blokā».
 - D-262 (v116): файл подтверждения Google google914254ab977aacc4.html и meta google-site-verification; на главной до старта JS виден «GymCaptain — Приложение для тренировок» (проверка бренда Google OAuth).
 - D-261 (v116, Эдуард/Тренер): заминка «Лёгкое кардио» — в зале ролик MoveKit incline-treadmill-walk и подпись «Без наклона или с малым наклоном…»; дома (b_bar/b_nobar/d) без ролика, «Ходьба на месте в лёгком темпе». RU/EN/LV.
 - D-260b: сборка Android (scripts/build-web.js) копирует nutrition.js — статья о питании есть и в APK.

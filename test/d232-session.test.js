@@ -228,7 +228,7 @@ test('D-232: refresh fails (network or revoked token, Supabase drops it) → fla
 test('D-232: a new sw.js version keeps the session — sw.js never touches localStorage; restart after update opens the app', async () => {
   const sw = read('sw.js');
   assert.doesNotMatch(sw, /localStorage|auth-token|gc_auth/);
-  assert.match(sw, /const C='moyzal-v116'/);
+  assert.match(sw, /const C='moyzal-v117'/);
   const ls = { [KEY]: tok(Date.now() / 1000 + 3600), gc_auth: USER.id };
   const before = bootA(seed(), { ls }); await go(before);
   const after = bootA(seed(), { ls }); await go(after); // same storage, new code
