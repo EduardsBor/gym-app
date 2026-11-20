@@ -40,7 +40,7 @@ const DICT2=[
 ['Данные хранятся','Data is stored','Dati tiek glabāti'],['только на этом устройстве','only on this device','tikai šajā ierīcē'],['(в браузере).','(in the browser).','(pārlūkā).'],
 ['Никуда не отправляются: нет аккаунтов, серверов и аналитики.','Nothing is sent anywhere: no accounts, servers or analytics.','Nekas netiek nosūtīts: nav kontu, serveru un analītikas.'],
 ['Используются только чтобы показать твои графики и прогресс.','Used only to show your charts and progress.','Tiek izmantoti tikai, lai parādītu tavus grafikus un progresu.'],
-['Согласие можно отозвать, а данные — экспортировать или удалить в «Профиле».','You can withdraw consent and export or delete the data under “Profile”.','Piekrišanu var atsaukt, bet datus — eksportēt vai dzēst sadaļā “Profils”.'],
+['Согласие можно отозвать, а данные — экспортировать или удалить в «Профиле».','You can withdraw consent and export or delete the data under “Profile”.','Piekrišanu var atsaukt, un datus var eksportēt vai dzēst sadaļā “Profils”.'],
 ['Я даю явное согласие на хранение и обработку моих данных о теле в этом приложении.','I give my explicit consent to storing and processing my body data in this app.','Es sniedzu skaidru piekrišanu manu ķermeņa datu glabāšanai un apstrādei šajā lietotnē.'],
 ['Согласен — продолжить','I agree — continue','Piekrītu — turpināt'],['Политика конфиденциальности','Privacy Policy','Privātuma politika'],['Условия использования','Terms of Use','Lietošanas noteikumi'],
 ['Без согласия раздел «Тело» не сохраняет никаких данных. Остальные функции работают как обычно.','Without consent, the “Body” section stores no data. Everything else works as usual.','Bez piekrišanas sadaļa “Ķermenis” nesaglabā nekādus datus. Pārējās funkcijas darbojas kā parasti.'],
