@@ -61,7 +61,8 @@ test('D-267: LV day names without «diena»; button Sastādīt savu programmu', 
   }
   assert.match(d, /\['🧩 Подобрать программу самому','🧩 Build my own program','🧩 Sastādīt savu programmu'\]/);
   assert.equal(d.includes('🧩 Izveidot programmu pašam'), false);
-  assert.match(read('sw.js'), /const C='moyzal-v120'/);
-  // place.js warmup cues untouched
-  assert.match(read('place.js'), /atsildīšanā/);
+  assert.match(read('sw.js'), /const C='moyzal-v121'/);
+  // place.js warmup cues: atsildīšanā → iesildīšanās laikā (D-268)
+  assert.doesNotMatch(read('place.js'), /atsildīšanā/);
+  assert.match(read('place.js'), /iesildīšanās laikā/);
 });
