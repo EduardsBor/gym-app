@@ -156,3 +156,23 @@ test('a deleted account is not recreated: sync does not upsert user_state and cl
   assert.equal(b.run('mzSignedIn()'), false);
   assert.equal(b.store.has('gym'), false, 'local copy is cleared');
 });
+
+test('Claude 21.11: missing consent table does not stop sync; queue is kept for later', async () => {
+  const cloud = { inserts: [], upserts: [], user: USER, insertError: { code: 'PGRST205', message: "Could not find the table 'public.health_consent_log'" }, remote: { payload: { goal: 'mass' }, updated_at: '2026-01-01T00:00:00.000Z' } };
+  const b = boot(seed({ healthConsentQueue: [] }), cloud);
+  for (let i = 0; i < 8; i++) await tick();
+  b.run("mzLogHealthConsent('grant')");
+  const before = cloud.upserts.filter(x => x.table === 'user_state').length;
+  await b.run('__mzSync()');
+  for (let i = 0; i < 8; i++) await tick();
+  assert.ok(cloud.upserts.filter(x => x.table === 'user_state').length > before, 'user_state still upserted');
+  assert.equal(JSON.parse(b.run('JSON.stringify(S.healthConsentQueue)')).length, 1, 'grant stays queued');
+  assert.equal(b.run('mzSignedIn()'), true);
+});
+
+test('Claude 21.11: migration 004 backfills legacy consent before the uid trigger and clamps future dates', () => {
+  const sql = read('sql/004_preplay_consent_tombstone.sql');
+  const back = sql.indexOf("'legacy-v1'"), trg = sql.indexOf('create trigger health_consent_log_set_uid');
+  assert.ok(back > 0 && back < trg);
+  assert.match(sql, /NEW\.created_at := least\(coalesce\(NEW\.created_at, now\(\)\), now\(\)\)/);
+});
