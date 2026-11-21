@@ -1,5 +1,5 @@
 'use strict';
-// D-238: «Тренировки» tab — next workout card + all program workouts by week (✓ done), tap opens that workout; «Программа» without «Почему программа построена так».
+// D-238 / v139: «Тренировки» tab — flat numbered workout list, Start under the due row, tap opens that workout; «Программа» without «Почему программа построена так».
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -58,7 +58,7 @@ function withProgram() {
   return r;
 }
 
-test('D-238: tab and screen are «Тренировки»; block program shows the card and all workouts by week', () => {
+test('D-238: tab and screen are «Тренировки»; block program shows a flat list and Start under the due workout', () => {
   const { run, app } = withProgram();
   assert.match(read('index.html'), /<button data-v="today">🏋️<span>Тренировки<\/span><\/button>/);
   assert.doesNotMatch(read('index.html'), /Сегодня/);
@@ -68,9 +68,19 @@ test('D-238: tab and screen are «Тренировки»; block program shows th
   assert.match(h, /id="start"/);
   assert.match(h, /id="blk-skip"/);
   assert.match(h, /<h2>Все тренировки программы<\/h2>/);
-  assert.match(h, /<summary><b>Неделя 1<\/b>/);
+  assert.doesNotMatch(h, /<summary><b>Неделя /);
+  assert.doesNotMatch(h, /class="card dayc"/);
   assert.equal((h.match(/data-i="\d+"/g) || []).length, run('S.program.length'));
-  assert.ok(h.indexOf('id="start"') < h.indexOf('Все тренировки программы'));
+  const due = run('dayDue()');
+  const startAt = h.indexOf('id="start"');
+  const dueAt = h.indexOf('data-i="'+due+'"');
+  assert.ok(dueAt >= 0 && dueAt < startAt);
+  const nextAt = h.indexOf('data-i="'+(due+1)+'"');
+  if (nextAt >= 0) assert.ok(startAt < nextAt);
+  assert.ok(h.indexOf('Все тренировки программы') < startAt);
+  assert.doesNotMatch(h, /id="tedit"/);
+  assert.doesNotMatch(h, /class="li exo"/);
+  assert.doesNotMatch(h, /Разминка/);
 });
 
 test('D-238: done workouts get ✓; tapping another workout opens it and it can be started', () => {
@@ -84,7 +94,6 @@ test('D-238: done workouts get ✓; tapping another workout opens it and it can 
   assert.match(h, /class="full dayb pri sel"[^>]*data-i="2" aria-current="true">3\. Всё тело/);
   assert.equal((h.match(/dayb[^"]*pri sel/g) || []).length, 1);
   assert.match(read('style.css'), /\.dayb\.pri\.sel\{background:var\(--acc\);color:var\(--on-acc\);font-weight:800/);
-  assert.match(h, /<span class="mut">2\/3 трен\./);
   run('today(5)');
   h = app();
   assert.match(h, /Выбранный день/);
@@ -117,22 +126,27 @@ test('D-238: «Программа» has no «Почему программа п�
   assert.match(app(), /Мой дневник/);
 });
 
-test('D-269: main workout card has no «Неделя N ·» title and no this-week / program counters; list weeks and stored names stay', () => {
+test('D-269: main workout card has no «Неделя N ·» title and no this-week / program counters; stored names stay', () => {
   const { run, app } = withProgram();
   const stored = run('S.program[S.block.next|0].name');
   assert.match(stored, /^Неделя \d+ · /);
   const title = run('workoutLabel(S.program[S.block.next|0], S.block.next|0)');
   assert.doesNotMatch(title, /^Неделя /);
   assert.match(title, /^\d+\. /);
-  const h = app();
+  const list = app();
   const re = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert.match(list, new RegExp(re(title)));
+  assert.doesNotMatch(list, /<h2 style="margin-top:6px">Неделя /);
+  assert.doesNotMatch(list, /на этой неделе/);
+  assert.doesNotMatch(list, /<summary><b>Неделя /);
+  run('today(S.block.next|0)');
+  const h = app();
   assert.match(h, new RegExp('<h2 style="margin-top:6px">' + re(title) + '</h2>'));
   assert.doesNotMatch(h, /<h2 style="margin-top:6px">Неделя /);
   assert.match(h, /× в неделю<\/div><h2 style="margin-top:6px">/);
   assert.doesNotMatch(h, /на этой неделе/);
   assert.doesNotMatch(h, / · \d+\/\d+<\/div><h2/);
-  assert.match(h, /<summary><b>Неделя 1<\/b>/);
-  run('$("#start").onclick()');
+  run('today();$("#start").onclick()');
   assert.equal(run('S.active.dayName'), stored);
   run('S.active=null;delete S.block;today(0)');
   const h2 = app();

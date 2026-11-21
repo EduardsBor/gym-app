@@ -61,6 +61,7 @@ function withProgram() {
 test('D-235: «Сегодня» rows open the exercise screen; no «Профиль оборудования» / «Мои шаблоны» blocks', () => {
   const { run, app } = withProgram();
   assert.ok(run('S.program.length') > 0);
+  run('today(0)');
   const h = app();
   assert.match(h, /data-exo="m,0"/);
   assert.match(h, /data-exo="w,0"/);

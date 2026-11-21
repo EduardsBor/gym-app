@@ -95,13 +95,15 @@ test('D-247: no program yet → «Тренировки» shows the catalog choic
   assert.match(r.app(), /id="toq"/);
 });
 
-test('D-247: «✏️ Изменить» in the open workout card edits only that workout; back returns to it', () => {
+test('D-247: no «✏️ Изменить» on the workouts tab; editDay still opens that workout in the program editor', () => {
   const { run, app } = withProgram();
+  run('today()');
+  assert.doesNotMatch(app(), /id="tedit"/);
   run('today(2)');
   let h = app();
-  assert.match(h, /id="tedit"[^>]*>✏️ Изменить</);
-  assert.ok(h.indexOf('id="start"') < h.indexOf('id="tedit"') && h.indexOf('id="tedit"') < h.indexOf('Все тренировки программы'));
-  run('$("#tedit").onclick()');
+  assert.doesNotMatch(h, /id="tedit"/);
+  assert.match(h, /id="start"/);
+  run('editDay(2)');
   assert.equal(run('view'), 'program');
   assert.equal(run('$("#title").textContent'), 'Изменить тренировку');
   h = app();
