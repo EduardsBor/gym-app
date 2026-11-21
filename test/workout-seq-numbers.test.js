@@ -162,3 +162,13 @@ test('preview and program editor use the same running numbers; SW cache is moyza
   assert.match(pr, /<summary><b>36\. /);
   assert.match(read('sw.js'), /const C='moyzal-v133'/);
 });
+
+test('D-275: standalone Верх / Низ have EN and LV dictionary entries', () => {
+  const ctx = vm.createContext({ console });
+  vm.runInContext(read('i18n/dict.js') + '\nthis.DICT=DICT;', ctx, { filename: 'i18n/dict.js' });
+  const rows = ctx.DICT;
+  const upper = rows.find(r => r[0] === 'Верх');
+  const lower = rows.find(r => r[0] === 'Низ');
+  assert.deepEqual(Array.from(upper), ['Верх', 'Upper', 'Augšdaļa']);
+  assert.deepEqual(Array.from(lower), ['Низ', 'Lower', 'Apakšdaļa']);
+});
