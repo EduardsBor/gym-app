@@ -9,8 +9,9 @@ const { build, ID_RE } = require('../scripts/build-blocks-index.js');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
-function boot() {
+function boot(lang) {
   const store = new Map();
+  if (lang) store.set('gym', JSON.stringify({ lang }));
   const nodes = new Map();
   function el(id) {
     if (id && nodes.has(id)) return nodes.get(id);
@@ -26,7 +27,9 @@ function boot() {
   }
   const g = {
     console, setTimeout, clearTimeout, setInterval() { return 0; }, clearInterval() {},
-    URL, Blob, navigator: { language: 'ru', languages: ['ru'] },
+    URL, Blob, MutationObserver: function () { this.observe = function () {}; },
+    confirm() { return true; }, alert() {},
+    navigator: { language: lang || 'ru', languages: [lang || 'ru'] },
     localStorage: { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) },
     location: { href: 'http://127.0.0.1/', origin: 'http://127.0.0.1', pathname: '/', search: '' },
     document: {
@@ -76,7 +79,8 @@ test('blocks-index is generated, complete, and matches data/blocks without embed
   const sw = read('sw.js');
   assert.match(html, /src="data\/blocks-index\.js"/);
   assert.match(sw, /data\/blocks-index\.js/);
-  assert.match(sw, /const C='moyzal-v135'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v135'/);
+  assert.match(sw, /const C=SW_CACHE/);
 });
 
 test('ready-program catalog keeps 13 curated cards, fills every chip combination, and does not generate in the list', () => {
@@ -151,4 +155,42 @@ test('opening a ready-program card starts the same block as the questionnaire; h
   assert.equal(run('CATALOG.some(c=>c.name==="Широкая спина"&&c.a.prio&&c.a.prio[0]==="Спина")'), true);
   const qId = run('blockIdForProfile({goal:"loss",level:"mid",days:3,place:"g",sex:"m",prio:[],lim:[]})');
   assert.equal(qId, want);
+});
+
+test('RU workout count uses proper plural: 1 тренировка, 2–4 тренировки, 5–20 тренировок, 21, 22–24…', () => {
+  const { run } = boot();
+  const one = [1, 21, 31, 41, 101, 121];
+  const few = [2, 3, 4, 22, 23, 24, 32, 33, 34, 102];
+  const many = [0, 5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 26, 30, 111, 112];
+  for (const n of one) assert.equal(run('catalogWorkoutWord(' + n + ')'), 'тренировка', n);
+  for (const n of few) assert.equal(run('catalogWorkoutWord(' + n + ')'), 'тренировки', n);
+  for (const n of many) assert.equal(run('catalogWorkoutWord(' + n + ')'), 'тренировок', n);
+  const desc = run('catalogFmt("{n} {workoutWord}, около {w} {weekWord}, по {dur}",{n:32,workoutWord:catalogWorkoutWord(32),w:8,weekWord:catalogWeekWord(8),dur:catalogDur("60–70 мин")})');
+  assert.match(desc, /32 тренировки/);
+  assert.doesNotMatch(desc, /32 тренировок/);
+  assert.equal(run('catalogWeekWord(1)'), 'неделя');
+  assert.equal(run('catalogWeekWord(2)'), 'недели');
+  assert.equal(run('catalogWeekWord(5)'), 'недель');
+  assert.equal(run('catalogWeekWord(21)'), 'неделя');
+});
+
+test('EN/LV card text for all 124 ready-program cards has no Cyrillic; duration is 60–70 min', () => {
+  const cyr = /[А-Яа-яЁё]/;
+  for (const lang of ['en', 'lv']) {
+    const { run } = boot(lang);
+    assert.equal(run('catalogLang()'), lang);
+    const n = run('catalogCards().length');
+    assert.equal(n, 124, 'expected 124 cards, got ' + n + ' in ' + lang);
+    const rows = JSON.parse(run(`JSON.stringify(catalogCards().map(function (c) {
+      return { id: c.id, text: [catalogT(c.name), catalogT(c.desc), catalogSummary(c), tags(c.a)].join('\\n') };
+    }))`));
+    assert.equal(rows.length, 124);
+    const bad = [];
+    for (const c of rows) {
+      if (cyr.test(c.text)) bad.push(lang + ' ' + c.id + ': ' + c.text);
+      else if (/60–70 мин/.test(c.text)) bad.push(lang + ' ' + c.id + ' still has RU duration');
+    }
+    assert.equal(bad.length, 0, bad.slice(0, 8).join('\n'));
+    assert.ok(rows.some(c => /60–70 min/.test(c.text)), 'expected a 60–70 min duration on a ' + lang + ' card');
+  }
 });

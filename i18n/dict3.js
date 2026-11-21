@@ -453,8 +453,10 @@ const DICT3=[
 ['Чтобы таймер отдыха сработал вовремя, разреши точные будильники в настройках Android. Открыть настройки?','For the rest timer to fire on time, allow exact alarms in Android settings. Open settings?','Lai atpūtas taimeris atskanētu laikā, Android iestatījumos atļauj precīzos signālus. Atvērt iestatījumus?'],
 ['Войди, чтобы смотреть ролики','Sign in to watch the videos','Ieej, lai skatītos video'],
 ['{level} · {days}× в неделю · {place}','{level} · {days}× a week · {place}','{level} · {days}× nedēļā · {place}'],
-['{n} тренировок, около {w} недель, по {dur}','{n} workouts, about {w} weeks, {dur} each','{n} treniņi, apmēram {w} nedēļas, pa {dur}'],
-['{title} · {n} тренировок, около {w} недель, по {dur}','{title} · {n} workouts, about {w} weeks, {dur} each','{title} · {n} treniņi, apmēram {w} nedēļas, pa {dur}'],
+['{n} {workoutWord}, около {w} {weekWord}, по {dur}','{n} {workoutWord}, about {w} {weekWord}, {dur} each','{n} {workoutWord}, apmēram {w} {weekWord}, pa {dur}'],
+['{title} · {n} {workoutWord}, около {w} {weekWord}, по {dur}','{title} · {n} {workoutWord}, about {w} {weekWord}, {dur} each','{title} · {n} {workoutWord}, apmēram {w} {weekWord}, pa {dur}'],
+['60–70 мин','60–70 min','60–70 min'],
+['×/нед','×/week','×/nedēļā'],
 ['Верх / Низ + Фулбоди','Upper / Lower + Full body','Augšdaļa / Apakšdaļa + Viss ķermenis'],
 ['Верх / Низ + Фулбоди ×2','Upper / Lower + Full body ×2','Augšdaļa / Apakšdaļa + Viss ķermenis ×2'],
 ]
