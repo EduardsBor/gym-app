@@ -110,9 +110,6 @@ test('C-113: LV has no forbidden glossary terms; no service phrases in RU/EN/LV 
       }
       if (lvBlob.includes(term)) hits.push(id + ' LV ' + term);
     }
-    // dorsālā/plantārā fleksija must not remain in steps
-    const steps = tech.steps.join('\n');
-    if (/dorsāl|plantār/.test(steps)) hits.push(id + ' LV fleksija in steps');
     for (const [lang, key] of [['ru', 'TECH'], ['en', 'TECH_EN'], ['lv', 'TECH_LV']]) {
       const t = pack(arr(run(key + '[' + JSON.stringify(id) + ']')));
       const blob = [...t.steps, ...t.errors, t.safety].join('\n');
@@ -120,6 +117,44 @@ test('C-113: LV has no forbidden glossary terms; no service phrases in RU/EN/LV 
     }
   }
   assert.deepEqual(hits, []);
+});
+
+
+test('C-113: no dorsāl or plantār anywhere in LV strings', () => {
+  const { run } = boot();
+  const hits = arr(run(`(function(){
+    const hits=[];
+    const check=(where,s)=>{if(s&&/dorsāl|plantār/i.test(String(s)))hits.push(where+': '+String(s).slice(0,160));};
+    const walk=(x,where)=>{
+      if(typeof x==='string')check(where,x);
+      else if(Array.isArray(x))x.forEach((y,i)=>walk(y,where+'['+i+']'));
+      else if(x&&typeof x==='object')Object.keys(x).forEach(k=>walk(x[k],where+'.'+k));
+    };
+    if(typeof EX!=='undefined')EX.forEach(e=>{check('EX.nameLv '+e.id,e.nameLv);check('EX.name '+e.id,e.name);});
+    if(typeof HIDDEN_EX!=='undefined')HIDDEN_EX.forEach(e=>{check('HIDDEN_EX.nameLv '+e.id,e.nameLv);check('HIDDEN_EX.name '+e.id,e.name);});
+    walk(typeof LIB_LV!=='undefined'?LIB_LV:{},'LIB_LV');
+    walk(typeof TECH_LV!=='undefined'?TECH_LV:{},'TECH_LV');
+    if(typeof DICT!=='undefined')DICT.forEach((row,i)=>{if(row&&row[2])check('DICT['+i+']',row[2]);});
+    return hits;
+  })()`));
+  assert.deepEqual(hits, []);
+});
+
+test('C-113: cooldown safety uses Claude wording in RU/EN/LV; hanging-knee-raises stay visible', () => {
+  const { run } = boot();
+  const packOf = (key, id) => pack(arr(run(key + '[' + JSON.stringify(id) + ']')));
+  assert.equal(packOf('TECH', 'cd_lat').safety, 'Если беспокоят плечи — пропусти (замени на дыхание лёжа).');
+  assert.equal(packOf('TECH', 'cd_quad').safety, 'Если беспокоят колени — пропусти.');
+  assert.equal(packOf('TECH', 'cd_xbody').safety, 'Если беспокоят плечи — пропусти.');
+  assert.equal(packOf('TECH_EN', 'cd_lat').safety, 'If your shoulders bother you, skip this (do the lying breathing instead).');
+  assert.equal(packOf('TECH_EN', 'cd_quad').safety, 'If your knees bother you, skip this.');
+  assert.equal(packOf('TECH_EN', 'cd_xbody').safety, 'If your shoulders bother you, skip this.');
+  assert.equal(packOf('TECH_LV', 'cd_lat').safety, 'Ja traucē pleci, izlaid šo vingrinājumu (aizstāj ar elpošanu guļus uz muguras).');
+  assert.equal(packOf('TECH_LV', 'cd_quad').safety, 'Ja traucē ceļi, izlaid šo vingrinājumu.');
+  assert.equal(packOf('TECH_LV', 'cd_xbody').safety, 'Ja traucē pleci, izlaid šo vingrinājumu.');
+  const ids = arr(run('EX.map(e => e.id)'));
+  assert.equal(ids.includes('mk-hanging-knee-raises'), true);
+  assert.equal(run('typeof isHidden==="function" && isHidden("mk-hanging-knee-raises")'), false);
 });
 
 test('C-113: 45 ids use the Amplitude and safety heading; dictionary has RU/EN/LV', () => {

@@ -25,7 +25,23 @@
 
 Не меняли: `plekstveida muskulis`, `kardio`, `ceturtdaļpietupiens`, `aizāķē stieni`, `drošības balsti`, `augšdelma muskulis`, `rumpja muskuļi`.
 
-В полях мышц и безопасности (не в шагах) оставлены формулировки с «dorsālā / plantārā fleksija» в нескольких описаниях икр и мобилизации голеностопа — замена в таблице относилась к шагам.
+После ревью Claude эти формулировки убраны из всех LV-строк приложения (не только из шагов). Проверка: в LV нет «dorsāl» / «plantār».
+
+## Доработка после ревью Claude (dorsāl / plantār)
+
+Все оставшиеся LV-вхождения (мышцы и безопасность) переписаны простыми словами. Других вхождений в LV-строках не было.
+
+| id | Поле | Было | Стало |
+|---|---|---|---|
+| box-jump | libLv мышцы | Ikri (plantārā fleksija atgrūšanās brīdī) | Ikri (atgrūšanās no pirkstgaliem) |
+| seated-calf | techLv амплитуда | Pilna dorsālā un plantārā fleksija ar fiksētu celi ap 90°. | Pilna amplitūda: lejā nolaid papēžus līdz ikru stiepumam, augšā pacelies uz pirkstgaliem; ceļi paliek saliekti ap 90°. |
+| smith-calf | techLv шаг | Papēži nolaižas (pacel pirkstgalus), tad pacelies pirkstgalos līdz galam. | Nolaid papēžus līdz ikru stiepumam, tad pacelies uz pirkstgaliem līdz galam. |
+| smith-calf | techLv амплитуда | Pilna dorsālā un plantārā fleksija uz platformas, Ahilleja cīpslas bezsāpju diapazonā. | Pilna amplitūda uz platformas: lejā nolaid papēžus līdz ikru stiepumam, augšā pacelies uz pirkstgaliem, bez sāpēm Ahilleja cīpslā. |
+| ankle-knee-to-wall | libLv «для чего» | Potītes dorsālās fleksijas mobilizācija pirms… | Potītes kustīguma uzlabošana pirms… |
+| tibialis-raise | techLv шаг | …pirkstgali ceļas pret sevi (pacel pirkstgalus). | Papēži paliek uz grīdas, pievelc pirkstgalus pret sevi. |
+| tibialis-raise | techLv амплитуда | …līdz maksimālai bezsāpju dorsālajai fleksijai. | …līdz maksimālai pirkstgalu pievilkšanai pret sevi bez sāpēm. |
+| deep-squat-hold | libLv мышцы | (potītes dorsālfleksija) | (stiepjas, saliecot potīti) |
+
 
 ## Словарь (новые или изменённые тройки)
 
