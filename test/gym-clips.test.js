@@ -116,6 +116,6 @@ test('gym catalog and gym programs have no exercise without a MoveKit clip (walk
 });
 
 test('gym-clips: sw is moyzal-v72; changelog mentions it', () => {
-  assert.match(read('sw.js'), /const C='moyzal-v132'/);
+  assert.match(read('sw.js'), /const C='moyzal-v133'/);
   assert.match(read('CHANGELOG.md'), /moyzal-v72/);
 });

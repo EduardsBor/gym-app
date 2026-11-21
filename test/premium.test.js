@@ -220,6 +220,7 @@ test('without subscription movekit-sign is never called: no video, no poster, no
   const calls = [];
   const b = boot(seed(), {
     MZ_SB: { url: 'https://example.test', anon: 'anon-test' },
+    mzAccessToken: async () => 'user-token-test',
     fetch: async (url) => { calls.push(String(url)); return { ok: true, status: 200, json: async () => ({ signedUrl: '/object/sign/movekit/x?token=t' }), blob: async () => new Blob(['x']) }; }
   });
   demo(b, 'free');
@@ -357,5 +358,5 @@ test('Premium screen v3: 14 days without card, yearly first ≈ €2,50/мес, 
   assert.match(read('LV-REVIEW.md'), /P-305b Premium model v3/);
   assert.match(read('LV-REVIEW.md'), /P-305c Premium screen subtitle/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v132'/); assert.match(sw, /'premium\.js','features\.js'/);
+  assert.match(sw, /const C='moyzal-v133'/); assert.match(sw, /'premium\.js','features\.js'/);
 });
