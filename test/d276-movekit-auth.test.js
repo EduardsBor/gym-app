@@ -169,3 +169,18 @@ test('D-276: without a session and without a cache the login message is shown, n
   assert.equal(msg.textContent, 'Войди, чтобы смотреть ролики');
   assert.equal(msg.className, 'mut');
 });
+
+test('movekit-sign: auth (getUser, is_anonymous, deleted) runs before path whitelist', () => {
+  const src = read('supabase/functions/movekit-sign/index.ts');
+  const getUserAt = src.indexOf('auth.getUser');
+  const anonAt = src.indexOf('user.is_anonymous');
+  const goneAt = src.indexOf('deleted_accounts');
+  const allowedAt = src.indexOf('!allowed(path)');
+  const badPathAt = src.indexOf('bad path');
+  assert.ok(getUserAt > 0 && anonAt > 0 && goneAt > 0 && allowedAt > 0 && badPathAt > 0);
+  assert.ok(getUserAt < allowedAt, 'getUser must precede path validation');
+  assert.ok(anonAt < allowedAt, 'is_anonymous must precede path validation');
+  assert.ok(goneAt < allowedAt, 'deleted_accounts must precede path validation');
+  assert.ok(getUserAt < badPathAt && anonAt < badPathAt && goneAt < badPathAt);
+  assert.ok(src.indexOf('status: 401') > 0);
+});
