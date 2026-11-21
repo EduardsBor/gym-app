@@ -165,7 +165,7 @@ test('themes: theme.js loads early; switcher in profile; local only; free; preca
   assert.equal(/premium|isPro|mzTrack|sb\.|supabase/i.test(th), false, 'free, no analytics, no cloud');
   for (const f of ['sync.js', 'app.js', 'csv.js', 'features.js', 'premium.js']) assert.equal(read(f).includes('gc_theme'), false, f);
   assert.match(th, /SystemBars/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v138-design'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v139'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.match(read('sw.js'), /'style\.css','theme\.js'/);
   assert.match(read('scripts/build-web.js'), /'theme\.js'/);
@@ -173,7 +173,7 @@ test('themes: theme.js loads early; switcher in profile; local only; free; preca
   assert.equal(man.background_color, '#0f1115');
   assert.equal(read('android/app/src/main/res/values/styles.xml').includes('#090A07'), true);
   const log = read('CHANGELOG.md');
-  assert.match(log, /v138-design/);
+  assert.match(log, /v139/);
   assert.match(log, /Капитан/);
 });
 

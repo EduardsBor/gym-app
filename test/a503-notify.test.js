@@ -100,7 +100,7 @@ test('rest timer: first start asks permission once with explanation, schedules; 
   assert.deepEqual(kinds(p.log, 'channel').map(x => x.slice(1)), [[N.CH_REST, 5, true], [N.CH_REM, 4, true]]);
   let s = kinds(p.log, 'schedule');
   assert.equal(s.length, 1); assert.equal(s[0][1][0].schedule.at.getTime(), end);
-  await n.restStart(end + 30000); // +30 s
+  await n.restStart(end + 30000); // reschedule to a later end
   s = kinds(p.log, 'schedule');
   assert.equal(s.length, 2); assert.equal(s[1][1][0].schedule.at.getTime(), end + 30000);
   assert.equal(e.explained, 1, 'not asked again');
@@ -167,7 +167,7 @@ test('wiring: native-only, loaded on web without UI, packaged, cached', () => {
   assert.match(read('scripts/build-web.js'), /'notify.js'/);
   const app = read('app.js');
   assert.match(app, /NTF\.restStart\(tEnd\)\}\n/);
-  assert.equal((app.match(/NTF\.restStart\(tEnd\)/g) || []).length, 2, 'start + extend');
+  assert.equal((app.match(/NTF\.restStart\(tEnd\)/g) || []).length, 1, 'start only (no ±30 extend)');
   assert.match(app, /NTF\.restCancel\(\)/);
   assert.match(app, /ntfCardHTML\(\)/);
   const man = read('android/app/src/main/AndroidManifest.xml');
