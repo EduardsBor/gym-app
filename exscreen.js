@@ -36,7 +36,7 @@ function exRecW(e){if(e.src!=='m')return'';const it=e.it;if(exNoW(e.id,it))retur
  if(w==null&&typeof awSuggest==='function'&&!A){try{const s=awSuggest({exId:it.exId,ns:it.sets,min:it.min,max:it.max,sets:[]},null);if(s&&s.weight!=null)w=s.weight}catch(x){}}
  if(w==null){const l=lastSets(e.id,A&&A.id);if(l&&l.length)w=Math.max(...l.map(s=>+s.w||0))||null}
  return w!=null?`<span>Рекомендуемый вес</span>: <b>${esc(String(w))}</b> <span>кг</span>`:'<span>Подбери вес, с которым последние 2 повтора даются тяжело</span>'}
-function exHist(id){const out=[];const W=histWorkouts();for(let i=W.length-1;i>=0&&out.length<3;i--){const w=W[i];if(S.active&&w.id===S.active.id)continue;const it=(w.items||[]).find(x=>x.exId===id);const L=it?it.sets.filter(s=>s.done):[];if(!L.length)continue;
+function exHistHTML(id){const out=[];const W=histWorkouts();for(let i=W.length-1;i>=0&&out.length<3;i--){const w=W[i];if(S.active&&w.id===S.active.id)continue;const it=(w.items||[]).find(x=>x.exId===id);const L=it?it.sets.filter(s=>s.done):[];if(!L.length)continue;
   out.push(`<div class="li"><span class="mut" style="min-width:64px">${esc(new Date(w.start).toLocaleDateString(typeof LOC!=='undefined'?LOC:'ru'))}</span><span class="grow">${L.map(s=>esc((+s.w?s.w+' × ':'')+s.r)).join(' · ')}</span></div>`)}
  return out.length?out.join(''):'<p class="mut">Пока нет записей.</p>'}
 function exOpen(src,i){const L=exList();const pos=L.findIndex(e=>e.src===src&&e.i===i);if(pos<0)return;EXS={pos,src,i,id:L[pos].id,cm:'',ret:uiSnap()};go('ex');
@@ -81,7 +81,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  ${e.src==='m'?`<div class="exlog row">${inf.noW?'':`<label class="grow">Килограммы<input id="exw" type="number" inputmode="decimal" step="0.5" value="${esc(nx.w==null?'':nx.w)}"></label>`}<label class="grow">${inf.unit==='min'?'Минуты':inf.unit==='sec'?'Секунды':'Повторы'}<input id="exr" type="number" inputmode="numeric" value="${esc(nx.r==null?'':nx.r)}"></label><button class="pri exadd" id="exadd" aria-label="Записать подход">+</button></div>
  <button class="linkb" id="excm">${EXS.cm?'✎ '+esc(EXS.cm):'Добавить комментарий к подходу'}</button>`:`<button class="pri full" id="exadd" style="margin-top:12px">+ <span>Подход выполнен</span></button>`}
  ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.filter(s=>s.done).map((s,k)=>`<div class="li"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}</div>`).join('')}`:''}
- ${id?`<h3 style="margin-top:14px">История</h3>${exHist(id)}`:''}
+ ${id?`<h3 style="margin-top:14px">История</h3>${exHistHTML(id)}`:''}
  <div class="row" style="margin:16px 0"><button class="grow" id="exprev" ${EXS.pos?'':'disabled'}>← <span>Предыдущее</span></button><button class="grow" id="exnext" ${EXS.pos<L.length-1?'':'disabled'}><span>Следующее</span> →</button></div>`;
  const v=app.querySelector('#exv video.a3d');if(v&&typeof startAnim==='function')startAnim(v);
  $('#exback').onclick=()=>{try{if(typeof history!=='undefined'&&history.state&&history.state.gcEx){history.back();return}}catch(e){}exBack()};const g=$('#exgo');if(g)g.onclick=exStart;

@@ -197,7 +197,7 @@ test('D-222: built-in privacy policy mentions Sentry in RU, EN and LV (B-410 §3
 });
 
 test('D-222: sw is moyzal-v67; changelog; LV strings only in docs/LV-NEW-D222.md; hooks present; not via Sentry', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v136'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v137'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-222/);

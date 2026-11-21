@@ -81,6 +81,7 @@ function libFilter(list,st){return (list||[]).filter(e=>libMatch(e,st||LQ))}
 function libView(){$('#title').textContent='Библиотека';
  if(typeof eqPlaces==='function'){const id=typeof eqActiveId==='function'?eqActiveId():'';if(LQ._eqAuto!==id){LQ._eqAuto=id;const pl=eqPlaces();if(pl.length===1){LQ.p=pl;LQ.places=''}else{LQ.p='';LQ.places=pl}}}
  const ch=(k,v,l)=>`<button class="opt chip ${LQ[k]===v?'sel':''}" data-lk="${k}" data-lv="${v}">${l}</button>`;
+ // Templates stay in S.templates; Library no longer shows «Мои шаблоны».
  const bar=typeof tplBarHTML==='function'&&can('templates')?tplBarHTML():'';
  app.innerHTML=`${bar}<input id="lq" type="search" placeholder="🔍 Поиск по названию" value="${esc(LQ.q)}" autocomplete="off">
  <p class="mut" style="margin:8px 0 0;font-size:12px">Мышцы</p>
