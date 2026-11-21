@@ -223,7 +223,7 @@ const DICT3=[
 ['🏋️ Моё оборудование','🏋️ My equipment','🏋️ Mans aprīkojums'],
 ['Шаги для авто-веса. По умолчанию — как в правилах тренера; поменяй, если у тебя другие гантели или блоки.','Steps for auto weight. Defaults follow the trainer rules; change them if your dumbbells or stacks differ.','Soļi auto svaram. Pēc noklusējuma — kā trenera noteikumos; maini, ja tev ir citas hanteles vai bloki.'],
 ['Гантели, кг (через запятую; дробные — через точку)','Dumbbells, kg (comma-separated; decimals with a dot)','Hanteles, kg (ar komatu; daļskaitļi ar punktu)'],
-['Гири, кг (через запятую; дробные — через точку)','Kettlebells, kg (comma-separated; decimals with a dot)','Svaru bumbas, kg (ar komatu; daļskaitļi ar punktu)'],
+['Гири, кг (через запятую; дробные — через точку)','Kettlebells, kg (comma-separated; decimals with a dot)','Svarbumbas, kg (ar komatu; daļskaitļi ar punktu)'],
 ['Гриф, кг','Bar, kg','Stienis, kg'],
 ['Шаг штанги, кг','Barbell step, kg','Stieņa solis, kg'],
 ['Шаг тренажёра, кг','Machine step, kg','Trenažiera solis, kg'],
