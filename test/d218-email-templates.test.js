@@ -28,11 +28,14 @@ test('D-218: reset template is link-only (the app resets by link); no secrets in
   assert.match(read('docs/D-218-SMTP-BREVO.md'), /no-reply@gymcaptain\.app[\s\S]*smtp-relay\.brevo\.com[\s\S]*587/);
 });
 
-test('D-218: after sign-up without a session the code field opens (verifyOtp type email)', () => {
+test('D-218: «Получить код на почту» sends the code email and opens the code field (verifyOtp type email); no password sign-in', () => {
   const s = read('sync.js');
-  const su = s.slice(s.indexOf('async function doSignup(){'), s.indexOf('async function doLogin(){'));
-  assert.match(su, /else\{const box=\$\('#mzotpbox'\);if\(box\) box\.classList\.remove\('hidden'\);msg\('Письмо отправлено\. Нажми ссылку или введи код из письма'\)\}/);
+  const mg = s.slice(s.indexOf('async function doMagic(){'), s.indexOf('async function doOtp(){'));
+  assert.match(mg, /signInWithOtp\(\{email,options:\{emailRedirectTo:appUrl\(\),shouldCreateUser:true\}\}\)/);
+  assert.match(mg, /const box=\$\('#mzotpbox'\);if\(box\) box\.classList\.remove\('hidden'\);/);
+  assert.match(mg, /msg\('Письмо отправлено\. Введи код из письма'\)/);
   assert.match(s, /sb\.auth\.verifyOtp\(\{email,token,type:'email'\}\)/);
+  assert.doesNotMatch(s, /signInWithPassword|signUp\(|resetPasswordForEmail|id="mzpass"/);
 });
 
 test('D-218b: no personal or login addresses in the D-218 files (public repo); LV wording per Claude', () => {

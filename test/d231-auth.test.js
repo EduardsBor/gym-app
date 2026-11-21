@@ -95,6 +95,8 @@ function fakeSupabase(cloud) {
           signOut() { cloud.signedOut = (cloud.signedOut || 0) + 1; return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithPassword() { cloud.user = USER; return Promise.resolve({ data: { user: USER, session: { user: USER } }, error: null }); },
+          signInWithOtp() { return Promise.resolve({ error: null }); },
+          verifyOtp() { return this.signInWithPassword(); },
           signInWithOAuth(o) { (cloud.oauth = cloud.oauth || []).push(o); return Promise.resolve({ error: null }); }
         }
       };
@@ -181,7 +183,8 @@ test('D-231: first start without a session shows the sign-in screen first (Googl
   assert.equal(r.run('view'), 'auth');
   assert.match(r.html(), /id="mzgate"/);
   assert.match(r.html(), /id="mzemail"/);
-  assert.match(r.html(), /id="mzin"/);
+  assert.match(r.html(), /id="mzcode"/);
+  assert.doesNotMatch(r.html(), /mzpass|mzreset|mzup/);
   assert.doesNotMatch(r.html(), /mzgoogle/);
   assert.equal(r.run('mzNeedAuth()'), true);
   assert.equal(r.run('MZ_SB.googleAuth'), undefined);
@@ -217,8 +220,8 @@ test('D-231: an existing user without an account keeps the data; sign-in syncs i
   await go(r);
   assert.equal(r.run('view'), 'auth');
   assert.equal(r.run('S.workouts.length'), 2);
-  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.equal(r.run('S.workouts.length'), 2);
   assert.equal(r.store.get('gc_auth'), USER.id);
@@ -271,8 +274,8 @@ test('D-231: guest local data is not overwritten by an empty or blank cloud', as
   const r = bootA(local, { cloud: { remote: { payload: { workouts: [], goal: null }, updated_at: '2026-01-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   await go(r);
   assert.equal(r.run('view'), 'auth');
-  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w1,w2');
   assert.equal(r.run('S.workouts.length'), 2);
@@ -285,8 +288,8 @@ test('D-231: guest transfer merges history (no losses/duplicates) and keeps the 
   const remote = { program: [{ name: 'Cloud', items: [] }], progName: 'Cloud', goal: 'cut', workouts: [W('w-cloud', 1000)] };
   const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   await go(r);
-  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.match(r.html(), /id="mztransfer"/);
   assert.match(r.html(), /id="mzmerge">Объединить с аккаунтом</);

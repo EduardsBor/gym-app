@@ -95,7 +95,6 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0">${premStatusText()}</p>
  <button class="full" id="pwopen">Посмотреть Premium</button>
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
- <div class="card"><b>🤖 ИИ-советы</b> <span class="badge">скоро · Premium</span><p class="mut" style="margin:4px 0 0">Персональные подсказки по прогрессу. Пока не подключено — данные никуда не отправляются.</p></div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
  <div class="card"><b>🛡️ Конфиденциальность и данные</b>
  <div class="li"><span class="grow">Согласие на данные о теле</span><span class="mut">${S.consentHealth?'дано '+new Date(S.consentHealth.at).toLocaleDateString(LOC):'не дано'}</span></div>

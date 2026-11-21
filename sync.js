@@ -237,7 +237,7 @@
     const R=data.payload||{};
     // Blank cloud never overwrites guest data (even after the user agrees to transfer).
     if(isUnboundGuest()&&!remoteHasData(R)){await pushNow();return}
-    if(protectGuestOnAuth&&isUnboundGuest()){return}
+    if(protectGuestOnAuth&&isUnboundGuest()){return 'held'}
     if(!hasLocalData()) applyRemoteFresh(R);
     else applyMerged(R,remoteAt);
     progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
@@ -256,7 +256,7 @@
     if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return Promise.resolve()}
     status='syncing';lastErr='';paint();
     running=(async()=>{
-      try{await pullAndMerge();status='ok';if(S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
+      try{const r=await pullAndMerge();status='ok';if(r!=='held'&&S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
       catch(e){if(isOffline()||netErr(e))status='offline';else{status='err';lastErr=friendly(e)}}
       running=null;paint();
       if(again){again=false;return sync()}
@@ -393,14 +393,21 @@
   }
   function showTransferDialog(){
     view='transfer';
+    // While the choice is open, background sync (timer, return to the app, network back) must not merge or push guest data.
+    protectGuestOnAuth=true;
     $('#title').textContent='Вход';$('#nav').classList.add('hidden');
-    app.innerHTML=`<div class="card" id="mztransfer"><p style="margin-top:0">Перенести данные в аккаунт?</p>
+    app.innerHTML=`<div class="card" id="mztransfer"><p style="margin-top:0"><b>Перенести данные в аккаунт?</b></p>
+      <p class="mut">В аккаунте уже есть данные. На этом устройстве есть данные, сохранённые без входа.</p>
       <button class="pri full" id="mzmerge">Объединить с аккаунтом</button>
-      <button class="full" id="mzkeep" style="margin-top:8px">Не переносить</button></div>`;
-    if($('#mzmerge')) $('#mzmerge').onclick=()=>transferGuestToAccount();
+      <button class="full" id="mzkeep" style="margin-top:8px">Не переносить</button>
+      <p class="mut" style="font-size:12px;margin:8px 0 0">Если не переносить, копия этих данных останется на устройстве.</p></div>`;
+    let busy=false;
+    if($('#mzmerge')) $('#mzmerge').onclick=()=>{if(busy)return;busy=true;transferGuestToAccount()};
     if($('#mzkeep')) $('#mzkeep').onclick=async()=>{
+      if(busy) return;busy=true;
       try{await snapshotUnboundGuest();await adoptAccountFromCloud()}
-      catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
+      catch(e){busy=false;status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
+      protectGuestOnAuth=false;
       await finishSignedIn();
     };
   }
@@ -435,29 +442,9 @@
     await finishSignedIn();
   }
   function creds(){
-    return {email:($('#mzemail')&&$('#mzemail').value||'').trim(),password:($('#mzpass')&&$('#mzpass').value)||''};
+    return {email:($('#mzemail')&&$('#mzemail').value||'').trim()};
   }
   function msg(t){const n=$('#mzmsg');if(n) n.textContent=t;else toast(t)}
-  async function doSignup(){
-    if(!sb) return msg('Облако недоступно');
-    const {email,password}=creds();
-    if(!email||!email.includes('@')) return msg('Укажи почту');
-    if(password.length<6) return msg('Пароль не короче 6 символов');
-    msg('…');
-    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:appUrl()}});
-    if(error) return msg(friendly(error));
-    if(data.session){user=data.session.user;await afterAuth()}
-    else{const box=$('#mzotpbox');if(box) box.classList.remove('hidden');msg('Письмо отправлено. Нажми ссылку или введи код из письма')} // D-218: the confirm email carries a 6-digit code (verifyOtp type email)
-  }
-  async function doLogin(){
-    if(!sb) return msg('Облако недоступно');
-    const {email,password}=creds();
-    if(!email||!password) return msg('Укажи почту и пароль');
-    msg('…');
-    const {data,error}=await sb.auth.signInWithPassword({email,password});
-    if(error) return msg(friendly(error));
-    user=data.user;await afterAuth();
-  }
   async function doMagic(){
     if(!sb) return msg('Облако недоступно');
     const {email}=creds();
@@ -466,7 +453,7 @@
     const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:appUrl(),shouldCreateUser:true}});
     if(error) return msg(friendly(error));
     const box=$('#mzotpbox');if(box) box.classList.remove('hidden');
-    msg('Письмо отправлено. Нажми ссылку или введи код из письма');
+    msg('Письмо отправлено. Введи код из письма');
   }
   async function doOtp(){
     if(!sb) return;
@@ -477,15 +464,6 @@
     const {data,error}=await sb.auth.verifyOtp({email,token,type:'email'});
     if(error) return msg(friendly(error));
     user=data.user;await afterAuth();
-  }
-  async function doReset(){
-    if(!sb) return;
-    const {email}=creds();
-    if(!email||!email.includes('@')) return msg('Укажи почту');
-    msg('…');
-    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:appUrl()});
-    if(error) return msg(friendly(error));
-    msg('Если аккаунт есть, отправили письмо для смены пароля');
   }
   function hasUnsyncedWorkouts(){
     return (S.updatedAt||0)>(lastAt||0);
@@ -571,22 +549,20 @@
         <p class="mut" id="mzst">${esc(statusText())}</p>
         <p class="mut" style="font-size:12px;margin:0 0 8px">Синхронизация автоматическая: при открытии приложения, после тренировки и изменений, при появлении сети.</p>
         <button class="full" id="mzout">Выйти</button>
-        <p class="mut" style="font-size:12px;margin-top:8px">Выход не удаляет данные на этом устройстве. Программа, история, рекорды и настройки копируются в облако в ЕС. Замеры тела — только при согласии. Фото тела остаются на устройстве.</p>
+        <p class="mut" style="font-size:12px;margin-top:8px">При выходе данные остаются в облаке и вернутся после входа. Фото тела хранятся только на этом устройстве.</p>
         ${azLab}</div>`;
     }
-    return `<div class="card" id="mzacc"><b>☁️ Аккаунт и синхронизация</b>
-      <p class="mut" style="margin:4px 0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p>
-      <input id="mzemail" type="email" autocomplete="username" inputmode="email" placeholder="Почта">
-      <input id="mzpass" type="password" autocomplete="current-password" placeholder="Пароль (не короче 6 символов)">
-      <div class="row" style="margin-top:8px"><button class="pri grow" id="mzin">Войти</button><button class="grow" id="mzup">Создать аккаунт</button></div>
-      <button class="full" id="mzmagic" style="margin-top:8px">Войти по ссылке на почту</button>
-      <button class="full sm" id="mzreset" style="margin-top:8px">Забыли пароль?</button>
+    // Eduards 20.11: sign-in only with Google or an email code (no password, no «forgot password»); one block on the sign-in screen.
+    // Accounts created with a password sign in with the code too — same account, same data.
+    return `<div class="card" id="mzacc">
+      <p class="mut" style="margin:0 0 8px">Введи почту — пришлём код из 6 цифр. Новый аккаунт создастся автоматически.</p>
+      <input id="mzemail" type="email" autocomplete="email" inputmode="email" placeholder="Почта" aria-label="Почта">
+      <button class="pri full" id="mzcode" style="margin-top:8px">Получить код на почту</button>
       <div id="mzotpbox" class="hidden" style="margin-top:8px">
-        <input id="mzotp" inputmode="numeric" autocomplete="one-time-code" placeholder="Код из письма">
+        <input id="mzotp" inputmode="numeric" autocomplete="one-time-code" placeholder="Код из письма" aria-label="Код из письма">
         <button class="pri full" id="mzotpgo" style="margin-top:8px">Подтвердить код</button>
       </div>
       <p class="mut" id="mzmsg" style="margin-top:8px"></p>
-      <p class="mut" style="font-size:12px">На iPhone в приложении с домашнего экрана надёжнее вход с паролем: ссылка из письма откроется в Safari.</p>
       ${azLab}</div>`;
   }
   function bindAccount(){
@@ -598,10 +574,7 @@
       toast(e.target.checked?'Аналитика включена':'Аналитика выключена');
     };
     if($('#mzout')) $('#mzout').onclick=doLogout;
-    if($('#mzin')) $('#mzin').onclick=doLogin;
-    if($('#mzup')) $('#mzup').onclick=doSignup;
-    if($('#mzmagic')) $('#mzmagic').onclick=doMagic;
-    if($('#mzreset')) $('#mzreset').onclick=doReset;
+    if($('#mzcode')) $('#mzcode').onclick=doMagic;
     if($('#mzotpgo')) $('#mzotpgo').onclick=doOtp;
   }
   function inject(){

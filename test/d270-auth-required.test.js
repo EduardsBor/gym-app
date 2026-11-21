@@ -95,6 +95,8 @@ function fakeSupabase(cloud) {
           signOut() { cloud.signedOut = (cloud.signedOut || 0) + 1; return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithPassword() { const U=cloud.loginUser||USER; cloud.user=U; return Promise.resolve({ data: { user: U, session: { user: U } }, error: null }); },
+          signInWithOtp() { return Promise.resolve({ error: null }); },
+          verifyOtp() { return this.signInWithPassword(); },
           signInWithOAuth(o) { (cloud.oauth = cloud.oauth || []).push(o); return Promise.resolve({ error: null }); }
         }
       };
@@ -196,8 +198,8 @@ test('D-270: declining guest transfer keeps a copy of gym + moyzal history on th
   const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   r.g.confirm = m => { asked++; return true; };
   await go(r);
-  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.match(r.html(), /id="mztransfer"/);
   assert.match(r.html(), /id="mzkeep"[^>]*>Не переносить/);
@@ -224,8 +226,8 @@ test('D-270: guest signing into an empty account is transferred with no question
   const r = bootA(local, { cloud: { remote: null, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   r.g.confirm = m => { asked++; return false; };
   await go(r);
-  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.doesNotMatch(r.html(), /mztransfer|mzkeep|mzmerge/);
   assert.equal(asked, 0, 'empty account: no transfer question');
@@ -244,8 +246,8 @@ test('D-270: second user on the same device does not see the first user\'s data 
   r.g.confirm = m => { asked++; return true; };
   await go(r);
   assert.equal(r.run('view'), 'auth');
-  r.run('document.querySelector("#mzemail").value="other@example.com";document.querySelector("#mzpass").value="secret1"');
-  r.run('document.querySelector("#mzin").onclick()');
+  r.run('document.querySelector("#mzemail").value="other@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.equal(r.run('view'), 'today');
   assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w-B');
@@ -334,4 +336,29 @@ test('D-270: logout with unsynced workouts warns; wait-for-sync then clears; sig
   for (let i = 0; i < 25; i++) await tick();
   assert.equal(r2.run('view'), 'auth');
   assert.equal(r2.run('S.workouts.length'), 0);
+});
+
+test('Urgent 21.11: while the transfer card is open, background sync does not merge, push or bind guest data', async () => {
+  const local = seed({ workouts: [W('w-guest', 5000)], progName: 'Guest', ownerUid: null });
+  const remote = seed({ workouts: [W('w-acc', 8000)], progName: 'Account' });
+  const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  await go(r);
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzotp").value="123456"');
+  r.run('document.querySelector("#mzotpgo").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.match(r.html(), /id="mztransfer"/);
+  assert.match(r.html(), /В аккаунте уже есть данные/);
+  const before = r.cloud.upserts.filter(u => u.table === 'user_state').length;
+  await r.run('__mzSync()'); // e.g. the app was minimised and opened again
+  for (let i = 0; i < 15; i++) await tick();
+  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w-guest');
+  assert.ok(!r.run('S.ownerUid'), 'guest data stays unbound until the choice');
+  assert.equal(r.cloud.upserts.filter(u => u.table === 'user_state').length, before, 'nothing pushed');
+  // «Не переносить» still works after that
+  await r.run('document.querySelector("#mzkeep").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w-acc');
+  const copy = JSON.parse(r.run('localStorage.getItem("gym_guest_copy")'));
+  assert.ok(copy.workouts.some(x => x.id === 'w-guest'));
+  assert.ok(!copy.workouts.some(x => x.id === 'w-acc'), 'the copy is the guest data, not a merge');
 });
