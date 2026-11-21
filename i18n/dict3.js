@@ -187,8 +187,6 @@ const DICT3=[
 // P-301 auto-weight
 ['Авто-вес','Auto weight','Auto svars'],
 ['Запас','Reserve','Rezerve'],
-['(необязательно)','(optional)','(nav obligāti)'],
-['Как прошло?','How did it go?','Kā gāja?'],
 ['легко','easy','viegli'],
 ['нормально','normal','normāli'],
 ['тяжело','hard','grūti'],
