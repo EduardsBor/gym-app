@@ -118,8 +118,7 @@ localStorage.setItem('gym', ${JSON.stringify(state)});
 <body>
 <header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" class="wclock" role="timer" hidden></span></header>
 <main id="app"></main>
-<div id="timer" class="hidden"><div><small>Отдых</small><b id="tval">0:00</b></div>
-<button data-t="-30">−30</button><button data-t="30">+30</button><button id="tstop">✕</button></div>
+<div id="timer" class="hidden"><div><small>Отдых</small><b id="tval">0:00</b></div></div>
 <nav id="nav"></nav>
 <div id="modal" class="hidden"></div>
 ${scripts}
