@@ -101,6 +101,8 @@ function fakeSupabase(cloud) {
           signOut() { cloud.signedOut = (cloud.signedOut || 0) + 1; return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithPassword() { cloud.user = USER; return Promise.resolve({ data: { user: USER, session: { user: USER } }, error: null }); },
+          signInWithOtp() { return Promise.resolve({ error: null }); },
+          verifyOtp() { return this.signInWithPassword(); },
           signInWithOAuth(o) { (cloud.oauth = cloud.oauth || []).push(o); return Promise.resolve({ data: { url: 'https://example.invalid/auth/v1/authorize?provider=google' }, error: null }); },
           exchangeCodeForSession(c) { (cloud.exchanged = cloud.exchanged || []).push(c); if (cloud.exchangeError) return Promise.resolve({ data: {}, error: { message: cloud.exchangeError } }); cloud.user = USER; return Promise.resolve({ data: { session: { user: USER } }, error: null }); }
         }
@@ -269,9 +271,9 @@ test('D-265: bounce page, manifest intent-filter, plugins, SW', () => {
   assert.match(m, /android\.intent\.category\.BROWSABLE/);
   const pkg = JSON.parse(read('package.json'));
   assert.ok(pkg.devDependencies['@capacitor/browser'] && pkg.devDependencies['@capacitor/app']);
-  assert.match(read('android/app/build.gradle'), /versionCode 6/);
+  assert.match(read('android/app/build.gradle'), /versionCode 7/);
   const sw = read('sw.js');
-  assert.match(sw, /const C='moyzal-v127'/);
+  assert.match(sw, /const C='moyzal-v128'/);
   assert.match(sw, /privacy\|terms\|auth-callback/);
 });
 

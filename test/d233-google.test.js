@@ -101,6 +101,8 @@ function fakeSupabase(cloud) {
           signOut() { cloud.signedOut = (cloud.signedOut || 0) + 1; return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithPassword() { cloud.user = USER; return Promise.resolve({ data: { user: USER, session: { user: USER } }, error: null }); },
+          signInWithOtp() { return Promise.resolve({ error: null }); },
+          verifyOtp() { return this.signInWithPassword(); },
           signInWithOAuth(o) { (cloud.oauth = cloud.oauth || []).push(o); return Promise.resolve({ error: null }); }
         }
       };
@@ -189,7 +191,7 @@ test('D-233: Google button is on top, big, with the «new account» note, above 
   assert.match(h, /id="mzgoogle"[^>]*font-size:18px[^>]*>Войти через Google</);
   assert.match(h, /id="mzgnote"[^>]*>Новый аккаунт создастся автоматически</);
   assert.ok(h.indexOf('id="mzgoogle"') < h.indexOf('id="mzemail"'));
-  assert.ok(h.indexOf('id="mzgoogle"') < h.indexOf('id="mzpass"'));
+  assert.doesNotMatch(h, /id="mzpass"/);
   assert.match(read('supabase-config.js'), /googleAuth:true/);
   assert.match(read('i18n/dict3.js'), /\['Новый аккаунт создастся автоматически','[^']+','[^']+'\]/);
 });

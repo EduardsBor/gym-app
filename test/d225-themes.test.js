@@ -133,7 +133,7 @@ test('D-225: theme.js loads early; switcher in «Ещё»; local only; free; pre
   assert.equal(/premium|isPro|mzTrack|sb\.|supabase/i.test(th), false, 'free, no analytics, no cloud');
   for (const f of ['sync.js', 'app.js', 'csv.js', 'features.js', 'premium.js']) assert.equal(read(f).includes('gc_theme'), false, f);
   assert.match(th, /SystemBars/);
-  assert.match(read('sw.js'), /const C='moyzal-v127'/);
+  assert.match(read('sw.js'), /const C='moyzal-v128'/);
   assert.match(read('sw.js'), /'style\.css','theme\.js'/);
   assert.match(read('scripts/build-web.js'), /'theme\.js'/);
   const man = JSON.parse(read('manifest.json'));
@@ -146,7 +146,7 @@ test('D-225: theme.js loads early; switcher in «Ещё»; local only; free; pre
 
 test('D-225: theme names RU/EN/LV; new LV strings only in docs/LV-NEW-D225.md', () => {
   const d = read('i18n/dict3.js');
-  for (const r of ["['Оформление','Appearance','Noformējums']", "['Классика','Classic','Klasiskā']", "['Капитан','Captain','Kapteinis']", "['Светлая','Light','Gaišā']", "['Океан','Ocean','Okeāns']", "['Ягода','Berry','Oga']"]) assert.ok(d.includes(r), r);
+  for (const r of ["['Оформление','Appearance','Izskats']", "['Классика','Classic','Klasiskā']", "['Капитан','Captain','Kapteinis']", "['Светлая','Light','Gaišā']", "['Океан','Ocean','Okeāns']", "['Ягода','Berry','Oga']"]) assert.ok(d.includes(r), r);
   const lv = read('docs/LV-NEW-D225.md');
   for (const w of ['Noformējums', 'Klasiskā', 'Kapteinis', 'Gaišā', 'Okeāns', 'Oga', 'Tēma tiek saglabāta tikai šajā ierīcē.']) assert.ok(lv.includes(w), w);
   assert.equal(read('LV-REVIEW.md').includes('D-225'), false);

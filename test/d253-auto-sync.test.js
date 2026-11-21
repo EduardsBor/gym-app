@@ -95,6 +95,8 @@ function fakeSupabase(cloud) {
           signOut() { cloud.signedOut = (cloud.signedOut || 0) + 1; return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithPassword() { cloud.user = USER; return Promise.resolve({ data: { user: USER, session: { user: USER } }, error: null }); },
+          signInWithOtp() { return Promise.resolve({ error: null }); },
+          verifyOtp() { return this.signInWithPassword(); },
           signInWithOAuth(o) { (cloud.oauth = cloud.oauth || []).push(o); return Promise.resolve({ error: null }); }
         }
       };
@@ -249,7 +251,7 @@ test('D-253: no «Синхронизировать сейчас»; «Выйти�
   assert.doesNotMatch(s, /mzsync|Синхронизировать сейчас/);
   assert.doesNotMatch(read('i18n/dict3.js'), /Синхронизировать сейчас/);
   assert.match(s, /id="mzout">Выйти</);
-  assert.match(s, /Замеры тела — только при согласии\. Фото тела остаются на устройстве\./);
+  assert.match(s, /При выходе данные остаются в облаке и вернутся после входа\. Фото тела хранятся только на этом устройстве\./);
   assert.match(read('i18n/dict3.js'), /\['Синхронизация автоматическая: при открытии приложения, после тренировки и изменений, при появлении сети\.','Sync is automatic/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-AUTO-SYNC.md')));
   const r = await signedIn();

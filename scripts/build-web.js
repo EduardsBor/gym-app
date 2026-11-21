@@ -42,6 +42,7 @@ const FILES = [
   'tech.js',
   'warm.js',
   'notify.js',
+  'profile.js',
   'sentry.js',
   'icon-192.png',
   'icon-512.png',
