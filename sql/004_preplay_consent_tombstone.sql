@@ -34,7 +34,22 @@ create policy health_consent_log_select_own on public.health_consent_log
 -- No update/delete policies: users cannot rewrite history.
 grant select, insert on table public.health_consent_log to authenticated;
 
+-- Backfill (Claude review 21.11): users who gave body consent before this log existed get one 'legacy-v1'
+-- grant row, otherwise user_state_guard below would strip their body data from the cloud on the next sync.
+-- Must run BEFORE the set_uid trigger (the SQL editor has no auth.uid()).
+insert into public.health_consent_log (user_id, action, text_version, created_at)
+select s.user_id, 'grant', 'legacy-v1',
+       case when (s.payload->'consentHealth'->>'at') ~ '^\d{4}-\d{2}-\d{2}T'
+            then least((s.payload->'consentHealth'->>'at')::timestamptz, now())
+            else now() end
+from public.user_state s
+where jsonb_typeof(s.payload) = 'object'
+  and jsonb_typeof(s.payload->'consentHealth') = 'object'
+  and not exists (select 1 from public.health_consent_log l where l.user_id = s.user_id);
+
 -- Force user_id from the session so a client cannot log under someone else.
+-- created_at may come from the device (offline queue) but never from the future,
+-- otherwise a future-dated grant would outrank a later revoke.
 create or replace function public.health_consent_log_set_uid()
 returns trigger
 language plpgsql
@@ -44,6 +59,7 @@ begin
     raise exception 'not authenticated';
   end if;
   NEW.user_id := auth.uid();
+  NEW.created_at := least(coalesce(NEW.created_at, now()), now());
   return NEW;
 end;
 $$;

@@ -234,7 +234,8 @@
         text_version:row.text_version||HEALTH_CONSENT_TEXT_V,
         created_at:row.at||new Date().toISOString()
       });
-      if(error) throw error;
+      // Журнал не должен останавливать синхронизацию (таблицы ещё нет / сбой): очередь остаётся до следующего раза.
+      if(error){if(isAccountDeletedErr(error)) throw error;return}
       q.shift();
       persistLocal();
     }

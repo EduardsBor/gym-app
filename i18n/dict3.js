@@ -450,5 +450,5 @@ const DICT3=[
 ['Резервная копия, экспорт, удаление, согласия','Backup, export, deletion, consents','Rezerves kopija, eksports, dzēšana, piekrišanas'],
 ['Библиотека упражнений, научная основа, питание','Exercise library, scientific basis, nutrition','Vingrinājumu bibliotēka, zinātniskais pamats, uzturs'],
 ['Аккаунт удалён. Данные на этом устройстве очищены.','This account has been deleted. Data on this device has been cleared.','Konts ir dzēsts. Dati šajā ierīcē ir notīrīti.'],
-['Чтобы таймер отдыха сработал вовремя, разреши точные будильники в настройках Android. Открыть настройки?','For the rest timer to fire on time, allow exact alarms in Android settings. Open settings?','Lai atpūtas taimeris atskanētu precīzi, atļauj precīzus signālus iestatījumos Android. Atvērt iestatījumus?'],
+['Чтобы таймер отдыха сработал вовремя, разреши точные будильники в настройках Android. Открыть настройки?','For the rest timer to fire on time, allow exact alarms in Android settings. Open settings?','Lai atpūtas taimeris atskanētu laikā, Android iestatījumos atļauj precīzos signālus. Atvērt iestatījumus?'],
 ]
