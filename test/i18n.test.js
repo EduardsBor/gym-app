@@ -40,7 +40,7 @@ test('D-209: APP_VERSION is 1.0; stale 68 / version 30 texts are gone', () => {
   assert.equal(feat.includes('Версия 30'), false);
   assert.match(feat, /appVersionLabel/);
   assert.match(feat, /textContent='Версия '/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v143'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.equal(sw.includes("C='moyzal-v59'"), false);
   assert.equal(lib.includes('20 базовых упражнений'), false);

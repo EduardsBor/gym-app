@@ -19,7 +19,7 @@ test('B-410: privacy policy has a Sentry section in RU, EN and LV; “Sentry н�
 });
 
 test('B-410: sw is moyzal-v71; changelog mentions it; policy date is 21.11.2026 (auth required)', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v143'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   const log = read('CHANGELOG.md');
   assert.match(log, /B-410/);
