@@ -452,4 +452,9 @@ const DICT3=[
 ['Аккаунт удалён. Данные на этом устройстве очищены.','This account has been deleted. Data on this device has been cleared.','Konts ir dzēsts. Dati šajā ierīcē ir notīrīti.'],
 ['Чтобы таймер отдыха сработал вовремя, разреши точные будильники в настройках Android. Открыть настройки?','For the rest timer to fire on time, allow exact alarms in Android settings. Open settings?','Lai atpūtas taimeris atskanētu laikā, Android iestatījumos atļauj precīzos signālus. Atvērt iestatījumus?'],
 ['Войди, чтобы смотреть ролики','Sign in to watch the videos','Ieej, lai skatītos video'],
+['{level} · {days}× в неделю · {place}','{level} · {days}× a week · {place}','{level} · {days}× nedēļā · {place}'],
+['{n} тренировок, около {w} недель, по {dur}','{n} workouts, about {w} weeks, {dur} each','{n} treniņi, apmēram {w} nedēļas, pa {dur}'],
+['{title} · {n} тренировок, около {w} недель, по {dur}','{title} · {n} workouts, about {w} weeks, {dur} each','{title} · {n} treniņi, apmēram {w} nedēļas, pa {dur}'],
+['Верх / Низ + Фулбоди','Upper / Lower + Full body','Augšdaļa / Apakšdaļa + Viss ķermenis'],
+['Верх / Низ + Фулбоди ×2','Upper / Lower + Full body ×2','Augšdaļa / Apakšdaļa + Viss ķermenis ×2'],
 ]

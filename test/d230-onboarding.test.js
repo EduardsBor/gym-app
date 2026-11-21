@@ -48,7 +48,7 @@ function boot(opts) {
     };
   };
   const ctx = vm.createContext(g);
-  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'blocks.js', 'legal.js', 'premium.js', 'features.js'];
+  const files = ['alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'data/blocks-index.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'blocks.js', 'legal.js', 'premium.js', 'features.js'];
   for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
   return { run: code => vm.runInContext(code, ctx), app: () => vm.runInContext('app.innerHTML', ctx) };
 }
@@ -66,8 +66,10 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
   assert.match(h, /<h3 class="catn">/);
   assert.match(h, /Не нашёл подходящую\?<\/p><button class="full" id="toq"[^>]*>🧩 Подобрать программу под себя</); // D-236
   assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
-  assert.equal((h.match(/data-c="c\d+"/g) || []).length, run('CATALOG.length'));
-  assert.equal(run('CATALOG.length'), 13); // «Дом с гантелями» hidden (Eduards 19.11)
+  assert.equal(run('CATALOG.length'), 13); // curated cards unchanged; «Дом с гантелями» hidden (Eduards 19.11)
+  assert.equal((h.match(/data-c="c\d+"/g) || []).length, 13);
+  assert.ok((h.match(/data-c="/g) || []).length === run('catalogCards().length'));
+  assert.ok(run('catalogCards().length') > 13);
 });
 
 test('D-230: questionnaire from the first run can go back to the catalog; picking a program starts it', () => {
