@@ -553,7 +553,7 @@ function showWorkoutSummary(A) {
     if (L.length) prHtml = typeof prNotesHTML === 'function' ? prNotesHTML(L) : '<div class="prnote"><b>' + (L.length === 1 ? '🏆 Новый рекорд' : '🏆 Новые рекорды') + '</b></div>';
   }
   m.classList.remove('hidden');
-  m.innerHTML = '<div class="sheet" id="wsum"><div class="row"><h2 class="grow" style="margin:0">Итог тренировки</h2><button id="mc" type="button">✕</button></div><h3 style="margin-top:8px">' + hesc(A.dayName || '') + '</h3>' + healthDetailHTML(A) + prHtml + '<button class="pri full" id="sumok" type="button" style="margin-top:12px">Готово</button></div>';
+  m.innerHTML = '<div class="sheet" id="wsum"><div class="row"><h2 class="grow" style="margin:0">Итог тренировки</h2><button id="mc" type="button">✕</button></div><h3 style="margin-top:8px">' + hesc(typeof historyLabel==='function'?historyLabel(A):(A.dayName || '')) + '</h3>' + healthDetailHTML(A) + prHtml + '<button class="pri full" id="sumok" type="button" style="margin-top:12px">Готово</button></div>';
   var close = function () { m.classList.add('hidden'); };
   var x = m.querySelector('#mc'), ok = m.querySelector('#sumok');
   if (x) x.onclick = close;
