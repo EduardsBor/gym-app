@@ -66,11 +66,13 @@ test('sequential labels: plan days are 1…36; stored names stay «Неделя 
   const nums = run('S.program.map((d,i)=>dayNum(d,i))');
   const labels = run('S.program.map((d,i)=>workoutLabel(d,i))');
   assert.equal(JSON.stringify(nums), JSON.stringify(Array.from({ length: 36 }, (_, i) => i + 1)));
-  assert.equal(labels[0], '1. ' + run('dayTitle(S.program[0])'));
-  assert.equal(labels[35], '36. ' + run('dayTitle(S.program[35])'));
+  assert.equal(labels[0], '1. Всё тело');
+  assert.equal(labels[35], '36. Всё тело');
   assert.equal(new Set(labels).size, 36);
-  assert.match(names[0], /^Неделя 1 · /);
-  assert.match(names[35], /^Неделя \d+ · /);
+  assert.ok(labels.every(l => !/ [A-E]( |$)/.test(l)));
+  assert.match(names[0], /^Неделя 1 · Всё тело A/);
+  assert.match(names[35], /^Неделя \d+ · Всё тело C/);
+  assert.equal(run('dayTitle(S.program[0])'), 'Всё тело A');
   assert.equal(run('S.program[0].n'), 1);
   assert.equal(run('S.program[35].n'), 36);
   // Not a weekly 1/2/3 (or A/B/C-as-number) recycle: week 2 first workout is 4, not 1.
@@ -86,6 +88,8 @@ test('plan view and current workout card show running numbers 1…36, not the we
   assert.match(h, /data-i="0"[^>]*>1\. /);
   assert.match(h, /data-i="3"[^>]*>4\. /);
   assert.match(h, /data-i="35"[^>]*>36\. /);
+  assert.match(h, />1\. Всё тело</);
+  assert.doesNotMatch(h, />\d+\. Всё тело [ABC]</);
   assert.match(h, /<summary><b>Неделя 1<\/b>/);
   assert.match(h, /<summary><b>Неделя 12<\/b>/);
   run('today(35)');
@@ -115,13 +119,35 @@ test('startW stores n; in-progress title and history use the running number; old
   run('showW("w-old")');
   assert.match(modal(), /<h2 class="grow" style="margin:0">12\. /);
 
-  // Old row that no longer matches the program: keep the stored dayName as-is.
+  // Old row that no longer matches the program: strip the letter on display, do not rewrite storage.
   run('S.workouts.push({id:"w-orphan",start:Date.now()-6e6,end:Date.now()-5e6,dayIdx:99,dayName:"Неделя 2 · Всё тело A",items:[]});history()');
-  assert.match(app(), /<b>Неделя 2 · Всё тело A<\/b>/);
+  assert.match(app(), /<b>Неделя 2 · Всё тело<\/b>/);
+  assert.doesNotMatch(app(), /<b>Неделя 2 · Всё тело A<\/b>/);
+  assert.equal(run('S.workouts.find(w=>w.id==="w-orphan").dayName'), 'Неделя 2 · Всё тело A');
 
   // Custom / template workouts must not pick up a program number from dayIdx.
   assert.equal(run('historyLabel({dayName:"Своя тренировка",dayIdx:0,n:1})'), 'Своя тренировка');
   assert.equal(run('historyLabel({dayName:"Шаблон",fromTemplate:"t1",dayIdx:0,n:2})'), 'Шаблон');
+});
+
+test('display strips the A/B/C letter and keeps «разгрузка»; RU/EN/LV; stored data unchanged', () => {
+  const { run, app } = withProgram();
+  assert.equal(run('stripDayLetter("Всё тело A")'), 'Всё тело');
+  assert.equal(run('stripDayLetter("Верх тела B (разгрузка)")'), 'Верх тела (разгрузка)');
+  assert.equal(run('stripDayLetter("Full body A")'), 'Full body');
+  assert.equal(run('stripDayLetter("Full body C (deload)")'), 'Full body (deload)');
+  assert.equal(run('stripDayLetter("Visa ķermeņa A")'), 'Visa ķermeņa');
+  assert.equal(run('stripDayLetter("Visa ķermeņa B (atslodze)")'), 'Visa ķermeņa (atslodze)');
+  assert.equal(run('stripDayLetter("Ноги A")'), 'Ноги');
+  assert.equal(run('workoutLabel({name:"Неделя 6 · Всё тело A (разгрузка)",n:16})'), '16. Всё тело (разгрузка)');
+  assert.equal(run('historyLabel({dayName:"Неделя 6 · Верх тела B (разгрузка)",n:21})'), '21. Верх тела (разгрузка)');
+  const h = app();
+  assert.match(h, /1\. Всё тело/);
+  assert.doesNotMatch(h, /Всё тело [ABC]/);
+  assert.match(run('S.program[0].name'), /Всё тело A/);
+  const sum = run('progSummary(S.program)');
+  assert.match(sum, /Всё тело/);
+  assert.doesNotMatch(sum, /Всё тело [ABC]/);
 });
 
 test('preview and program editor use the same running numbers; SW cache is moyzal-v133', () => {
