@@ -803,13 +803,6 @@
       user=session&&session.user||null;
       // SIGNED_OUT after a failed refresh does NOT clear the sign-in flag: only «Выйти» and account deletion do.
       if(user) markAuthed();
-      if(ev==='PASSWORD_RECOVERY'){
-        const np=prompt('Новый пароль (не короче 6 символов)');
-        if(np&&np.length>=6){
-          const {error}=await sb.auth.updateUser({password:np});
-          toast(error?friendly(error):'Пароль обновлён');
-        }
-      }
     });
     // An expired access token is refreshed here with the refresh token; a network error keeps the saved session.
     try{const {data}=await sb.auth.getSession();user=data&&data.session&&data.session.user||null}catch(e){user=null}

@@ -71,7 +71,7 @@ test('D-272: delete-account.html is excluded from the service worker cache, like
   assert.match(sw, /\(privacy\|terms\|auth-callback\|delete-account\)\\\.html\$\/\.test\(u\.pathname\)\)return;/);
   const precache = sw.slice(0, sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(precache, /delete-account/);
-  assert.match(sw, /const C='moyzal-v131'/);
+  assert.match(sw, /const C='moyzal-v132'/);
   // GitHub Pages / Play Console link; not bundled into the Android www copy (same as privacy.html).
   const build = read('scripts/build-web.js');
   assert.doesNotMatch(build, /delete-account/);
