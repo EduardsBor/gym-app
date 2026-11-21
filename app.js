@@ -320,7 +320,42 @@ function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='funct
 let durInt;
 // D-235: one place that marks a set done (workout list ✓ and the exercise screen «+»): auto-weight carry-over, PR check, rest timer.
 function setDone(it,k){const s=it.sets[k];s.done=true;s.pf=false;if(s.w==='')s.w=0;if(s.r==='')s.r=0;if(S.autoW!==false&&!isCardio(it.exId))it.sets.slice(k+1).forEach(n=>{if(!n.done&&(n.pf||n.w==='')){n.w=s.w;n.pf=true}});checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}
+// D-286: keep already-painted MoveKit poster nodes across a full workout re-render (add/remove set, swap).
+function reuseMkPosters(root,build){
+  const bag=new Map();
+  if(root&&root.querySelectorAll)root.querySelectorAll('[data-mk-poster]').forEach(el=>{const id=(el.dataset&&el.dataset.mkPoster)||'';if(!bag.has(id))bag.set(id,[]);bag.get(id).push(el)});
+  build();
+  if(!root||!root.querySelectorAll)return;
+  root.querySelectorAll('[data-mk-poster]').forEach(el=>{
+    const id=(el.dataset&&el.dataset.mkPoster)||'',q=bag.get(id),prev=q&&q.shift();
+    if(!prev||prev===el)return;
+    if(!(prev.dataset&&prev.dataset.mkPosterState==='ok')&&!(prev.querySelector&&prev.querySelector('img')))return;
+    if(typeof el.replaceWith==='function')el.replaceWith(prev);else if(el.parentNode)el.parentNode.replaceChild(prev,el);
+  });
+}
+// D-286: tick a warm-up/cool-down row in place — do not rebuild the list (that flashed every poster).
+function patchWuCd(kind,k){
+  const A=S.active,chk=kind==='cd'?(A.cool&&A.cool.c):(A.warm&&A.warm.c);if(!chk)return;
+  const b=app.querySelector('[data-'+kind+'="'+k+'"]');if(!b)return;
+  const on=!!chk[k];b.classList.toggle('ok',on);
+  const row=b.closest&&(b.closest('.li.wu')||b.closest('.li'));if(row)row.classList.toggle('done',on);
+  const n=chk.filter(Boolean).length,all=n===chk.length;
+  const d=b.closest&&b.closest('details');
+  if(d){const m=d.querySelector('summary .mut');if(m)m.textContent=n+'/'+chk.length+(all?' ✓':'');d.open=!all}
+}
+function patchSets(i){
+  const it=S.active&&S.active.items[i];if(!it)return;
+  (it.sets||[]).forEach((s,k)=>{
+    const b=app.querySelector('[data-done="'+i+','+k+'"]');if(!b)return;
+    b.classList.toggle('ok',!!s.done);
+    const row=b.closest&&b.closest('.set');if(!row)return;
+    row.classList.toggle('done',!!s.done);row.classList.toggle('pf',!!(s.pf&&!s.done));
+    const w=row.querySelector('input[data-f="w"]'),r=row.querySelector('input[data-f="r"]');
+    if(w)w.value=s.w;if(r)r.value=s.r;
+  });
+}
 function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
+ reuseMkPosters(app,()=>{
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok hidden" id="fin" aria-hidden="true" tabindex="-1">Завершить</button></div>
  ${typeof healthPanel==='function'?healthPanel():''}
  ${A.warm?(()=>{if(A.warm.t)return`<div class="card wucard">${wuHTML(A.warm.wu,A.warm.c)}</div>`;const n=A.warm.c.filter(Boolean).length,all=n===A.warm.c.length;return`<div class="card wucard"><details ${all?'':'open'}><summary>🔥 <b>Разминка</b> <span class="mut">${n}/${A.warm.c.length}${all?' ✓':''}</span></summary>${warmHTML(A.warm.P,A.warm.c)}</details></div>`})():''}
@@ -334,11 +369,12 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  <h2>Заметки</h2><textarea id="notes" rows="3" placeholder="Самочувствие, что получилось…">${esc(A.notes)}</textarea>
  <button class="pri full" id="fin2" style="margin:16px 0 0;min-height:52px;font-size:17px">Завершить тренировку</button>
  <button class="danger full" id="cancel" style="margin:16px 0">Отменить тренировку</button>`;
+ });
  const tick=()=>{const e=$('#dur');if(e)e.textContent=fmtT(Math.floor((Date.now()-A.start)/1000));if(typeof healthTick==='function')healthTick()};tick();clearInterval(durInt);durInt=setInterval(tick,1000);if(typeof healthBind==='function')healthBind();
  app.querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{const s=A.items[inp.dataset.i].sets[inp.dataset.k];s[inp.dataset.f]=inp.value===''?'':+inp.value;if(s.pf){s.pf=false;inp.closest('.set').classList.remove('pf')}save()});
- app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.done.split(',').map(Number),it=A.items[i],s=it.sets[k];if(!s.done)setDone(it,k);else{s.done=false;delete s.pr;delete s.prInfo}save();workoutView()});
- app.querySelectorAll('[data-wu]').forEach(b=>b.onclick=()=>{const k=+b.dataset.wu;A.warm.c[k]=!A.warm.c[k];save();const y=scrollY;workoutView();scrollTo(0,y)});
- app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const k=+b.dataset.cd;A.cool.c[k]=!A.cool.c[k];save();const y=scrollY;workoutView();scrollTo(0,y)});
+ app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.done.split(',').map(Number),it=A.items[i],s=it.sets[k];if(!s.done)setDone(it,k);else{s.done=false;delete s.pr;delete s.prInfo}save();patchSets(i)});
+ app.querySelectorAll('[data-wu]').forEach(b=>b.onclick=()=>{const k=+b.dataset.wu;A.warm.c[k]=!A.warm.c[k];save();patchWuCd('wu',k)});
+ app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const k=+b.dataset.cd;A.cool.c[k]=!A.cool.c[k];save();patchWuCd('cd',k)});
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push(S.autoW!==false?{w:l.w,r:l.r,pf:l.w!=='',done:false}:{w:'',r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
@@ -391,8 +427,7 @@ function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=f
  if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
 function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
-// D-245: one place to shift the running rest (bottom bar and the exercise-screen circle)
-$('#tstop').onclick=()=>stopTimer();
+// D-288: no skip/stop button. Rest ends on its own (tt → stopTimer) or is restarted by startTimer when the next set is logged.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
 const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};

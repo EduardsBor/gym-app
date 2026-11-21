@@ -1,8 +1,9 @@
 'use strict';
 // P-301: auto-weight in the app. Rules live in progress.js (pure); here: state in S.pg, prefill, buttons, «Моё оборудование».
-// History (S.workouts) is never rewritten: the new fields feel/pain only go into the workout being saved now.
+// History (S.workouts) is never rewritten. Old it.feel / it.pain in saved workouts stay as they are
+// (progression and CSV still read them). D-287: the optional how-it-went row is gone; new workouts have no UI
+// to set feel, so awFinish falls back to reps/weights (RIR stays null).
 const AW_DAY=864e5;
-const AW_FEELS=[['easy','легко'],['ok','нормально'],['hard','тяжело']];
 const AW_NOTE={inc:'↑ Прибавка: верх диапазона 2 тренировки подряд',inc_big:'↑ Прибавка: верх диапазона 2 тренировки подряд. Шаг снаряда большой: если в первый раз не выйдет нижняя граница — это не промах',
  top1:'Верх диапазона во всех подходах: ещё одна такая тренировка — и прибавка',grace:'Недобор на новом весе не засчитан как промах (первая тренировка после большого шага)',cal_up:'↑ Калибровка: сразу прибавка',cal_down:'↓ Калибровка: вес −10 %',
  miss1:'Промах в прошлый раз: вес тот же',miss2:'Два промаха подряд: на один подход меньше',miss3:'Три промаха подряд: вес −10 %, прогрессия заново',
@@ -78,9 +79,6 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
  // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
  // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
  return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
-function awFeelHTML(it,i){if(!awCls(it.exId)||!it.sets.length||!it.sets.every(s=>s.done))return'';
- return`<div class="row awfeel" style="margin-top:6px"><span class="mut grow">Как прошло? <span style="font-size:12px">(необязательно)</span></span>${AW_FEELS.map(([k,t])=>`<button class="sm ${it.feel===k?'ok':''}" data-awfeel="${i},${k}">${t}</button>`).join('')}</div>`}
-
 function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  A.items.forEach(it=>{const c=awCls(it.exId);if(!c)return;if((!it.awx&&!it.sets.some(s=>s.done))||(it.sug&&it.sug.ex!==it.exId)){awApply(it,A.dl);ch=true}});
  if(ch){save();return workoutView()}
@@ -91,9 +89,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
   if(b)fc.insertAdjacentHTML('beforebegin',b)}
  A.items.forEach((it,i)=>{const rm=app.querySelector(`[data-rm="${i}"]`);if(!rm||!rm.closest)return;const card=rm.closest('.card');if(!card)return;
   const c=awCls(it.exId);if(!c)return;
-  const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i));
-  const add=card.querySelector('[data-add]');if(add)add.closest('.row').insertAdjacentHTML('beforebegin',awFeelHTML(it,i))});
- app.querySelectorAll('[data-awfeel]').forEach(b=>b.onclick=()=>{const[i,k]=b.dataset.awfeel.split(',');const it=A.items[+i];it.feel=it.feel===k?undefined:k;save();const y=scrollY;workoutView();scrollTo(0,y)});
+  const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i))});
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to)return;
   it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}
   const p=awPg()[from];if(p&&p.next)delete p.next.id;awApply(it,A.dl);save();workoutView()});

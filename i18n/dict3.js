@@ -13,7 +13,6 @@ const DICT3=[
 // Body screen: height set, no weight yet (LV for Claude: docs/LV-NEW-ONBOARDING.md)
 ['Добавь замер с весом — посчитаем ИМТ.','Add a measurement with your weight and we will calculate your BMI.','Pievieno mērījumu ar svaru — aprēķināsim ĶMI.'],
 // D-245 rest controls on the exercise screen (LV for Claude: docs/LV-NEW-REST-CIRCLE.md)
-['Пропустить отдых','Skip rest','Izlaist atpūtu'],
 // D-244 auto next exercise (LV for Claude: docs/LV-NEW-AUTO-NEXT.md)
 ['Тренировка выполнена 💪 Нажми «Завершить»','Workout done 💪 Tap «Finish»','Treniņš pabeigts 💪 Nospied “Pabeigt”'],
 // D-235 exercise screen (LV for Claude: docs/LV-NEW-EXERCISE-SCREEN.md)
@@ -187,8 +186,6 @@ const DICT3=[
 // P-301 auto-weight
 ['Авто-вес','Auto weight','Auto svars'],
 ['Запас','Reserve','Rezerve'],
-['(необязательно)','(optional)','(nav obligāti)'],
-['Как прошло?','How did it go?','Kā gāja?'],
 ['легко','easy','viegli'],
 ['нормально','normal','normāli'],
 ['тяжело','hard','grūti'],
