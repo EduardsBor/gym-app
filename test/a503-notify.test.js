@@ -184,3 +184,26 @@ test('i18n: new UI strings have EN/LV', () => {
   ['Уведомления', 'Напоминать о тренировке', 'Разрешить точное время'].forEach(k => { assert.ok(m.get(k) && m.get(k)[1] && m.get(k)[2], k); });
   for (const L of ['ru', 'en', 'lv']) for (const k of ['restT', 'restB', 'remT', 'remB', 'chRest', 'chRem']) assert.ok(N.TXT[L][k], L + k);
 });
+
+test('rest timer on Android 14+: if exact alarms are denied, ask once and open settings; schedule still happens', async () => {
+  const p = mockPlugin('granted'); const e = env(p);
+  e.explainedExact = 0;
+  e.explainExact = () => (e.explainedExact++, true);
+  const n = N.makeNotifier(e);
+  await n.restStart(Date.now() + 90000);
+  assert.equal(kinds(p.log, 'schedule').length, 1, 'inexact/exact schedule still requested');
+  assert.equal(e.explainedExact, 1);
+  assert.equal(kinds(p.log, 'exact').length, 1, 'opens exact-alarm settings');
+  assert.equal(e.st.get(N.EXACT_ASKED_KEY), '1');
+  await n.restStart(Date.now() + 90000);
+  assert.equal(e.explainedExact, 1, 'asked only once');
+  assert.equal(kinds(p.log, 'exact').length, 1);
+});
+
+test('rest timer: no exact-alarm prompt when the hook is absent (existing callers)', async () => {
+  const p = mockPlugin('granted'); const e = env(p);
+  await N.makeNotifier(e).restStart(Date.now() + 90000);
+  assert.equal(kinds(p.log, 'schedule').length, 1);
+  assert.equal(kinds(p.log, 'exact').length, 0);
+  assert.equal(e.st.get(N.EXACT_ASKED_KEY), '1');
+});

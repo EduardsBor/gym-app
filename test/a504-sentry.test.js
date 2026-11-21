@@ -135,7 +135,7 @@ test('site files do not load Sentry and do not contain a DSN-like ingest URL', (
   assert.equal(index.includes('sentry-sdk.js'), false);
   assert.equal(sw.includes('sentry.js'), false);
   assert.equal(sw.includes('sentry-config'), false);
-  assert.match(sw, /moyzal-v128/);
+  assert.match(sw, /moyzal-v129/);
   assert.equal(/https:\/\/[A-Za-z0-9._-]+@[^'"\s]+sentry\.io/.test(index + sw + read('sentry.js') + read('scripts/build-web.js')), false);
 });
 
@@ -146,4 +146,13 @@ test('gitignore covers sentry-config.js; ANDROID-BUILD.md documents GC_SENTRY_DS
   assert.match(doc, /GC_SENTRY_DSN/);
   assert.match(doc, /GC_SENTRY_ENV/);
   assert.equal(/https:\/\/[A-Za-z0-9._-]+@[^'"\s]+sentry\.io/.test(doc), false);
+});
+
+test('scrubUrl strips sign-in code from auth-callback and otp query params', () => {
+  assert.equal(S.scrubUrl('app.gymcaptain://auth-callback?code=SECRET-CODE').includes('SECRET-CODE'), false);
+  assert.equal(S.scrubUrl('https://eduardsbor.github.io/gym-app/auth-callback.html?code=SECRET-CODE').includes('SECRET-CODE'), false);
+  assert.equal(S.scrubUrl('https://example.invalid/?otp=123456').includes('123456'), false);
+  const ev = S.beforeSend({ user: { ip_address: '9.9.9.9' }, request: { url: 'app.gymcaptain://auth-callback?code=SECRET-CODE' } });
+  assert.deepEqual(ev.user, { ip_address: null });
+  assert.equal(String(ev.request.url).includes('SECRET-CODE'), false);
 });

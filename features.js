@@ -82,7 +82,7 @@ function consentView(){$('#title').textContent='Согласие';app.innerHTML=
  <label class="li"><input type="checkbox" id="cs" style="width:28px;min-height:28px"><span class="grow">Я даю явное согласие на хранение и обработку моих данных о теле в этом приложении.</span></label>
  <button class="pri full" id="csok" disabled>Согласен — продолжить</button><button class="full" id="cspol" style="margin-top:8px">Политика конфиденциальности</button></div>
  <p class="mut">Без согласия раздел «Тело» не сохраняет никаких данных. Остальные функции работают как обычно.</p>`;
- $('#cs').onchange=e=>$('#csok').disabled=!e.target.checked;$('#csok').onclick=()=>{S.consentHealth={v:1,at:new Date().toISOString()};save();toast('Согласие сохранено');body()};$('#cspol').onclick=()=>legal('privacy','body')}
+ $('#cs').onchange=e=>$('#csok').disabled=!e.target.checked;$('#csok').onclick=()=>{S.consentHealth={v:1,at:new Date().toISOString()};if(typeof mzLogHealthConsent==='function')mzLogHealthConsent('grant');save();toast('Согласие сохранено');body()};$('#cspol').onclick=()=>legal('privacy','body')}
 const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('body');_bodyForm(e);if(can('girths'))return;
  // Free: only body weight is entered. Other fields are hidden, not removed, so saved values stay untouched.
  const m=$('#modal');if(!m||!m.querySelectorAll)return;m.querySelectorAll('[data-bf]').forEach(i=>{if(i.dataset.bf!=='weight'){const l=i.closest&&i.closest('label');if(l)l.style.display='none'}});
@@ -106,7 +106,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
- if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;S.healthConsentRevokedAt=new Date().toISOString();
+ if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;S.healthConsentRevokedAt=new Date().toISOString();if(typeof mzLogHealthConsent==='function')mzLogHealthConsent('revoke');
   if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
    // id удалённых замеров запоминаем: иначе синхронизация вернёт их из старой копии в облаке
    S.deletedBody=(S.deletedBody||[]).concat(S.body.map(e=>e.id));S.body=[];S.height=0}save();more()};

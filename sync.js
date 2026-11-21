@@ -39,9 +39,12 @@
   function hasLocalData(){
     return !!(S.program||(S.workouts&&S.workouts.length)||(S.body&&S.body.length)||S.goal||(S.templates&&S.templates.length));
   }
+  function canTrack(){return !!(S.consentAnalytics&&S.consentAnalytics.v)}
+  // G6 / ePrivacy: do not create or keep the analytics id until the user consents. On withdraw, drop it.
   function ensureMeta(){
     let ch=false;
-    if(!S.installId){S.installId=nid();ch=true}
+    if(canTrack()){if(!S.installId){S.installId=nid();ch=true}}
+    else if(S.installId){delete S.installId;ch=true}
     if(!S.updatedAt){S.updatedAt=hasLocalData()?Date.now():0;ch=true}
     S.deletedWorkouts=S.deletedWorkouts||[];
     S.deletedBody=S.deletedBody||[];
@@ -74,6 +77,7 @@
     delete p.installId;
     // D-222: флаг first_workout тоже только на устройстве.
     delete p.azFirstWo;
+    delete p.healthConsentQueue;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
     if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
@@ -207,8 +211,64 @@
     S.updatedAt=Math.max(S.updatedAt||0,remoteAt||0,Date.now());
     seedFirstWorkoutFlag();
   }
+  const HEALTH_CONSENT_TEXT_V='2026-11-21';
+  function isAccountDeletedErr(e){
+    const m=(e&&(e.message||e.code||e.code_||e))+'';
+    return /account_deleted/i.test(m);
+  }
+  function queueHealthConsent(action){
+    if(action!=='grant'&&action!=='revoke') return;
+    S.healthConsentQueue=Array.isArray(S.healthConsentQueue)?S.healthConsentQueue:[];
+    S.healthConsentQueue.push({action,text_version:HEALTH_CONSENT_TEXT_V,at:new Date().toISOString()});
+    persistLocal();
+  }
+  async function flushHealthConsentLog(){
+    if(!sb||!user) return;
+    if(typeof navigator!=='undefined'&&navigator.onLine===false) return;
+    const q=S.healthConsentQueue;
+    if(!Array.isArray(q)||!q.length) return;
+    while(q.length){
+      const row=q[0];
+      const {error}=await sb.from('health_consent_log').insert({
+        action:row.action,
+        text_version:row.text_version||HEALTH_CONSENT_TEXT_V,
+        created_at:row.at||new Date().toISOString()
+      });
+      if(error) throw error;
+      q.shift();
+      persistLocal();
+    }
+  }
+  async function onAccountGone(){
+    clearTimeout(timer);
+    try{if(sb&&sb.auth) await sb.auth.signOut({scope:'local'})}catch(e){}
+    try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+    user=null;status='off';
+    try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
+    try{
+      if(typeof clearLocalData==='function') await clearLocalData();
+      else{
+        localStorage.removeItem('gym');
+        await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
+      }
+    }catch(e){}
+    toast('Аккаунт удалён. Данные на этом устройстве очищены.');
+    if(typeof authView==='function') authView();
+  }
+  async function checkAccountTombstone(){
+    if(!sb||!user) return false;
+    try{
+      const {data,error}=await sb.rpc('account_is_deleted');
+      if(!error&&data===true){await onAccountGone();return true}
+    }catch(e){}
+    return false;
+  }
+  window.mzLogHealthConsent=queueHealthConsent;
+  window.mzHealthConsentTextV=HEALTH_CONSENT_TEXT_V;
   async function pushNow(){
     if(!sb||!user) return;
+    if(await checkAccountTombstone()) return;
+    await flushHealthConsentLog();
     ensureMeta();
     S.updatedAt=Date.now();
     const {error}=await sb.from('user_state').upsert({
@@ -230,6 +290,8 @@
   function isUnboundGuest(){return hasLocalData()&&!S.ownerUid}
   async function pullAndMerge(){
     if(!sb||!user) return;
+    if(await checkAccountTombstone()) return 'gone';
+    await flushHealthConsentLog();
     const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
     if(error) throw error;
     if(!data){await pushNow();return}
@@ -256,10 +318,18 @@
     if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return Promise.resolve()}
     status='syncing';lastErr='';paint();
     running=(async()=>{
-      try{const r=await pullAndMerge();status='ok';if(r!=='held'&&S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
-      catch(e){if(isOffline()||netErr(e))status='offline';else{status='err';lastErr=friendly(e)}}
-      running=null;paint();
-      if(again){again=false;return sync()}
+      try{
+        const r=await pullAndMerge();
+        if(r==='gone'||!user){status='off'}
+        else {status='ok';if(r!=='held'&&S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
+      }
+      catch(e){
+        if(isAccountDeletedErr(e)){await onAccountGone();status='off'}
+        else if(isOffline()||netErr(e))status='offline';
+        else {status='err';lastErr=friendly(e)}
+      }
+      finally{running=null;paint()}
+      if(again&&user){again=false;return sync()}
     })();
     return running;
   }
@@ -278,7 +348,6 @@
     schedule();
   };
 
-  function canTrack(){return !!(S.consentAnalytics&&S.consentAnalytics.v)}
   // D-217: анонимная аналитика — только случайный install_id с устройства; без user_id, email и auth uid.
   function eventRow(name,props){
     const pr={};Object.entries(props||{}).forEach(([k,v])=>{if(!/^(user_?id|uid|email)$/i.test(k)) pr[k]=v});
@@ -569,6 +638,7 @@
     const az=$('#mzaz');
     if(az) az.onchange=e=>{
       S.consentAnalytics=e.target.checked?{v:1,at:new Date().toISOString()}:null;
+      if(!e.target.checked) delete S.installId;
       save();
       if(e.target.checked) bootAnalytics();
       toast(e.target.checked?'Аналитика включена':'Аналитика выключена');
