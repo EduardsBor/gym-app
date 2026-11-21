@@ -227,22 +227,72 @@ test('D-231: an existing user without an account keeps the data; sign-in syncs i
   assert.equal(r.run('mzNeedAuth()'), false);
 });
 
-test('D-231: offline without a session — existing data can continue; logout clears the flag', async () => {
+test('D-231: offline without a session — sign-in screen, no continue-without-account button', async () => {
   const r = bootA(seed(), { offline: true });
   await go(r);
-  assert.match(r.html(), /id="mzoffline"/);
-  r.run('document.querySelector("#mzoffline").onclick()');
-  assert.equal(r.run('view'), 'today');
-  const r2 = bootA(undefined, { offline: true });
-  await go(r2);
-  assert.doesNotMatch(r2.html(), /mzoffline/);
+  assert.equal(r.run('view'), 'auth');
+  assert.match(r.html(), /id="mzgate"/);
+  assert.match(r.html(), /Нет сети\. Войти можно, когда появится интернет/);
+  assert.doesNotMatch(r.html(), /mzoffline/);
+  assert.doesNotMatch(r.html(), /Продолжить без входа/);
+  r.run('view="today";render()');
+  assert.equal(r.run('view'), 'auth');
+  assert.equal(r.run('mzNeedAuth()'), true);
   assert.match(read('sync.js'), /removeItem\(AUTH_FLAG\)/);
 });
 
-test('D-231: without the cloud config the app does not lock (no gate)', async () => {
-  const r = boot(undefined);
+test('D-231: without the cloud config the app stays on the sign-in screen', async () => {
+  const r = bootA(undefined, { sb: { url: '', anon: '' } });
+  await go(r);
+  assert.equal(r.run('view'), 'auth');
+  assert.match(r.html(), /id="mzcloudoff"/);
+  assert.match(r.html(), /Облако недоступно\. Вход сейчас невозможен/);
+  assert.doesNotMatch(r.html(), /id="mzemail"/);
   r.run('view="today";render()');
-  assert.notEqual(r.run('view'), 'auth');
+  assert.equal(r.run('view'), 'auth');
+  assert.equal(r.run('mzNeedAuth()'), true);
+});
+
+test('D-231: logout returns to the sign-in screen; tabs stay closed', async () => {
+  const r = bootA(seed(), { ls: { gc_auth: USER.id } });
+  r.cloud.user = USER;
+  await go(r);
+  assert.equal(r.run('view'), 'today');
+  r.run('mzDoLogout()');
+  for (let i = 0; i < 20; i++) await tick();
+  assert.equal(r.run('view'), 'auth');
+  assert.match(r.html(), /id="mzgate"/);
+  assert.equal(r.run('mzNeedAuth()'), true);
+  r.run('view="today";render()');
+  assert.equal(r.run('view'), 'auth');
+});
+
+test('D-231: guest local data is not overwritten by an empty or blank cloud', async () => {
+  const local = seed({ workouts: [W('w1', 5000), W('w2', 6000)] });
+  const r = bootA(local, { cloud: { remote: { payload: { workouts: [], goal: null }, updated_at: '2026-01-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  await go(r);
+  assert.equal(r.run('view'), 'auth');
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
+  r.run('document.querySelector("#mzin").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w1,w2');
+  assert.equal(r.run('S.workouts.length'), 2);
+  assert.ok(r.cloud.upserts.length > 0, 'blank cloud: local data is pushed, not wiped');
+  assert.equal(r.run('view'), 'today');
+});
+
+test('D-231: guest local data is not overwritten when the cloud already has other data', async () => {
+  const local = seed({ workouts: [W('w-local', 5000)], progName: 'Local' });
+  const remote = { program: [{ name: 'Cloud', items: [] }], progName: 'Cloud', goal: 'cut', workouts: [W('w-cloud', 1000)] };
+  const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  await go(r);
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
+  r.run('document.querySelector("#mzin").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w-local');
+  assert.equal(r.run('S.progName'), 'Local');
+  assert.equal(r.cloud.upserts.length, 0, 'PR 1: do not push over an existing cloud copy');
+  assert.equal(r.run('view'), 'today');
 });
 
 test('Body screen: height without a weight measurement asks for a weight, no height keeps the old text', async () => {

@@ -1,5 +1,5 @@
 'use strict';
-// Stage 2: optional account, offline-first sync to Supabase (EU), opt-in analytics.
+// Stage 2: required account, offline-first sync to Supabase (EU) after sign-in, opt-in analytics.
 (function(){
   const CFG=window.MZ_SB||(typeof MZ_SB!=='undefined'?MZ_SB:null);const READY=!!(CFG&&CFG.url&&CFG.anon&&window.supabase&&supabase.createClient);
   let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,running=null,again=false;
@@ -205,6 +205,14 @@
     persistLocal();
     lastAt=Date.now();
   }
+  function remoteHasData(R){
+    return !!(R&&(R.program||(R.workouts&&R.workouts.length)||(R.body&&R.body.length)||R.goal||(R.templates&&R.templates.length)));
+  }
+  // Guest data (never bound to an account: no ownerUid) must not be overwritten or deleted on first sign-in.
+  // Empty or blank cloud: push local. Cloud already has data: leave local as-is (no apply, no push) until the transfer dialog (PR 2).
+  // The guard runs only during afterAuth (first sign-in), not on later sync of an already signed-in session.
+  let protectGuestOnAuth=false;
+  function isUnboundGuest(){return hasLocalData()&&!S.ownerUid}
   async function pullAndMerge(){
     if(!sb||!user) return;
     const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
@@ -212,6 +220,10 @@
     if(!data){await pushNow();return}
     const remoteAt=data.updated_at?Date.parse(data.updated_at):0;
     const R=data.payload||{};
+    if(protectGuestOnAuth&&isUnboundGuest()){
+      if(!remoteHasData(R)){await pushNow();return}
+      return;
+    }
     if(!hasLocalData()) applyRemoteFresh(R);
     else applyMerged(R,remoteAt);
     progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
@@ -314,7 +326,8 @@
       else{await doLogout();return}
     }
     ensureMeta();persistLocal();
-    await sync();
+    protectGuestOnAuth=isUnboundGuest();
+    try{await sync()}finally{protectGuestOnAuth=false}
     toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
     if(view==='more') more();
     if(view==='auth') go('today');
@@ -378,8 +391,8 @@
     try{await sb.auth.signOut()}catch(e){}
     user=null;status='off';
     try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
-    toast('Выход выполнен. Данные на этом устройстве на месте');
-    if(view==='more') more();
+    toast('Выход выполнен');
+    authView();
   }
   // Удаление данных в облаке. Возвращает:
   //  'none'    — входа нет, в облаке удалять нечего;
@@ -407,7 +420,7 @@
 
   function statusText(){
     if(!READY) return 'Облако недоступно';
-    if(!user) return 'Без входа данные только на этом устройстве';
+    if(!user) return 'Нужен вход';
     if(status==='syncing') return 'Синхронизация…';
     if(status==='offline') return 'Нет сети — работаем офлайн, синхронизируется позже';
     if(status==='err') return 'Синхронизация не удалась: '+lastErr;
@@ -427,7 +440,7 @@
         ${azLab}</div>`;
     }
     return `<div class="card" id="mzacc"><b>☁️ Аккаунт и синхронизация</b>
-      <p class="mut" style="margin:4px 0">Без входа всё остаётся только на этом устройстве. После входа программа, история, рекорды и настройки копируются в облако (серверы в ЕС) и не затирают то, что уже есть.</p>
+      <p class="mut" style="margin:4px 0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p>
       <input id="mzemail" type="email" autocomplete="username" inputmode="email" placeholder="Почта">
       <input id="mzpass" type="password" autocomplete="current-password" placeholder="Пароль (не короче 6 символов)">
       <div class="row" style="margin-top:8px"><button class="pri grow" id="mzin">Войти</button><button class="grow" id="mzup">Создать аккаунт</button></div>
@@ -472,9 +485,8 @@
     const st=$('#mzst');if(st) st.textContent=statusText();
   }
 
-  // D-231 (Eduards 19.11): sign-in is required at start. Supabase keeps the session in localStorage, so after one
-  // sign-in the app opens offline without signing in again. Local data is kept and merged by sync() after sign-in.
-  let offlineSkip=false;
+  // Sign-in is required: no guest / «continue without signing in» path. Supabase keeps the session in localStorage,
+  // so after one sign-in the app opens offline without signing in again. Guest local data is kept and not overwritten.
   function storedSession(){
     try{
       const ls=localStorage;if(ls.getItem(AUTH_FLAG)) return true;
@@ -483,7 +495,7 @@
     }catch(e){}
     return false;
   }
-  function needAuth(){return READY&&!user&&!offlineSkip&&!storedSession()}
+  function needAuth(){return !user&&!storedSession()}
   // Returning from an email link / OAuth: the session is still being restored — show «Вход…» instead of the form.
   function authInUrl(){try{return /[?&](code|token_hash)=/.test(location.search||'')||/access_token=/.test(location.hash||'')}catch(e){return false}}
   function authWaitView(){view='auth';$('#title').textContent='Вход';$('#nav').classList.add('hidden');app.innerHTML='<div class="card" id="mzwait"><p class="mut" style="margin:0">Вход…</p></div>'}
@@ -536,17 +548,18 @@
     view='auth';
     $('#title').textContent='Вход';$('#nav').classList.add('hidden');
     const off=typeof navigator!=='undefined'&&navigator.onLine===false;
+    const locked=!READY;
+    const googleBtn=(!locked&&CFG&&CFG.googleAuth)?'<button class="pri full" id="mzgoogle" style="margin:4px 0 0;padding:16px;font-size:18px;font-weight:700">Войти через Google</button><p class="mut" id="mzgnote" style="margin:6px 0 12px;text-align:center">Новый аккаунт создастся автоматически</p>':'';
     app.innerHTML=`<div class="card" id="mzgate"><h2 style="margin-top:0">Вход</h2>
-      ${CFG&&CFG.googleAuth?'<button class="pri full" id="mzgoogle" style="margin:4px 0 0;padding:16px;font-size:18px;font-weight:700">Войти через Google</button><p class="mut" id="mzgnote" style="margin:6px 0 12px;text-align:center">Новый аккаунт создастся автоматически</p>':''}
+      ${googleBtn}
       <p class="mut" style="margin:0">Войди или создай аккаунт: программа, история и рекорды сохранятся в облаке. Данные, которые уже есть на этом устройстве, не пропадут.</p></div>
-      ${accountHTML()}
+      ${locked?'<div class="card" id="mzcloudoff"><p class="mut" style="margin:0">Облако недоступно. Вход сейчас невозможен. Попробуй позже.</p></div>':accountHTML()}
       <p class="mut" id="mzlegal" style="font-size:12px;text-align:center;margin:4px 0 16px"><a href="privacy.html" target="_blank" rel="noopener" style="color:inherit">Конфиденциальность</a> · <a href="terms.html" target="_blank" rel="noopener" style="color:inherit">Условия</a></p>
-      ${off?`<div class="card"><p class="mut" style="margin-top:0">Нет сети. Войти можно, когда появится интернет.</p>${hasLocalData()?'<button class="full" id="mzoffline">Продолжить без входа (нет сети)</button>':''}</div>`:''}`;
-    bindAccount();
+      ${off&&!locked?'<div class="card" id="mznetoff"><p class="mut" style="margin-top:0">Нет сети. Войти можно, когда появится интернет.</p></div>':''}`;
+    if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
-    if($('#mzoffline')) $('#mzoffline').onclick=()=>{offlineSkip=true;go('today')};
   }
-  window.mzNeedAuth=needAuth;
+  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;
   if(typeof render==='function'){
     const _render=render;
     render=function(){
@@ -556,7 +569,7 @@
     };
   }
 
-  if(typeof more==='function'){const _more=more;more=function(){_more();inject()}}
+  if(typeof more==='function'){const _more=more;more=function(){if(needAuth())return authView();_more();inject()}}
   if(typeof wipeAll==='function'){
     wipeAll=async function(){
       if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?')) return;
@@ -578,6 +591,7 @@
         if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
       }catch(e){}
       if(cloud==='data') alert('Данные удалены. Аккаунт (почту для входа) удалить не удалось — войди ещё раз и повтори удаление позже.');
+      authView();
       location.reload();
     };
   }

@@ -292,11 +292,12 @@ test('subscription features after the demo: programs read-only, auto-weight, del
   assert.match(p.run('volBadges()'), /badge/);
 });
 
-test('trial: programs, warm-up and auto-weight are open; sign-in offer before the first workout', () => {
+test('trial: programs, warm-up and auto-weight are open; no guest sign-in offer', () => {
   const b = boot(seed()); demo(b, 'trial');
   for (const f of SUB) assert.equal(can(b, f), true, f);
   const s = read('features.js');
-  assert.match(s, /st\.tier==='trial'&&!premFirstWorkout\(\)&&!hide&&!\(typeof mzSignedIn==='function'&&mzSignedIn\(\)\)/);
+  assert.doesNotMatch(s, /id="sgoffer"/);
+  assert.doesNotMatch(s, /Можно и без входа/);
   assert.match(read('sync.js'), /window\.mzSignedIn=\(\)=>!!user;/);
 });
 

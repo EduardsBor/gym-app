@@ -151,10 +151,6 @@ function premFreeToday(){$('#title').textContent='Тренировки';
 const _pwv=workoutView;workoutView=function(){if(typeof S!=='undefined'&&S&&S.active)refreshDiaryWarmCool(S.active);return _pwv()};
 const _ptoday=today;// D-235: «Сегодня» with a program is the finished workout window — no «Мои шаблоны» and no «Профиль оборудования» here (Eduards 19.11). Template data stays in S.templates; equipment is chosen only in «Собрать свою программу».
 today=function(sel){if(!can('programs')){premFreeToday();return}_ptoday(sel);
- const st=premState();let hide=false;try{hide=localStorage.getItem('gymSignOffer')==='1'}catch(e){}
- if(st.tier==='trial'&&!premFirstWorkout()&&!hide&&!(typeof mzSignedIn==='function'&&mzSignedIn())&&app.insertAdjacentHTML){
-  app.insertAdjacentHTML('afterbegin','<div class="card offer" id="sgoffer"><b>🔐 Войди в аккаунт</b><p class="mut" style="margin:4px 0 8px">14 дней бесплатно, без карты — отсчёт с первой завершённой тренировки. С аккаунтом демо и история сохранятся при переустановке и на другом устройстве. Можно и без входа.</p><div class="row"><button class="pri grow" id="sgin">Войти</button><button class="grow" id="sgno">Не сейчас</button></div></div>');
-  $('#sgin').onclick=()=>go('more');$('#sgno').onclick=()=>{try{localStorage.setItem('gymSignOffer','1')}catch(e){}today(sel)}}
  premMoment()};
 const _pprogram=program;program=function(){_pprogram();if(can('programs')||!app.querySelectorAll)return;
  app.querySelectorAll('input[data-dn],input[data-e]').forEach(i=>{i.disabled=true});
