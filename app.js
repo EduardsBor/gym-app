@@ -1,6 +1,6 @@
 'use strict';
 const APP_VERSION='1.0';
-function swCacheVer(){const m=typeof SW_CACHE==='string'&&/^moyzal-(v\d+)$/.exec(SW_CACHE);return m?m[1]:''}
+function swCacheVer(){const m=typeof SW_CACHE==='string'&&/^moyzal-(v\d+(?:-[a-z]+)?)$/.exec(SW_CACHE);return m?m[1]:''}
 function appVersionLabel(){const v=swCacheVer();return v?APP_VERSION+' ('+v+')':APP_VERSION}
 
 const $=s=>document.querySelector(s), app=$('#app');
