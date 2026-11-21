@@ -21,7 +21,7 @@ test('D-234: pages have all three languages, no scripts, no service worker, no s
   }
   assert.match(read('privacy.html'), /Политика конфиденциальности[\s\S]*Privacy Policy[\s\S]*Privātuma politika/);
   assert.match(read('terms.html'), /Условия использования[\s\S]*Terms of Use[\s\S]*Lietošanas noteikumi/);
-  assert.match(read('sw.js'), /\(privacy\|terms\|auth-callback\)\\\.html\$\/\.test\(u\.pathname\)\)return;/);
+  assert.match(read('sw.js'), /\(privacy\|terms\|auth-callback\|delete-account\)\\\.html\$\/\.test\(u\.pathname\)\)return;/);
 });
 
 test('D-234: Google sign-in clause (name, email, profile photo) in all three languages', () => {
