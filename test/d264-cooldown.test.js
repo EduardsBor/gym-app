@@ -163,7 +163,7 @@ test('D-264: LV caption fix + new EN/LV strings; SW cache moyzal-v137', () => {
   assert.ok(!d3.includes('var izmantot to pašu trenažieri, kas kardio blokā'));
   assert.ok(d3.includes("['Лёгкая ходьба','Easy walk','Viegla iešana']"));
   assert.ok(d3.includes("['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga']"));
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v142'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-D264.md')));
 });

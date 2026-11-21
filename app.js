@@ -328,15 +328,36 @@ let durInt;
 // D-235: one place that marks a set done (workout list ✓ and the exercise screen «+»): auto-weight carry-over, PR check, rest timer.
 function setDone(it,k){const s=it.sets[k];s.done=true;s.pf=false;if(s.w==='')s.w=0;if(s.r==='')s.r=0;if(S.autoW!==false&&!isCardio(it.exId))it.sets.slice(k+1).forEach(n=>{if(!n.done&&(n.pf||n.w==='')){n.w=s.w;n.pf=true}});checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}
 // D-286: keep already-painted MoveKit poster nodes across a full workout re-render (add/remove set, swap).
+// D-289: reuse ONLY list thumbnails (span.athumb.mkposter, not .mkwide) into a slot of exactly the same
+// kind and classes, and only when the old node really holds a painted <img>. Before, any painted
+// [data-mk-poster] node with the same id was reused — after ← from the exercise screen its big
+// <video class="a3d mk"> landed in a warm-up/cool-down row: huge poster, row pushed off-screen, iOS zoomed out.
+function mkThumbKey(el){
+  if(!el||String(el.tagName||'').toUpperCase()!=='SPAN'||!el.classList)return '';
+  if(!el.classList.contains('athumb')||!el.classList.contains('mkposter')||el.classList.contains('mkwide'))return '';
+  const id=(el.dataset&&el.dataset.mkPoster)||'';if(!id)return '';
+  return id+'|'+String(el.className||'').trim().split(/\s+/).sort().join(' ');
+}
+function mkThumbReusable(prev,el){
+  if(!prev||!el||prev===el)return false;
+  const k=mkThumbKey(el);if(!k||mkThumbKey(prev)!==k)return false;
+  if(String(prev.className)!==String(el.className))return false;
+  if(prev.isConnected)return false;
+  const img=prev.querySelector&&prev.querySelector('img');
+  if(!img||!(img.getAttribute&&img.getAttribute('src')))return false;
+  if(prev.children&&prev.children.length!==1)return false;
+  return !!(prev.dataset&&prev.dataset.mkPosterState==='ok');
+}
 function reuseMkPosters(root,build){
   const bag=new Map();
-  if(root&&root.querySelectorAll)root.querySelectorAll('[data-mk-poster]').forEach(el=>{const id=(el.dataset&&el.dataset.mkPoster)||'';if(!bag.has(id))bag.set(id,[]);bag.get(id).push(el)});
+  if(root&&root.querySelectorAll)root.querySelectorAll('[data-mk-poster]').forEach(el=>{const k=mkThumbKey(el);if(!k)return;if(!bag.has(k))bag.set(k,[]);bag.get(k).push(el)});
   build();
   if(!root||!root.querySelectorAll)return;
   root.querySelectorAll('[data-mk-poster]').forEach(el=>{
-    const id=(el.dataset&&el.dataset.mkPoster)||'',q=bag.get(id),prev=q&&q.shift();
-    if(!prev||prev===el)return;
-    if(!(prev.dataset&&prev.dataset.mkPosterState==='ok')&&!(prev.querySelector&&prev.querySelector('img')))return;
+    const k=mkThumbKey(el),q=k&&bag.get(k);if(!q)return;
+    let prev=q.shift();while(prev&&!mkThumbReusable(prev,el))prev=q.shift();
+    if(!prev)return;
+    if(el.getAttribute&&prev.setAttribute)['aria-hidden','title'].forEach(a=>{const v=el.getAttribute(a);if(v==null)prev.removeAttribute&&prev.removeAttribute(a);else prev.setAttribute(a,v)});
     if(typeof el.replaceWith==='function')el.replaceWith(prev);else if(el.parentNode)el.parentNode.replaceChild(prev,el);
   });
 }
