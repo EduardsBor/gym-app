@@ -1,8 +1,10 @@
 'use strict';
 /**
  * D-234: public privacy.html and terms.html generated from legal.js (RU/EN/LV, all three sections).
+ * D-274: also builds delete-account.html and can write all three copies for gymcaptain-site
+ * (`node scripts/build-legal-pages.js --site <dir>`). One source for privacy/terms: legal.js.
  * Static pages: no app scripts, no service worker, no sign-in gate. Run: node scripts/build-legal-pages.js
- * test/d234-legal-pages.test.js checks that the pages match legal.js.
+ * test/d234-legal-pages.test.js and test/d274-site-legal-pages.test.js check the pages.
  */
 const fs = require('fs');
 const path = require('path');
@@ -41,15 +43,110 @@ ${secs}
 `;
 }
 
+function deleteAccountPage() {
+  // Text is the public delete-account page (D-272). Kept here so site copies
+  // are not edited by hand. Not added to legal.js, which is a cached app file.
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GymCaptain — Delete account</title><meta name="robots" content="index,follow">
+<style>body{font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:16px;color:#1b1d21;background:#fff}
+h1{font-size:26px;margin:24px 0 8px}h3{margin:20px 0 6px}a{color:#2563eb}.top{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:1px solid #ddd}
+.links{margin-top:20px}hr{margin:32px 0;border:0;border-top:1px solid #ddd}
+</style></head>
+<body>
+<div class="top"><b>GymCaptain</b> · <a href="#ru">Русский</a> · <a href="#en">English</a> · <a href="#lv">Latviešu</a></div>
+
+<section id="ru" lang="ru">
+<h1>Удаление аккаунта GymCaptain</h1>
+<p>Удалить аккаунт и все данные можно двумя способами.</p>
+<p><b>В приложении:</b> Профиль → Данные → «Удалить все данные». Аккаунт и данные в облаке удаляются сразу, данные на телефоне — тоже.</p>
+<p><b>Без приложения:</b> напиши на <a href="mailto:support@gymcaptain.app?subject=%D0%A3%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%B0%D0%BA%D0%BA%D0%B0%D1%83%D0%BD%D1%82%D0%B0">support@gymcaptain.app</a> с той почты, с которой входишь в GymCaptain, тема «Удаление аккаунта». Мы удалим аккаунт в течение 30 дней и ответим письмом.</p>
+<p><b>Что удаляется:</b> аккаунт (адрес почты), тренировки, программа, настройки, замеры тела, отмеченные ограничения и журнал согласий.</p>
+<p><b>Что может остаться:</b></p>
+<ul>
+<li>анонимные события аналитики (если ты её включал) — без связи с аккаунтом, удаляются через 13 месяцев;</li>
+<li>отчёты об ошибках Android-приложения — без имени и почты, по сроку хранения Sentry;</li>
+<li>резервные копии сервера — до окончания срока их хранения (см. <a href="privacy.html#ru">политику конфиденциальности</a>, раздел 7).</li>
+</ul>
+<p>Фото тела хранятся только на телефоне: они удаляются вместе с данными приложения или кнопкой «Удалить все данные».</p>
+<p class="links"><a href="privacy.html#ru">Политика конфиденциальности</a> · <a href="./">GymCaptain</a></p>
+</section>
+
+<hr>
+
+<section id="en" lang="en">
+<h1>Delete your GymCaptain account</h1>
+<p>You can delete your account and all your data in two ways.</p>
+<p><b>In the app:</b> Profile → Data → “Delete all data”. Your account and cloud data are deleted immediately, and so is the data on your phone.</p>
+<p><b>Without the app:</b> email <a href="mailto:support@gymcaptain.app?subject=Account%20deletion">support@gymcaptain.app</a> from the address you use to sign in to GymCaptain, subject “Account deletion”. We will delete the account within 30 days and confirm by email.</p>
+<p><b>What is deleted:</b> your account (email address), workouts, program, settings, body measurements, marked limitations and the consent log.</p>
+<p><b>What may remain:</b></p>
+<ul>
+<li>anonymous analytics events (if you turned analytics on) — not linked to your account, deleted after 13 months;</li>
+<li>Android app crash reports — without name or email, for Sentry’s retention period;</li>
+<li>server backups — until they expire (see the <a href="privacy.html#en">Privacy Policy</a>, section 7).</li>
+</ul>
+<p>Body photos are stored only on your phone: they are deleted together with the app data or with “Delete all data”.</p>
+<p class="links"><a href="privacy.html#en">Privacy Policy</a> · <a href="./">GymCaptain</a></p>
+</section>
+
+<hr>
+
+<section id="lv" lang="lv">
+<h1>GymCaptain konta dzēšana</h1>
+<p>Kontu un visus datus vari dzēst divos veidos.</p>
+<p><b>Lietotnē:</b> Profils → Dati → “Dzēst visus datus”. Konts un dati mākonī tiek dzēsti uzreiz, tāpat arī dati tālrunī.</p>
+<p><b>Bez lietotnes:</b> nosūti e-pastu uz <a href="mailto:support@gymcaptain.app?subject=Konta%20dz%C4%93%C5%A1ana">support@gymcaptain.app</a> no adreses, ar kuru piesakies GymCaptain lietotnē, ar tēmu “Konta dzēšana”. Mēs dzēsīsim kontu 30 dienu laikā un nosūtīsim apstiprinājumu e-pastā.</p>
+<p><b>Kas tiek dzēsts:</b> konts (e-pasta adrese), treniņi, programma, iestatījumi, ķermeņa mērījumi, atzīmētie ierobežojumi un piekrišanas žurnāls.</p>
+<p><b>Kas var palikt:</b></p>
+<ul>
+<li>anonīmi analītikas notikumi (ja analītika bija ieslēgta) — nav saistīti ar kontu, tiek dzēsti pēc 13 mēnešiem;</li>
+<li>Android lietotnes kļūdu ziņojumi — bez vārda un e-pasta, Sentry glabāšanas termiņā;</li>
+<li>servera rezerves kopijas — līdz to glabāšanas termiņa beigām (sk. <a href="privacy.html#lv">privātuma politikas</a> 7. sadaļu).</li>
+</ul>
+<p>Ķermeņa foto glabājas tikai tālrunī: tie tiek dzēsti kopā ar lietotnes datiem vai nospiežot pogu “Dzēst visus datus”.</p>
+<p class="links"><a href="privacy.html#lv">Privātuma politika</a> · <a href="./">GymCaptain</a></p>
+</section>
+
+</body></html>
+`;
+}
+
 function build() {
   const L = loadLegal();
   const out = {};
   for (const key of ['privacy', 'terms']) out[key + '.html'] = page(L, key);
+  out['delete-account.html'] = deleteAccountPage();
   return out;
 }
-module.exports = { build };
+
+function writePages(dir, files) {
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [f, html] of Object.entries(files)) fs.writeFileSync(path.join(dir, f), html);
+}
+
+function siteCopies(out) {
+  return {
+    'privacy.html': out['privacy.html'],
+    'terms.html': out['terms.html'],
+    'delete-account.html': out['delete-account.html']
+  };
+}
+
+module.exports = { build, deleteAccountPage, writePages, siteCopies };
 if (require.main === module) {
   const out = build();
-  for (const [f, html] of Object.entries(out)) fs.writeFileSync(path.join(root, f), html);
-  console.log('written: ' + Object.keys(out).join(', '));
+  const args = process.argv.slice(2);
+  const si = args.indexOf('--site');
+  const siteDir = si >= 0 ? args[si + 1] : null;
+  // App root: privacy + terms (D-234). delete-account.html is written too when
+  // it matches the builder; do not change its committed bytes.
+  for (const f of ['privacy.html', 'terms.html', 'delete-account.html']) {
+    fs.writeFileSync(path.join(root, f), out[f]);
+  }
+  console.log('written: privacy.html, terms.html, delete-account.html');
+  if (siteDir) {
+    writePages(siteDir, siteCopies(out));
+    console.log('site copies written: ' + siteDir);
+  }
 }
