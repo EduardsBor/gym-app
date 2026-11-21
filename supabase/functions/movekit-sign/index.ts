@@ -226,10 +226,8 @@ Deno.serve(async (req) => {
   const jwt = auth.replace(/^Bearer\s+/i, "").trim();
   if (!jwt) return new Response("auth", { status: 401, headers: h });
 
-  let path: unknown;
-  try { path = (await req.json()).path; } catch { path = null; }
-  if (typeof path !== "string" || !allowed(path)) return new Response("bad path", { status: 400, headers: h });
-
+  // Auth (getUser, anonymous, deleted) must run before the path whitelist
+  // so an unauthenticated caller with a bad filename gets 401, not 400.
   const url = env("SUPABASE_URL");
   const anon = env("SUPABASE_ANON_KEY");
   const service = env("SUPABASE_SERVICE_ROLE_KEY");
@@ -251,6 +249,10 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (goneErr) return new Response("tombstone", { status: 500, headers: h });
   if (gone) return new Response("deleted", { status: 403, headers: h });
+
+  let path: unknown;
+  try { path = (await req.json()).path; } catch { path = null; }
+  if (typeof path !== "string" || !allowed(path)) return new Response("bad path", { status: 400, headers: h });
 
   const now = Date.now();
   const rec = hits.get(user.id);
