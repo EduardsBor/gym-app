@@ -304,17 +304,24 @@ function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))retur
 // D-238: «Тренировки» tab = next/current workout card + every program workout by week (✓ done). One list for the plain and block programs.
 function dayDone(i){const p=S.program[i];if(!p)return false;if(typeof blockActive==='function'&&blockActive())return i<(S.block.next|0);
  return (S.workouts||[]).some(w=>w.dayIdx===i&&w.dayName===p.name&&Date.now()-w.start<7*864e5)}
-function dayListHTML(sel){if(!S.program||!S.program.length)return'';const btn=(p,i)=>`<button class="full dayb${dayDone(i)?' done':''}${i===sel?' pri sel':''}" style="margin:4px 0" data-i="${i}"${i===sel?' aria-current="true"':''}>${dayDone(i)?'✓ ':''}${esc(workoutLabel(p,i))}</button>`;
- let h;if(!S.program.some(dayWeek))h=S.program.map(btn).join('');else{const wk={};S.program.forEach((p,i)=>{(wk[dayWeek(p)]=wk[dayWeek(p)]||[]).push(i)});const cur=dayWeek(S.program[sel]);
-  h=Object.keys(wk).map(w=>{const n=wk[w].filter(dayDone).length;return`<details class="card dayc"${+w===cur?' open':''}><summary><b>Неделя ${w}</b> <span class="mut">${n?n+'/':''}${wk[w].length} ${LANG==='lv'?lvTreninWord(wk[w].length):'трен.'}${n===wk[w].length?' ✓':''}</span></summary>${wk[w].map(i=>btn(S.program[i],i)).join('')}</details>`}).join('')}
- return`<h2>Все тренировки программы</h2>${h}`}
-function dayListBind(){app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
-let TSEL=null;function today(sel){$('#title').textContent='Тренировки';if(!S.program||!S.program.length)return catalog();if(sel==null||sel>=S.program.length)sel=S.next%S.program.length;TSEL=sel;const d0=S.program[sel],d=typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0,mins=dayMin(d);
- app.innerHTML=`<div class="card"><div class="mut">${goalName(S.goal,S.prof&&S.prof.place)} · ${S.days}× в неделю</div><h2 style="margin-top:6px">${esc(workoutLabel(d,sel))}</h2><div class="mut">${sel===S.next%S.program.length?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>${sel!==S.next%S.program.length?'<button class="sm" id="tback" style="margin-top:6px">← К дню по плану</button>':''}
+function dayDue(){if(!S.program||!S.program.length)return 0;if(typeof blockActive==='function'&&blockActive())return Math.min(S.block.next|0,S.program.length-1);const n=S.program.length;return(((S.next||0)%n)+n)%n}
+function dayRowLabel(p,i){const d=typeof eqAdaptDay==='function'?eqAdaptDay(p):p;const mins=typeof dayMin==='function'?dayMin(d):0;return esc(workoutLabel(p,i))+(mins?` · ≈ ${mins} мин`:'')}
+function dayStartHTML(due){const skip=typeof blockActive==='function'&&blockActive()?`<button class="full" id="blk-skip" style="margin:0 0 12px">Пропустить тренировку</button>`:'';return`<button class="pri full wstart" id="start" style="margin:8px 0 12px">▶ Начать тренировку</button>${skip}`}
+function todayOpenCardHTML(sel){const d0=S.program[sel],d=typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0,mins=dayMin(d),due=dayDue();
+ return`<div class="card"><button class="sm" id="tback" style="margin-bottom:8px">← К списку тренировок</button><div class="mut">${goalName(S.goal,S.prof&&S.prof.place)} · ${S.days}× в неделю</div><h2 style="margin-top:6px">${esc(workoutLabel(d,sel))}</h2><div class="mut">${sel===due?'По плану сегодня':'Выбранный день'} · ≈ ${mins} мин · ${d.items.length} упражн.</div>
  ${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,S.prof).min} мин</span></summary>${warmHTML(warmPlan(d,S.prof))}</details>`}${d.items.map((it,ii)=>`<div class="li exo" data-exo="m,${ii}">${animShot(it.exId)}<div class="grow">${esc(exBy(it.exId).name)}${hint(it)}</div>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span></div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}
- <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button>${TEDIT_HTML}</div>
- ${dayListHTML(sel)}`;
- $('#start').onclick=()=>startW(sel);const tb=$('#tback');if(tb)tb.onclick=()=>today();dayListBind();todayProgBind(sel)}
+ <button class="pri full" id="start" style="margin-top:14px">▶ Начать тренировку</button>${sel===due&&typeof blockActive==='function'&&blockActive()?'<button class="full" id="blk-skip" style="margin-top:8px">Пропустить тренировку</button>':''}</div>`}
+function todayBind(sel){const due=dayDue();const st=$('#start');if(st)st.onclick=()=>startW(TOPEN?sel:due);const tb=$('#tback');if(tb)tb.onclick=()=>today();dayListBind();const sk=$('#blk-skip');if(sk)sk.onclick=()=>{if(typeof skipBlockWorkout==='function')skipBlockWorkout(S);if(typeof save==='function')save();if(typeof toast==='function')toast('Тренировка перенесена');if(typeof go==='function')go('today')}}
+function dayListHTML(sel,withStart){if(!S.program||!S.program.length)return'';const due=dayDue();const btn=(p,i)=>`<button class="full dayb${dayDone(i)?' done':''}${i===sel?' pri sel':''}" style="margin:4px 0;text-align:left;height:auto;padding:12px 14px" data-i="${i}"${i===sel?' aria-current="true"':''}>${dayDone(i)?'✓ ':''}${dayRowLabel(p,i)}</button>${withStart&&i===due?dayStartHTML(due):''}`;
+ return`<h2>Все тренировки программы</h2>${S.program.map(btn).join('')}`}
+function dayListBind(){app.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{today(+b.dataset.i);scrollTo({top:0,behavior:'smooth'})})}
+let TSEL=null,TOPEN=false;
+function renderTodayScreen(pick){$('#title').textContent='Тренировки';if(!S.program||!S.program.length)return catalog();
+ TOPEN=pick!=null&&isFinite(+pick)&&+pick>=0&&!!S.program[+pick];const due=dayDue();const sel=TOPEN?+pick:due;TSEL=sel;
+ if(!TOPEN)app.innerHTML=`<div class="mut">${goalName(S.goal,S.prof&&S.prof.place)} · ${S.days}× в неделю</div>${dayListHTML(sel,true)}`;
+ else app.innerHTML=`${todayOpenCardHTML(sel)}${dayListHTML(sel,false)}`;
+ todayBind(sel)}
+function today(sel){if(!S.program||!S.program.length){$('#title').textContent='Тренировки';return catalog()}return renderTodayScreen(sel)}
 function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,n:dayNum(d,i),notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
  items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
 let durInt;

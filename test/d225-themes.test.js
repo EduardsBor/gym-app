@@ -165,7 +165,7 @@ test('themes: theme.js loads early; switcher in profile; local only; free; preca
   assert.equal(/premium|isPro|mzTrack|sb\.|supabase/i.test(th), false, 'free, no analytics, no cloud');
   for (const f of ['sync.js', 'app.js', 'csv.js', 'features.js', 'premium.js']) assert.equal(read(f).includes('gc_theme'), false, f);
   assert.match(th, /SystemBars/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v140'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.match(read('sw.js'), /'style\.css','theme\.js'/);
   assert.match(read('scripts/build-web.js'), /'theme\.js'/);

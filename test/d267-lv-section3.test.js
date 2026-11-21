@@ -24,7 +24,7 @@ test('D-267: LV count word — treniņš / treniņi / treniņu', () => {
     30: 'treniņu', 100: 'treniņu', 110: 'treniņu', 111: 'treniņu'
   };
   for (const [n, w] of Object.entries(expect)) assert.equal(fn(+n), w, n);
-  assert.match(read('app.js'), /lvTreninWord\(wk\[w\]\.length\)/);
+  assert.match(read('app.js'), /lvTreninWord\(n\)/);
 });
 
 test('D-267: LV day names without «diena»; button Sastādīt savu programmu', () => {
@@ -61,7 +61,7 @@ test('D-267: LV day names without «diena»; button Sastādīt savu programmu', 
   }
   assert.match(d, /\['🧩 Подобрать программу самому','🧩 Build my own program','🧩 Sastādīt savu programmu'\]/);
   assert.equal(d.includes('🧩 Izveidot programmu pašam'), false);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v140'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   // place.js warmup cues: atsildīšanā → iesildīšanās laikā (D-268)
   assert.doesNotMatch(read('place.js'), /atsildīšanā/);

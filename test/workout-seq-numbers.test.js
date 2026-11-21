@@ -83,15 +83,13 @@ test('sequential labels: plan days are 1…36; stored names stay «Неделя 
 test('plan view and current workout card show running numbers 1…36, not the week prefix', () => {
   const { run, app } = withProgram();
   let h = app();
-  assert.match(h, /<h2 style="margin-top:6px">1\. /);
   assert.doesNotMatch(h, /<h2 style="margin-top:6px">Неделя /);
   assert.match(h, /data-i="0"[^>]*>1\. /);
   assert.match(h, /data-i="3"[^>]*>4\. /);
   assert.match(h, /data-i="35"[^>]*>36\. /);
-  assert.match(h, />1\. Всё тело</);
+  assert.match(h, />1\. Всё тело/);
   assert.doesNotMatch(h, />\d+\. Всё тело [ABC]</);
-  assert.match(h, /<summary><b>Неделя 1<\/b>/);
-  assert.match(h, /<summary><b>Неделя 12<\/b>/);
+  assert.doesNotMatch(h, /<summary><b>Неделя /);
   run('today(35)');
   h = app();
   assert.match(h, /<h2 style="margin-top:6px">36\. /);
@@ -160,7 +158,7 @@ test('preview and program editor use the same running numbers; SW cache is moyza
   const pr = app();
   assert.match(pr, /<summary><b>1\. /);
   assert.match(pr, /<summary><b>36\. /);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v140'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v141'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
 });
 

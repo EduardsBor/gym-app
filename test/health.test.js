@@ -229,7 +229,7 @@ test('provider exposes connect, onSample, disconnect and the four sources', asyn
 test('service worker cache is v44 and precaches health.js and movekit.js', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(fs.readFileSync(path.join(root, 'cache-ver.js'), 'utf8'), /var SW_CACHE='moyzal-v140'/);
+  assert.match(fs.readFileSync(path.join(root, 'cache-ver.js'), 'utf8'), /var SW_CACHE='moyzal-v141'/);
   assert.match(sw, /const C=SW_CACHE/);
   assert.equal(sw.includes('moyzal-v42'), false);
   assert.equal(sw.charCodeAt(0) === 0xfeff, false);
