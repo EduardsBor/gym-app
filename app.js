@@ -135,6 +135,42 @@ const CATALOG=[
 ['Объёмные руки','Приоритет бицепса и трицепса.',{goal:'mass',level:'mid',days:5,len:60,place:'g',prio:['Бицепс','Трицепс']}],
 ['Ягодицы и ноги','Приоритет низа тела.',{goal:'mass',level:'mid',days:4,len:60,place:'g',sex:'f',prio:['Ягодицы','Ноги']}],
 ['Пресс и рельеф','Похудение с приоритетом пресса.',{goal:'loss',level:'mid',days:4,len:45,place:'g',prio:['Пресс']}]].map(([name,desc,a],i)=>({id:'c'+i,name,desc,a:{sex:'m',prio:[],lim:[],...a}}));
+// Ready-program list: curated CATALOG plus one card per blocks-index entry (gym g, Home = b_nobar).
+// The list uses the small index only — it does not load block JSON.
+function catalogCardPlace(c){const p=c&&c.a&&c.a.place;return(p==='b'||p==='b_nobar')?'b':(p||'g')}
+function catalogChipOptions(){return{goal:Object.keys(GOALS),level:Object.keys(LVN),days:[2,3,4,5,6],place:Object.keys(PLN).filter(k=>k!=='d')}}
+function catalogIndexList(){return(typeof BLOCK_INDEX!=='undefined'&&Array.isArray(BLOCK_INDEX))?BLOCK_INDEX:[]}
+function catalogLang(){return(typeof LANG==='string'&&LANG)||'ru'}
+function catalogT(s){return typeof tr==='function'?tr(s):s}
+function ruCountWord(n,one,few,many){n=Math.abs(parseInt(n,10)||0);const r=n%100,d=n%10;if(r>=11&&r<=19)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many}
+function catalogWorkoutWord(n){const lang=catalogLang();if(lang==='en')return Number(n)===1?'workout':'workouts';if(lang==='lv')return typeof lvTreninWord==='function'?lvTreninWord(n):'treniņi';return ruCountWord(n,'тренировка','тренировки','тренировок')}
+function catalogWeekWord(n){const lang=catalogLang();if(lang==='en')return Number(n)===1?'week':'weeks';if(lang==='lv'){n=Math.abs(parseInt(n,10)||0);const r=n%100,d=n%10;if((r>=11&&r<=19)||n%10===0)return'nedēļu';if(d===1)return'nedēļa';return'nedēļas'}return ruCountWord(n,'неделя','недели','недель')}
+function catalogDur(label){const s=String(label||'60–70 мин');if(catalogLang()==='ru')return s;return s.replace(/\s*мин(ут[аыу]?)?$/i,' min')}
+function catalogFmt(ru,map){let s=catalogT(ru);Object.keys(map).forEach(k=>{s=String(s).split('{'+k+'}').join(map[k])});return s}
+function catalogBlockName(b){const pl=b.place==='b_nobar'?'b':'g';return catalogT(typeof goalName==='function'?goalName(b.goal,pl):(GOALS[b.goal]||b.goal))+': '+catalogT(b.title||'')}
+function catalogBlockDesc(b){const pl=b.place==='b_nobar'?'b':'g';
+  const head=catalogFmt('{level} · {days}× в неделю · {place}',{level:catalogT(LVN[b.level]||b.level),days:b.days,place:catalogT(PLN[pl]||pl)});
+  const tail=catalogFmt('{n} {workoutWord}, около {w} {weekWord}, по {dur}',{n:b.workouts,workoutWord:catalogWorkoutWord(b.workouts),w:b.weeks,weekWord:catalogWeekWord(b.weeks),dur:catalogDur(b.duration_label||'60–70 мин')});
+  return head+'. '+tail}
+function catalogBlockSummary(b){return catalogFmt('{title} · {n} {workoutWord}, около {w} {weekWord}, по {dur}',{title:catalogT(b.title||''),n:b.workouts,workoutWord:catalogWorkoutWord(b.workouts),w:b.weeks,weekWord:catalogWeekWord(b.weeks),dur:catalogDur(b.duration_label||'60–70 мин')})}
+function catalogCoveredKey(a){return[a.goal,a.level,a.days,catalogCardPlace({a})].join('_')}
+function catalogCards(){
+  const curated=CATALOG.slice();
+  const covered=new Set(curated.filter(c=>!(c.a.prio&&c.a.prio.length)&&!(c.a.lim&&c.a.lim.length)).map(c=>catalogCoveredKey(c.a)));
+  const extra=[];
+  catalogIndexList().forEach(b=>{
+    if(b.prio||(b.place!=='g'&&b.place!=='b_nobar'))return;
+    const pl=b.place==='b_nobar'?'b':'g';
+    if(covered.has([b.goal,b.level,b.days,pl].join('_')))return;
+    extra.push({id:'blk-'+b.id,name:catalogBlockName(b),desc:catalogBlockDesc(b),summary:catalogBlockSummary(b),blockId:b.id,
+      a:{sex:'m',prio:[],lim:[],goal:b.goal,level:b.level,days:b.days,place:pl,bar:pl==='b'?'0':undefined,len:70,lenLabel:b.duration_label||'60–70 мин'}});
+  });
+  return curated.concat(extra);
+}
+function filterCatalog(F){F=F||{};return catalogCards().filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||Number(c.a.days)===Number(F.days))&&(!F.place||catalogCardPlace(c)===F.place))}
+function catalogFind(id){return catalogCards().find(c=>c.id===id)||CATALOG.find(c=>c.id===id)}
+function catalogSummary(c){if(c.summary)return c.summary;const pl=catalogCardPlace(c),b=catalogIndexList().find(x=>!x.prio&&x.goal===c.a.goal&&x.level===c.a.level&&x.days===c.a.days&&(x.place==='b_nobar'?'b':x.place)===pl);return b?catalogBlockSummary(b):''}
+
 
 // Повреждённая запись не должна ломать запуск: сохраняем её в ключ gym_broken и стартуем с пустого состояния.
 // S_RO — копию сохранить не удалось; тогда ничего не пишем, чтобы не затереть единственный экземпляр данных.
@@ -235,16 +271,16 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
   S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
-const tags=a=>[goalName(a.goal,a.place),LVN[a.level],a.days+'×/нед',a.lenLabel||a.len+' мин',PLN[a.place],...(a.prio||[]).map(p=>'★ '+p),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+ACC_RU[a.acc]]:[]),...(a.lim||[]).map(l=>'⚠ '+LIMN[l])].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
+const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
- const L=CATALOG.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||c.a.days==F.days)&&(!F.place||c.a.place===F.place));
+ const L=filterCatalog(F);
  app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN).filter(([k])=>k!=='d'))}
- <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card catc"><h3 class="catn">${esc(c.name)}</h3><div class="mut">${esc(c.desc)}</div><div style="margin:6px 0">${tags(c.a)}</div>
- <div class="mut" style="font-size:13px">${esc(progSummary(generate(c.a).days))}</div><button class="pri full" style="margin-top:10px" data-c="${c.id}">Подробнее</button></div>`).join('')}
+ <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card catc"><h3 class="catn">${esc(catalogT(c.name))}</h3><div class="mut">${esc(catalogT(c.desc))}</div><div style="margin:6px 0">${tags(c.a)}</div>
+ ${catalogSummary(c)?`<div class="mut" style="font-size:13px">${esc(catalogSummary(c))}</div>`:''}<button class="pri full" style="margin-top:10px" data-c="${esc(c.id)}">Подробнее</button></div>`).join('')}
  <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Подобрать программу под себя</button>`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
- app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(CATALOG.find(c=>c.id===b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
+ app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(catalogFind(b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
