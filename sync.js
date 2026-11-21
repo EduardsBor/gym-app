@@ -104,6 +104,19 @@
     (S.workouts||[]).forEach(w=>(w&&w.items||[]).forEach((it,i)=>{if(it&&it.pain) pain.push({id:w.id,i,exId:it.exId})}));
     return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,why:Array.isArray(S.why)?S.why.filter(isLimWhy):null,pain};
   }
+  function mergePg(a,b){
+    const o={};
+    function ts(x){return x&&typeof x==='object'?+(x.at||x.updatedAt||x.ts||0):0}
+    [a,b].forEach(src=>{
+      if(!src||typeof src!=='object') return;
+      Object.keys(src).forEach(k=>{
+        const x=src[k],y=o[k];
+        if(y==null) o[k]=x;
+        else o[k]=ts(x)>=ts(y)?x:y;
+      });
+    });
+    return o;
+  }
   function mergeLists(local,remote,delA,delB,idKey,timeFn){
     const del=new Set([].concat(delA||[],delB||[]));
     const map=new Map();
@@ -166,6 +179,8 @@
     S.custom=c.list;S.deletedCustom=c.deleted;
     S.templates=tpl.list;S.deletedTemplates=tpl.deleted;
     S.eqProfiles=eqp.list;S.deletedEqProfiles=eqp.deleted;
+    // Records come from workout history (union by id above). Auto-weight state S.pg is also united by exercise id so no exercise is dropped.
+    S.pg=mergePg(S.pg,R.pg);
     // Активный профиль — по своей метке eqActiveAt, чтобы смена места не затиралась чужим сохранением.
     if((R.eqActiveAt||0)>(S.eqActiveAt||0)){S.eqActive=R.eqActive;S.eqActiveAt=R.eqActiveAt}
     else if(S.eqActiveAt||S.eqActive){/* local wins or equal */}
@@ -203,7 +218,7 @@
     });
     if(error) throw error;
     persistLocal();
-    lastAt=Date.now();
+    lastAt=S.updatedAt||Date.now();
   }
   function remoteHasData(R){
     return !!(R&&(R.program||(R.workouts&&R.workouts.length)||(R.body&&R.body.length)||R.goal||(R.templates&&R.templates.length)));
@@ -220,10 +235,9 @@
     if(!data){await pushNow();return}
     const remoteAt=data.updated_at?Date.parse(data.updated_at):0;
     const R=data.payload||{};
-    if(protectGuestOnAuth&&isUnboundGuest()){
-      if(!remoteHasData(R)){await pushNow();return}
-      return;
-    }
+    // Blank cloud never overwrites guest data (even after the user agrees to transfer).
+    if(isUnboundGuest()&&!remoteHasData(R)){await pushNow();return}
+    if(protectGuestOnAuth&&isUnboundGuest()){return}
     if(!hasLocalData()) applyRemoteFresh(R);
     else applyMerged(R,remoteAt);
     progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
@@ -319,15 +333,55 @@
     if(S.azOpen!==day){S.azOpen=day;persistLocal();mzTrack('app_open')}
   }
 
+  async function adoptAccountFromCloud(){
+    if(!sb||!user) return;
+    const lang=S&&S.lang;
+    if(isOffline()) throw new Error('offline');
+    const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
+    if(error) throw error;
+    Object.keys(S||{}).forEach(k=>{delete S[k]});
+    if(lang) S.lang=lang;
+    S.workouts=[];S.body=[];S.custom=[];S.templates=[];S.eqProfiles=[];
+    S.deletedWorkouts=[];S.deletedBody=[];S.deletedCustom=[];S.deletedTemplates=[];S.deletedEqProfiles=[];
+    if(data&&data.payload) applyRemoteFresh(data.payload);
+    S.ownerUid=user.id;
+    persistLocal();
+    if(!data) await pushNow();
+    else {lastAt=S.updatedAt||Date.now();status='ok'}
+  }
+  function clearBodyPhotos(){
+    try{
+      if(typeof idb!=='undefined'&&idb&&idb.all) return idb.all().then(async o=>{for(const k of Object.keys(o||{})) try{await idb.del(k)}catch(e){}});
+    }catch(e){}
+    return Promise.resolve();
+  }
   async function afterAuth(){
     markAuthed();
+    // Previous signed-in user's data on this device is never offered to another account and must not be visible.
     if(foreignData()){
-      if(confirm('На этом устройстве сохранены данные другого аккаунта. Объединить их с этим аккаунтом?\n\nОК — объединить. Отмена — выйти, данные останутся как есть.')) S.ownerUid=user.id;
-      else{await doLogout();return}
+      try{await clearBodyPhotos();await adoptAccountFromCloud()}
+      catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);authView();return}
+      toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
+      if(view==='auth') go('today');
+      return;
     }
-    ensureMeta();persistLocal();
-    protectGuestOnAuth=isUnboundGuest();
-    try{await sync()}finally{protectGuestOnAuth=false}
+    if(isUnboundGuest()){
+      const ok=confirm('Перенести данные в аккаунт?');
+      if(!ok){
+        try{await adoptAccountFromCloud()}
+        catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
+        toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
+        if(view==='auth') go('today');
+        return;
+      }
+      // Yes: merge (history/records union, program/settings newer-wins) and push. Do not use the first-login lock that skipped a cloud copy.
+      ensureMeta();persistLocal();
+      protectGuestOnAuth=false;
+      await sync();
+    }else{
+      ensureMeta();persistLocal();
+      await sync();
+    }
     toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
     if(view==='more') more();
     if(view==='auth') go('today');
@@ -385,14 +439,46 @@
     if(error) return msg(friendly(error));
     msg('Если аккаунт есть, отправили письмо для смены пароля');
   }
+  function hasUnsyncedWorkouts(){
+    return (S.updatedAt||0)>(lastAt||0);
+  }
+  function resetLocalState(){
+    const lang=S&&S.lang;
+    try{Object.keys(S||{}).forEach(k=>{delete S[k]})}catch(e){}
+    if(lang) S.lang=lang;
+    S.workouts=[];S.body=[];S.custom=[];S.templates=[];S.eqProfiles=[];
+    S.deletedWorkouts=[];S.deletedBody=[];S.deletedCustom=[];S.deletedTemplates=[];S.deletedEqProfiles=[];
+  }
+  async function finishLogout(clearLocal){
+    clearTimeout(timer);
+    try{if(sb) await sb.auth.signOut()}catch(e){}
+    user=null;status='off';
+    try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
+    if(clearLocal){
+      try{if(typeof clearLocalData==='function') await clearLocalData()}catch(e){}
+      resetLocalState();
+      toast('Выход выполнен. Данные остаются в облаке и вернутся после входа');
+    }else{
+      toast('Выход выполнен');
+    }
+    authView();
+  }
+  function showUnsyncedLogout(){
+    app.innerHTML=`<div class="card" id="mzunsynced"><p style="margin-top:0">Есть тренировки, которые ещё не сохранены в облаке</p>
+      <button class="pri full" id="mzwaitsync">Подождать синхронизацию</button>
+      <button class="full" id="mzoutanyway" style="margin-top:8px">Выйти всё равно</button></div>`;
+    if($('#mzwaitsync')) $('#mzwaitsync').onclick=async()=>{
+      if(!isOffline()) await syncNow();
+      if(hasUnsyncedWorkouts()){toast('Синхронизация не удалась. Данные на устройстве на месте');return}
+      await finishLogout(true);
+    };
+    if($('#mzoutanyway')) $('#mzoutanyway').onclick=()=>finishLogout(false);
+  }
   async function doLogout(){
     clearTimeout(timer);
     if(user&&!isOffline()) await sync(); // D-253: last changes go to the cloud before signing out
-    try{await sb.auth.signOut()}catch(e){}
-    user=null;status='off';
-    try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
-    toast('Выход выполнен');
-    authView();
+    if(hasUnsyncedWorkouts()){showUnsyncedLogout();return}
+    await finishLogout(true);
   }
   // Удаление данных в облаке. Возвращает:
   //  'none'    — входа нет, в облаке удалять нечего;
@@ -559,7 +645,7 @@
     if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
   }
-  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;
+  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;
   if(typeof render==='function'){
     const _render=render;
     render=function(){
