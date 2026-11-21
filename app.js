@@ -253,11 +253,12 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
 function dayWeek(d){if(d&&d.week)return d.week;const m=/^Неделя (\d+)/.exec(d&&d.name||'');return m?+m[1]:0}
 function dayTitle(d){return String(d&&d.name||'').replace(/^Неделя \d+ · /,'')}
 function dayNum(d,i){const n=d&&d.n;if(n!=null&&+n>0)return +n;if(i!=null&&i>=0)return +i+1;return 0}
-function dayTypeTitle(d){return String(d&&(d.name!=null?d.name:d.dayName)||'').replace(/^Неделя \d+ · /,'').replace(/^\d+\.\s/,'')}
+function stripDayLetter(s){return String(s||'').replace(/(^| )[A-Ea-e](?=(?: \((?:разгрузка|deload|atslodze)\))?$)/,'')}
+function dayTypeTitle(d){return stripDayLetter(String(d&&(d.name!=null?d.name:d.dayName)||'').replace(/^Неделя \d+ · /,'').replace(/^\d+\.\s/,''))}
 function workoutLabel(d,i){const n=dayNum(d,i),t=dayTypeTitle(d);return n?(t?n+'. '+t:String(n)):t}
-function historyLabel(w){if(!w)return'';if(w.dayName==='Своя тренировка'||w.fromTemplate)return w.dayName||'';if(w.n!=null&&+w.n>0)return workoutLabel(w);const i=w.dayIdx;if(typeof S!=='undefined'&&S&&S.program&&i!=null&&S.program[i]){const p=S.program[i];if(p.name===w.dayName||dayTypeTitle(p)===dayTypeTitle(w))return workoutLabel(p,i)}return w.dayName||''}
+function historyLabel(w){if(!w)return'';if(w.dayName==='Своя тренировка'||w.fromTemplate)return w.dayName||'';if(w.n!=null&&+w.n>0)return workoutLabel(w);const i=w.dayIdx;if(typeof S!=='undefined'&&S&&S.program&&i!=null&&S.program[i]){const p=S.program[i];if(p.name===w.dayName||dayTypeTitle(p)===dayTypeTitle(w))return workoutLabel(p,i)}return stripDayLetter(w.dayName||'')}
 function weekHead(days,di){const w=dayWeek(days[di]);return w&&(di===0||dayWeek(days[di-1])!==w)?`<h3 style="margin:16px 0 6px">Неделя ${w}</h3>`:''}
-function progSummary(days){const t=[...new Set(days.map(d=>dayWeek(d)?dayTitle(d).replace(/ \(разгрузка\)$/,''):d.name))];const w=new Set(days.map(dayWeek).filter(Boolean)).size;return(w?w+' нед. · ':'')+t.join(' · ')}
+function progSummary(days){const t=[...new Set(days.map(d=>stripDayLetter(dayWeek(d)?dayTitle(d).replace(/ \((?:разгрузка|deload|atslodze)\)$/,''):d.name)))];const w=new Set(days.map(dayWeek).filter(Boolean)).size;return(w?w+' нед. · ':'')+t.join(' · ')}
 // D-230 (Эдуард 19.11): дом только без инвентаря — «Дом с гантелями» (place d) скрыт; d-блоки остаются для старых профилей:
 // ['Дом с гантелями','Для тех, кто хочет набрать мышцы дома: нужны гантели, скамья и резинка. Четыре тренировки в неделю, два дня на верх, два на низ. 36 тренировок, около 9 недель, по 60–70 минут.',{goal:'mass',level:'mid',days:4,len:60,place:'d'}]
 // D-228: «Здоровая спина» и «Бережно к коленям» скрыты до отдельных блоков Тренера без запрещённых упражнений:
