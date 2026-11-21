@@ -241,6 +241,7 @@ Deno.serve(async (req) => {
   const { data: userData, error: userErr } = await userClient.auth.getUser(jwt);
   const user = userData && userData.user;
   if (userErr || !user || !user.id) return new Response("auth", { status: 401, headers: h });
+  if (user.is_anonymous) return new Response("auth", { status: 401, headers: h });
 
   const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: gone, error: goneErr } = await admin

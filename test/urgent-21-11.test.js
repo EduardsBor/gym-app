@@ -78,7 +78,9 @@ test('transfer card: background sync is held while the choice is open', () => {
 test('LV: sign-in wording is «pieteikties / pieteikšanās», never «ieiet / ieej / ieiešana»', () => {
   const ctx = i18nCtx('lv');
   const vals = vm.runInContext('DICT.concat(DICT2,DICT3).map(r=>r[2]).filter(Boolean)', ctx);
-  const bad = Array.from(vals).filter(v => /(?<![\p{L}])(ieiet|ieej|ieiešan|iegāj)/iu.test(v));
+  // D-276 (Claude, 21.11): the login prompt for clips is the approved exception «Ieej, lai skatītos video».
+  const allowed = new Set(['Ieej, lai skatītos video']);
+  const bad = Array.from(vals).filter(v => /(?<![\p{L}])(ieiet|ieej|ieiešan|iegāj)/iu.test(v) && !allowed.has(v));
   assert.equal(bad.length, 0, bad.join('\n'));
   assert.ok(vals.length > 500, 'dictionaries loaded');
 });

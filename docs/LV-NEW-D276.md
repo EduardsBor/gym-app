@@ -7,4 +7,4 @@
 
 | RU | EN | LV |
 |---|---|---|
-| Войди, чтобы смотреть ролики | Sign in to watch the videos | Piesakies, lai skatītos video |
+| Войди, чтобы смотреть ролики | Sign in to watch the videos | Ieej, lai skatītos video |

@@ -36,7 +36,7 @@ test('D-276: login prompt has EN and LV dictionary entries', () => {
   assert.deepEqual(Array.from(row), [
     'Войди, чтобы смотреть ролики',
     'Sign in to watch the videos',
-    'Piesakies, lai skatītos video'
+    'Ieej, lai skatītos video'
   ]);
 });
 
@@ -44,6 +44,7 @@ test('D-276: function source requires a user, keys only from env, deploy without
   const src = read('supabase/functions/movekit-sign/index.ts');
   const cfg = read('supabase/config.toml');
   assert.match(src, /auth\.getUser/);
+  assert.match(src, /user\.is_anonymous/);
   assert.match(src, /deleted_accounts/);
   assert.match(src, /status: 401/);
   assert.match(src, /status: 403/);
