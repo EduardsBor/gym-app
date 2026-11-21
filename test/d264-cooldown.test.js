@@ -157,12 +157,12 @@ test('D-264: gym/home template days — every spin cooldown is replaced; home ca
   assert.equal(blocks.leftover, 0);
 });
 
-test('D-264: LV caption fix + new EN/LV strings; SW cache moyzal-v126', () => {
+test('D-264: LV caption fix + new EN/LV strings; SW cache moyzal-v127', () => {
   const d3 = read('i18n/dict3.js');
   assert.ok(d3.includes("'Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; vari izmantot to pašu trenažieri, ko izmantoji kardio blokā'"));
   assert.ok(!d3.includes('var izmantot to pašu trenažieri, kas kardio blokā'));
   assert.ok(d3.includes("['Лёгкая ходьба','Easy walk','Viegla iešana']"));
   assert.ok(d3.includes("['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga']"));
-  assert.match(read('sw.js'), /moyzal-v126/);
+  assert.match(read('sw.js'), /moyzal-v127/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-D264.md')));
 });

@@ -355,36 +355,84 @@
     }catch(e){}
     return Promise.resolve();
   }
+  const GUEST_COPY_KEY='gym_guest_copy',GUEST_IDB='moyzal_guest';
+  function guestIdbPut(list){
+    if(typeof indexedDB==='undefined') return Promise.resolve();
+    return new Promise(res=>{
+      try{
+        const r=indexedDB.open(GUEST_IDB,1);
+        r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('history'))db.createObjectStore('history')};
+        r.onerror=()=>res();
+        r.onsuccess=()=>{
+          try{
+            const db=r.result,t=db.transaction('history','readwrite');
+            t.objectStore('history').put(list||[],'workouts');
+            t.oncomplete=()=>res();t.onerror=()=>res();
+          }catch(e){res()}
+        };
+      }catch(e){res()}
+    });
+  }
+  async function snapshotUnboundGuest(){
+    let hist=Array.isArray(S.workouts)?S.workouts.slice():[];
+    try{if(typeof idb!=='undefined'&&idb&&idb.histGet){const h=await idb.histGet();if(Array.isArray(h)&&h.length) hist=h}}catch(e){}
+    const snap=JSON.parse(JSON.stringify(Object.assign({},S,{workouts:hist})));
+    try{localStorage.setItem(GUEST_COPY_KEY,JSON.stringify(snap))}catch(e){}
+    try{await guestIdbPut(hist)}catch(e){}
+  }
+  async function finishSignedIn(){
+    toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
+    if(view==='more') more();
+    if(view==='auth'||view==='transfer') go('today');
+  }
+  async function transferGuestToAccount(){
+    ensureMeta();persistLocal();
+    protectGuestOnAuth=false;
+    await sync();
+    await finishSignedIn();
+  }
+  function showTransferDialog(){
+    view='transfer';
+    $('#title').textContent='Вход';$('#nav').classList.add('hidden');
+    app.innerHTML=`<div class="card" id="mztransfer"><p style="margin-top:0">Перенести данные в аккаунт?</p>
+      <button class="pri full" id="mzmerge">Объединить с аккаунтом</button>
+      <button class="full" id="mzkeep" style="margin-top:8px">Не переносить</button></div>`;
+    if($('#mzmerge')) $('#mzmerge').onclick=()=>transferGuestToAccount();
+    if($('#mzkeep')) $('#mzkeep').onclick=async()=>{
+      try{await snapshotUnboundGuest();await adoptAccountFromCloud()}
+      catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
+      await finishSignedIn();
+    };
+  }
   async function afterAuth(){
     markAuthed();
     // Previous signed-in user's data on this device is never offered to another account and must not be visible.
     if(foreignData()){
       try{await clearBodyPhotos();await adoptAccountFromCloud()}
       catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);authView();return}
-      toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
-      if(view==='auth') go('today');
+      await finishSignedIn();
       return;
     }
     if(isUnboundGuest()){
-      const ok=confirm('Перенести данные в аккаунт?');
-      if(!ok){
-        try{await adoptAccountFromCloud()}
-        catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
-        toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
-        if(view==='auth') go('today');
+      // Empty account: transfer guest data with no question. Account already has data: ask with explicit buttons (not confirm()).
+      let remote=null;
+      if(!isOffline()&&sb){
+        try{
+          const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
+          if(error) throw error;
+          remote=data||null;
+        }catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);return}
+      }
+      if(!remote||!remoteHasData(remote.payload||{})){
+        await transferGuestToAccount();
         return;
       }
-      // Yes: merge (history/records union, program/settings newer-wins) and push. Do not use the first-login lock that skipped a cloud copy.
-      ensureMeta();persistLocal();
-      protectGuestOnAuth=false;
-      await sync();
-    }else{
-      ensureMeta();persistLocal();
-      await sync();
+      showTransferDialog();
+      return;
     }
-    toast(status==='err'?'Вход выполнен, но синхронизация не удалась: '+lastErr:'Вход выполнен. Данные синхронизируются');
-    if(view==='more') more();
-    if(view==='auth') go('today');
+    ensureMeta();persistLocal();
+    await sync();
+    await finishSignedIn();
   }
   function creds(){
     return {email:($('#mzemail')&&$('#mzemail').value||'').trim(),password:($('#mzpass')&&$('#mzpass').value)||''};
@@ -465,6 +513,7 @@
   }
   function showUnsyncedLogout(){
     app.innerHTML=`<div class="card" id="mzunsynced"><p style="margin-top:0">Есть тренировки, которые ещё не сохранены в облаке</p>
+      <p class="mut">Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся.</p>
       <button class="pri full" id="mzwaitsync">Подождать синхронизацию</button>
       <button class="full" id="mzoutanyway" style="margin-top:8px">Выйти всё равно</button></div>`;
     if($('#mzwaitsync')) $('#mzwaitsync').onclick=async()=>{
@@ -645,7 +694,7 @@
     if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
   }
-  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;
+  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
   if(typeof render==='function'){
     const _render=render;
     render=function(){
@@ -673,6 +722,8 @@
           localStorage.removeItem('gym');
           await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
         }
+        try{localStorage.removeItem(GUEST_COPY_KEY)}catch(e){}
+        try{await new Promise(r=>{const q=indexedDB.deleteDatabase(GUEST_IDB);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
         // Кэш сервис-воркера мог содержать ответы сервера с личными данными (версии до v39).
         if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
       }catch(e){}

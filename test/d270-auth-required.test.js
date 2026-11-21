@@ -189,19 +189,50 @@ test('D-270: no path into tabs after account deletion', async () => {
   assert.equal(r.run('view'), 'auth');
 });
 
-test('D-270: declining guest transfer loads the account copy and does not keep guest workouts on screen', async () => {
+test('D-270: declining guest transfer keeps a copy of gym + moyzal history on the device', async () => {
   const local = seed({ workouts: [W('w-guest', 5000)], progName: 'Guest', ownerUid: null });
   const remote = seed({ workouts: [W('w-acc', 8000)], progName: 'Account', goal: 'cut' });
-  const r = bootA(local, { confirm: false, cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  let asked = 0;
+  const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  r.g.confirm = m => { asked++; return true; };
   await go(r);
   r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
   r.run('document.querySelector("#mzin").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.match(r.html(), /id="mztransfer"/);
+  assert.match(r.html(), /id="mzkeep"[^>]*>Не переносить/);
+  assert.equal(asked, 0, 'must not use confirm()');
+  await r.run('document.querySelector("#mzkeep").onclick()');
   for (let i = 0; i < 30; i++) await tick();
   assert.equal(r.run('view'), 'today');
   const ids = r.run('S.workouts.map(x=>x.id).join(",")');
   assert.equal(ids, 'w-acc');
   assert.doesNotMatch(ids, /w-guest/);
   assert.equal(r.run('S.progName'), 'Account');
+  assert.equal(r.run('S.ownerUid'), USER.id);
+  const copy = JSON.parse(r.run('localStorage.getItem("gym_guest_copy")'));
+  assert.ok(copy && copy.workouts.some(x => x.id === 'w-guest'), 'gym_guest_copy keeps guest workouts');
+  assert.equal(copy.progName, 'Guest');
+  const hist = r.idb.get('moyzal_guest') && r.idb.get('moyzal_guest').stores.get('history');
+  const fromIdb = hist && hist.get('workouts');
+  assert.ok(fromIdb && fromIdb.some(x => x.id === 'w-guest'), 'moyzal_guest history copy is on the device');
+});
+
+test('D-270: guest signing into an empty account is transferred with no question', async () => {
+  const local = seed({ workouts: [W('w1', 5000), W('w2', 6000)], progName: 'Guest' });
+  let asked = 0;
+  const r = bootA(local, { cloud: { remote: null, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
+  r.g.confirm = m => { asked++; return false; };
+  await go(r);
+  r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
+  r.run('document.querySelector("#mzin").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
+  assert.doesNotMatch(r.html(), /mztransfer|mzkeep|mzmerge/);
+  assert.equal(asked, 0, 'empty account: no transfer question');
+  assert.equal(r.run('view'), 'today');
+  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w1,w2');
+  assert.equal(r.run('S.progName'), 'Guest');
+  assert.ok(r.cloud.upserts.length > 0, 'guest data pushed to the empty account');
   assert.equal(r.run('S.ownerUid'), USER.id);
 });
 
@@ -281,6 +312,7 @@ test('D-270: logout with unsynced workouts warns; wait-for-sync then clears; sig
   for (let i = 0; i < 10; i++) await tick();
   assert.match(r.html(), /id="mzunsynced"/);
   assert.match(r.html(), /Есть тренировки, которые ещё не сохранены в облаке/);
+  assert.match(r.html(), /Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся\./);
   assert.match(r.html(), /id="mzwaitsync"/);
   assert.match(r.html(), /id="mzoutanyway"/);
   // anyway: stay signed out but keep local workouts

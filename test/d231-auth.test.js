@@ -288,6 +288,11 @@ test('D-231: guest transfer merges history (no losses/duplicates) and keeps the 
   r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
   r.run('document.querySelector("#mzin").onclick()');
   for (let i = 0; i < 30; i++) await tick();
+  assert.match(r.html(), /id="mztransfer"/);
+  assert.match(r.html(), /id="mzmerge">Объединить с аккаунтом</);
+  assert.match(r.html(), /id="mzkeep"[^>]*>Не переносить/);
+  await r.run('document.querySelector("#mzmerge").onclick()');
+  for (let i = 0; i < 30; i++) await tick();
   const ids = r.run('S.workouts.map(x=>x.id).sort().join(",")');
   assert.equal(ids, 'w-cloud,w-local', 'history is merged, no workout lost, no duplicate ids');
   assert.equal(r.run('S.progName'), 'Cloud', 'newer program/settings win');
