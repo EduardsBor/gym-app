@@ -371,21 +371,37 @@ function posterRevoke(url) {
 }
 
 const mkPosterUrls = new Map();
+const mkPosterPathUrls = new Map();
 const MK_POSTER_LIMIT = 4;
 let mkPosterActive = 0;
 const mkPosterQueue = [];
 let mkPosterIO = null;
 
+function posterUrlForPath(objectPath, blob) {
+  if (objectPath && mkPosterPathUrls.has(objectPath)) return mkPosterPathUrls.get(objectPath);
+  const url = posterObjectUrl(movekitImageBlob(blob));
+  if (objectPath) mkPosterPathUrls.set(objectPath, url);
+  return url;
+}
+
+function isCachedPosterUrl(url) {
+  if (!url) return false;
+  for (const cached of mkPosterPathUrls.values()) {
+    if (cached === url) return true;
+  }
+  return false;
+}
+
 function rememberPosterUrl(el, url) {
   const prev = mkPosterUrls.get(el);
-  if (prev && prev !== url) posterRevoke(prev);
+  if (prev && prev !== url && !isCachedPosterUrl(prev)) posterRevoke(prev);
   mkPosterUrls.set(el, url);
 }
 
 function forgetPosterUrl(el) {
   const prev = mkPosterUrls.get(el);
-  if (prev) posterRevoke(prev);
   mkPosterUrls.delete(el);
+  if (prev && !isCachedPosterUrl(prev)) posterRevoke(prev);
 }
 
 function sweepPosterUrls() {
@@ -463,7 +479,9 @@ function posterFailed(el) {
 }
 
 function showMovekitPoster(el, blob) {
-  const url = posterObjectUrl(movekitImageBlob(blob));
+  const id = (el.dataset && (el.dataset.mkPoster || el.dataset.mk)) || '';
+  const objectPath = movekitPosterPath(id);
+  const url = posterUrlForPath(objectPath, blob);
   rememberPosterUrl(el, url);
   if (String(el.tagName || '').toUpperCase() === 'VIDEO') {
     el.poster = url;
@@ -471,24 +489,33 @@ function showMovekitPoster(el, blob) {
     return;
   }
   if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-    const img = document.createElement('img');
-    img.alt = '';
-    img.decoding = 'async';
-    if ('referrerPolicy' in img) img.referrerPolicy = 'no-referrer';
-    img.onload = function () { if (el.dataset) el.dataset.mkPosterState = 'ok'; };
-    img.onerror = function () {
-      img.onerror = null;
-      if (typeof img.remove === 'function') img.remove();
-      posterFailed(el);
-    };
-    img.src = url;
-    if (typeof el.replaceChildren === 'function') el.replaceChildren(img);
-    else if (typeof el.appendChild === 'function') el.appendChild(img);
-    else {
-      el.style = el.style || {};
-      el.style.backgroundImage = 'url("' + url + '")';
-      el.dataset.mkPosterState = 'ok';
+    let img = el.querySelector && el.querySelector('img');
+    if (!img) {
+      img = document.createElement('img');
+      img.alt = '';
+      img.decoding = 'async';
+      if ('referrerPolicy' in img) img.referrerPolicy = 'no-referrer';
+      img.onerror = function () {
+        img.onerror = null;
+        if (typeof img.remove === 'function') img.remove();
+        posterFailed(el);
+      };
+      if (typeof el.replaceChildren === 'function') el.replaceChildren(img);
+      else if (typeof el.appendChild === 'function') el.appendChild(img);
+      else {
+        el.style = el.style || {};
+        el.style.backgroundImage = 'url("' + url + '")';
+        el.dataset.mkPosterState = 'ok';
+        return;
+      }
     }
+    const same = img.src === url || img.getAttribute && img.getAttribute('src') === url;
+    if (same) {
+      el.dataset.mkPosterState = 'ok';
+      return;
+    }
+    img.onload = function () { if (el.dataset) el.dataset.mkPosterState = 'ok'; };
+    img.src = url;
     return;
   }
   el.style = el.style || {};
