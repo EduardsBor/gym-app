@@ -81,7 +81,7 @@ test('D-238: done workouts get ✓; tapping another workout opens it and it can 
   assert.match(h, /class="full dayb done"[^>]*data-i="1">✓ /);
   // D-239: no eye icon; the open workout is the whole accent-coloured button
   assert.doesNotMatch(h, /👁/);
-  assert.match(h, /class="full dayb pri sel"[^>]*data-i="2" aria-current="true">Всё тело/);
+  assert.match(h, /class="full dayb pri sel"[^>]*data-i="2" aria-current="true">3\. Всё тело/);
   assert.equal((h.match(/dayb[^"]*pri sel/g) || []).length, 1);
   assert.match(read('style.css'), /\.dayb\.pri\.sel\{background:var\(--acc\);color:var\(--on-acc\);font-weight:800/);
   assert.match(h, /<span class="mut">2\/3 трен\./);
@@ -121,8 +121,9 @@ test('D-269: main workout card has no «Неделя N ·» title and no this-we
   const { run, app } = withProgram();
   const stored = run('S.program[S.block.next|0].name');
   assert.match(stored, /^Неделя \d+ · /);
-  const title = run('dayTitle(S.program[S.block.next|0])');
+  const title = run('workoutLabel(S.program[S.block.next|0], S.block.next|0)');
   assert.doesNotMatch(title, /^Неделя /);
+  assert.match(title, /^\d+\. /);
   const h = app();
   const re = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   assert.match(h, new RegExp('<h2 style="margin-top:6px">' + re(title) + '</h2>'));
