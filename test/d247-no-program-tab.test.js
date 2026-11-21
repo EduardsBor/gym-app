@@ -151,7 +151,7 @@ test('D-248: «Ещё» → «Профиль» 👤; library + science in the «
   const m = read('app.js'), more = m.slice(m.indexOf('function more(){'), m.indexOf('function library(){'));
   assert.match(more, /\$\('#title'\)\.textContent='Профиль'/);
   const help = more.indexOf('id="helpc"><b>Справка</b>');
-  assert.ok(help > more.indexOf('id="reset"') && help < more.indexOf('id="lib"') && more.indexOf('id="lib"') < more.indexOf('id="sci"') && more.indexOf('id="sci"') < more.indexOf('Версия ${APP_VERSION}'));
+  assert.ok(help > more.indexOf('id="reset"') && help < more.indexOf('id="lib"') && more.indexOf('id="lib"') < more.indexOf('id="sci"') && more.indexOf('id="sci"') < more.indexOf('Версия ${appVersionLabel()}'));
   assert.match(read('features.js'), /\(app\.querySelector\('#helpc'\)\|\|ver\)\.insertAdjacentHTML\('beforebegin',html\)/);
   const d = read('i18n/dict3.js');
   assert.ok(d.includes("['Профиль','Profile','Profils']") && d.includes("['Справка','Help & info','Uzziņas']"));

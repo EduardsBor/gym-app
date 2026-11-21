@@ -66,7 +66,7 @@ function onb(){$('#title').textContent='Добро пожаловать';$('#nav
   preview({name:'Моя программа: '+goalName(a.goal,a.place),desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
  if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
  $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(c.a)}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};if(OB.place==='d')OB.place='g';go('onb')}
+function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};if(OB.place==='d')OB.place='b';go('onb')}
 
 // ---- Wrap existing views with gating / offers
 const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
@@ -102,7 +102,7 @@ const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
  <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
  <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- (app.querySelector('#helpc')||ver).insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+APP_VERSION;
+ (app.querySelector('#helpc')||ver).insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+(typeof appVersionLabel==='function'?appVersionLabel():APP_VERSION);
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');

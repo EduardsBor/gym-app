@@ -28,7 +28,8 @@ test('D-226: §3.5 names the first completed workout in RU, EN and LV; LV has 1R
 
 test('D-226: first_workout stays in code; sw is moyzal-v74; changelog', () => {
   assert.match(read('sync.js'), /mzTrack\('first_workout'/);
-  assert.match(read('sw.js'), /const C='moyzal-v133'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v134'/);
+  assert.match(read('sw.js'), /const C=SW_CACHE/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-226/);
   assert.match(log, /moyzal-v74/);

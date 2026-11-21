@@ -111,7 +111,7 @@ test('D-230: home is bodyweight only — questionnaire has g and b, no d; catalo
   assert.match(h, /data-k="place" data-v="g"/);
   assert.match(h, /data-k="place" data-v="b">🏠 Дом</);
   assert.doesNotMatch(h, /data-k="place" data-v="d"/);
-  assert.equal(run('Q.place'), 'g');
+  assert.equal(run('Q.place'), 'b');
   run('Q.place="b";quiz()');
   assert.match(app(), /Есть турник\?/);
   assert.ok(!run('CATALOG.some(c=>c.a.place==="d")'));

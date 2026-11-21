@@ -90,10 +90,10 @@ const DICT3=[
 ['Без входа данные только на этом устройстве','Without signing in, data stays only on this device','Bez pieteikšanās dati paliek tikai šajā ierīcē'],
 ['Без входа всё остаётся только на этом устройстве. После входа программа, история, рекорды и настройки копируются в облако (серверы в ЕС) и не затирают то, что уже есть.','Without signing in, everything stays only on this device. After you sign in, your program, history, records and settings are copied to the cloud (EU servers) and do not overwrite what is already there.','Bez pieteikšanās viss paliek tikai šajā ierīcē. Pēc pieteikšanās programma, vēsture, rekordi un iestatījumi tiek kopēti mākonī (ES serveros) un nepārraksta to, kas jau ir.'],
 ['Почта','Email','E-pasts'],
-['Пароль (не короче 6 символов)','Password (at least 6 characters)','Parole (vismaz 6 rakstzīmes)'],
+
 ['Войти','Sign in','Pieteikties'],
 ['Создать аккаунт','Create account','Izveidot kontu'],
-['Забыли пароль?','Forgot password?','Aizmirsi paroli?'],
+
 ['Код из письма','Code from the email','Kods no e-pasta'],
 ['Подтвердить код','Confirm code','Apstiprināt kodu'],
 ['Выйти','Sign out','Iziet'],
@@ -105,27 +105,27 @@ const DICT3=[
 ['Вход выполнен. Данные синхронизируются','Signed in. Your data is syncing','Pieteikšanās izdevās. Dati tiek sinhronizēti'],
 ['Облако недоступно','Cloud unavailable','Mākonis nav pieejams'],
 ['Укажи почту','Enter your email','Norādi e-pastu'],
-['Укажи почту и пароль','Enter your email and password','Norādi e-pastu un paroli'],
-['Пароль не короче 6 символов','Password must be at least 6 characters','Parolei jābūt vismaz 6 rakstzīmes'],
+
+
 ['Письмо отправлено. Нажми ссылку или введи код из письма','Email sent. Open the link or enter the code from the email','E-pasts nosūtīts. Atver saiti vai ievadi kodu no vēstules'],
 ['Введи почту и код из 6 цифр','Enter your email and the 6-digit code','Ievadi e-pastu un 6 ciparu kodu'],
-['Если аккаунт есть, отправили письмо для смены пароля','If an account exists, we sent a password-reset email','Ja konts pastāv, nosūtījām e-pastu paroles maiņai'],
-['Неверная почта или пароль','Wrong email or password','Nepareizs e-pasts vai parole'],
+
+
 ['Подтверди почту — мы отправили письмо','Confirm your email — we sent a message','Apstiprini e-pastu — mēs nosūtījām vēstuli'],
 ['Такой аккаунт уже есть — войди','An account with this email already exists — sign in','Šāds konts jau ir — piesakies'],
 ['Проверь адрес почты','Check the email address','Pārbaudi e-pasta adresi'],
 ['Слишком много попыток. Подожди минуту','Too many attempts. Wait a minute','Pārāk daudz mēģinājumu. Uzgaidi minūti'],
 ['Подожди минуту и попробуй снова','Wait a minute and try again','Uzgaidi minūti un mēģini vēlreiz'],
 ['Регистрация временно недоступна','Sign-up is temporarily unavailable','Reģistrācija īslaicīgi nav pieejama'],
-['Нет сети — данные остаются на устройстве','No network — data stays on the device','Nav tīkla — dati paliek ierīcē'],
+['Неверная почта или код','Wrong email or code','Nepareizs e-pasts vai kods'],['Слишком много данных для облака. На устройстве всё на месте.','Too much data for the cloud. Everything is still on your device.','Pārāk daudz datu mākonim. Uz ierīces viss paliek.'],['В облако ушла сокращённая копия истории. На устройстве все данные на месте.','A shortened history was saved to the cloud. All data is still on your device.','Uz mākoni aizgāja saīsināta vēsture. Uz ierīces visi dati paliek.'],['Нет сети — данные остаются на устройстве','No network — data stays on the device','Nav tīkla — dati paliek ierīcē'],
 ['Синхронизация…','Syncing…','Sinhronizē…'],
 ['Нет сети — работаем офлайн, синхронизируется позже','No network — working offline, will sync later','Nav tīkla — strādājam bezsaistē, sinhronizēsies vēlāk'],
 ['Синхронизация не удалась:','Sync failed:','Sinhronizācija neizdevās:'],
 ['Синхронизировано','Synced','Sinhronizēts'],
 ['Вход выполнен','Signed in','Pieteikšanās izdevās'],
 ['Вход:','Signed in as:','Konts:'],
-['Новый пароль (не короче 6 символов)','New password (at least 6 characters)','Jauna parole (vismaz 6 rakstzīmes)'],
-['Пароль обновлён','Password updated','Parole atjaunināta'],
+
+
 ['Не получилось','Something went wrong','Neizdevās'],
 ['Если войдёшь в аккаунт, они синхронизируются с облаком в ЕС.','If you sign in, they sync to the EU cloud.','Ja ieiesi kontā, tie sinhronizēsies ES mākonī.'],
 ['На этом устройстве данные хранятся в браузере.','On this device the data is stored in the browser.','Šajā ierīcē dati tiek glabāti pārlūkā.'],

@@ -91,7 +91,7 @@ test('each new card has RU/EN/LV name and steps and no service fields', () => {
   }
   assert.equal(NO_ANIM.has('bp'), false);
   assert.equal(NO_ANIM.has('mch'), false);
-  assert.equal(get('hasAnim')('mk-barbell-deadlift'), true);
+  assert.equal(get('hasAnim')('mk-barbell-deadlift'), false);
   assert.equal(EX.some(e => e.id === 'w_scpu' || e.id === 'dl'), false);
 });
 

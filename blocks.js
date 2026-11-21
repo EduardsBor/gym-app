@@ -300,10 +300,29 @@ function ymdPlus(iso,days){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+
+function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?('data/blocks/'+id+'.json'):null}
+function cacheBlockFile(id){
+  const url=blockFileUrl(id);
+  if(!url)return;
+  try{
+    const sw=typeof navigator!=='undefined'&&navigator.serviceWorker;
+    if(sw&&sw.controller&&typeof sw.controller.postMessage==='function'){
+      sw.controller.postMessage({type:'cache-block',url:url});
+      return;
+    }
+    if(typeof caches!=='undefined'&&caches.open){
+      const name=typeof SW_CACHE==='string'?SW_CACHE:(typeof C==='string'?C:null);
+      if(!name)return;
+      Promise.resolve(caches.open(name)).then(c=>fetch(new Request(url,{cache:'reload'})).then(r=>{if(r.ok)return c.put(url,r)})).catch(function(){});
+    }
+  }catch(e){}
+}
 function blockOnApplied(gen){
   if(typeof S==='undefined'||!S)return;
   if(gen&&gen.blockId)S.block={id:gen.blockId,next:0};
   else if(S.block)delete S.block;
+  if(S.block&&S.block.id)cacheBlockFile(S.block.id);
 }
 
 function blockOnFinished(A){
@@ -334,7 +353,7 @@ function renderBlockEnd(b){
     const nb=getBlock(S.block.id);
     if(nb){
       const plan=planFromBlock(nb,S.prof||{});
-      S.program=plan.days;S.progName=nb.title||S.progName;S.why=plan.why;S.next=0;
+      S.program=plan.days;S.progName=nb.title||S.progName;S.why=plan.why;S.next=0;cacheBlockFile(S.block.id);
     }
     if(typeof save==='function')save();
     if(typeof go==='function')go('today');
