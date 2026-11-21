@@ -284,6 +284,22 @@
     if(!fit())return{payload:null,trimmed:'refuse'};
     return{payload:t,trimmed:true};
   }
+  // D-282 follow-up: the shortened-copy toast at most once per launch and once per calendar day.
+  let trimToastLaunch=false;
+  const TRIM_TOAST_KEY='gc_trim_toast_day';
+  function todayKey(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function toastTrimmedCopy(){
+    if(trimToastLaunch) return false;
+    const day=todayKey();
+    try{if(localStorage.getItem(TRIM_TOAST_KEY)===day){trimToastLaunch=true;return false}}catch(e){}
+    trimToastLaunch=true;
+    try{localStorage.setItem(TRIM_TOAST_KEY,day)}catch(e){}
+    if(typeof toast==='function')toast('В облако ушла сокращённая копия истории. На устройстве все данные на месте.');
+    return true;
+  }
   async function pushNow(){
     if(!sb||!user) return;
     if(await checkAccountTombstone()) return;
@@ -303,7 +319,7 @@
     });
     if(error) throw error;
     persistLocal();
-    if(up.trimmed&&typeof toast==='function')toast('В облако ушла сокращённая копия истории. На устройстве все данные на месте.');
+    if(up.trimmed) toastTrimmedCopy();
     lastAt=S.updatedAt||Date.now();
   }
   function remoteHasData(R){
@@ -772,7 +788,7 @@
     if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
   }
-  window.mzNeedAuth=needAuth;window.mzFriendly=friendly;window.mzPayloadForUpload=payloadForUpload;window.USER_STATE_MAX=USER_STATE_MAX;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
+  window.mzNeedAuth=needAuth;window.mzFriendly=friendly;window.mzPayloadForUpload=payloadForUpload;window.mzToastTrimmedCopy=toastTrimmedCopy;window.USER_STATE_MAX=USER_STATE_MAX;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
   if(typeof render==='function'){
     const _render=render;
     render=function(){

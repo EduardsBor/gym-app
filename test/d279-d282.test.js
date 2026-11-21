@@ -8,12 +8,18 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
-function loadSync() {
+function loadSync(opts) {
+  const store = (opts && opts.store) || new Map();
+  const toasts = [];
   const g = {
     console, Date, JSON, TextEncoder, Promise, URL, Uint8Array,
     crypto: { getRandomValues(a) { for (let i = 0; i < a.length; i++) a[i] = (i * 17 + 3) & 255; return a; } },
     S: { workouts: [], body: [], updatedAt: Date.now() },
-    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    localStorage: {
+      getItem(k) { return store.has(k) ? store.get(k) : null; },
+      setItem(k, v) { store.set(k, String(v)); },
+      removeItem(k) { store.delete(k); }
+    },
     location: { href: 'https://eduardsbor.github.io/gym-app/' },
     document: { hidden: true, visibilityState: 'hidden', addEventListener() {}, querySelector() { return null; } },
     navigator: { onLine: true },
@@ -29,7 +35,8 @@ function loadSync() {
         };
       }
     },
-    toast() {},
+    toasts,
+    toast(msg) { toasts.push(msg); },
     view: 'home',
     render() {},
     setInterval() { return 0; },
@@ -240,7 +247,33 @@ test('D-282: anim3d leftovers are gone; legacy place d suggests Дом; user_sta
 
   const lv = read('docs/LV-NEW-D279-D282.md');
   assert.match(lv, /Nepareizs e-pasts vai kods/);
-  assert.match(lv, /Pārāk daudz datu mākonim/);
+  assert.match(lv, /Datu ir par daudz mākonim\. Ierīcē viss ir saglabāts\./);
+  assert.match(lv, /Mākonī nonāca saīsināta vēstures kopija\. Ierīcē visi dati ir saglabāti\./);
+  assert.match(read('i18n/dict3.js'), /Datu ir par daudz mākonim\. Ierīcē viss ir saglabāts\./);
+  assert.match(read('i18n/dict3.js'), /Mākonī nonāca saīsināta vēstures kopija\. Ierīcē visi dati ir saglabāti\./);
   assert.equal(read('docs/LV-NEW-D279-D282.md').includes('LV-проверка.xlsx'), true);
   assert.match(lv, /не менялись/);
+});
+
+test('D-282: shortened cloud-copy toast is shown at most once per launch and once per day', () => {
+  const store = new Map();
+  const msg = 'В облако ушла сокращённая копия истории. На устройстве все данные на месте.';
+  const a = loadSync({ store });
+  assert.equal(a.mzToastTrimmedCopy(), true);
+  assert.deepEqual(a.toasts, [msg]);
+  assert.equal(a.mzToastTrimmedCopy(), false);
+  assert.deepEqual(a.toasts, [msg]);
+
+  // New launch, same calendar day: still no toast.
+  const b = loadSync({ store });
+  assert.equal(b.mzToastTrimmedCopy(), false);
+  assert.deepEqual(b.toasts, []);
+
+  // Next day (stored key is in the past): toast once again.
+  store.set('gc_trim_toast_day', '2000-01-01');
+  const c = loadSync({ store });
+  assert.equal(c.mzToastTrimmedCopy(), true);
+  assert.deepEqual(c.toasts, [msg]);
+  assert.equal(c.mzToastTrimmedCopy(), false);
+  assert.deepEqual(c.toasts, [msg]);
 });

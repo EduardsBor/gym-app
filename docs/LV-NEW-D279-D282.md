@@ -5,7 +5,7 @@
 | RU | EN | LV |
 |---|---|---|
 | Неверная почта или код | Wrong email or code | Nepareizs e-pasts vai kods |
-| Слишком много данных для облака. На устройстве всё на месте. | Too much data for the cloud. Everything is still on your device. | Pārāk daudz datu mākonim. Uz ierīces viss paliek. |
-| В облако ушла сокращённая копия истории. На устройстве все данные на месте. | A shortened history was saved to the cloud. All data is still on your device. | Uz mākoni aizgāja saīsināta vēsture. Uz ierīces visi dati paliek. |
+| Слишком много данных для облака. На устройстве всё на месте. | Too much data for the cloud. Everything is still on your device. | Datu ir par daudz mākonim. Ierīcē viss ir saglabāts. |
+| В облако ушла сокращённая копия истории. На устройстве все данные на месте. | A shortened history was saved to the cloud. All data is still on your device. | Mākonī nonāca saīsināta vēstures kopija. Ierīcē visi dati ir saglabāti. |
 
 Мёртвые строки про пароль (вход паролем, сброс, «не короче 6 символов») убраны из словаря — новых LV для них нет. Фраза в политике «Пароль от Google мы не получаем» не менялась.
