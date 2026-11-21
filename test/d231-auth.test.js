@@ -254,12 +254,11 @@ test('D-231: without the cloud config the app stays on the sign-in screen', asyn
 });
 
 test('D-231: logout returns to the sign-in screen; tabs stay closed', async () => {
-  const r = bootA(seed(), { ls: { gc_auth: USER.id } });
-  r.cloud.user = USER;
+  const r = bootA(seed(), { ls: { gc_auth: USER.id }, cloud: { user: USER, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   await go(r);
   assert.equal(r.run('view'), 'today');
-  r.run('mzDoLogout()');
-  for (let i = 0; i < 20; i++) await tick();
+  await r.run('mzDoLogout()');
+  for (let i = 0; i < 10; i++) await tick();
   assert.equal(r.run('view'), 'auth');
   assert.match(r.html(), /id="mzgate"/);
   assert.equal(r.run('mzNeedAuth()'), true);
@@ -281,7 +280,7 @@ test('D-231: guest local data is not overwritten by an empty or blank cloud', as
   assert.equal(r.run('view'), 'today');
 });
 
-test('D-231: guest local data is not overwritten when the cloud already has other data', async () => {
+test('D-231: guest transfer merges history (no losses/duplicates) and keeps the newer program', async () => {
   const local = seed({ workouts: [W('w-local', 5000)], progName: 'Local' });
   const remote = { program: [{ name: 'Cloud', items: [] }], progName: 'Cloud', goal: 'cut', workouts: [W('w-cloud', 1000)] };
   const r = bootA(local, { cloud: { remote: { payload: remote, updated_at: '2026-06-01T00:00:00.000Z' }, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
@@ -289,9 +288,10 @@ test('D-231: guest local data is not overwritten when the cloud already has othe
   r.run('document.querySelector("#mzemail").value="someone@example.com";document.querySelector("#mzpass").value="secret1"');
   r.run('document.querySelector("#mzin").onclick()');
   for (let i = 0; i < 30; i++) await tick();
-  assert.equal(r.run('S.workouts.map(x=>x.id).join(",")'), 'w-local');
-  assert.equal(r.run('S.progName'), 'Local');
-  assert.equal(r.cloud.upserts.length, 0, 'PR 1: do not push over an existing cloud copy');
+  const ids = r.run('S.workouts.map(x=>x.id).sort().join(",")');
+  assert.equal(ids, 'w-cloud,w-local', 'history is merged, no workout lost, no duplicate ids');
+  assert.equal(r.run('S.progName'), 'Cloud', 'newer program/settings win');
+  assert.ok(r.cloud.upserts.length > 0);
   assert.equal(r.run('view'), 'today');
 });
 

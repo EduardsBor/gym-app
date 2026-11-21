@@ -422,4 +422,11 @@ const DICT3=[
 ['Нужен вход','Sign-in required','Nepieciešama pieteikšanās'],
 ['Облако недоступно. Вход сейчас невозможен. Попробуй позже.','Cloud is unavailable. Sign-in is not possible right now. Try again later.','Mākonis nav pieejams. Pieteikšanās pašlaik nav iespējama. Mēģini vēlāk.'],
 ['Выход выполнен','Signed out','Esi izgājis'],
+['Перенести данные в аккаунт?','Transfer the data to the account?','Pārcelt datus uz kontu?'],
+['Есть тренировки, которые ещё не сохранены в облаке','There are workouts that are not yet saved in the cloud','Ir treniņi, kas vēl nav saglabāti mākonī'],
+['Подождать синхронизацию','Wait for sync','Pagaidīt sinhronizāciju'],
+['Выйти всё равно','Sign out anyway','Iziet tik un tā'],
+['Выход выполнен. Данные остаются в облаке и вернутся после входа','Signed out. Your data stays in the cloud and will return after you sign in','Esi izgājis. Dati paliek mākonī un pēc pieteikšanās atgriezīsies'],
+['Синхронизация не удалась. Данные на устройстве на месте','Sync failed. Data on the device is unchanged','Sinhronizācija neizdevās. Dati ierīcē paliek kā bija'],
+['Не удалось загрузить данные аккаунта: ','Could not load the account data: ','Neizdevās ielādēt konta datus: '],
 ]
