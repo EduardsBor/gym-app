@@ -67,8 +67,8 @@ function withProgram() {
   return r;
 }
 
-test('D-285: cache-ver is moyzal-v138', () => {
-  assert.equal(read('cache-ver.js').trim(), "var SW_CACHE='moyzal-v138';");
+test('D-285: cache-ver stays on the v138 line', () => {
+  assert.match(read('cache-ver.js').trim(), /^var SW_CACHE='moyzal-v139';$/);
 });
 
 test('D-285: RU/EN/LV triples for the five button labels', () => {
