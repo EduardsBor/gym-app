@@ -282,7 +282,7 @@ function catalog(){$('#title').textContent='Готовые программы';c
  const L=filterCatalog(F);
  app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN).filter(([k])=>k!=='d'))}
  <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card catc"><h3 class="catn">${esc(catalogT(c.name))}</h3><div class="mut">${esc(catalogT(c.desc))}</div><div style="margin:6px 0">${tags(c.a)}</div>
- ${catalogSummary(c)?`<div class="mut" style="font-size:13px">${esc(catalogSummary(c))}</div>`:''}<button class="pri full" style="margin-top:10px" data-c="${esc(c.id)}">Подробнее</button></div>`).join('')}
+ ${catalogSummary(c)?`<div class="mut" style="font-size:13px">${esc(catalogSummary(c))}</div>`:''}<button class="pri full" style="margin-top:10px" data-c="${esc(c.id)}" aria-label="Посмотреть программу">Посмотреть программу</button></div>`).join('')}
  <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Подобрать программу под себя</button>`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(catalogFind(b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
