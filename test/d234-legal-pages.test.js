@@ -28,7 +28,7 @@ test('D-234: Google sign-in clause (name, email, profile photo) in all three lan
   const h = read('privacy.html');
   assert.match(h, /войти через Google: тогда Google передаёт нам только имя, адрес электронной почты и фото профиля/);
   assert.match(h, /sign in with Google: in that case Google shares with us only your name, email address and profile photo/);
-  assert.match(h, /ieiet arī ar Google: tad Google mums nodod tikai vārdu, e-pasta adresi un profila foto/);
+  assert.match(h, /pieteikties arī ar Google: tad Google mums nodod tikai vārdu, e-pasta adresi un profila foto/);
   assert.match(read('legal.js'), /фото профиля/);
 });
 

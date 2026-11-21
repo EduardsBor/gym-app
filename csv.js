@@ -1,5 +1,5 @@
 'use strict';
-// P-306: CSV export of the workout history. Always free, offline, works for guests (reads only local S).
+// P-306: CSV export of the workout history. Always free, offline, reads only local S.
 // UTF-8 with BOM (Excel opens Cyrillic correctly), ';' separator everywhere, CRLF rows, RFC 4180 quoting.
 // Text cells starting with = + - @ get a leading ' so spreadsheets don't run them as formulas.
 const CSV_SEP=';';

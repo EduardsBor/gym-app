@@ -150,7 +150,7 @@ const DICT3=[
 ['Оценка','Rating','Vērtējums'],
 ['да','yes','jā'],
 ['⬇ Экспорт CSV (история тренировок)','⬇ Export CSV (workout history)','⬇ Eksportēt CSV (treniņu vēsture)'],
-['Таблица для Excel/Google Таблиц. Работает без интернета и без аккаунта.','A table for Excel/Google Sheets. Works offline and without an account.','Tabula Excel/Google izklājlapām. Darbojas bez interneta un bez konta.'],
+['Таблица для Excel/Google Таблиц. Работает без интернета.','A table for Excel/Google Sheets. Works offline.','Tabula Excel/Google izklājlapām. Darbojas bez interneta.'],
 ['ккал, примерно','kcal, approx.','kcal, aptuveni'],
 ['Вес нужен для примерной оценки калорий. Оба поля необязательны и хранятся на устройстве.','Weight is used for an approximate calorie estimate. Both fields are optional and stay on this device.','Svars vajadzīgs aptuvenam kaloriju novērtējumam. Abi lauki nav obligāti un glabājas šajā ierīcē.'],
 ['ккал','kcal','kcal'],
@@ -419,4 +419,7 @@ const DICT3=[
 ['Без наклона или с малым наклоном, в лёгком темпе; можно на том же тренажёре, что в кардио-блоке','No incline or a slight incline, at an easy pace; you can use the same machine as in the cardio block','Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; vari izmantot to pašu trenažieri, ko izmantoji kardio blokā'],['Ходьба на месте в лёгком темпе','Walking on the spot at an easy pace','Soļošana uz vietas vieglā tempā'],['Лёгкая ходьба','Easy walk','Viegla iešana'],['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga'],
 ['Жимовая A','Push A','Spiešanas A'],['Жимовая B','Push B','Spiešanas B'],['Тяговая A','Pull A','Vilkšanas A'],['Тяговая B','Pull B','Vilkšanas B'],['Верх тела A','Upper body A','Ķermeņa augšdaļas A'],['Верх тела B','Upper body B','Ķermeņa augšdaļas B'],['Низ тела A','Lower body A','Ķermeņa apakšdaļas A'],['Низ тела B','Lower body B','Ķermeņa apakšdaļas B'],['Всё тело A','Full body A','Visa ķermeņa A'],['Всё тело B','Full body B','Visa ķermeņa B'],['Всё тело C','Full body C','Visa ķermeņa C'],
 ['Приложение для тренировок','Workout app','Treniņu lietotne'],
+['Нужен вход','Sign-in required','Nepieciešama pieteikšanās'],
+['Облако недоступно. Вход сейчас невозможен. Попробуй позже.','Cloud is unavailable. Sign-in is not possible right now. Try again later.','Mākonis nav pieejams. Pieteikšanās pašlaik nav iespējama. Mēģini vēlāk.'],
+['Выход выполнен','Signed out','Esi izgājis'],
 ]
