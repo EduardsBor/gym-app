@@ -1,0 +1,10 @@
+# Deploy flags for Edge Functions in this repo. Not a full `supabase start` project config.
+#
+# movekit-sign MUST be deployed WITHOUT --no-verify-jwt, and only AFTER the
+# matching client (this PR) is already live on the site:
+#   supabase functions deploy movekit-sign
+# Deploying verify_jwt first would break videos for users still on the old client,
+# which sends the anon key in Authorization.
+
+[functions.movekit-sign]
+verify_jwt = true

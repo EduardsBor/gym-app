@@ -394,6 +394,15 @@
   window.mzTrack=mzTrack;
   window.mzOnWorkoutFinished=mzOnWorkoutFinished;
   window.mzSignedIn=()=>!!user;
+  // D-276: MoveKit signs with the user access token, never the anon key.
+  window.mzAccessToken=async function(){
+    if(!sb) return '';
+    try{
+      const {data}=await sb.auth.getSession();
+      const tok=data&&data.session&&data.session.access_token;
+      return typeof tok==='string'&&tok ? tok : '';
+    }catch(e){return ''}
+  };
   function bootAnalytics(){
     seedFirstWorkoutFlag();
     if(!canTrack()) return;

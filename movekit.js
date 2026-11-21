@@ -222,38 +222,56 @@ function movekitVideoBlob(blob) {
 }
 
 
-// Подпись ссылки: сначала серверная функция movekit-sign (без анонимного доступа к списку бакета),
-// если функция ещё не развёрнута (404) — прежняя прямая подпись. После sql/002 прямая подпись перестанет работать.
-const MK_FN_RETRY_MS = 5 * 60 * 1000;
-let mkFnOffUntil = 0;
+// Подпись ссылки только через серверную функцию movekit-sign и только с токеном сессии.
+// Прямая подпись бакета убрана. Нет сессии — запрос не отправляется; уже скачанные ролики идут из кэша.
 // P-305b: videos and posters are a subscription feature. Without it the function is never called.
 function movekitAllowed() { return typeof can !== 'function' || can('video'); }
+async function movekitAccessToken() {
+  const fn = (typeof mzAccessToken === 'function')
+    ? mzAccessToken
+    : (typeof window !== 'undefined' && typeof window.mzAccessToken === 'function' ? window.mzAccessToken : null);
+  if (!fn) return '';
+  try {
+    const t = await fn();
+    return typeof t === 'string' ? t : '';
+  } catch (e) { return ''; }
+}
+function movekitLoginMessage() { return 'Войди, чтобы смотреть ролики'; }
+function showMovekitLogin(video) {
+  if (!video) return;
+  if (video.dataset) video.dataset.mkNeedAuth = '1';
+  const msg = movekitLoginMessage();
+  const parent = video.parentNode;
+  if (parent && typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const p = document.createElement('p');
+    p.className = 'mut';
+    if (p.dataset) p.dataset.mkLogin = '1';
+    else if (typeof p.setAttribute === 'function') p.setAttribute('data-mk-login', '1');
+    p.textContent = msg;
+    if (typeof parent.insertBefore === 'function') parent.insertBefore(p, video);
+    else if (typeof parent.appendChild === 'function') parent.appendChild(p);
+    if (typeof video.remove === 'function') video.remove();
+    return;
+  }
+  if ('textContent' in video) video.textContent = msg;
+}
 async function movekitSignPath(objectPath) {
   if (!movekitAllowed()) throw new Error('movekit locked');
   const cfg = movekitCfg();
   if (!cfg.url || !cfg.anon) throw new Error('movekit config');
-  const headers = { apikey: cfg.anon, Authorization: 'Bearer ' + cfg.anon, 'Content-Type': 'application/json' };
-  let res = null;
-  if (Date.now() >= mkFnOffUntil) {
-    try {
-      res = await fetch(cfg.url + '/functions/v1/movekit-sign', { method: 'POST', headers, body: JSON.stringify({ path: objectPath }) });
-    } catch (e) { res = null; }
-    if (res && res.ok) {
-      const d = await res.json();
-      if (d && typeof d.signedUrl === 'string') return d.signedUrl;
-    }
-    if (res && res.status !== 404) throw new Error('movekit sign ' + res.status);
-    // Функции нет (404 или сетевой/CORS отказ): не повторяем запрос к ней для каждого файла 5 минут.
-    mkFnOffUntil = Date.now() + MK_FN_RETRY_MS;
+  const token = await movekitAccessToken();
+  if (!token) throw new Error('movekit auth');
+  const headers = { apikey: cfg.anon, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  let res;
+  try {
+    res = await fetch(cfg.url + '/functions/v1/movekit-sign', { method: 'POST', headers, body: JSON.stringify({ path: objectPath }) });
+  } catch (e) {
+    throw new Error('movekit sign');
   }
-  const direct = await fetch(cfg.url + '/storage/v1/object/sign/movekit/' + objectPath.split('/').map(encodeURIComponent).join('/'), {
-    method: 'POST', headers, body: JSON.stringify({ expiresIn: 3600 })
-  });
-  if (!direct.ok) throw new Error('movekit sign ' + direct.status);
-  const data = await direct.json();
-  const path = data && (data.signedURL || data.signedUrl);
-  if (!path || typeof path !== 'string') throw new Error('movekit sign empty');
-  return /^https?:\/\//i.test(path) ? path : cfg.url + '/storage/v1' + (path.charAt(0) === '/' ? path : '/' + path);
+  if (!res || !res.ok) throw new Error('movekit sign ' + (res && res.status ? res.status : 'fail'));
+  const d = await res.json();
+  if (d && typeof d.signedUrl === 'string') return d.signedUrl;
+  throw new Error('movekit sign empty');
 }
 
 async function requestMovekitUrl(file) {
@@ -492,6 +510,9 @@ async function loadMovekitPoster(el) {
   let blob = await readPosterBlob(objectPath);
   if (!alive()) return;
   if (blob) { showMovekitPoster(el, blob); return; }
+  const token = await movekitAccessToken();
+  if (!alive()) return;
+  if (!token) { posterFailed(el); return; }
   let signed = null;
   try { signed = await movekitPosterSignedUrl(id); } catch (e) { signed = null; }
   if (!alive()) return;
@@ -609,6 +630,9 @@ async function loadMovekit(video) {
   try { blob = await movekitCachedBlob(file); } catch (e) { blob = null; }
   if (!alive()) return;
   if (blob) { playMovekitBlob(video, blob); return; }
+  const sessionTok = await movekitAccessToken();
+  if (!alive()) return;
+  if (!sessionTok) { showMovekitLogin(video); return; }
   let signed = null;
   try { signed = await movekitSignedUrl(id); } catch (e) { signed = null; }
   if (!alive()) return;
