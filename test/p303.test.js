@@ -173,7 +173,8 @@ test('P-303 is wired: histList, stats.js precache, cache v59, changelog, new LV 
   assert.match(app, /Новый рекорд/);
   assert.match(app, /function prNotes/);
   assert.equal(app.includes('pendingFan=true;celebrate'), false);
-  assert.match(sw, /const C='moyzal-v133'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v134'/);
+  assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.equal(sw.includes("C='moyzal-v59'"), false);
   assert.match(sw, /'stats\.js'/);
   assert.match(html, /<script src="stats\.js"><\/script>/);

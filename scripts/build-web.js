@@ -4,6 +4,9 @@
  * Copy static PWA files into www/ for the Capacitor Android wrapper.
  * GitHub Pages still serves from the repository root; www/ is a gitignored build output.
  * Do not include test/, docs/, sql/, tools/, node_modules/, android/, or any MoveKit clips.
+ * D-282: JS minify is not applied here. This script only copies files; there is no release/debug
+ * split for the PWA JS, and a bundler/minifier would be unsafe for implicit globals without a
+ * dedicated test pass. android minifyEnabled (R8) is Java/Kotlin, not these scripts.
  */
 const fs = require('fs');
 const path = require('path');
@@ -19,6 +22,7 @@ const FILES = [
   'sw.js',
   'supabase-config.js',
   'alt.js',
+  'cache-ver.js',
   'app.js',
   'stats.js',
   'autow.js',

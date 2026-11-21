@@ -16,10 +16,9 @@
   function friendly(err){
     const m=(err&&(err.message||err.error_description||err))+'';
     const map=[
-      [/invalid login credentials/i,'Неверная почта или пароль'],
+      [/invalid login credentials/i,'Неверная почта или код'],
       [/email not confirmed/i,'Подтверди почту — мы отправили письмо'],
       [/already registered/i,'Такой аккаунт уже есть — войди'],
-      [/password should be at least/i,'Пароль не короче 6 символов'],
       [/invalid format/i,'Проверь адрес почты'],
       [/unable to validate email/i,'Проверь адрес почты'],
       [/rate limit/i,'Слишком много попыток. Подожди минуту'],
@@ -266,19 +265,61 @@
   }
   window.mzLogHealthConsent=queueHealthConsent;
   window.mzHealthConsentTextV=HEALTH_CONSENT_TEXT_V;
+
+  const USER_STATE_MAX=900*1024;
+  function utf8Len(str){try{return new TextEncoder().encode(str).length}catch(e){return unescape(encodeURIComponent(str)).length}}
+  function payloadForUpload(){
+    const raw=payloadOf(S), pack=o=>JSON.stringify(o);
+    if(utf8Len(pack(raw))<=USER_STATE_MAX)return{payload:raw,trimmed:false};
+    const t=JSON.parse(pack(raw));
+    const fit=()=>utf8Len(pack(t))<=USER_STATE_MAX;
+    if(Array.isArray(t.workouts)&&t.workouts.length){
+      t.workouts=t.workouts.slice();
+      while(!fit()&&t.workouts.length)t.workouts.shift();
+    }
+    if(!fit()&&Array.isArray(t.body)){
+      t.body=t.body.map(e=>{const x=Object.assign({},e);if(x.photos)delete x.photos;return x});
+      while(!fit()&&t.body.length)t.body.shift();
+    }
+    if(!fit())return{payload:null,trimmed:'refuse'};
+    return{payload:t,trimmed:true};
+  }
+  // D-282 follow-up: the shortened-copy toast at most once per launch and once per calendar day.
+  let trimToastLaunch=false;
+  const TRIM_TOAST_KEY='gc_trim_toast_day';
+  function todayKey(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function toastTrimmedCopy(){
+    if(trimToastLaunch) return false;
+    const day=todayKey();
+    try{if(localStorage.getItem(TRIM_TOAST_KEY)===day){trimToastLaunch=true;return false}}catch(e){}
+    trimToastLaunch=true;
+    try{localStorage.setItem(TRIM_TOAST_KEY,day)}catch(e){}
+    if(typeof toast==='function')toast('В облако ушла сокращённая копия истории. На устройстве все данные на месте.');
+    return true;
+  }
   async function pushNow(){
     if(!sb||!user) return;
     if(await checkAccountTombstone()) return;
     await flushHealthConsentLog();
     ensureMeta();
     S.updatedAt=Date.now();
+    const up=payloadForUpload();
+    if(!up.payload){
+      persistLocal();
+      if(typeof toast==='function')toast('Слишком много данных для облака. На устройстве всё на месте.');
+      return;
+    }
     const {error}=await sb.from('user_state').upsert({
       user_id:user.id,
-      payload:payloadOf(S),
+      payload:up.payload,
       updated_at:new Date(S.updatedAt).toISOString()
     });
     if(error) throw error;
     persistLocal();
+    if(up.trimmed) toastTrimmedCopy();
     lastAt=S.updatedAt||Date.now();
   }
   function remoteHasData(R){
@@ -747,7 +788,7 @@
     if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
   }
-  window.mzNeedAuth=needAuth;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
+  window.mzNeedAuth=needAuth;window.mzFriendly=friendly;window.mzPayloadForUpload=payloadForUpload;window.mzToastTrimmedCopy=toastTrimmedCopy;window.USER_STATE_MAX=USER_STATE_MAX;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
   if(typeof render==='function'){
     const _render=render;
     render=function(){
