@@ -190,7 +190,8 @@ function startTemplate(id){if(S.active){go('today');return S.active}if(typeof ca
  S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:n?((S.next||0)%n+n-1)%n:0,dayName:t.name||'Своя тренировка',fromTemplate:t.id,notes:'',warm:wc.warm,cool:wc.cool,items};
  if(typeof save==='function')save();go('today');return S.active}
 function tplCountText(t){const n=(t&&t.items&&t.items.length)||0;return n+' упражн.'}
-function tplBarHTML(){if(typeof can==='function'&&!can('templates'))return'';
+function tplUiEnabled(){return false}
+function tplBarHTML(){if(!tplUiEnabled())return'';if(typeof can==='function'&&!can('templates'))return'';
  const L=tplAll().slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
  return`<div class="card" id="tplbox"><div class="row"><b class="grow">Мои шаблоны</b><button class="sm pri" id="tplnew">➕ Новый шаблон</button></div>
  ${L.length?L.map(t=>`<div class="li"><span class="grow"><b>${esc(t.name)}</b><br><span class="mut">${esc(tplCountText(t))}</span></span><button class="pri sm" data-tpls="${esc(t.id)}">▶ Начать</button><button class="sm" data-tple="${esc(t.id)}">Изменить</button><button class="sm" data-tpld="${esc(t.id)}">✕</button></div>`).join(''):'<p class="mut" style="margin:8px 0 0">Собери свою тренировку из библиотеки и сохраняй как шаблон.</p>'}</div>`}
@@ -199,7 +200,7 @@ function tplBind(root){root=root||(typeof app!=='undefined'?app:null);if(!root||
  root.querySelectorAll('[data-tpls]').forEach(b=>b.onclick=()=>startTemplate(b.dataset.tpls));
  root.querySelectorAll('[data-tple]').forEach(b=>b.onclick=()=>tplOpen(b.dataset.tple));
  root.querySelectorAll('[data-tpld]').forEach(b=>b.onclick=()=>{const t=tplGet(b.dataset.tpld);if(!t)return;if(!confirm('Удалить шаблон «'+t.name+'»?'))return;tplDelete(t.id);if(view==='library')libView();else go('today')})}
-function tplMount(root){if(typeof can==='function'&&!can('templates'))return;root=root||(typeof app!=='undefined'?app:null);if(!root||!root.insertAdjacentHTML)return;
+function tplMount(root){if(!tplUiEnabled())return;if(typeof can==='function'&&!can('templates'))return;root=root||(typeof app!=='undefined'?app:null);if(!root||!root.insertAdjacentHTML)return;
  if(root.querySelector&&root.querySelector('#tplbox'))return;const html=tplBarHTML();const first=root.querySelector&&root.querySelector('.card');
  if(first&&first.insertAdjacentHTML)first.insertAdjacentHTML('afterend',html);else root.insertAdjacentHTML('beforeend',html);tplBind(root)}
 function tplOpen(id){if(id){const t=tplGet(id);if(!t)return;TE={id:t.id,name:t.name,items:(t.items||[]).map(x=>({...x}))}}else TE={id:'',name:'',items:[]};go('tpl')}
