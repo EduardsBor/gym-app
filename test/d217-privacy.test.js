@@ -111,9 +111,10 @@ test('analytics event: install_id only, no user_id even when signed in', async (
 
 test('no analytics without consent', async () => {
   const cloud = { inserts: [], upserts: [], user: null };
-  boot(seed({ consentAnalytics: null }), true, cloud);
+  const b = boot(seed({ consentAnalytics: null, installId: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }), true, cloud);
   await tick(); await tick();
   assert.equal(cloud.inserts.length, 0);
+  assert.equal(b.run('S.installId'), undefined, 'analytics id is not kept without consent');
 });
 
 async function pushed(extra) {

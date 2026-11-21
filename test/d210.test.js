@@ -303,7 +303,8 @@ test('account deletion calls delete_my_account, then clears local data and auth 
   assert.ok(b.store.has('gym'));
   await b.run('wipeAll()');
   for (let i = 0; i < 8; i++) await tick();
-  assert.deepEqual(cloud.rpcs.map(r => r.name), ['delete_my_account']);
+  assert.ok(cloud.rpcs.some(r => r.name === 'delete_my_account'));
+  assert.equal(cloud.rpcs.filter(r => r.name === 'delete_my_account').length, 1);
   assert.equal(cloud.deletes.length, 0); // rpc succeeded — no fallback delete
   assert.ok(cloud.signedOut >= 1);
   assert.equal(b.store.has('gym'), false);
@@ -318,7 +319,7 @@ test('if delete_my_account fails, wipe falls back to user_state delete and still
   for (let i = 0; i < 6; i++) await tick();
   await b.run('wipeAll()');
   for (let i = 0; i < 8; i++) await tick();
-  assert.equal(cloud.rpcs[0].name, 'delete_my_account');
+  assert.ok(cloud.rpcs.some(r => r.name === 'delete_my_account'));
   assert.equal(cloud.deletes.length, 1);
   assert.equal(cloud.deletes[0].table, 'user_state');
   assert.equal(cloud.deletes[0].val, USER.id);

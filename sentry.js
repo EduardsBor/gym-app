@@ -52,8 +52,14 @@
         x.hash = '';
         return x.toString();
       }
-      if (x.search && /token|sig(?:nature)?|sign|auth|apikey|key/i.test(x.search)) {
+      if (x.search && /token|sig(?:nature)?|sign|auth|apikey|key|code|otp/i.test(x.search)) {
         x.search = '';
+        x.hash = '';
+        return x.toString();
+      }
+      if (/auth-callback/i.test((x.pathname || '') + (x.host || '') + raw)) {
+        x.search = '';
+        x.hash = '';
         return x.toString();
       }
       return u;

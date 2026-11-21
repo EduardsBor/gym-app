@@ -5,7 +5,7 @@
   const REST_ID = 1001, REM_BASE = 2000; // reminders: 2001..2007 (Capacitor weekday 1=Sun..7=Sat)
   const REM_IDS = [1, 2, 3, 4, 5, 6, 7].map(w => REM_BASE + w);
   const CH_REST = 'gc_rest', CH_REM = 'gc_remind';
-  const REM_KEY = 'gc_remind', ASKED_KEY = 'gc_ntf_asked'; // device-only (not synced, not in history)
+  const REM_KEY = 'gc_remind', ASKED_KEY = 'gc_ntf_asked', EXACT_ASKED_KEY = 'gc_exact_asked'; // device-only (not synced, not in history)
   const TXT = {
     ru: { restT: 'Отдых закончен — следующий подход', restB: 'Вернись к тренировке в GymCaptain', remT: 'Время тренировки', remB: 'Сегодня по плану тренировка в GymCaptain', chRest: 'Таймер отдыха', chRem: 'Напоминания о тренировке' },
     en: { restT: 'Rest is over — next set', restB: 'Back to your workout in GymCaptain', remT: 'Workout time', remB: 'A workout is planned for today in GymCaptain', chRest: 'Rest timer', chRem: 'Workout reminders' },
@@ -79,6 +79,17 @@
         try { await p.cancel(ids([REST_ID])); } catch (e) {}
         const n = restNotification(endAt, env.lang());
         if (s === 'granted' && n) await p.schedule({ notifications: [n] });
+        // Android 14+: exact alarms are not granted to a new install. Ask once and open settings; otherwise the plugin uses an inexact alarm.
+        if (s === 'granted' && n && p.checkExactNotificationSetting && !env.store.get(EXACT_ASKED_KEY)) {
+          let exact = 'granted';
+          try { exact = (await p.checkExactNotificationSetting()).exact_alarm || 'granted'; } catch (e) {}
+          if (exact !== 'granted') {
+            env.store.set(EXACT_ASKED_KEY, '1');
+            if (typeof env.explainExact === 'function' && env.explainExact() && p.changeExactNotificationSetting) {
+              try { await p.changeExactNotificationSetting(); } catch (e) {}
+            }
+          }
+        }
       }),
       restCancel: () => run(async p => { await p.cancel(ids([REST_ID])); }),
       getRemind: remind,
@@ -103,7 +114,7 @@
     }
   }
 
-  const api = { REST_ID, REM_BASE, REM_IDS, CH_REST, CH_REM, REM_KEY, ASKED_KEY, TXT, txt, capWeekday, defaultDays, parseTime, normRemind, restNotification, reminderNotifications, makeNotifier };
+  const api = { REST_ID, REM_BASE, REM_IDS, CH_REST, CH_REM, REM_KEY, ASKED_KEY, EXACT_ASKED_KEY, TXT, txt, capWeekday, defaultDays, parseTime, normRemind, restNotification, reminderNotifications, makeNotifier };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   root.NTF_LIB = api;
   root.NTF = makeNotifier({
@@ -112,6 +123,7 @@
     sessions: () => (typeof S !== 'undefined' && S && +S.days) || 3,
     store: { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } },
     explain: () => confirm('GymCaptain покажет уведомление, когда закончится отдых (даже при выключенном экране), и напомнит о тренировке, если ты включишь напоминания. Разрешить уведомления?'),
+    explainExact: () => confirm('Чтобы таймер отдыха сработал вовремя, разреши точные будильники в настройках Android. Открыть настройки?'),
     onOpen: () => { try { if (typeof go === 'function') go('today'); } catch (e) {} }
   });
   if (root.NTF.native()) root.NTF.init();
