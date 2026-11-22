@@ -65,8 +65,8 @@ function startBetween(h, due) {
   if (nextAt >= 0) assert.ok(startAt < nextAt, 'Start should sit before the next workout row');
 }
 
-test('v144: version is moyzal-v149; new LV back-string is in the dictionary', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v149'/);
+test('v144: version is moyzal-v150; new LV back-string is in the dictionary', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v150'/);
   assert.match(read('i18n/dict3.js'), /\['← К списку тренировок','← Back to the workout list','← Uz treniņu sarakstu'\]/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-WORKOUTS-LIST.md')));
 });
@@ -99,8 +99,16 @@ test('v139: tapping a workout opens its exercises; Start and back are there, sti
   assert.match(h, /Разминка/);
   assert.match(h, /id="tback"[^>]*>← К списку тренировок</);
   assert.match(h, /id="start"[^>]*>▶ Начать тренировку</);
+  assert.doesNotMatch(h, /id="blk-skip"/);
   assert.doesNotMatch(h, /id="tedit"/);
   assert.match(h, /<h2 style="margin-top:6px">4\. /);
+  const titleAt = h.indexOf('<h2 style="margin-top:6px">');
+  const sumAt = h.indexOf('упражн.</div>');
+  const startAt = h.indexOf('id="start"');
+  const warmAt = h.indexOf('Разминка');
+  const exoAt = h.indexOf('class="li exo"');
+  assert.ok(titleAt >= 0 && sumAt > titleAt && startAt > sumAt, 'Start sits under the title and summary');
+  assert.ok(warmAt > startAt && exoAt > startAt, 'Start sits above the warm-up and the exercise list');
   run('$("#tback").onclick()');
   assert.equal(run('TOPEN'), false);
   assert.doesNotMatch(app(), /class="li exo"/);
@@ -123,4 +131,30 @@ test('v139: starting an opened workout starts that day, not only the due one', (
   const { run } = withProgram();
   run('today(5);$("#start").onclick()');
   assert.equal(run('S.active.dayIdx'), 5);
+});
+
+test('v150: on today\'s open card Start is under the summary and Skip stays below the list', () => {
+  const { run, app } = withProgram();
+  const due = run('dayDue()');
+  run('today(' + due + ')');
+  const h = app();
+  const sumAt = h.indexOf('упражн.</div>');
+  const startAt = h.indexOf('id="start"');
+  const warmAt = h.indexOf('Разминка');
+  const exoAt = h.lastIndexOf('class="li exo"');
+  const skipAt = h.indexOf('id="blk-skip"');
+  const cdAt = h.lastIndexOf('Заминка');
+  assert.match(h, /По плану сегодня/);
+  assert.match(h, /id="start"[^>]*>▶ Начать тренировку</);
+  assert.match(h, /id="blk-skip"[^>]*>Пропустить тренировку</);
+  assert.ok(sumAt >= 0 && startAt > sumAt, 'Start follows the summary');
+  assert.ok(warmAt > startAt && exoAt > startAt, 'the exercise list follows Start');
+  assert.ok(skipAt > exoAt, 'Skip stays below the exercise list');
+  if (cdAt >= 0) assert.ok(skipAt > cdAt, 'Skip stays below the cool-down');
+  run('$("#start").onclick()');
+  assert.equal(run('S.active.dayIdx'), due);
+  run('S.active=null;today()');
+  const list = app();
+  startBetween(list, due);
+  assert.ok(list.indexOf('id="blk-skip"') > list.indexOf('id="start"'), 'the flat list still keeps Skip with Start');
 });
