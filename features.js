@@ -119,7 +119,7 @@ const _more=more;more=function(){_more();
 async function wipeAll(){if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?'))return;
  if(!confirm('Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?'))return;
  try{if(typeof clearLocalData==='function')await clearLocalData();
-  else{localStorage.removeItem('gym');await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()})}}catch(e){}location.reload()}
+  else{localStorage.removeItem('gym');try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()})}}catch(e){}location.reload()}
 // ---- Legal pages (drafts)
 let LG=null;function legal(k,back){LG={k,back};go('legal')}
 function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textContent=L[0];
@@ -273,16 +273,20 @@ function eqSwapFor(id,places,used){places=eqNormPlaces(places||eqPlaces());used=
 function eqAdaptItems(items,places){places=eqNormPlaces(places||eqPlaces());const used=new Set();return(items||[]).map(it=>{if(!it||!it.exId)return it;const id=eqSwapFor(it.exId,places,used);used.add(id);return id===it.exId?it:Object.assign({},it,{exId:id})})}
 function eqAdaptDay(d,places){if(!d)return d;return Object.assign({},d,{items:eqAdaptItems(d.items,places)})}
 function eqAdaptMisses(items,places){places=eqNormPlaces(places||eqPlaces());return(items||[]).filter(it=>it&&it.exId&&!eqAvail(it.exId,places)&&eqSwapFor(it.exId,places,new Set())===it.exId).map(it=>it.exId)}
-function eqMountToday(sel){eqEnsure();if(!app||!app.insertAdjacentHTML)return;if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('eqbar'))return;
- const mid=!!(S&&S.active);const chips=eqAll().map(p=>`<button type="button" class="opt chip ${eqActiveId()===p.id?'sel':''}" data-eqsw="${p.id}" ${mid?'disabled':''}>${esc(p.name)}</button>`).join('');
- const html=`<div class="card" id="eqbar"><div class="row"><span class="grow"><b>Профиль оборудования</b></span><button type="button" class="sm" id="eqedit">Изменить</button></div><div class="chips sm2" style="margin-top:8px">${chips}</div>${mid?'<p class="mut" style="margin:6px 0 0">Профиль нельзя сменить во время тренировки.</p>':''}</div>`;
+function eqSwitchHTML(id){eqEnsure();const mid=!!(S&&S.active);
+ const chips=eqAll().map(p=>`<button type="button" class="opt chip ${eqActiveId()===p.id?'sel':''}" data-eqsw="${esc(p.id)}" ${mid?'disabled':''}>${esc(p.name)}</button>`).join('');
+ return `<div${id?' id="'+id+'"':''}><div class="chips sm2">${chips}</div>${mid?'<p class="mut" style="margin:6px 0 0">Профиль нельзя сменить во время тренировки.</p>':''}</div>`}
+function eqBindSwitch(root,after){if(!root||!root.querySelectorAll)return;root.querySelectorAll('[data-eqsw]').forEach(b=>b.onclick=()=>{if(S&&S.active)return;if(b.dataset.eqsw===eqActiveId())return;eqSetActive(b.dataset.eqsw);if(after)after()})}
+function eqMountToday(sel){eqEnsure();if(!app||!app.insertAdjacentHTML)return;if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('eqtoday'))return;
+ const html=`<div class="card" id="eqtoday"><div class="row"><span class="grow"><b>Профиль оборудования</b></span><button type="button" class="sm" id="eqedit">Изменить</button></div>${eqSwitchHTML('')}</div>`;
  app.insertAdjacentHTML('afterbegin',html);
- app.querySelectorAll('[data-eqsw]').forEach(b=>b.onclick=()=>{if(S.active||b.dataset.eqsw===eqActiveId())return;eqSetActive(b.dataset.eqsw);if(typeof today==='function')today(sel)});
+ eqBindSwitch(app,()=>{if(typeof today==='function')today(sel)});
  const ed=$('#eqedit');if(ed)ed.onclick=()=>eqEditor()}
 function eqEditor(){eqEnsure();const m=$('#modal');if(!m)return;m.classList.remove('hidden');
  const placeBox=(cur)=>[...'gdb'].map(k=>{const lab=(typeof EQN!=='undefined'&&EQN[k])||k;return`<label class="li"><span class="grow">${esc(lab)}</span><input type="checkbox" data-eqpl="${k}" ${String((cur&&cur.places)||'').includes(k)?'checked':''} style="width:28px;min-height:28px"></label>`}).join('');
  const row=p=>`<div class="card" data-eqid="${p.id}" style="margin-top:8px"><label class="mut">Название профиля<input data-eqname value="${esc(p.name)}" maxlength="60" autocomplete="off"></label>${placeBox(p)}<div class="row" style="margin-top:8px"><button type="button" class="pri grow" data-eqsave="${p.id}">Сохранить профиль</button>${eqIsPreset(p.id)?'':'<button type="button" class="danger" data-eqdel="'+p.id+'">Удалить профиль</button>'}</div></div>`;
- m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Профили оборудования</h2><button type="button" id="mc">✕</button></div><p class="mut">Каждый профиль — набор мест, которые реально есть в карточках: зал, дом с гантелями, без инвентаря. Активный профиль переключается на экране «Сегодня».</p>${eqAll().map(row).join('')}${eqCanAdd()?'<button type="button" class="full" id="eqadd" style="margin-top:10px">➕ Новый профиль</button>':'<p class="mut">Уже есть дополнительный профиль.</p>'}<button type="button" class="full" id="eqdone" style="margin:10px 0 0">Закрыть</button></div>`;
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Профили оборудования</h2><button type="button" id="mc">✕</button></div><p class="mut">Каждый профиль — набор мест: зал, дом с гантелями, без инвентаря. Активный профиль выбирается здесь. Во время тренировки сменить его нельзя.</p>${eqSwitchHTML('eqswedit')}${eqAll().map(row).join('')}${eqCanAdd()?'<button type="button" class="full" id="eqadd" style="margin-top:10px">➕ Новый профиль</button>':'<p class="mut">Уже есть дополнительный профиль.</p>'}<button type="button" class="full" id="eqdone" style="margin:10px 0 0">Закрыть</button></div>`;
+ eqBindSwitch(m,()=>eqEditor());
  const close=()=>m.classList.add('hidden');$('#mc').onclick=close;$('#eqdone').onclick=close;
  const boxOf=id=>{const el=m.querySelector(`[data-eqid="${id}"]`);return{name:el.querySelector('[data-eqname]').value,places:[...el.querySelectorAll('[data-eqpl]:checked')].map(x=>x.dataset.eqpl).join('')}};
  m.querySelectorAll('[data-eqsave]').forEach(b=>b.onclick=()=>{const v=boxOf(b.dataset.eqsave);if(!String(v.name||'').trim()){toast('Введи название профиля');return}if(!eqNormPlaces(v.places)){toast('Выбери хотя бы одно место');return}if(!eqSave({id:b.dataset.eqsave,name:v.name,places:v.places})){toast('Не удалось сохранить профиль');return}toast('Профиль сохранён');eqEditor()});

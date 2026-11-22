@@ -71,12 +71,13 @@
   }
   function payloadOf(src){
     const p=JSON.parse(JSON.stringify(src));
-    delete p.ownerPremium;delete p.active;delete p.tEnd;delete p.ownerUid;
+    delete p.ownerPremium;delete p.premium;delete p.active;delete p.tEnd;delete p.ownerUid;
     // D-217: install_id остаётся только на устройстве, чтобы анонимные события нельзя было связать с аккаунтом.
     delete p.installId;
     // D-222: флаг first_workout тоже только на устройстве.
     delete p.azFirstWo;
     delete p.healthConsentQueue;
+    delete p.replacePending;delete p.replaceBody;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
     if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
@@ -143,12 +144,23 @@
     S.consentHealth=grant||null;
     if(rev) S.healthConsentRevokedAt=new Date(rev).toISOString();
   }
+  function bodyPhotoKeys(list){const s=new Set();(list||[]).forEach(b=>(b&&b.photos||[]).forEach(k=>{if(typeof k==='string')s.add(k)}));return s}
+  function dropBodyPhotos(prev,next){
+    try{
+      const keep=bodyPhotoKeys(next),drop=[...bodyPhotoKeys(prev)].filter(k=>!keep.has(k));
+      if(!drop.length||typeof idb==='undefined'||!idb||!idb.del) return;
+      drop.forEach(k=>{Promise.resolve(idb.del(k)).catch(()=>{})});
+    }catch(e){}
+  }
   function applyRemoteFresh(R){
-    const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId,azFirst=S.azFirstWo;
+    const keepOwner=S.ownerPremium,keepPrem=S.premium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId,azFirst=S.azFirstWo;
     const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
+    const prevBody=S.body;
     const az=S.consentAnalytics,lang=S.lang,LL=localLimits(),ds=S.demoStart;
     Object.keys(R).forEach(k=>{S[k]=R[k]});
     keepEarliestDemo(ds,R.demoStart);
+    // premium is never taken from the cloud: the row is writable by the client. Keep the device value.
+    if(keepPrem!==undefined) S.premium=keepPrem; else delete S.premium;
     keepLocalLimits(LL);
     S.ownerPremium=keepOwner;
     if(keepActive) S.active=keepActive;
@@ -161,12 +173,14 @@
     applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
     if(typeof migrateLegacyPlans==='function') migrateLegacyPlans();
     if(typeof eqEnsure==='function') eqEnsure();
+    dropBodyPhotos(prevBody,S.body);
   }
   // P-305b: demo start (first completed workout) — always the earliest of local and cloud, never a later date.
   function keepEarliestDemo(a,b){const m=[a,b].filter(x=>typeof x==='number'&&isFinite(x)&&x>0);if(m.length) S.demoStart=Math.min(...m)}
   function applyMerged(R,remoteAt){
     const keepOwner=S.ownerPremium,keepActive=S.active,keepTEnd=S.tEnd,LL=localLimits();
     const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
+    const prevBody=S.body;
     const w=mergeLists(S.workouts,R.workouts,S.deletedWorkouts,R.deletedWorkouts,'id',x=>x.end||x.start||0);
     const b=mergeLists(S.body,R.body,S.deletedBody,R.deletedBody,'id',x=>Date.parse(x.date||'')||0);
     const c=mergeLists(S.custom,R.custom,S.deletedCustom,R.deletedCustom,'id',x=>+(String(x.id).replace(/\D/g,'')||0));
@@ -178,7 +192,7 @@
       return R[k]!==undefined?R[k]:S[k];
     };
     S.workouts=w.list;S.deletedWorkouts=w.deleted;
-    if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted}
+    if(S.consentHealth||R.consentHealth){S.body=b.list;S.deletedBody=b.deleted;dropBodyPhotos(prevBody,S.body)}
     S.custom=c.list;S.deletedCustom=c.deleted;
     S.templates=tpl.list;S.deletedTemplates=tpl.deleted;
     S.eqProfiles=eqp.list;S.deletedEqProfiles=eqp.deleted;
@@ -196,7 +210,7 @@
       if(v!==undefined) S[k]=v;
     });
     const pa=Math.max(S.progAt||0,R.progAt||0);if(pa) S.progAt=pa;
-    ['next','lang','sound','wake','autoW','restOverride','premium','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
+    ['next','lang','sound','wake','autoW','restOverride','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;
     });
     applyHealthConsent(locCons,locRev,R.consentHealth,R.healthConsentRevokedAt);
@@ -249,9 +263,11 @@
       if(typeof clearLocalData==='function') await clearLocalData();
       else{
         localStorage.removeItem('gym');
+        try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
         await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
       }
     }catch(e){}
+    resetLocalState(); // QA-13
     toast('Аккаунт удалён. Данные на этом устройстве очищены.');
     if(typeof authView==='function') authView();
   }
@@ -339,6 +355,21 @@
     if(!data){await pushNow();return}
     const remoteAt=data.updated_at?Date.parse(data.updated_at):0;
     const R=data.payload||{};
+    if(S.replacePending){ // QA-02: «Заменить». Records another device wrote after the backup (exportedAt) stay.
+      const cutoff=+S.exportedAt>0?+S.exportedAt:(+S.replacePending>0?+S.replacePending:0);
+      let keptN=0;
+      const tsOf=(kind,x)=>{if(!x||typeof x!=='object')return 0;if(kind==='workouts')return +x.end||+x.start||0;
+        if(kind==='body'){const t=Date.parse(x.date||'');return Number.isFinite(t)?t+86400000-1:(+x.updatedAt||0)}return +x.updatedAt||0};
+      const mark=(lk,dk,idk,kind)=>{const keep=new Set((S[lk]||[]).map(x=>x&&x[idk]));const del=new Set([].concat(S[dk]||[],R[dk]||[]));const newer=[];
+        (R[lk]||[]).forEach(x=>{if(!x||x[idk]==null||keep.has(x[idk]))return;if(cutoff&&tsOf(kind,x)>cutoff){newer.push(x);del.delete(x[idk]);return}del.add(x[idk])});
+        keep.forEach(id=>del.delete(id));newer.forEach(x=>del.delete(x[idk]));S[dk]=[...del];
+        if(newer.length){const have=new Set((S[lk]||[]).map(x=>x&&x[idk]));newer.forEach(x=>{if(!have.has(x[idk])){(S[lk]=S[lk]||[]).push(x);have.add(x[idk]);keptN++}})}};
+      mark('workouts','deletedWorkouts','id','workouts');mark('custom','deletedCustom','id','custom');mark('templates','deletedTemplates','id','templates');mark('eqProfiles','deletedEqProfiles','id','eq');
+      if(S.consentHealth&&S.replaceBody) mark('body','deletedBody','id','body');
+      delete S.replacePending;delete S.replaceBody;S.updatedAt=Date.now();S.progAt=Date.now();progSig=progSigOf();persistLocal();
+      if(keptN&&typeof toast==='function')toast('Оставлены записи с другого устройства, сделанные после этой копии.');
+      await pushNow();return;
+    }
     // Blank cloud never overwrites guest data (even after the user agrees to transfer).
     if(isUnboundGuest()&&!remoteHasData(R)){await pushNow();return}
     if(protectGuestOnAuth&&isUnboundGuest()){return 'held'}
@@ -353,7 +384,13 @@
   // One run at a time: a call during a run is queued once (again). Offline / network errors only show the offline note.
   const isOffline=()=>typeof navigator!=='undefined'&&navigator.onLine===false;
   const netErr=e=>!!e&&(e.name==='TypeError'||/failed to fetch|networkerror|load failed|network request failed|fetch/i.test(String(e.message||e)));
+  // Account delete and «clear this phone» must not race with an automatic sync.
+  let syncHold=0;
+  function holdSync(){syncHold++;clearTimeout(timer)}
+  function releaseSync(){syncHold=Math.max(0,syncHold-1)}
+  function resetSyncHold(){syncHold=0}
   function sync(){
+    if(syncHold>0) return Promise.resolve();
     if(!READY||!user) return Promise.resolve();
     if(running){again=true;return running}
     if(isOffline()){status='offline';paint();return Promise.resolve()}
@@ -378,7 +415,7 @@
   function syncNow(){clearTimeout(timer);return sync()}
   const SYNC_DEBOUNCE=3000,SYNC_EVERY=5*60e3;
   function schedule(){
-    if(!user) return;
+    if(!user||syncHold>0) return;
     S.updatedAt=Date.now();
     persistLocal();
     clearTimeout(timer);
@@ -485,9 +522,11 @@
         r.onerror=()=>res();
         r.onsuccess=()=>{
           try{
-            const db=r.result,t=db.transaction('history','readwrite');
+            const db=r.result;
+            db.onversionchange=()=>{try{db.close()}catch(e){}};
+            const t=db.transaction('history','readwrite');
             t.objectStore('history').put(list||[],'workouts');
-            t.oncomplete=()=>res();t.onerror=()=>res();
+            t.oncomplete=()=>{try{db.close()}catch(e){} res()};t.onerror=()=>{try{db.close()}catch(e){} res()};
           }catch(e){res()}
         };
       }catch(e){res()}
@@ -588,6 +627,7 @@
   function hasUnsyncedWorkouts(){
     return (S.updatedAt||0)>(lastAt||0);
   }
+  let logoutWipe=false;
   function resetLocalState(){
     const lang=S&&S.lang;
     try{Object.keys(S||{}).forEach(k=>{delete S[k]})}catch(e){}
@@ -607,23 +647,32 @@
     }else{
       toast('Выход выполнен');
     }
+    resetSyncHold();
     authView();
   }
   function showUnsyncedLogout(){
-    app.innerHTML=`<div class="card" id="mzunsynced"><p style="margin-top:0">Есть тренировки, которые ещё не сохранены в облаке</p>
+    const wipe=logoutWipe;
+    const lead=wipe?'Есть тренировки, которые ещё не сохранены в облаке. Очистка удалит их с этого телефона. Аккаунт и облако не изменятся.':'Есть тренировки, которые ещё не сохранены в облаке';
+    app.innerHTML=`<div class="card" id="mzunsynced"><p style="margin-top:0">${lead}</p>
       <p class="mut">Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся.</p>
       <button class="pri full" id="mzwaitsync">Подождать синхронизацию</button>
-      <button class="full" id="mzoutanyway" style="margin-top:8px">Выйти всё равно</button></div>`;
+      <button class="full" id="mzoutanyway" style="margin-top:8px">Выйти всё равно</button>
+      ${wipe?'<button class="full" id="mzclearcancel" style="margin-top:8px">Отмена</button>':''}</div>`;
     if($('#mzwaitsync')) $('#mzwaitsync').onclick=async()=>{
+      if(wipe) releaseSync();
       if(!isOffline()) await syncNow();
+      if(wipe) holdSync();
       if(hasUnsyncedWorkouts()){toast('Синхронизация не удалась. Данные на устройстве на месте');return}
       await finishLogout(true);
     };
-    if($('#mzoutanyway')) $('#mzoutanyway').onclick=()=>finishLogout(false);
+    if($('#mzoutanyway')) $('#mzoutanyway').onclick=()=>finishLogout(!!wipe);
+    if($('#mzclearcancel')) $('#mzclearcancel').onclick=()=>{logoutWipe=false;resetSyncHold();if(typeof more==='function')more()};
   }
-  async function doLogout(){
+  async function doLogout(opts){
+    logoutWipe=!!(opts&&opts.wipeLocal);
     clearTimeout(timer);
     if(user&&!isOffline()) await sync(); // D-253: last changes go to the cloud before signing out
+    if(logoutWipe) holdSync();
     if(hasUnsyncedWorkouts()){showUnsyncedLogout();return}
     await finishLogout(true);
   }
@@ -635,12 +684,22 @@
   // supabase-js не бросает исключение при ошибке, а возвращает её в поле error — его и проверяем.
   async function mzDeleteCloud(){
     if(!sb||!user) return 'none';
-    let res='fail';
-    try{const {error}=await sb.rpc('delete_my_account');if(!error) res='account'}catch(e){}
+    holdSync();
+    try{
+    if(isOffline()) return 'offline';
+    let res='fail', err=null;
+    const once=async()=>{
+      try{const {error}=await sb.rpc('delete_my_account');if(!error) return 'account';err=error}catch(e){err=e}
+      return 'fail';
+    };
+    res=await once();
+    // One automatic retry on a server error. A network failure is reported as-is, without a second attempt.
+    if(res==='fail'&&!(isOffline()||netErr(err))) res=await once();
+    // Lost response: the server may already have written the tombstone. Never delete user_state by itself.
     if(res==='fail'){
-      try{const {error}=await sb.from('user_state').delete().eq('user_id',user.id);if(!error) res='data'}catch(e){}
+      try{const {data,error}=await sb.rpc('account_is_deleted');if(!error&&data===true) res='account';else if(error) err=err||error}catch(e){err=err||e}
     }
-    if(res==='fail') return res;
+    if(res==='fail') return (isOffline()||netErr(err))?'offline':'fail';
     clearTimeout(timer);
     try{await sb.auth.signOut({scope:'local'})}catch(e){}
     // На случай, если signOut не сработал (аккаунт уже удалён): убираем сохранённую сессию вручную.
@@ -648,6 +707,7 @@
     user=null;status='off';
     try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
     return res;
+    }finally{releaseSync()}
   }
   window.mzDeleteCloud=mzDeleteCloud;
 
@@ -667,7 +727,8 @@
     let sync='';
     if(status==='offline') sync='Нет сети';
     else if(status==='err') sync='Ошибка синхронизации';
-    else if(email||status==='ok'||status==='syncing') sync='Синхронизировано';
+    else if(status==='syncing') sync='Синхронизация…';
+    else if(email||status==='ok') sync='Синхронизировано';
     return sync?who+' · '+sync:who;
   }
   window.mzAccountRowStatus=mzAccountRowStatus;
@@ -799,7 +860,7 @@
     if(!locked) bindAccount();
     if($('#mzgoogle')) $('#mzgoogle').onclick=doGoogle;
   }
-  window.mzNeedAuth=needAuth;window.mzFriendly=friendly;window.mzPayloadForUpload=payloadForUpload;window.mzToastTrimmedCopy=toastTrimmedCopy;window.USER_STATE_MAX=USER_STATE_MAX;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;
+  window.mzNeedAuth=needAuth;window.mzFriendly=friendly;window.mzPayloadForUpload=payloadForUpload;window.mzToastTrimmedCopy=toastTrimmedCopy;window.USER_STATE_MAX=USER_STATE_MAX;window.mzHasLocalData=hasLocalData;window.mzIsUnboundGuest=isUnboundGuest;window.mzDoLogout=doLogout;window.mzHasUnsyncedWorkouts=hasUnsyncedWorkouts;window.mzFinishLogout=finishLogout;window.mzKeepEarliestDemo=keepEarliestDemo;window.mzMergeLists=mergeLists;window.mzMergePg=mergePg;window.mzGuestCopyKey=GUEST_COPY_KEY;window.mzGuestIdbName=GUEST_IDB;window.mzSnapshotUnboundGuest=snapshotUnboundGuest;window.mzHoldSync=holdSync;window.mzReleaseSync=releaseSync;window.mzSyncHold=()=>syncHold;
   if(typeof render==='function'){
     const _render=render;
     render=function(){
@@ -814,17 +875,22 @@
     wipeAll=async function(){
       if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?')) return;
       if(!confirm('Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?')) return;
+      holdSync();
       let cloud='fail';
-      try{cloud=await mzDeleteCloud()}catch(e){}
-      if(cloud==='fail'){
+      try{cloud=await mzDeleteCloud()}catch(e){cloud=(isOffline()||netErr(e))?'offline':'fail'}
+      if(cloud==='fail'||cloud==='offline'){
+        releaseSync();
         // Облако не очищено: локальные данные оставляем, иначе после перезагрузки они вернутся из облака.
-        alert('Не удалось удалить данные в облаке. Проверь интернет и попробуй ещё раз. Данные на этом устройстве пока не удалены.');
+        alert(cloud==='offline'
+          ?'Нет сети. Аккаунт не удалён. Данные в облаке и на этом устройстве на месте. Повтори, когда появится интернет.'
+          :'Сервер не подтвердил удаление аккаунта. Данные в облаке и на этом устройстве пока не удалены. Нажми «Удалить аккаунт» ещё раз.');
         return;
       }
       try{
         if(typeof clearLocalData==='function') await clearLocalData();
         else{
           localStorage.removeItem('gym');
+          try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
           await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
         }
         try{localStorage.removeItem(GUEST_COPY_KEY)}catch(e){}
@@ -832,7 +898,8 @@
         // Кэш сервис-воркера мог содержать ответы сервера с личными данными (версии до v39).
         if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
       }catch(e){}
-      if(cloud==='data') alert('Данные удалены. Аккаунт (почту для входа) удалить не удалось — войди ещё раз и повтори удаление позже.');
+      resetLocalState(); // QA-13: и в памяти тоже
+      resetSyncHold();
       authView();
       location.reload();
     };
