@@ -79,7 +79,7 @@ test('blocks-index is generated, complete, and matches data/blocks without embed
   const sw = read('sw.js');
   assert.match(html, /src="data\/blocks-index\.js"/);
   assert.match(sw, /data\/blocks-index\.js/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v143'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v144'/);
   assert.match(sw, /const C=SW_CACHE/);
 });
 

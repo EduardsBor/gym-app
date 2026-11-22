@@ -78,7 +78,7 @@ test('D-264: home cooldown walk-brisk is «Лёгкая ходьба» with the 
   assert.equal(rd.n, 'Лёгкая ходьба');
   assert.equal(b.run('exBy("walk-brisk").name'), WALK_NAME);
   assert.ok(!b.run('movekitFile("walk-brisk")'));
-  assert.match(read('place.js'), /'walk-brisk','Быстрая ходьба \(улица или на месте\)'/);
+  assert.match(read('place.js'), /['"]walk-brisk['"],\s*['"]Быстрая ходьба \(улица или на месте\)['"]/);
 });
 
 test('D-264: gym/home template days — every spin cooldown is replaced; home cardio-block walk stays brisk; IDs in stored cd.cardio unchanged', () => {
@@ -157,13 +157,13 @@ test('D-264: gym/home template days — every spin cooldown is replaced; home ca
   assert.equal(blocks.leftover, 0);
 });
 
-test('D-264: LV caption fix + new EN/LV strings; SW cache moyzal-v137', () => {
+test('D-264: LV caption fix + new EN/LV strings; SW cache moyzal-v144', () => {
   const d3 = read('i18n/dict3.js');
   assert.ok(d3.includes("'Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; vari izmantot to pašu trenažieri, ko izmantoji kardio blokā'"));
   assert.ok(!d3.includes('var izmantot to pašu trenažieri, kas kardio blokā'));
   assert.ok(d3.includes("['Лёгкая ходьба','Easy walk','Viegla iešana']"));
   assert.ok(d3.includes("['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga']"));
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v143'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v144'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-D264.md')));
 });
