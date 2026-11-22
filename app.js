@@ -233,8 +233,14 @@ function onboarding(){quiz()}
 let Q=null,catF={};
 function quizLenOld(grp){return`${(typeof lenOff==='function'&&lenOff(Q,LENS[lenIdx(Q.len)])&&(Q.len=effLen(Q)),grp('Длительность тренировки','len',[30,45,60,75,90].filter(n=>!(typeof lenOff==='function'&&lenOff(Q,n))).map(n=>[n,n+' мин'])))}${typeof lenOff==='function'&&lenOff(Q,30)?`<p class="mut" id="qlenoff" style="margin-top:0">${esc(LEN_MIN_STR)}</p>`:''}${typeof lenNote==='function'&&lenNote(Q,Q.len)?`<p class="mut" id="qlennote" style="margin-top:0">⚡ <span>${esc(lenNote(Q,Q.len))}</span></p>`:''}
  ${typeof progGlance==='function'&&progGlance(Q)?(()=>{const g=progGlance(Q);return `<p class="mut" style="margin-top:0">Реальное время с разминкой и заминкой: ${esc(g.label)}${g.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>${g.advice?`<p class="mut">${esc(g.advice)}</p>`:''}`})():''}`}
-// C-112: blocks-v2c — every program is 60–70 min (Eduards), so the length is shown, not asked.
-function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){Q.len=70;Q.lenLabel='60–70 мин';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">60–70 мин (с разминкой и заминкой)</p>`}delete Q.lenLabel;return quizLenOld(grp)}
+// C-114: show the selected block's duration_label (no longer a fixed 60–70 min).
+function quizBlockId(q){q=q||(typeof Q!=='undefined'?Q:null);return(q&&typeof blockIdForProfile==='function'&&blockIdForProfile(q))||null}
+function quizDurationLabel(q){const id=quizBlockId(q);if(!id)return'';
+ if(typeof BLOCK_INDEX!=='undefined'&&Array.isArray(BLOCK_INDEX)){const it=BLOCK_INDEX.find(b=>b&&b.id===id);if(it&&it.duration_label)return it.duration_label}
+ if(typeof getBlock==='function'){try{const b=getBlock(id);if(b&&b.duration_label)return b.duration_label}catch(e){}}
+ return''}
+function quizGrowthHint(q){q=q||(typeof Q!=='undefined'?Q:null);return!!(q&&q.level==='adv'&&+q.days===2)}
+function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){const label=quizDurationLabel(Q)||'60–70 мин';Q.lenLabel=label;const nums=String(label).match(/\d+/g);Q.len=nums&&nums.length?+nums[nums.length-1]:70;const shown=(typeof catalogDur==='function'?catalogDur(label):label)+' (с разминкой и заминкой)';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">${esc(shown)}</p>`}delete Q.lenLabel;return quizLenOld(grp)}
 
 const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" data-k="${k}" data-v="${v}">${label}</button>`;
 function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{})};if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
@@ -242,7 +248,7 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ '+goalName('str',Q.place)],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
  ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
- ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${quizLen(grp)}
+ ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${quizGrowthHint(Q)?`<p class="mut" id="qgrowth" style="margin-top:0">Для роста выбери 3–4 дня</p>`:''}${quizLen(grp)}
  ${Q.place==='d'?(Q.place='b',''):''}${grp('Где тренируешься','place',[['g','🏢 Тренажёрный зал'],['b','🏠 Дом']])}<p class="mut" id="qhome" style="margin-top:0">Дом — без инвентаря, желательно турник.</p>${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
  ${typeof blocksEnabled==='function'&&blocksEnabled()?(Q.prio=[],grp('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']])):grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
  ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}

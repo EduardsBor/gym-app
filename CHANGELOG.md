@@ -1,5 +1,7 @@
 # Changelog
 
+- C-114 программы v3.2 (v145): в `data/blocks` обновлены 184 блока (зал / дом со штангой / дом без штанги + 4 акцентных). Ключи `BLOCK_MAP` не менялись; 60 старых домашних блоков (`place: d`) оставлены для прежних профилей. В анкете длительность берётся из `duration_label` блока, а не фиксированные «60–70 мин». Если выбран уровень «Опытный» и 2 дня в неделю, показывается подсказка «Для роста выбери 3–4 дня» / «For growth, choose 3–4 days» / «Izaugsmei izvēlies 3–4 dienas» (LV — черновик, на ревью Claude: `docs/LV-NEW-C114.md`). `mk-hanging-knee-raises` скрыт (в новых блоках стоит `hanging-knee-raise`). Индекс каталога пересобран: `data/blocks-index.js`.
+
 - C-113 (v144): исправлены описания упражнений (RU/EN/LV) по `fixes-v2.json` (560) и `fixes-master.json` (703), плюс правки Claude (мах гирей, пронос палки, LV-глоссарий: в т.ч. jostas kvadrātveida muskulis, svarbumba, Ahilleja cīpsla). У 45 упражнений заголовок «Амплитуда и безопасность» / «Range and safety» / «Amplitūda un drošība». Переименование «Тяга штанги к груди широким хватом». После ревью Claude: новые формулировки безопасности заминки (cd_lat/cd_quad/cd_xbody) и все LV без «dorsāl»/«plantār». Новые LV: `docs/LV-NEW-C113.md`.
 
 

@@ -65,7 +65,9 @@ test('packed programs: every id is a library card with a MoveKit clip (except br
   const I = arr(run('PROG.I'));
   assert.equal(new Set(I).size, I.length);
   for (const id of I) {
-    assert.equal(ids.has(id), true, 'card ' + id);
+    const hidden = run(`typeof isHidden==="function" && isHidden(${JSON.stringify(id)})`);
+    if (!hidden) assert.equal(ids.has(id), true, 'card ' + id);
+    else assert.equal(run(`exBy(${JSON.stringify(id)}).id`), id, 'hidden card ' + id);
     if (!NO_CLIP_OK.has(id)) assert.match(run(`movekitFile(${JSON.stringify(id)})`), /\.mp4$/, 'clip ' + id);
   }
   // Trainer v1.2c names for the new place ids.

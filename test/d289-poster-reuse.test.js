@@ -26,7 +26,7 @@ test('D-289: reuseMkPosters only reuses same-kind thumbnails', () => {
   assert.match(g, /athumb/);
   assert.match(g, /mkwide/);
   assert.match(g, /className/);
-  assert.match(read('cache-ver.js'), /moyzal-v144/);
+  assert.match(read('cache-ver.js'), /moyzal-v145/);
 });
 
 function gymState() {
