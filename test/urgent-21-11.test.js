@@ -79,7 +79,8 @@ test('LV: sign-in wording is «pieteikties / pieteikšanās», never «ieiet / i
   const ctx = i18nCtx('lv');
   const vals = vm.runInContext('DICT.concat(DICT2,DICT3).map(r=>r[2]).filter(Boolean)', ctx);
   // D-276 (Claude, 21.11): the login prompt for clips is the approved exception «Ieej, lai skatītos video».
-  const allowed = new Set(['Ieej, lai skatītos video']);
+  // D-291 (Claude): Profile «Not signed in» is the approved exception «Nav ieiets kontā».
+  const allowed = new Set(['Ieej, lai skatītos video', 'Nav ieiets kontā']);
   const bad = Array.from(vals).filter(v => /(?<![\p{L}])(ieiet|ieej|ieiešan|iegāj)/iu.test(v) && !allowed.has(v));
   assert.equal(bad.length, 0, bad.join('\n'));
   assert.ok(vals.length > 500, 'dictionaries loaded');
