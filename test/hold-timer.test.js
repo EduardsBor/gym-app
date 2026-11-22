@@ -105,6 +105,7 @@ test('hold timer: empty cooldown dose + note «2–3 мин» is a 3:00 time ite
   assert.match(h, /id="exhold"/);
   assert.match(h, /▶ Пуск/);
   assert.match(h, /Подход выполнен|Записать подход/);
+  assert.doesNotMatch(h, /\+\s*<span>Подход выполнен|\+\s*Подход выполнен/);
   // no empty-dose middle dot sitting on its own line under the name
   assert.doesNotMatch(h, /exrec"><span>\s*<\/span>\s*·/);
   assert.doesNotMatch(h, /exrec"><span>\.<\/span>/);
@@ -180,7 +181,7 @@ test('hold timer: no start button or countdown on a rep-based exercise', () => {
   assert.equal(run('exHoldSec(exList()[EXS.pos])'), 0);
 });
 
-test('hold timer: manual «+ Set done» still works and cancels a running countdown', () => {
+test('hold timer: manual «Set done» still works and cancels a running countdown', () => {
   const { run } = withProgram();
   run(`startW(0);
       S.active.items.push({exId:'mk-front-plank',ns:1,sets:[{w:0,r:'',done:false}],min:20,max:45,rest:20,sec:1});
@@ -202,6 +203,8 @@ test('hold timer: ticks do not rebuild the workout list (D-286)', () => {
   assert.doesNotMatch(src, /function exHoldTick[\s\S]{0,400}workoutView\(/);
   assert.doesNotMatch(read('cache-ver.js').trim(), /moyzal-v143/);
   assert.match(read('cache-ver.js').trim(), /^var SW_CACHE='moyzal-v143';$/);
+  assert.doesNotMatch(read('exscreen.js'), /\+\s*<span>Подход выполнен/);
+  assert.doesNotMatch(read('i18n/dict.js')+read('i18n/dict2.js')+read('i18n/dict3.js'), /\+\s*Подход выполнен|\+\s*Set done|\+\s*Piegājiens izpildīts/);
   assert.match(read('i18n/dict3.js'), /▶ Пуск/);
   assert.match(read('i18n/dict3.js'), /▶ Sākt/);
   assert.match(read('i18n/dict3.js'), /Laiks beidzies/);
