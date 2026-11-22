@@ -660,6 +660,17 @@
     if(status==='ok'&&lastAt) return 'Синхронизировано '+new Date(lastAt).toLocaleString(typeof LOC!=='undefined'?LOC:undefined);
     return 'Вход выполнен';
   }
+  // D-290: compact «Аккаунт» menu row — email or «Не выполнен вход», plus a short sync status.
+  function mzAccountRowStatus(){
+    const email=(user&&user.email)||'';
+    const who=email||'Не выполнен вход';
+    let sync='';
+    if(status==='offline') sync='Нет сети';
+    else if(status==='err') sync='Ошибка синхронизации';
+    else if(email||status==='ok'||status==='syncing') sync='Синхронизировано';
+    return sync?who+' · '+sync:who;
+  }
+  window.mzAccountRowStatus=mzAccountRowStatus;
   function accountHTML(){
     const az=!!(S.consentAnalytics&&S.consentAnalytics.v);
     const azLab=`<label class="li"><span class="grow">Анонимная аналитика<br><span class="mut">Короткие события (открытие, онбординг, показ оплаты) без имени, почты и тренировок</span></span><input type="checkbox" id="mzaz" style="width:28px;min-height:28px" ${az?'checked':''}></label>`;

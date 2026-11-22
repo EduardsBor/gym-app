@@ -1,16 +1,17 @@
 'use strict';
 // Eduards 20.11 (docs/17-claude-ux-review.md, Б11): «Профиль» is a short menu of screens instead of one long list:
-// Аккаунт, Программа, Оборудование, Тренировка, Данные, Язык и оформление, Справка.
+// Аккаунт, Программа, Оборудование, Настройки тренировки, Уведомления (только Android), Данные, Язык и оформление, Справка.
 // Loaded last: wraps the final more() (after features.js / sync.js have injected their cards) and only regroups the
-// rendered cards — every card keeps its own markup, ids and handlers. Unknown cards stay visible under the menu.
+// rendered cards — every card keeps its own markup, ids and handlers. D-290: every card belongs to a section; nothing hangs under the menu.
 (function(){
   if(typeof more!=='function') return;
   const SECTIONS=[
     {k:'acc',ic:'👤',t:'Аккаунт',sel:['#mzacc','#pwopen']},
     {k:'prog',ic:'📋',t:'Программа',sel:['#progrow','#obre']},
     {k:'equip',ic:'🏋️',t:'Оборудование',sel:['#awequip','#eqdb']},
-    {k:'train',ic:'⏱',t:'Тренировка',d:'Таймер, звук, экран, подстановка веса',sel:['#snd','#aw','#ro','#bwkg']},
-    {k:'data',ic:'💾',t:'Данные',d:'Резервная копия, экспорт, удаление, согласия',sel:['#expcsv','#wipe']},
+    {k:'train',ic:'⏱',t:'Настройки тренировки',d:'Таймер, звук, экран, подстановка веса',sel:['#snd','#aw','#ro','#bwkg']},
+    {k:'ntf',ic:'🔔',t:'Уведомления',d:'Напоминания о тренировке и таймер отдыха',sel:['#ntfc']},
+    {k:'data',ic:'💾',t:'Данные',d:'Резервная копия, экспорт, удаление, согласия',sel:['#expcsv','#privdata','#pfdanger']},
     {k:'look',ic:'🎨',t:'Язык и оформление',sel:['[data-theme]','[data-lang]']},
     {k:'help',ic:'ℹ️',t:'Справка',d:'Библиотека упражнений, научная основа, питание',sel:['#helpc']}
   ];
@@ -33,7 +34,7 @@
     if(ver) used.add(ver);
     const rest=kids.filter(c=>!used.has(c));
     const sub={
-      acc:()=>{try{return (window.mzSignedIn&&mzSignedIn()&&app.querySelector('#mzacc p'))?app.querySelector('#mzacc p').textContent:''}catch(e){return ''}},
+      acc:()=>{try{return (typeof mzAccountRowStatus==='function'&&mzAccountRowStatus())||'Не выполнен вход'}catch(e){return 'Не выполнен вход'}},
       prog:()=>{try{return S.progName||''}catch(e){return ''}}
     };
     if(open&&by[open]&&by[open].length){
@@ -51,7 +52,7 @@
       return `<button class="full card pfitem" data-pf="${s.k}" style="text-align:left;display:flex;align-items:center;gap:10px"><span style="font-size:22px">${s.ic}</span><span class="grow"><b>${s.t}</b>${d?`<br><span class="mut" style="font-size:13px">${esc(d)}</span>`:''}</span><span class="mut" aria-hidden="true">›</span></button>`;
     }).join('');
     app.insertAdjacentHTML('afterbegin',`<div id="pfmenu">${items}</div>`);
-    rest.forEach(c=>app.append(c));
+    // D-290: do not leave unknown cards hanging under the menu. Every card must belong to a section.
     if(ver) app.append(ver);
     app.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{open=b.dataset.pf;more();try{scrollTo(0,0)}catch(e){}});
   }

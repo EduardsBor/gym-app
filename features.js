@@ -23,6 +23,7 @@ function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(
  const stx=st.tier==='trial'?(st.pre?'<p class="mut" style="text-align:center">Отсчёт начнётся с первой завершённой тренировки.</p>':`<p class="mut" style="text-align:center"><span>Демо: осталось дней —</span> <b>${st.left}</b></p>`):st.tier==='free'?'<p class="mut" style="text-align:center">Демо закончилось. Дневник тренировок остаётся бесплатным.</p>':'';
  const draw=()=>{d.innerHTML=`<div class="sheet pwsheet"><div class="row"><span class="badge demo">ДЕМО</span><span class="grow"></span><button id="pwc" aria-label="Закрыть">✕</button></div>
  <div style="text-align:center;font-size:44px">👑</div><h2 style="text-align:center;margin:4px 0">${PREM_NAME}</h2>
+ <p class="mut" style="text-align:center;margin:4px 0" id="pwdemo">Демо — оплата ещё не подключена</p>
  <p style="text-align:center;margin:4px 0"><b>${sub}</b></p>${stx}
  ${reason?`<p class="mut" style="text-align:center">${esc(reason)}</p>`:''}
  <ul class="pwlist"><li>Программы тренера по анкете</li><li>Авто-вес, разгрузка и возврат после перерыва</li><li>Видео техники</li><li>Графики, рекорды и 1ПМ</li><li>Объём по мышцам и обхваты тела</li></ul>
@@ -89,20 +90,24 @@ const _bodyForm=bodyForm;bodyForm=function(e){if(!S.consentHealth)return go('bod
  const f=m.querySelector('#bfile'),fl=f&&f.closest&&f.closest('label');if(fl){fl.style.display='none';fl.insertAdjacentHTML('afterend','<p class="mut" style="font-size:12px">Обхваты, % жира и фото — по подписке.</p>')}};
 
 // ---- «Ещё»: language, premium, onboarding, privacy & data
-const _more=more;more=function(){_more();const r=$('#reset');if(r)r.remove();
+const _more=more;more=function(){_more();
  const ver=[...app.querySelectorAll('p.mut')].pop();
  const html=`<div class="card"><b data-noi18n>🌐 Язык / Language / Valoda</b><div class="chips" style="margin-top:8px" data-noi18n>${Object.entries(LANGS).map(([k,l])=>`<button class="opt chip ${LANG===k?'sel':''}" data-lang="${k}">${l}</button>`).join('')}</div>${LANG==='lv'?'<p class="mut" style="font-size:12px">Latviešu tulkojums ir melnraksts — to vēl pārbaudīs dzimtās valodas runātājs.</p>':''}</div>
- <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0">${premStatusText()}</p>
+ <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0" id="pwrow">Демо — оплата ещё не подключена</p><p class="mut" style="margin:4px 0">${premStatusText()}</p>
  <button class="full" id="pwopen">Посмотреть Premium</button>
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
  <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
- <div class="card"><b>🛡️ Конфиденциальность и данные</b>
+ <div class="card" id="privdata"><b>🛡️ Конфиденциальность и данные</b>
  <div class="li"><span class="grow">Согласие на данные о теле</span><span class="mut">${S.consentHealth?'дано '+new Date(S.consentHealth.at).toLocaleDateString(LOC):'не дано'}</span></div>
  ${S.consentHealth?'<button class="full sm" id="cwd">Отозвать согласие</button>':''}
  <button class="full" id="exp2" style="margin-top:8px">⬇ Скачать все мои данные (JSON)</button>
- <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div>
- <button class="danger full" id="wipe" style="margin-top:8px">🗑 Удалить все данные</button></div>`;
- (app.querySelector('#helpc')||ver).insertAdjacentHTML('beforebegin',html);ver.textContent='Версия '+(typeof appVersionLabel==='function'?appVersionLabel():APP_VERSION);
+ <div class="row" style="margin-top:8px"><button class="grow" id="lpriv">Политика конфиденциальности</button><button class="grow" id="lterms">Условия использования</button></div></div>`;
+ (app.querySelector('#helpc')||ver).insertAdjacentHTML('beforebegin',html);
+ let danger=$('#pfdanger');
+ if(!danger){ (app.querySelector('#privdata')||app.querySelector('#helpc')||ver).insertAdjacentHTML('afterend','<div class="card" id="pfdanger"></div>'); danger=$('#pfdanger'); }
+ if(danger&&!$('#wipe')) danger.insertAdjacentHTML('beforeend','<button class="danger full" id="wipe" style="margin-top:8px">Удалить аккаунт</button>');
+ const priv=$('#privdata'); if(priv&&danger&&danger.parentNode) priv.after(danger);
+ ver.textContent='Версия '+(typeof appVersionLabel==='function'?appVersionLabel():APP_VERSION);
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
  $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
