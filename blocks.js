@@ -18,9 +18,41 @@ function registerBlock(raw){
   return b;
 }
 
+// tech-fix-1: program variants (pilot-rework-3). Own ids and files in data/blocks/variants/ — not in BLOCK_INDEX / the catalog,
+// so there is one catalog card per base program. The base block id and file do not change; active plans keep S.block.id.
+// Variants are used only with the pilot switch (?pilot=1 or localStorage gc_pilot=1); default off = old behaviour.
+const BLOCK_VARIANTS={
+  loss_nov_6_g_b36:{def:'loss_nov_4_g_b36_vb',opts:['loss_nov_4_g_b36_vb','loss_nov_6_g_b36_va']},
+  loss_nov_4_g_b36:{def:'loss_nov_4_g_b36_vb',opts:['loss_nov_4_g_b36_vb']},
+  mass_nov_3_g_b36:{def:'mass_nov_3_g_b36_v3',opts:['mass_nov_3_g_b36_v3']},
+  str_adv_5_g_b35:{def:'str_adv_5_g_b35_voe',opts:['str_adv_5_g_b35_voe','str_adv_5_g_b35_vfree']},
+  loss_mid_4_g_pr_abs_b36:{def:'loss_mid_4_g_pr_abs_b36_v3',opts:['loss_mid_4_g_pr_abs_b36_v3']}
+};
+const BLOCK_VARIANT_RU={loss_nov_4_g_b36_vb:['Вариант B — 4 тренировки в неделю','Рекомендуем: между тренировками есть дни отдыха.'],
+  loss_nov_6_g_b36_va:['Вариант A — 6 тренировок в неделю','Дополнительный вариант: шесть тренировок в неделю без дня отдыха — только при хорошем восстановлении.'],
+  str_adv_5_g_b35_voe:['Исходное оборудование (Смит)','Рекомендуем: жим и присед в Смите, можно без страхующего.'],
+  str_adv_5_g_b35_vfree:['Свободная штанга','Для опытных: нужен уверенный жим и присед со штангой и страхующий.'],
+  mass_nov_3_g_b36_v3:['Доработанная версия',''],loss_mid_4_g_pr_abs_b36_v3:['Доработанная версия','']};
+const BLOCK_VARIANT_OF={};
+for(const k in BLOCK_VARIANTS)BLOCK_VARIANTS[k].opts.forEach(v=>{if(!BLOCK_VARIANT_OF[v])BLOCK_VARIANT_OF[v]=k});
+function blockVariantsOn(){
+  try{
+    const search=(typeof location!=='undefined'&&location.search)||'';
+    const m=/[?&]pilot=(0|1)\b/.exec(search);const ls=typeof localStorage!=='undefined'?localStorage:null;
+    if(m){if(ls)ls.setItem('gc_pilot',m[1]);return m[1]==='1'}
+    return!!(ls&&ls.getItem('gc_pilot')==='1');
+  }catch(e){return false}
+}
+function blockVariantFor(baseId,a){
+  const v=baseId&&BLOCK_VARIANTS[baseId];if(!v||!blockVariantsOn())return baseId;
+  const pick=a&&a.variant;return v.opts.includes(pick)?pick:v.def;
+}
+function blockVariantOpts(id){const base=BLOCK_VARIANT_OF[id]||id;const v=BLOCK_VARIANTS[base];return v&&blockVariantsOn()?v.opts.slice():[]}
+function blockFilePath(id){return BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}
+
 function fetchBlockFile(id){
   if(!/^[a-z0-9_]+$/.test(String(id||''))||typeof XMLHttpRequest==='undefined')return null;
-  try{const x=new XMLHttpRequest();x.open('GET','data/blocks/'+id+'.json',false);x.send();
+  try{const x=new XMLHttpRequest();x.open('GET',blockFilePath(id),false);x.send();
     if(x.status>=200&&x.status<300&&x.responseText)return registerBlock(JSON.parse(x.responseText));}catch(e){}
   return null;
 }
@@ -44,7 +76,8 @@ function blockIdForProfile(a){
   if(!a||!blocksEnabled())return null;
   const key=blockKey(a);
   const acc=blockAcc(a);
-  return(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null;
+  const id=(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null;
+  return blockVariantFor(id,a);
 }
 // D-229: accent (blocks-priority-v2, Claude 17.11.2026). Key {base}_pr_{muscle}; no block → base block. Sex is not used.
 // next_level of an accent block is the base advanced block (no advanced accent blocks yet), so the accent is dropped there.
@@ -197,27 +230,111 @@ function itemFromBlock(it){
   const row={exId:resolveExId(it.exId),sets:+it.sets,min:+it.min,max:+it.max,rest:+it.rest};
   if(it.cardio){row.cardio=1;row.sets=1;row.rest=0;return row}  // cardio finish: min/max are minutes
   if(it.unit==='sec'||it.sec)row.sec=1;
+  if(it.role==='c'||it.role==='a')row.role=it.role;  // tech-fix-1 UI RIR: optional trainer role in the block JSON
   return row;
 }
 
+// tech-fix-1 UI RIR: role of an exercise for the RIR table — 'c' main multi-joint, 'a' accessory / single-joint.
+const BLOCK_ROLE_A=new Set(['calf-bw','calf-db','calf','seated-calf','smith-calf','mk-standing-calf-raise-machine','hip-abduction','lc','lc-seated','le','nlc','towel-leg-curl','reverse-hyper','sglb','tibialis-raise',
+  'fly','incline-db-fly','mk-cable-pec-fly','pec-deck','straight-arm-pulldown','mk-dumbbell-shrug','smith-shrug','shr','superman','hyp',
+  'lr','mk-dumbbell-rear-delt-fly','mk-prone-y-t-raises','reverse-pec-deck','rfly','single-arm-cable-lateral','mk-cable-seated-rope-face-pull','fp','mk-barbell-upright-row','yr','mk-band-row']);
+const BLOCK_ROLE_C=new Set(['cgb','smith-close-grip','chin']);
+const BLOCK_ROLE_A_GROUPS=new Set(['Бицепс','Трицепс','Пресс','Разминка']);
+function blockRole(it){
+  if(it&&(it.role==='c'||it.role==='a'))return it.role;
+  const id=it&&it.exId;if(!id)return'c';
+  if(BLOCK_ROLE_C.has(id))return'c';
+  if(BLOCK_ROLE_A.has(id))return'a';
+  const e=typeof exBy==='function'?exBy(id):null;
+  return e&&BLOCK_ROLE_A_GROUPS.has(e.group)?'a':'c';
+}
+// rir_target of one workout: phase (by workout number) → block → null (the app falls back to PR_RIR of the level).
+function blockRirOk(t){return!!(t&&Array.isArray(t.c)&&Array.isArray(t.a)&&t.c.length===2&&t.a.length===2&&[...t.c,...t.a].every(x=>typeof x==='number'&&isFinite(x)&&x>=0&&x<=6))}
+function blockRirTarget(b,w){
+  if(!b||!w)return null;const n=+w.n;
+  const ph=(b.phases||[]).find(p=>p&&Array.isArray(p.workouts)&&n>=p.workouts[0]&&n<=p.workouts[1]&&blockRirOk(p.rir_target));
+  const t=ph?ph.rir_target:(blockRirOk(b.rir_target)?b.rir_target:null);
+  return t?{c:t.c.slice(),a:t.a.slice()}:null;
+}
+// Workout of the block for a plan day (by its number n): used at run time, so plans saved before this change work too.
+function blockWorkoutOf(b,day,dayIdx){
+  b=unwrapBlock(b);if(!b||!Array.isArray(b.workouts))return null;
+  const n=day&&day.n!=null?+day.n:(dayIdx|0)+1;
+  return b.workouts.find(w=>+w.n===n)||b.workouts[n-1]||null;
+}
+// Day context for auto-weight: block deload (GC-07), block has its own deloads (awDeload), rir_target (UI RIR).
+function blockDayCtx(dayIdx){
+  if(typeof S==='undefined'||!S||!S.block||!S.block.id)return null;
+  const b=getBlock(S.block.id);if(!b)return null;
+  const day=S.program&&S.program[dayIdx];
+  const w=blockWorkoutOf(b,day,dayIdx);
+  return{deload:!!((w&&w.deload)||(day&&day.deload)),blockHasDeload:(b.workouts||[]).some(x=>x&&x.deload),rirTarget:(day&&day.rirTarget)||blockRirTarget(b,w)};
+}
+
 // Limitations (back / knees / shoulders): swap inside the block for a trainer alternative of the same main muscles.
+// tech-fix-1 GC-03: impact cardio has a knee risk letter here (jump / jump-rope already have «k» in META).
+const BLOCK_CARDIO_RISK={'mk-treadmill-run':'k'};
+function blockRisk(id){
+  const m=typeof META!=='undefined'&&META[id];
+  return(m?(String(m).split('|')[1]||''):'')+(BLOCK_CARDIO_RISK[id]||'');
+}
 function blockLimOk(id,a){
   const lim=(a&&a.lim)||[];if(!lim.length)return true;
-  const m=typeof META!=='undefined'&&META[id];if(!m)return true;
-  const r=String(m).split('|')[1]||'';return!lim.some(l=>r.includes(l));
+  const r=blockRisk(id);return!lim.some(l=>r.includes(l));
 }
-function blockLimSwap(items,a){
+// tech-fix-1 GC-02: replacement candidates in order: 1) trainer ALT of the exercise; 2) ALT of those alternatives;
+// 3) exercises that list this one as their alternative (and their ALT); 4) BLOCK_LIM_FALLBACK (trainer table for ids with an empty ALT).
+const BLOCK_LIM_FALLBACK={'rdl-db':['ht-db','ht','ht-bw','sglb','lc','lc-seated'],'rdl-kb':['ht-db','ht-bw','sglb'],'rdl-band':['ht-bw','sglb'],
+  'hyp':['ht','ht-db','ht-bw','sglb','lc'],'superman':['ht-bw','sglb'],'mk-rkc-plank':['mk-front-plank','dbug','bdog'],'suitcase-carry':['mk-front-plank','dbug','bdog'],
+  'mk-barbell-deadlift':['ht','ht-db','ht-bw','sglb','lc'],'backpack-row':['towel-row','inv'],'nlc':['towel-leg-curl','sglb','ht-bw'],
+  // overhead press with a shoulder limitation → lateral / rear-delt work below shoulder height (proposal, see questions.md)
+  'ohp':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'dsp':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'standing-db-press':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],
+  'smith-seated-press':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'ppu':['mk-prone-y-t-raises','lr']};
+function blockLimCands(id){
+  const A=(typeof ALT!=='undefined'&&ALT)||{};const L=[],seen=new Set([id]);
+  const add=x=>{if(x&&!seen.has(x)){seen.add(x);L.push(x)}};
+  const own=A[id]||[];
+  own.forEach(add);
+  own.forEach(x=>(A[x]||[]).forEach(add));
+  for(const k in A){const l=A[k];if(Array.isArray(l)&&l.includes(id)){add(k);l.forEach(add)}}
+  (BLOCK_LIM_FALLBACK[id]||[]).forEach(add);
+  return L;
+}
+// Home without a pull-up bar: these need the bar (same split as the b_bar / b_nobar blocks).
+const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','inv','pull','scap-pullup','dead-hang']);
+function blockHasClip(id){return typeof movekitFile!=='function'||!!movekitFile(id)}
+function blockIsCardio(it){return!!(it&&it.cardio)||(typeof isCardio==='function'&&isCardio(it.exId))}
+function blockLimSwap(items,a,warn){
   if(!a||!(a.lim||[]).length)return items;
   const used=new Set(items.map(i=>i.exId));
-  return items.map(it=>{
-    if(it.cardio||blockLimOk(it.exId,a))return it;
-    const alts=(typeof ALT!=='undefined'&&ALT[it.exId])||[];
-    const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
-    const place=a.place||'g';
-    const ok=alts.find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&same(it.exId,x)&&(typeof eqAvail!=='function'||eqAvail(x,place)));
-    if(!ok)return it;
-    used.add(ok);return Object.assign({},it,{exId:ok,swapped:1});
+  const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
+  const place=a.place||'g';
+  const noBar=place==='b'&&!(a.bar===true||a.bar==='1'||a.bar===1);
+  const avail=x=>(typeof eqAvail!=='function'||eqAvail(x,place))&&!(noBar&&BLOCK_NEEDS_BAR.has(x));
+  const out=[];
+  items.forEach(it=>{
+    if(blockLimOk(it.exId,a)){out.push(it);return}
+    const lim=(a.lim||[]).filter(l=>blockRisk(it.exId).includes(l));
+    const cardio=blockIsCardio(it);
+    const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]);  // trainer fallback table: may cross the muscle group (hyp → hip thrust)
+    const ok=blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockHasClip(x)&&
+      (cardio?(typeof isCardio!=='function'||isCardio(x)):((fb.has(x)||same(it.exId,x))&&!(typeof isCardio==='function'&&isCardio(x)))));
+    if(ok){used.add(ok);out.push(Object.assign({},it,{exId:ok,swapped:1}));if(warn)warn.push({from:it.exId,to:ok,lim});return}
+    // No safe replacement: the exercise is not kept silently — it is left out of this workout with a visible note.
+    if(warn)warn.push({from:it.exId,to:null,lim});
   });
+  return out;
+}
+// Text of the limitation notes of a day (RU source; i18n translates the fixed phrases and exercise names).
+const BLOCK_LIM_RU={s:'спина',k:'колени',p:'плечи'};
+function blockLimWarnHTML(day){
+  const W=(day&&day.limWarn)||[];if(!W.length)return'';
+  const nm=id=>{const e=typeof exBy==='function'?exBy(id):null;const n=e&&e.name&&e.name!=='?'?e.name:id;return typeof esc==='function'?esc(n):n};
+  const lims=l=>(l||[]).map(x=>BLOCK_LIM_RU[x]||x).map(x=>`<span>${x}</span>`).join(', ');
+  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): <b>${nm(w.from)}</b> → <b>${nm(w.to)}</b></div>`
+    :`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): <b>${nm(w.from)}</b> — <span>убрано из тренировки: безопасной замены нет</span></div>`);
+  const removed=W.some(w=>!w.to);
+  return`<div class="mut limwarn" style="font-size:13px;margin:4px 0">${rows.join('')}${removed?'<div><span>Если хочешь вернуть упражнение — сначала посоветуйся с врачом или тренером.</span></div>':''}</div>`;
 }
 
 // day_code → template day index: codes in order of first appearance follow the template rotation (FA,FB,FC / U1,L1,U2,L2 / PU,PL,LG,…).
@@ -264,7 +381,11 @@ function planFromBlock(block,a){
   const dayIdx=blockDayIndex(b);
   const days=(b.workouts||[]).map((w,i)=>{
     const wc=attachWarmCool(shell,w,dayIdx);
-    const day={name:blockDayName(w),n:w.n!=null&&+w.n>0?+w.n:i+1,items:blockLimSwap((w.items||[]).map(itemFromBlock),a)};
+    const warn=[];
+    const day={name:blockDayName(w),n:w.n!=null&&+w.n>0?+w.n:i+1,items:blockLimSwap((w.items||[]).map(itemFromBlock),a,warn)};
+    if(warn.length)day.limWarn=warn;
+    if(w.deload)day.deload=1;  // tech-fix-1 GC-07: the block deload reaches auto-weight
+    const rt=blockRirTarget(b,w);if(rt)day.rirTarget=rt;
     if(wc.wu)day.wu=wc.wu;
     if(wc.cd)day.cd=wc.cd;
     if(w.est_min!=null)day.est=w.est_min;
@@ -301,7 +422,7 @@ function ymdPlus(iso,days){
 }
 
 
-function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?('data/blocks/'+id+'.json'):null}
+function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?((typeof BLOCK_VARIANT_OF!=='undefined'&&BLOCK_VARIANT_OF[id])?'data/blocks/variants/'+id+'.json':'data/blocks/'+id+'.json'):null}
 function cacheBlockFile(id){
   const url=blockFileUrl(id);
   if(!url)return;
@@ -333,6 +454,12 @@ function blockOnFinished(A){
   const planned=S.block.next|0;
   if(A&&A.dayIdx!=null&&A.dayIdx!==planned)return;
   finishBlockWorkout(S,b);
+}
+
+function blockVariantHTML(gen){
+  const cur=gen.blockId,E=typeof esc==='function'?esc:(x=>x);
+  return`<div class="card bvar"><b>Вариант программы</b>${gen.variantOpts.map(id=>{const t=BLOCK_VARIANT_RU[id]||[id,''];
+    return`<button class="full${id===cur?' pri sel':''}" data-bv="${E(id)}" style="margin-top:6px;text-align:left;height:auto;padding:10px 12px">${id===cur?'✓ ':''}${E(t[0])}${t[1]?`<br><span class="mut" style="font-size:13px">${E(t[1])}</span>`:''}</button>`}).join('')}</div>`;
 }
 
 function blockActive(){return !!(typeof S!=='undefined'&&S&&S.block&&S.block.id&&getBlock(S.block.id))}
@@ -385,7 +512,9 @@ function renderBlockToday(pick){
       if(blocksEnabled()){
         const id=blockIdForProfile(a);
         const b=id&&getBlock(id);
-        if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;else if(b.equipment_note_ru)p.advice=b.equipment_note_ru;return p}
+        if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;else if(b.equipment_note_ru)p.advice=b.equipment_note_ru;
+          if(BLOCK_VARIANT_OF[b.id]){p.variantOf=BLOCK_VARIANT_OF[b.id];p.variantOpts=blockVariantOpts(b.id);if(b.days_per_week&&a&&+a.days!==+b.days_per_week)p.variantDays=+b.days_per_week}
+          return p}
       }
       return orig(a);
     };
@@ -401,6 +530,9 @@ function renderBlockToday(pick){
     const orig=renderPreview;
     renderPreview=function(){
       orig();
+      const gen=typeof PV!=='undefined'&&PV&&PV.gen;
+      if(gen&&gen.variantOpts&&gen.variantOpts.length>1&&typeof app!=='undefined'&&app&&app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin',blockVariantHTML(gen));
+      if(typeof app!=='undefined'&&app&&app.querySelectorAll)app.querySelectorAll('[data-bv]').forEach(x=>x.onclick=()=>{PV.pr.a=Object.assign({},PV.pr.a,{variant:x.dataset.bv});PV.gen=generate(PV.pr.a);renderPreview()});
       const btn=typeof $==='function'?$('#pstart'):null;
       if(!btn)return;
       const prev=btn.onclick;
@@ -408,7 +540,9 @@ function renderBlockToday(pick){
         const was=S.program;
         if(prev)prev.apply(this,arguments);
         if(S.program===was)return;
-        blockOnApplied(typeof PV!=='undefined'&&PV&&PV.gen);
+        const g=typeof PV!=='undefined'&&PV&&PV.gen;
+        blockOnApplied(g);
+        if(g&&g.variantOf){S.prof=Object.assign({},S.prof||{},{variant:g.blockId});if(g.variantDays){S.days=g.variantDays;S.prof.days=g.variantDays}}
         if(typeof save==='function')save();
       };
     };

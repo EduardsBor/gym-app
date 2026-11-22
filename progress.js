@@ -49,7 +49,11 @@ function prUp(w,c,e,minimal){const L=prGrid(c.eq,e);if(!L)return null;
 function prDown(w,f,c,e){const L=prGrid(c.eq,e);if(!L||!(w>0))return w;const t=w*f;let r=null;for(const x of L)if(x<=t+PR_EPS)r=x;
  if(r!=null&&Math.abs(r-w)<PR_EPS){const lo=L.filter(x=>x<w-PR_EPS);r=lo.length?lo[lo.length-1]:null}
  return r==null?(L[0]<w?L[0]:w):r}
-function prRir(level,role,flags,plus){const t=(PR_RIR[level]||PR_RIR.mid)[role==='a'?'a':'c'];let r=t.slice();
+// tech-fix-1 UI RIR: tgt = rir_target of the block / phase {c:[lo,hi],a:[lo,hi]}; never below the floor of the user's level.
+const PR_RIR_FLOOR={nov:2,mid:1,adv:0};
+function prRir(level,role,flags,plus,tgt){const k=role==='a'?'a':'c',lt=(PR_RIR[level]||PR_RIR.mid)[k];
+ const tt=tgt&&Array.isArray(tgt[k])&&tgt[k].length===2?tgt[k]:null;
+ let r=tt?(()=>{const f=PR_RIR_FLOOR[level]!=null?PR_RIR_FLOOR[level]:1,lo=Math.max(+tt[0]|0,f);return[lo,Math.max(+tt[1]|0,lo)]})():lt.slice();
  if(flags&&flags.length)r=[Math.max(2,r[0]+1),r[1]+1];if(plus)r=[r[0]+plus,r[1]+plus];return r}
 function prForbidden(to,lim){const c=prCls(to);return!!(c&&c.risk&&(lim||[]).some(f=>c.risk.includes(f)))}
 
@@ -57,23 +61,30 @@ function prForbidden(to,lim){const c=prCls(to);return!!(c&&c.risk&&(lim||[]).som
 // {id, level, range:[min,max], sets_plan, weight, results (array | {L,R}), rir?, state?, flags?, ctx?, target?,
 //  role?('c'|'a'), calibration?, pain?, place?, hang?(best dead-hang sec)}
 // Returns {id, weight, sets, target, rir, state, mod, note}; note codes: inc, same, miss1, miss2, miss3, cal_up, cal_down,
-// ladder, no_heavier, pain, break14, break28, deload_scheduled, deload_early, time_up, time_down, hold_max.
+// ladder, no_heavier, pain, break14, break28, deload_scheduled, deload_early, deload_block, return_planned, time_up, time_down, hold_max.
+// ctx: {deload:'scheduled'|'early'|'block', days_since_last, planned_return}; rir_target?: {c:[lo,hi],a:[lo,hi]}.
 function prNext(inp,equip){const e=prEquip(equip);const c=prCls(inp.id)||inp.cls||{id:inp.id,eq:'bodyweight',region:'upper',uni:false,hard:false,risk:''};
  const lv=PR_RIR[inp.level]?inp.level:'mid',lo=inp.range[0],hi=inp.range[1],plan=Math.max(1,inp.sets_plan|0||3);
  const lim=inp.flags||[],fl=prFlags(c,lim),ctx=inp.ctx||{};
  if(inp.profile&&Array.isArray(inp.profile.band)){e.bands=inp.profile.band.map(Number).filter(x=>x>0).sort((a,b)=>a-b)}
  const st=Object.assign({success:0,miss:0},inp.state||{});if(inp.variant!=null)st.mod=inp.variant|0;
- let rp=st.rirPlus|0;const rir=prRir(lv,inp.role,fl,rp?1:0);
+ let rp=st.rirPlus|0;const rir=prRir(lv,inp.role,fl,rp?1:0,inp.rir_target);
  const out={id:inp.id,weight:inp.weight==null?null:inp.weight,sets:plan,target:null,rir,state:st,mod:st.mod|0,note:'same',big_jump:false,grace_used:false,suggest_swap:false};
  const has=inp.results!=null&&(Array.isArray(inp.results)?inp.results.length:true);
- if(has){
+ // tech-fix-1 GC-07: results of a deload workout (ctx.deload / ctx.block_deload) never move the progression counters.
+ if(ctx.block_deload&&!ctx.deload)ctx.deload='block';
+ if(has&&!ctx.deload){
   if(rp>0)st.rirPlus=rp-1;
   if(c.eq==='time')prTime(inp,c,lim,out,lo,hi);else prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir)}
  if(!st.rirPlus)delete st.rirPlus;
  // Context before the next workout
  const days=ctx.days_since_last;
- if(ctx.deload){out.sets=Math.max(1,Math.ceil(plan/2));out.target=c.eq==='time'?(inp.target||lo):lo;out.rir=[out.rir[0]+2,out.rir[1]+2];out.note='deload_'+(ctx.deload==='early'?'early':'scheduled');
+ // tech-fix-1 GC-07/awDeload: ctx.deload 'block' = deload workout of the program block: its sets are already reduced in the block,
+ // so they are not halved again; weight the same, RIR +2.
+ if(ctx.deload){const blk=ctx.deload==='block';out.sets=blk?plan:Math.max(1,Math.ceil(plan/2));out.target=c.eq==='time'?(inp.target||lo):lo;out.rir=[out.rir[0]+2,out.rir[1]+2];out.note=blk?'deload_block':'deload_'+(ctx.deload==='early'?'early':'scheduled');
   if(ctx.deload==='early'&&out.weight>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(out.weight+e.assist):prDown(out.weight,0.9,c,e)}
+ // tech-fix-1 GC-01: the exercise comes back by the plan (the user kept training): no break cut, the state stays.
+ else if(ctx.planned_return){out.sets=plan;out.note='return_planned';if(c.eq==='time'){out.target=out.target!=null?out.target:(inp.target||lo)}else out.target=lo}
  else if(days>=14){const big=days>=28;st.success=0;st.miss=0;delete st.cut;out.sets=plan;out.note=big?'break28':'break14';
   if(c.eq==='time'){const t=out.target!=null?out.target:(inp.target||lo);out.target=big?lo:Math.max(lo,t-(PR_TSTEP[c.id]||5))}
   else{out.target=lo;
@@ -81,7 +92,7 @@ function prNext(inp,equip){const e=prEquip(equip);const c=prCls(inp.id)||inp.cls
    else if(c.eq==='band'){if(big&&out.weight>0){const L=e.bands.filter(x=>x<out.weight);if(L.length)out.weight=L[L.length-1]}}
    else if(c.eq==='assisted'){if(out.weight!=null)out.weight=pr2(out.weight+(big?2:1)*e.assist)}
    else if(out.weight>0)out.weight=prDown(out.weight,big?0.8:0.9,c,e)}
-  if(big){st.rirPlus=2;out.rir=prRir(lv,inp.role,fl,1)}}
+  if(big){st.rirPlus=2;out.rir=prRir(lv,inp.role,fl,1,inp.rir_target)}}
  out.modKey=prModKey(c.eq,out.mod);out.variant=out.mod;if(!out.state.mod)delete out.state.mod;return out}
 // What the modifier step means for this equipment: '', 'shorter' (band), 'tempo', 'pause', 'load'
 function prModKey(eq,m){if(!m)return'';if(eq==='band')return['','tempo','pause','shorter'][Math.min(m,3)];
