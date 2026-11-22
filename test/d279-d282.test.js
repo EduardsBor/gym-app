@@ -94,7 +94,7 @@ test('D-279: profile shows 1.0 (vNNN) from a single SW cache-version source', ()
   assert.match(app, /function appVersionLabel\(/);
   assert.match(app, /Версия \$\{appVersionLabel\(\)\}/);
   assert.match(feat, /appVersionLabel\(\)/);
-  const g = { SW_CACHE: 'moyzal-v144', APP_VERSION: '1.0' };
+  const g = { SW_CACHE: 'moyzal-v137', APP_VERSION: '1.0' };
   vm.runInNewContext(
     read('app.js').split('function swCacheVer')[1]
       ? 'const APP_VERSION=\'1.0\';\n' +
@@ -106,7 +106,7 @@ test('D-279: profile shows 1.0 (vNNN) from a single SW cache-version source', ()
   // fallback if regex is brittle: evaluate helpers copied from source
   const helpers = read('app.js').match(/function swCacheVer\(\)\{[^}]+}\nfunction appVersionLabel\(\)\{[^}]+}/);
   assert.ok(helpers);
-  const box = { SW_CACHE: 'moyzal-v144', APP_VERSION: '1.0', label: '', ver: '' };
+  const box = { SW_CACHE: 'moyzal-v137', APP_VERSION: '1.0', label: '', ver: '' };
   vm.runInNewContext(helpers[0] + ';label=appVersionLabel();ver=swCacheVer();', box);
   assert.equal(box.label, '1.0 (v137)');
   assert.equal(box.ver, 'v137');
@@ -150,8 +150,8 @@ test('D-280: after a program is applied, its block file is cached asynchronously
   };
   const cachesStore = new Map();
   const env = {
-    SW_CACHE: 'moyzal-v144',
-    C: 'moyzal-v144',
+    SW_CACHE: 'moyzal-v137',
+    C: 'moyzal-v137',
     self,
     importScripts() {},
     caches: {
