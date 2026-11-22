@@ -414,6 +414,21 @@ function attachWarmCool(shellDays,workout,dayIdx){
 
 const DAY_RU={U1:'Верх тела A',U2:'Верх тела B',L1:'Низ тела A',L2:'Низ тела B',FA:'Всё тело A',FB:'Всё тело B',FC:'Всё тело C',PU:'Жимовая A',PL:'Тяговая A',LG:'Ноги A',PU2:'Жимовая B',PL2:'Тяговая B',LG2:'Ноги B'};
 function blockDayName(w){const t=DAY_RU[w.day_code]||('Тренировка '+w.n);return w.week?('Неделя '+w.week+' · '+t+(w.deload?' (разгрузка)':'')):t}
+// tech-fix-2.1: workout duration after limitation / equipment swaps and removals. est_min of the block is kept as the base;
+// the difference of the main items (same item time as dayMin: sets × (40 s + rest), cardio = max minutes) is added.
+// est0 = item minutes of the block workout as written; old saved plans without est0 → taken from the block file by the day number.
+function blockItemsMin(items){return typeof itemTime==='function'?(items||[]).reduce((t,i)=>t+(i&&i.exId?itemTime(i):0),0)/60:null}
+function blockEstBase(d){
+  if(!d)return null;if(d.est0!=null)return d.est0;
+  if(typeof S==='undefined'||!S||!S.block||!S.block.id||typeof getBlock!=='function')return null;
+  const b=unwrapBlock(getBlock(S.block.id)),w=b&&(b.workouts||[]).find(x=>+x.n===+d.n);
+  return w&&w.est_min!=null&&+w.est_min===+d.est?blockItemsMin((w.items||[]).map(itemFromBlock)):null;
+}
+function blockEstMin(d){
+  const base=blockEstBase(d),now=blockItemsMin(d&&d.items);
+  if(base==null||now==null)return Math.round(d.est);
+  return Math.max(1,Math.round(d.est+now-base));
+}
 function planFromBlock(block,a){
   const b=unwrapBlock(block);
   const shell=warmCoolShell(b,a||{});
@@ -430,7 +445,7 @@ function planFromBlock(block,a){
     if(warn.length)day.limWarn=warn;
     if(wc2.wu)day.wu=wc2.wu;
     if(wc2.cd)day.cd=wc2.cd;
-    if(w.est_min!=null)day.est=w.est_min;
+    if(w.est_min!=null){day.est=w.est_min;day.est0=blockItemsMin((w.items||[]).map(itemFromBlock))}  // tech-fix-2.1: base for the duration after swaps
     if(w.week)day.week=w.week;
     return day;
   });

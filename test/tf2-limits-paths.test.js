@@ -138,7 +138,9 @@ test('tf2 open / resumed workout: flagged items not done yet → replace / remov
       {exId:'jump',ns:1,min:10,max:20,rest:0,sets:[{w:'',r:20,done:false}]},
       {exId:'lc',ns:3,min:8,max:12,rest:90,sets:[{w:'',r:12,done:false}]}]};save()`);
   const L = b.J('lgAuditActive()');
-  assert.deepEqual(L.map(x => x.exId), ['lp', 'jump'], 'started item sq is not touched; lc is safe');
+  // tech-fix-2.1: the partly done sq is checked for its remaining set (before: one done set hid it); lc is safe
+  assert.deepEqual(L.map(x => x.exId), ['sq', 'lp', 'jump']);
+  assert.deepEqual(L[0].partial, { done: 1, left: 1 });
   const lp = L.find(x => x.exId === 'lp');
   b.run(`lgActiveFix(${lp.i},'swap')`);
   const it = b.J(`S.active.items[${lp.i}]`);
@@ -147,7 +149,7 @@ test('tf2 open / resumed workout: flagged items not done yet → replace / remov
   b.run(`lgActiveFix(${j.i},'keep')`);
   assert.equal(b.run(`S.active.items.find(i=>i.exId==='jump').limAck`), 'k');
   assert.deepEqual(b.J('S.active.items[0].sets'), [{ w: 60, r: 8, done: true }, { w: 60, r: 8, done: false }]);
-  assert.deepEqual(b.J('lgAuditActive()'), []);
+  assert.deepEqual(b.J('lgAuditActive().map(x=>x.exId)'), ['sq'], 'only the partly done sq is left (tf21-partial-exercise covers its options)');
 });
 
 test('tf2 ladder hint: «Пора усложнить» is not offered when the next step conflicts with the limitations', () => {
@@ -170,5 +172,5 @@ test('tf2 without limitations nothing changes: no plan check, no modal, swap lis
 test('tf2 health data: limitation notes / acknowledgements are stripped from the cloud copy without consent (sync.js)', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'sync.js'), 'utf8');
   const fn = src.slice(src.indexOf('function stripLimits'), src.indexOf('function keepLocalLimits'));
-  for (const k of ['limAck', 'limWarn', 'limAckWuCd', 'limLog']) assert.match(fn, new RegExp('delete [a-z.]*' + k));
+  for (const k of ['limAck', 'limWarn', 'limAckWuCd', 'limLog', 'limFrom', 'limStop']) assert.match(fn, new RegExp('delete [a-z.]*' + k));
 });

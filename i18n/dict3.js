@@ -532,4 +532,11 @@ const DICT3=[
 ['Другое оборудование:','Other equipment:','Cits inventārs:'],
 ['Не подходит при твоих ограничениях:','Not suitable with your limitations:','Neder ar taviem ierobežojumiem:'],
 ['Заминка','Cool-down','Atdzišana'],
+// tech-fix-2.1: partly done exercise, finished days of the plan
+['выполнено','done','izpildīts'],
+['Заменить остаток','Replace the rest','Aizstāt atlikušo'],
+['Остановить','Stop','Apturēt'],
+['Выполненные подходы и веса сохраняются.','Done sets and weights are kept.','Izpildītie piegājieni un svari saglabājas.'],
+['Это упражнение отмечено как рискованное при твоих ограничениях. Продолжить подходы? Лучше заменить его или остановиться.','This exercise is marked as risky with your limitations. Continue the sets? It is better to replace it or stop.','Šis vingrinājums ir atzīmēts kā riskants ar taviem ierobežojumiem. Turpināt piegājienus? Labāk to aizstāt vai apstāties.'],
+['Завершённые тренировки не меняются.','Finished workouts are not changed.','Pabeigtie treniņi netiek mainīti.'],
 ]
