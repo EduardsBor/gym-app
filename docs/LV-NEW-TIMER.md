@@ -6,8 +6,7 @@
 
 | RU | EN | LV |
 | --- | --- | --- |
-| ▶ Пуск | ▶ Start | ▶ Sākt |
-| ⏸ Пауза | ⏸ Pause | ⏸ Pauze |
 | Пуск | Start | Sākt |
+| ⏸ Пауза | ⏸ Pause | ⏸ Pauze |
 | Пауза | Pause | Pauze |
 | ⏰ Время вышло | ⏰ Time's up | ⏰ Laiks beidzies |

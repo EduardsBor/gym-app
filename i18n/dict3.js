@@ -463,7 +463,6 @@ const DICT3=[
 // v139 workouts list (LV: docs/LV-NEW-WORKOUTS-LIST.md)
 ['← К списку тренировок','← Back to the workout list','← Uz treniņu sarakstu'],
 // v143 hold timer (LV: docs/LV-NEW-TIMER.md)
-['▶ Пуск','▶ Start','▶ Sākt'],
 ['⏸ Пауза','⏸ Pause','⏸ Pauze'],
 ['Пуск','Start','Sākt'],
 ['Пауза','Pause','Pauze'],
