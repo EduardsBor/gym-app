@@ -163,7 +163,9 @@ test('D-222: first_workout props allow only place and goal (no extra fields)', a
   const ev = events(cloud).filter(e => e.name === 'first_workout');
   assert.equal(ev.length, 1);
   assert.deepEqual(ev[0].props, { place: 'g', goal: 'mass' });
-  const json = JSON.stringify(ev[0]);
+  // tech-fix-1: install_id is a random 32-hex id and contains «80» in ~11 % of runs (the old flake) — leave it out of the substring check
+  const json = JSON.stringify(Object.assign({}, ev[0], { install_id: undefined }));
+  assert.match(String(ev[0].install_id || ''), /^[0-9a-f]{32}$/);
   assert.equal(json.includes('e@x') || json.includes('secret') || json.includes('80') || json.includes('user_id'), false);
 });
 
