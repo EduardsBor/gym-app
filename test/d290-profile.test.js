@@ -35,8 +35,8 @@ function sections() {
   return vm.runInNewContext('(' + m[1] + ')');
 }
 
-test('D-290: cache is moyzal-v147', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v147'/);
+test('D-290: cache is moyzal-v148', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v148'/);
 });
 
 test('D-290: profile.js sections — rename, notifications item, data danger block', () => {
@@ -139,14 +139,14 @@ test('D-290: RU/EN/LV triples and LV-NEW file; LV-проверка / LV-REVIEW u
     "['Очистить данные на этом телефоне','Clear data on this phone','Notīrīt datus šajā tālrunī']",
     "['Удалить аккаунт','Delete account','Dzēst kontu']",
     "['Демо — оплата ещё не подключена','Demo — payments are not connected yet','Demo — maksājumi vēl nav pieslēgti']",
-    "['Не выполнен вход','Not signed in','Nav veikta pieteikšanās']",
+    "['Не выполнен вход','Not signed in','Nav ieiets kontā']",
     "['Нет сети','No network','Nav tīkla']",
     "['Ошибка синхронизации','Sync error','Sinhronizācijas kļūda']",
   ];
   for (const r of rows) assert.match(d3, new RegExp(r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(d3, /Удалятся данные только на этом устройстве/);
   const lv = read('docs/LV-NEW-D290.md');
-  for (const s of ['Treniņa iestatījumi', 'Notīrīt datus šajā tālrunī', 'Dzēst kontu', 'Demo — maksājumi vēl nav pieslēgti', 'Nav veikta pieteikšanās', 'Nav tīkla', 'Sinhronizācijas kļūda']) {
+  for (const s of ['Treniņa iestatījumi', 'Notīrīt datus šajā tālrunī', 'Dzēst kontu', 'Demo — maksājumi vēl nav pieslēgti', 'Nav ieiets kontā', 'Nav tīkla', 'Sinhronizācijas kļūda']) {
     assert.match(lv, new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-D290.md')));
