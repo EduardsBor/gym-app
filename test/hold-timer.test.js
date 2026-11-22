@@ -103,7 +103,8 @@ test('hold timer: empty cooldown dose + note «2–3 мин» is a 3:00 time ite
   assert.match(h, /id="exht"/);
   assert.match(h, />3:00</);
   assert.match(h, /id="exhold"/);
-  assert.match(h, /▶ Пуск/);
+  assert.match(h, />Пуск</);
+  assert.doesNotMatch(h, /id="exhold"[^>]*>\s*▶/);
   assert.match(h, /Подход выполнен|Записать подход/);
   assert.doesNotMatch(h, /\+\s*<span>Подход выполнен|\+\s*Подход выполнен/);
   // no empty-dose middle dot sitting on its own line under the name
@@ -176,7 +177,7 @@ test('hold timer: no start button or countdown on a rep-based exercise', () => {
   const h = app();
   assert.doesNotMatch(h, /id="exhold"/);
   assert.doesNotMatch(h, /id="exht"/);
-  assert.doesNotMatch(h, /▶ Пуск/);
+  assert.doesNotMatch(h, /▶ Пуск|id="exhold"/);
   assert.match(h, /Повторов|id="exadd"/);
   assert.equal(run('exHoldSec(exList()[EXS.pos])'), 0);
 });
@@ -205,8 +206,9 @@ test('hold timer: ticks do not rebuild the workout list (D-286)', () => {
   assert.match(read('cache-ver.js').trim(), /^var SW_CACHE='moyzal-v143';$/);
   assert.doesNotMatch(read('exscreen.js'), /\+\s*<span>Подход выполнен/);
   assert.doesNotMatch(read('i18n/dict.js')+read('i18n/dict2.js')+read('i18n/dict3.js'), /\+\s*Подход выполнен|\+\s*Set done|\+\s*Piegājiens izpildīts/);
-  assert.match(read('i18n/dict3.js'), /▶ Пуск/);
-  assert.match(read('i18n/dict3.js'), /▶ Sākt/);
+  assert.match(read('i18n/dict3.js'), /\['Пуск','Start','Sākt'\]/);
+  assert.doesNotMatch(read('i18n/dict3.js'), /▶ Пуск/);
+  assert.doesNotMatch(read('exscreen.js'), /▶ Пуск|id="exhold"[^>]*>[^<]*▶/);
   assert.match(read('i18n/dict3.js'), /Laiks beidzies/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-TIMER.md')));
 });
