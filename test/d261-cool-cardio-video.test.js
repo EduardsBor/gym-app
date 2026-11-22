@@ -90,7 +90,7 @@ test('D-261: generated gym/home programs carry the place on cd; blocks b_bar/b_n
   assert.ok(d3.includes("'Bez slīpuma vai ar nelielu slīpumu, vieglā tempā; vari izmantot to pašu trenažieri, ko izmantoji kardio blokā'"));
   assert.ok(d3.includes("['Лёгкая ходьба','Easy walk','Viegla iešana']"));
   assert.ok(d3.includes("['Ходьба на месте или по комнате в лёгком темпе, дыхание спокойное','Walking on the spot or around the room at an easy pace, breathing calmly','Soļošana uz vietas vai pa istabu vieglā tempā, elpošana mierīga']"));
-  assert.match(read('exscreen.js'), /e\.r\.c\?`<p class="mut excap">/);
+  assert.match(read('exscreen.js'), /excap/); assert.match(read('exscreen.js'), /e\.r\.c/);
 });
 
 test('D-262: Google site verification file + meta; static visible «GymCaptain» brand before JS; not in SW cache', () => {

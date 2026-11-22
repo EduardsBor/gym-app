@@ -158,7 +158,7 @@ test('preview and program editor use the same running numbers; SW cache is moyza
   const pr = app();
   assert.match(pr, /<summary><b>1\. /);
   assert.match(pr, /<summary><b>36\. /);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v142'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v143'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
 });
 

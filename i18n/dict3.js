@@ -462,4 +462,9 @@ const DICT3=[
 ['Верх / Низ + Фулбоди ×2','Upper / Lower + Full body ×2','Augšdaļa / Apakšdaļa + Viss ķermenis ×2'],
 // v139 workouts list (LV: docs/LV-NEW-WORKOUTS-LIST.md)
 ['← К списку тренировок','← Back to the workout list','← Uz treniņu sarakstu'],
+// v143 hold timer (LV: docs/LV-NEW-TIMER.md)
+['⏸ Пауза','⏸ Pause','⏸ Pauze'],
+['Пуск','Start','Sākt'],
+['Пауза','Pause','Pauze'],
+['⏰ Время вышло','⏰ Time\'s up','⏰ Laiks beidzies'],
 ]
