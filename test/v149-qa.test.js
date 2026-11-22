@@ -497,7 +497,7 @@ test('QA-14: the rest circle uses the profile override', () => {
 });
 
 test('v149: cache name, new strings have EN and LV, LV review files untouched', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v149'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v150'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   const d3 = read('i18n/dict3.js');
   const lv = read('docs/LV-NEW-v149.md');
