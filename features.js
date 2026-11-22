@@ -119,7 +119,7 @@ const _more=more;more=function(){_more();
 async function wipeAll(){if(!confirm('Удалить ВСЕ данные: тренировки, программу, замеры, фото и настройки?'))return;
  if(!confirm('Это необратимо. Сначала можно скачать копию. Точно удалить всё без возможности восстановления?'))return;
  try{if(typeof clearLocalData==='function')await clearLocalData();
-  else{localStorage.removeItem('gym');await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()})}}catch(e){}location.reload()}
+  else{localStorage.removeItem('gym');try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()})}}catch(e){}location.reload()}
 // ---- Legal pages (drafts)
 let LG=null;function legal(k,back){LG={k,back};go('legal')}
 function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textContent=L[0];

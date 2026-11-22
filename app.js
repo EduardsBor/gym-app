@@ -576,16 +576,21 @@ function showW(id){const w=S.workouts.find(x=>x.id===id),m=$('#modal');m.classLi
 // ---------- Тело
 const BM=[['weight','Вес','кг'],['fat','Жир','%'],['neck','Шея','см'],['chest','Грудь','см'],['waist','Талия','см'],['belly','Живот','см'],['hips','Бёдра (таз)','см'],['biceps','Бицепс','см'],['thigh','Бедро','см'],['calf','Икра','см']];
 const IDB_NAME='moyzal',IDB_VER=2,HIST_BACKUP_KEY='gym_hist_backup',HIST_IDB_KEY='gym_hist_idb',PERSIST_KEY='gymPersist';
-const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{
- if(typeof indexedDB==='undefined'){p=null;rej(new Error('no idb'));return}
- const r=indexedDB.open(IDB_NAME,IDB_VER);
- r.onupgradeneeded=()=>{const db=r.result;
-  if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos');
-  if(!db.objectStoreNames.contains('history'))db.createObjectStore('history')};
- r.onsuccess=()=>res(r.result);
- r.onerror=()=>{p=null;rej(r.error)}});
+const idb=(()=>{let p,live,epoch=0;
+ function drop(){epoch++;try{if(live&&live.close)live.close()}catch(e){} live=null; p=null}
+ const open=()=>p=p||new Promise((res,rej)=>{
+  if(typeof indexedDB==='undefined'){p=null;rej(new Error('no idb'));return}
+  const r=indexedDB.open(IDB_NAME,IDB_VER);
+  r.onupgradeneeded=()=>{const db=r.result;
+   if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos');
+   if(!db.objectStoreNames.contains('history'))db.createObjectStore('history')};
+  r.onsuccess=()=>{live=r.result;
+   // A blocked deleteDatabase never finishes while this connection is open (Android may kill the process first).
+   live.onversionchange=()=>drop();
+   res(live)};
+  r.onerror=()=>{p=null;rej(r.error)}});
  const tx=(store,m,f)=>open().then(db=>new Promise((res,rej)=>{const t=db.transaction(store,m),st=t.objectStore(store),q=f(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)}));
- return{get:k=>tx('photos','readonly',s=>s.get(k)),put:(k,v)=>tx('photos','readwrite',s=>s.put(v,k)),del:k=>tx('photos','readwrite',s=>s.delete(k)),
+ return{close:drop,gen:()=>epoch,get:k=>tx('photos','readonly',s=>s.get(k)),put:(k,v)=>tx('photos','readwrite',s=>s.put(v,k)),del:k=>tx('photos','readwrite',s=>s.delete(k)),
   all:()=>tx('photos','readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o}),
   histGet:()=>tx('history','readonly',s=>s.get('workouts')),
   histPut:list=>tx('history','readwrite',s=>s.put(list,'workouts'))}})();
@@ -594,7 +599,8 @@ const idb=(()=>{let p;const open=()=>p=p||new Promise((res,rej)=>{
 function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
 function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
- Promise.resolve().then(async()=>{try{await idb.histPut(histList());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
+ const gen=idb.gen();
+ Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await idb.histPut(histList());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
 // Union of IDB + localStorage(+in-memory) history by workout id; tombstones in S.deletedWorkouts (same list sync uses) win;
 // on a conflict the newer one (updatedAt||end||start) wins, ties go to the local copy (written synchronously, so freshest).
 function histT(w){return +(w&&(w.updatedAt||w.end||w.start))||0}
@@ -605,13 +611,16 @@ function mergeHist(fromIdb,local,deleted){const del=new Set(Array.isArray(delete
  return order.map(id=>map.get(id))}
 async function migrateHistory(){
  if(typeof indexedDB==='undefined')return{ok:false,fallback:'localStorage'};
+ const gen=idb.gen();
  let fromIdb,idbAvail=true;
  try{fromIdb=await idb.histGet()}catch(e){idbAvail=false}
+ if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
  if(!idbAvail)return{ok:false,fallback:'localStorage'};
  if(Array.isArray(fromIdb)){
   // D-207 fix (Claude 15.11): union by id instead of replace. localStorage 'gym' is written synchronously,
   // the IDB write is async; if the app was closed before it finished, the last workout is only in localStorage.
   const merged=mergeHist(fromIdb,histList(),S.deletedWorkouts);
+  if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
   S.workouts=merged;
   try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
   try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
@@ -620,12 +629,14 @@ async function migrateHistory(){
  }
  const local=histList();
  writeHistBackupOnce(local);
- try{await idb.histPut(local);try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
+ try{if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};await idb.histPut(local);try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
  catch(e){return{ok:false,fallback:'localStorage'}}
 }
 async function clearLocalData(){
  // QA-03: вместе с основными данными — гостевые и аварийные копии.
  try{['gym','gym_hist_backup','gym_hist_idb','gymPersist','gym_guest_copy','gym_broken'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+ // Close the cached moyzal connection first, otherwise deleteDatabase stays blocked until the page dies.
+ try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
  for(const db of [IDB_NAME,'moyzal_guest'])try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(db);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
 }
 let persistAsked=false;

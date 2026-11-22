@@ -263,6 +263,7 @@
       if(typeof clearLocalData==='function') await clearLocalData();
       else{
         localStorage.removeItem('gym');
+        try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
         await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
       }
     }catch(e){}
@@ -521,9 +522,11 @@
         r.onerror=()=>res();
         r.onsuccess=()=>{
           try{
-            const db=r.result,t=db.transaction('history','readwrite');
+            const db=r.result;
+            db.onversionchange=()=>{try{db.close()}catch(e){}};
+            const t=db.transaction('history','readwrite');
             t.objectStore('history').put(list||[],'workouts');
-            t.oncomplete=()=>res();t.onerror=()=>res();
+            t.oncomplete=()=>{try{db.close()}catch(e){} res()};t.onerror=()=>{try{db.close()}catch(e){} res()};
           }catch(e){res()}
         };
       }catch(e){res()}
@@ -887,6 +890,7 @@
         if(typeof clearLocalData==='function') await clearLocalData();
         else{
           localStorage.removeItem('gym');
+          try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
           await new Promise(r=>{const q=indexedDB.deleteDatabase('moyzal');q.onsuccess=q.onerror=q.onblocked=()=>r()});
         }
         try{localStorage.removeItem(GUEST_COPY_KEY)}catch(e){}

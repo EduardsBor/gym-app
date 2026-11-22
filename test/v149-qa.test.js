@@ -49,15 +49,25 @@ function fakeIDB() {
     };
   }
   function conn(db) {
-    return {
+    const c = {
+      onversionchange: null,
       objectStoreNames: { contains: n => db.stores.has(n) },
       createObjectStore(n) { if (!db.stores.has(n)) db.stores.set(n, new Map()); return storeApi(db.stores.get(n)); },
       transaction(storeName) {
         const t = { oncomplete: null, onerror: null, error: null, objectStore(n) { return storeApi(db.stores.get(n)); } };
         later(() => { if (t.oncomplete) t.oncomplete(); });
         return t;
+      },
+      close() {
+        db.conns.delete(c);
+        if (!db.conns.size && db.pendingDeletes.length) {
+          const q = db.pendingDeletes.splice(0);
+          q.forEach(fn => fn());
+        }
       }
     };
+    db.conns.add(c);
+    return c;
   }
   return {
     dbs,
@@ -66,13 +76,28 @@ function fakeIDB() {
         return req(r => {
           let db = dbs.get(name);
           const oldVer = db ? db.version : 0;
-          if (!db) { db = { version: version || 1, stores: new Map() }; dbs.set(name, db); }
+          if (!db) { db = { version: version || 1, stores: new Map(), conns: new Set(), pendingDeletes: [] }; dbs.set(name, db); }
+          if (!db.conns) db.conns = new Set();
+          if (!db.pendingDeletes) db.pendingDeletes = [];
           if ((version || 1) > oldVer) db.version = version || 1;
           r.result = conn(db);
           if ((version || 1) > oldVer && r.onupgradeneeded) r.onupgradeneeded({ target: r, oldVersion: oldVer, newVersion: db.version });
         });
       },
-      deleteDatabase(name) { return req(() => { dbs.delete(name); }); }
+      // An open connection blocks the delete until it closes (versionchange). That is the real browser.
+      deleteDatabase(name) {
+        const r = { result: undefined, error: null, onsuccess: null, onerror: null, onblocked: null };
+        later(() => {
+          const db = dbs.get(name);
+          const finish = () => { dbs.delete(name); if (r.onsuccess) r.onsuccess({ target: r }); };
+          if (!db || !db.conns || !db.conns.size) return finish();
+          [...db.conns].forEach(c => { try { if (c.onversionchange) c.onversionchange(); } catch (e) {} });
+          if (!db.conns.size) return finish();
+          db.pendingDeletes.push(finish);
+          if (r.onblocked) r.onblocked();
+        });
+        return r;
+      }
     }
   };
 }
@@ -354,7 +379,7 @@ test('QA-03: clear-this-phone while signed in and offline wipes local copies, in
   await new Promise((res, rej) => {
     const r = b.g.indexedDB.open('moyzal_guest', 1);
     r.onupgradeneeded = () => r.result.createObjectStore('photos');
-    r.onsuccess = () => res(); r.onerror = () => rej(r.error);
+    r.onsuccess = () => { if (r.result && r.result.close) r.result.close(); res(); }; r.onerror = () => rej(r.error);
   });
   assert.equal(b.run('mzHasUnsyncedWorkouts()'), true);
   await b.run('mzDoLogout({wipeLocal:true})');
@@ -378,6 +403,32 @@ test('QA-03: cancelling the offline clear changes nothing', async () => {
   assert.equal(b.store.get('gym'), before);
   assert.equal(b.run('mzSignedIn()'), true);
   assert.equal(b.run('S.workouts.length'), 1);
+});
+
+test('clearLocalData drops IndexedDB history immediately, without a reload', async () => {
+  const b = await ready(boot(seed({ workouts: [wo('a', 0), wo('b', 1), wo('c', 2), wo('d', 3), wo('e', 4)] })));
+  await b.run('idb.histPut(S.workouts)');
+  for (let i = 0; i < 4; i++) await tick();
+  const before = await b.run('idb.histGet()');
+  assert.equal(before.length, 5);
+  await b.run('clearLocalData()');
+  for (let i = 0; i < 4; i++) await tick();
+  assert.equal(b.g.__reloaded, false);
+  const after = await b.run('idb.histGet()');
+  assert.ok(after == null || after.length === 0);
+});
+
+test('account delete also drops IndexedDB history before reload', async () => {
+  const cloud = { inserts: [], upserts: [], deletes: [], rpcs: [], user: USER, state: { payload: {} }, deleted: false, mode: 'ok' };
+  const b = await ready(boot(seed({ workouts: [wo('a', 0), wo('b', 1), wo('c', 2), wo('d', 3), wo('e', 4)] }), { cloud }));
+  await b.run('idb.histPut(S.workouts)');
+  for (let i = 0; i < 4; i++) await tick();
+  await b.run('wipeAll()');
+  for (let i = 0; i < 8; i++) await tick();
+  const after = await b.run('idb.histGet()');
+  assert.ok(after == null || after.length === 0);
+  assert.match(read('sync.js'), /idb\.close\(\)/);
+  assert.match(read('features.js'), /idb\.close\(\)/);
 });
 
 test('QA-08: a measurement removed on another device drops its photo here', async () => {
@@ -459,6 +510,10 @@ test('v149: cache name, new strings have EN and LV, LV review files untouched', 
   ]) assert.ok(d3.includes(s), s);
   assert.match(lv, /Aprīkojuma profili/);
   assert.match(lv, /Serveris neapstiprināja konta dzēšanu/);
+  assert.match(d3, /Tu esi pierakstījies: ja tikai notīrīsi datus/);
+  assert.match(d3, /izveidoti pēc šīs kopijas/);
+  assert.match(d3, /paliek neskarti/);
+  assert.doesNotMatch(d3, /izdarīti pēc šīs kopijas|ir vietā/);
   assert.match(read('style.css'), /\.grow\{flex:1;min-width:0\}/);
   assert.match(read('style.css'), /#lpriv,#lterms/);
   assert.doesNotMatch(read('app.js'), /white-space:nowrap">\$\{esc\(typeof exShort/);
