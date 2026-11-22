@@ -243,7 +243,7 @@ function quizGrowthHint(q){q=q||(typeof Q!=='undefined'?Q:null);return!!(q&&q.le
 function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){const label=quizDurationLabel(Q)||'60–70 мин';Q.lenLabel=label;const nums=String(label).match(/\d+/g);Q.len=nums&&nums.length?+nums[nums.length-1]:70;const shown=(typeof catalogDur==='function'?catalogDur(label):label)+' (с разминкой и заминкой)';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">${esc(shown)}</p>`}delete Q.lenLabel;return quizLenOld(grp)}
 
 const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" data-k="${k}" data-v="${v}">${label}</button>`;
-function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{})};if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
+function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{}),...(typeof quizDaysAsked==='function'?quizDaysAsked():{})};if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
  const grp=(t,k,opts,multi)=>`<h2>${t}</h2><div class="chips">${opts.map(([v,l])=>chip(k,v,l,multi?Q[k].includes(v):String(Q[k])===String(v))).join('')}</div>`;
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ '+goalName('str',Q.place)],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
@@ -297,10 +297,14 @@ function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const 
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
  const place=a.place||'g';
  const L=altCands(cur).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b')));
- const good=L.filter(e=>okEx(e.id,a)),other=L.filter(e=>!okEx(e.id,a));
+ // tech-fix-2: exercises that conflict with the limitations (META + impact cardio) are not offered — shown greyed with the reason, no tap.
+ const lc=e=>typeof blockLimConf==='function'?blockLimConf(e.id,a):[];const risky=L.filter(e=>lc(e).length);
+ const good=L.filter(e=>!lc(e).length&&okEx(e.id,a)),other=L.filter(e=>!lc(e).length&&!okEx(e.id,a));
+ const LR={s:'спина',k:'колени',p:'плечи'};
  m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">Альтернативы на те же мышцы</p>
  ${good.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join('')}
- ${other.length?`<p class="mut">Другое оборудование или риск при ограничениях:</p>`+other.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left;opacity:.6" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}</div>`;
+ ${other.length?`<p class="mut">Другое оборудование:</p>`+other.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left;opacity:.6" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}
+ ${risky.length?`<p class="mut">Не подходит при твоих ограничениях:</p>`+risky.map(e=>`<div class="row lgrisky"><button class="full grow" disabled style="margin:3px 0;text-align:left;opacity:.45">⚠ ${esc(e.name)} <span class="mut">(${lc(e).map(l=>`<span>${LR[l]}</span>`).join(', ')})</span></button></div>`).join(''):''}</div>`;
  $('#mc').onclick=()=>m.classList.add('hidden');m.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})}
 
 // ---------- Сегодня
@@ -418,7 +422,7 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
  app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{it.exId=id;const l=S.autoW!==false?lastSets(id,A.id):null;it.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p}});save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
- $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false}))});save();workoutView()});
+ $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false})),limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);go('today')}};
  // D-259 (Eduards: «Завершить тренировку в конце должна быть.»): bottom button runs the same (wrapped) handler as the top «Завершить».
  $('#fin2').onclick=()=>{const f=$('#fin');if(f&&f.onclick)f.onclick()};
@@ -504,12 +508,13 @@ function program(){const one=PEDIT!=null&&S.program[PEDIT]?PEDIT:null;$('#title'
  const mv=(a,d)=>{const[di,ii]=a.split(',').map(Number),L=S.program[di].items,j=ii+d;if(j<0||j>=L.length)return;[L[ii],L[j]]=[L[j],L[ii]];save();program()};
  app.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(b.dataset.up,-1));app.querySelectorAll('[data-dn2]').forEach(b=>b.onclick=()=>mv(b.dataset.dn2,1));
  app.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.x.split(',');S.program[di].items.splice(ii,1);save();program()});
- app.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>pickEx(id=>{const p=prmMe().a;S.program[b.dataset.ad].items.push({exId:id,sets:p[0],min:p[1],max:p[2],rest:p[3]});save();program()}))}
+ app.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>pickEx(id=>{const p=prmMe().a;S.program[b.dataset.ad].items.push({exId:id,sets:p[0],min:p[1],max:p[2],rest:p[3],limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();program()}))}
 function volBadges(){const v={};S.program.forEach(d=>d.items.forEach(it=>{const g=exBy(it.exId).group;if(g!=='Кардио')v[g]=(v[g]||0)+it.sets}));return Object.entries(v).map(([g,n])=>`<span class="badge">${esc(g)}: ${esc(n)}</span>`).join('')}
 function pickEx(cb){const m=$('#modal');m.classList.remove('hidden');
  m.innerHTML=`<div class="sheet"><div class="row"><input id="q" placeholder="Поиск упражнения"><button id="mc">✕</button></div><div id="el"></div></div>`;
- const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&tr(e.name).toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}).join('');
-  $('#el').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})};
+ const draw=()=>{const q=$('#q').value.toLowerCase();$('#el').innerHTML=GROUPS.map(g=>{const l=allEx().filter(e=>e.group===g&&tr(e.name).toLowerCase().includes(q));return l.length?`<h2>${g}</h2>`+l.map(e=>{const rk=typeof lgConf==='function'?lgConf(e.id):[];return`<div class="row"><button class="full grow" style="margin:3px 0;text-align:left${rk.length?';opacity:.6':''}" data-p="${esc(e.id)}">${rk.length?'⚠ ':''}${esc(e.name)}${rk.length?` <span class="mut">(${typeof lgLimSpans==='function'?lgLimSpans(rk):''})</span>`:''}</button>${techBtn(e.id)}</div>`}).join(''):''}).join('');
+  // tech-fix-2: a risky exercise is marked; adding it needs a confirm and the item keeps the acknowledgement (limAck).
+  $('#el').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const id=b.dataset.p;if(typeof lgConfirmAdd==='function'&&!lgConfirmAdd(id))return;m.classList.add('hidden');cb(id)})};
  $('#q').oninput=draw;$('#mc').onclick=()=>m.classList.add('hidden');draw()}
 // ---------- Прогресс
 let pEx=null,pM='w';

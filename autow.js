@@ -29,7 +29,12 @@ const awFmt=x=>String(Math.round(x*100)/100);
 // Deload week: {type, start}. Scheduled every 6 weeks (6th week) for mid/adv; novices: none for the first 12 weeks.
 // tech-fix-1 awDeload: noSchedule = the active program block has its own deload workouts → no calendar deload on top
 // (a deload started by hand with «Начать разгрузку» still works).
-function awDeload(noSchedule){const now=Date.now();if(S.dl&&now-S.dl.start<7*AW_DAY)return S.dl.type;
+// tech-fix-2: noSchedule is checked BEFORE the active S.dl. A calendar deload started under the old plan (or before the switch
+// to a block with its own deload workouts) is closed, not carried into the block (no calendar + block deload overlap).
+// A deload the user started by hand (type 'early') stays until its 7 days end.
+function awDeload(noSchedule){const now=Date.now();
+ if(noSchedule&&S.dl&&S.dl.type!=='early'&&now-S.dl.start<7*AW_DAY){S.dlEnded={type:S.dl.type,start:S.dl.start,at:now,why:'block'};S.dl=null}
+ if(S.dl&&now-S.dl.start<7*AW_DAY)return S.dl.type;
  if(noSchedule||!S.workouts.length)return null;const lv=awLevel(),first=S.workouts[0].start;
  if(lv==='nov'&&now-first<84*AW_DAY)return null;
  const base=Math.max(S.dlLast||0,S.pgSince||now,lv==='nov'?first+84*AW_DAY-35*AW_DAY:0);
@@ -85,7 +90,8 @@ function awPrev(it){it.awx=1;it.sug=null;const c0=awCls(it.exId);
 // tech-fix-1 GC-07: a deload workout of the program block is a deload for auto-weight (not a premium switch: it is the program).
 // awDeload: blocks with their own deload workouts get no calendar deload on top.
 function awStart(){const A=S.active;if(!A)return;const dc=awDayCtx();
- const dl=dc&&dc.deload?'block':(awCan('deload')?awDeload(!!(dc&&dc.blockHasDeload)):null);A.dl=dl||null;
+ // tech-fix-2: awDeload runs first (it closes a calendar deload in a block with own deloads), then the block deload wins.
+ const cal=awCan('deload')?awDeload(!!(dc&&dc.blockHasDeload)):null;const dl=dc&&dc.deload?'block':cal;A.dl=dl||null;
  A.items.forEach(it=>awApply(it,dl));save()}
 const _awSW=startW;startW=function(i){_awSW(i);awStart();if(S.active)workoutView()};
 
@@ -98,7 +104,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
 
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
-  if(s.to&&s.to!==it.exId)L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
+  if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
  // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
  // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
  return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
@@ -114,7 +120,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  A.items.forEach((it,i)=>{const rm=app.querySelector(`[data-rm="${i}"]`);if(!rm||!rm.closest)return;const card=rm.closest('.card');if(!card)return;
   const c=awCls(it.exId);if(!c)return;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i))});
- app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to)return;
+ app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return;
   it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}
   const p=awPg()[from];if(p&&p.next)delete p.next.id;awApply(it,A.dl);save();workoutView()});
  const dlb=$('#awdl');if(dlb)dlb.onclick=()=>{S.dl={type:'early',start:Date.now()};S.dlLast=S.dl.start;A.dl='early';A.items.forEach(it=>awApply(it,'early'));save();workoutView()};

@@ -33,8 +33,13 @@ const BLOCK_VARIANT_RU={loss_nov_4_g_b36_vb:['Вариант B — 4 трени�
   str_adv_5_g_b35_voe:['Исходное оборудование (Смит)','Рекомендуем: жим и присед в Смите, можно без страхующего.'],
   str_adv_5_g_b35_vfree:['Свободная штанга','Для опытных: нужен уверенный жим и присед со штангой и страхующий.'],
   mass_nov_3_g_b36_v3:['Доработанная версия',''],loss_mid_4_g_pr_abs_b36_v3:['Доработанная версия','']};
-const BLOCK_VARIANT_OF={};
-for(const k in BLOCK_VARIANTS)BLOCK_VARIANTS[k].opts.forEach(v=>{if(!BLOCK_VARIANT_OF[v])BLOCK_VARIANT_OF[v]=k});
+// tech-fix-2: home base of every variant = variant_of of its file (one fixed value). Before it was built from BLOCK_VARIANTS
+// in key order, so B (4 days) was tied back to the 6-day base and a 4-day user got the 6-day A offered.
+// The base that OFFERS a variant (the questionnaire base) is passed separately (generate → variantBase).
+const BLOCK_VARIANT_OF={loss_nov_4_g_b36_vb:'loss_nov_4_g_b36',loss_nov_6_g_b36_va:'loss_nov_6_g_b36',mass_nov_3_g_b36_v3:'mass_nov_3_g_b36',
+  str_adv_5_g_b35_voe:'str_adv_5_g_b35',str_adv_5_g_b35_vfree:'str_adv_5_g_b35',loss_mid_4_g_pr_abs_b36_v3:'loss_mid_4_g_pr_abs_b36'};
+// Workouts per week of each variant (= days_per_week of its file; checked by test).
+const BLOCK_VARIANT_DAYS={loss_nov_4_g_b36_vb:4,loss_nov_6_g_b36_va:6,mass_nov_3_g_b36_v3:3,str_adv_5_g_b35_voe:5,str_adv_5_g_b35_vfree:5,loss_mid_4_g_pr_abs_b36_v3:4};
 function blockVariantsOn(){
   try{
     const search=(typeof location!=='undefined'&&location.search)||'';
@@ -47,7 +52,12 @@ function blockVariantFor(baseId,a){
   const v=baseId&&BLOCK_VARIANTS[baseId];if(!v||!blockVariantsOn())return baseId;
   const pick=a&&a.variant;return v.opts.includes(pick)?pick:v.def;
 }
-function blockVariantOpts(id){const base=BLOCK_VARIANT_OF[id]||id;const v=BLOCK_VARIANTS[base];return v&&blockVariantsOn()?v.opts.slice():[]}
+// Options shown for a variant id: those of the questionnaire base when it offers this id, else of its home base.
+function blockVariantBase(id,baseId){if(baseId&&BLOCK_VARIANTS[baseId]&&(baseId===id||BLOCK_VARIANTS[baseId].opts.includes(id)))return baseId;return BLOCK_VARIANT_OF[id]||(BLOCK_VARIANTS[id]?id:null)}
+function blockVariantOpts(id,baseId){const base=blockVariantBase(id,baseId);const v=base&&BLOCK_VARIANTS[base];return v&&blockVariantsOn()?v.opts.slice():[]}
+// tech-fix-2: reopening the questionnaire after a pilot variant: the answer «days» is what the user asked (6), not the
+// frequency of the accepted variant (B = 4), so the same base and the A / B choice come back.
+function quizDaysAsked(){const p=typeof S!=='undefined'&&S&&S.prof;return p&&p.variant&&BLOCK_VARIANT_OF[p.variant]&&+p.daysAsked>0?{days:+p.daysAsked}:{}}
 function blockFilePath(id){return BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}
 
 function fetchBlockFile(id){
@@ -72,12 +82,13 @@ function blocksEnabled(){
   }catch(e){return true}
 }
 
-function blockIdForProfile(a){
+function blockIdForProfile(a){return blockVariantFor(blockBaseForProfile(a),a)}
+// Base block of the questionnaire (before the pilot variant).
+function blockBaseForProfile(a){
   if(!a||!blocksEnabled())return null;
   const key=blockKey(a);
   const acc=blockAcc(a);
-  const id=(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null;
-  return blockVariantFor(id,a);
+  return(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null;
 }
 // D-229: accent (blocks-priority-v2, Claude 17.11.2026). Key {base}_pr_{muscle}; no block → base block. Sex is not used.
 // next_level of an accent block is the base advanced block (no advanced accent blocks yet), so the accent is dropped there.
@@ -249,7 +260,8 @@ function blockRole(it){
   return e&&BLOCK_ROLE_A_GROUPS.has(e.group)?'a':'c';
 }
 // rir_target of one workout: phase (by workout number) → block → null (the app falls back to PR_RIR of the level).
-function blockRirOk(t){return!!(t&&Array.isArray(t.c)&&Array.isArray(t.a)&&t.c.length===2&&t.a.length===2&&[...t.c,...t.a].every(x=>typeof x==='number'&&isFinite(x)&&x>=0&&x<=6))}
+// tech-fix-2: also lo ≤ hi (an inverted range [3,1] is invalid → level fallback)
+function blockRirOk(t){return!!(t&&Array.isArray(t.c)&&Array.isArray(t.a)&&t.c.length===2&&t.a.length===2&&[...t.c,...t.a].every(x=>typeof x==='number'&&isFinite(x)&&x>=0&&x<=6)&&t.c[0]<=t.c[1]&&t.a[0]<=t.a[1])}
 function blockRirTarget(b,w){
   if(!b||!w)return null;const n=+w.n;
   const ph=(b.phases||[]).find(p=>p&&Array.isArray(p.workouts)&&n>=p.workouts[0]&&n<=p.workouts[1]&&blockRirOk(p.rir_target));
@@ -279,7 +291,7 @@ function blockRisk(id){
   return(m?(String(m).split('|')[1]||''):'')+(BLOCK_CARDIO_RISK[id]||'');
 }
 function blockLimOk(id,a){
-  const lim=(a&&a.lim)||[];if(!lim.length)return true;
+  const lim=Array.isArray(a&&a.lim)?a.lim:[];if(!lim.length)return true;  // tech-fix-2: old data may hold a non-array
   const r=blockRisk(id);return!lim.some(l=>r.includes(l));
 }
 // tech-fix-1 GC-02: replacement candidates in order: 1) trainer ALT of the exercise; 2) ALT of those alternatives;
@@ -304,26 +316,52 @@ function blockLimCands(id){
 const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','inv','pull','scap-pullup','dead-hang']);
 function blockHasClip(id){return typeof movekitFile!=='function'||!!movekitFile(id)}
 function blockIsCardio(it){return!!(it&&it.cardio)||(typeof isCardio==='function'&&isCardio(it.exId))}
+// tech-fix-2: one safe pick for one item (block builder, plan check of saved plans, open workout).
+// used = ids already in the workout. a.places (equipment profile) wins over a.place.
+function blockLimAvail(a){
+  const place=(a&&a.place)||'g',places=(a&&a.places)||place;
+  const noBar=place==='b'&&!(a.bar===true||a.bar==='1'||a.bar===1);
+  return x=>(typeof eqAvail!=='function'||eqAvail(x,places))&&!(noBar&&BLOCK_NEEDS_BAR.has(x));
+}
+function blockLimConf(id,a){const lim=Array.isArray(a&&a.lim)?a.lim:[];if(!id||!lim.length)return[];const r=blockRisk(id);return lim.filter(l=>r.includes(l))}
+function blockLimPick(it,a,used){
+  used=used||new Set();
+  const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
+  const avail=blockLimAvail(a);
+  const cardio=blockIsCardio(it);
+  const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]);  // trainer fallback table: may cross the muscle group (hyp → hip thrust)
+  return blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockHasClip(x)&&
+    (cardio?(typeof isCardio!=='function'||isCardio(x)):((fb.has(x)||same(it.exId,x))&&!(typeof isCardio==='function'&&isCardio(x)))))||null;
+}
 function blockLimSwap(items,a,warn){
   if(!a||!(a.lim||[]).length)return items;
   const used=new Set(items.map(i=>i.exId));
-  const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
-  const place=a.place||'g';
-  const noBar=place==='b'&&!(a.bar===true||a.bar==='1'||a.bar===1);
-  const avail=x=>(typeof eqAvail!=='function'||eqAvail(x,place))&&!(noBar&&BLOCK_NEEDS_BAR.has(x));
   const out=[];
   items.forEach(it=>{
     if(blockLimOk(it.exId,a)){out.push(it);return}
-    const lim=(a.lim||[]).filter(l=>blockRisk(it.exId).includes(l));
-    const cardio=blockIsCardio(it);
-    const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]);  // trainer fallback table: may cross the muscle group (hyp → hip thrust)
-    const ok=blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockHasClip(x)&&
-      (cardio?(typeof isCardio!=='function'||isCardio(x)):((fb.has(x)||same(it.exId,x))&&!(typeof isCardio==='function'&&isCardio(x)))));
+    const lim=blockLimConf(it.exId,a);
+    const ok=blockLimPick(it,a,used);
     if(ok){used.add(ok);out.push(Object.assign({},it,{exId:ok,swapped:1}));if(warn)warn.push({from:it.exId,to:ok,lim});return}
     // No safe replacement: the exercise is not kept silently — it is left out of this workout with a visible note.
     if(warn)warn.push({from:it.exId,to:null,lim});
   });
   return out;
+}
+// tech-fix-2: warm-up and cool-down of a block day (wu.cardio / wu.mob / wu.ramp / cd.cardio / cd.stretch) were built
+// without the limitations (shell profile lim:[]) and the ramp followed the original first exercise. Same rule here:
+// cardio → safe cardio with a clip; ramp → the exercise that replaced the main lift, or no ramp; mobility / stretch with a
+// risk letter → left out with a note. Returns {wu,cd} copies; notes go to warn with part 'wu' / 'cd'.
+function blockLimWuCd(wu,cd,a,swapMap,warn){
+  const lim=(a&&a.lim)||[];if(!lim.length)return{wu,cd};
+  const W=wu?JSON.parse(JSON.stringify(wu)):wu,C=cd?JSON.parse(JSON.stringify(cd)):cd;
+  const note=(part,from,to)=>{if(warn&&!warn.some(w=>w.part===part&&w.from===from))warn.push({from,to:to||null,lim:blockLimConf(from,a),part})};
+  const cardio=(part,o)=>{if(!o||!o.cardio||!o.cardio.id||blockLimOk(o.cardio.id,a))return;const from=o.cardio.id;
+    const to=blockLimPick({exId:from,cardio:1},a,new Set());note(part,from,to);if(to)o.cardio.id=to;else delete o.cardio};
+  const list=(part,arr,key)=>(arr||[]).filter(x=>{const id=x&&x[key];if(!id||blockLimOk(id,a))return true;note(part,id,null);return false});
+  if(W){cardio('wu',W);if(W.mob)W.mob=list('wu',W.mob,'id');
+    if(W.ramp){W.ramp=W.ramp.map(r=>{if(!r||!r.exId||blockLimOk(r.exId,a))return r;const to=swapMap&&swapMap[r.exId];note('wu',r.exId,to);return to?Object.assign({},r,{exId:to}):null}).filter(Boolean);if(!W.ramp.length)delete W.ramp}}
+  if(C){cardio('cd',C);if(C.stretch)C.stretch=list('cd',C.stretch,'id')}
+  return{wu:W,cd:C};
 }
 // Text of the limitation notes of a day (RU source; i18n translates the fixed phrases and exercise names).
 const BLOCK_LIM_RU={s:'спина',k:'колени',p:'плечи'};
@@ -331,8 +369,9 @@ function blockLimWarnHTML(day){
   const W=(day&&day.limWarn)||[];if(!W.length)return'';
   const nm=id=>{const e=typeof exBy==='function'?exBy(id):null;const n=e&&e.name&&e.name!=='?'?e.name:id;return typeof esc==='function'?esc(n):n};
   const lims=l=>(l||[]).map(x=>BLOCK_LIM_RU[x]||x).map(x=>`<span>${x}</span>`).join(', ');
-  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): <b>${nm(w.from)}</b> → <b>${nm(w.to)}</b></div>`
-    :`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): <b>${nm(w.from)}</b> — <span>убрано из тренировки: безопасной замены нет</span></div>`);
+  const pt=w=>w.part==='wu'?'<span>Разминка</span>: ':w.part==='cd'?'<span>Заминка</span>: ':'';
+  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> → <b>${nm(w.to)}</b></div>`
+    :`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> — <span>убрано из тренировки: безопасной замены нет</span></div>`);
   const removed=W.some(w=>!w.to);
   return`<div class="mut limwarn" style="font-size:13px;margin:4px 0">${rows.join('')}${removed?'<div><span>Если хочешь вернуть упражнение — сначала посоветуйся с врачом или тренером.</span></div>':''}</div>`;
 }
@@ -383,11 +422,14 @@ function planFromBlock(block,a){
     const wc=attachWarmCool(shell,w,dayIdx);
     const warn=[];
     const day={name:blockDayName(w),n:w.n!=null&&+w.n>0?+w.n:i+1,items:blockLimSwap((w.items||[]).map(itemFromBlock),a,warn)};
-    if(warn.length)day.limWarn=warn;
     if(w.deload)day.deload=1;  // tech-fix-1 GC-07: the block deload reaches auto-weight
     const rt=blockRirTarget(b,w);if(rt)day.rirTarget=rt;
-    if(wc.wu)day.wu=wc.wu;
-    if(wc.cd)day.cd=wc.cd;
+    // tech-fix-2: warm-up / cool-down pass the same limitation check (ramp follows the replaced main lift)
+    const sm={};warn.forEach(w=>{if(w.to)sm[w.from]=w.to});
+    const wc2=blockLimWuCd(wc.wu,wc.cd,a,sm,warn);
+    if(warn.length)day.limWarn=warn;
+    if(wc2.wu)day.wu=wc2.wu;
+    if(wc2.cd)day.cd=wc2.cd;
     if(w.est_min!=null)day.est=w.est_min;
     if(w.week)day.week=w.week;
     return day;
@@ -513,7 +555,8 @@ function renderBlockToday(pick){
         const id=blockIdForProfile(a);
         const b=id&&getBlock(id);
         if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;else if(b.equipment_note_ru)p.advice=b.equipment_note_ru;
-          if(BLOCK_VARIANT_OF[b.id]){p.variantOf=BLOCK_VARIANT_OF[b.id];p.variantOpts=blockVariantOpts(b.id);if(b.days_per_week&&a&&+a.days!==+b.days_per_week)p.variantDays=+b.days_per_week}
+          if(BLOCK_VARIANT_OF[b.id]){const base=blockBaseForProfile(a);p.variantOf=BLOCK_VARIANT_OF[b.id];p.variantBase=blockVariantBase(b.id,base);p.variantOpts=blockVariantOpts(b.id,base);
+            const vd=BLOCK_VARIANT_DAYS[b.id]||+b.days_per_week||0;if(vd&&a&&+a.days!==vd)p.variantDays=vd}
           return p}
       }
       return orig(a);
@@ -529,7 +572,13 @@ function renderBlockToday(pick){
   if(typeof renderPreview==='function'){
     const orig=renderPreview;
     renderPreview=function(){
-      orig();
+      // tech-fix-2: the preview shows the real frequency of the chosen variant (B = 4×/week even when 6 was asked);
+      // PV.pr.a keeps the questionnaire answer so the A / B choice stays available on the next click.
+      const g0=typeof PV!=='undefined'&&PV&&PV.gen;
+      if(g0&&g0.variantOf&&PV.pr&&PV.pr.a){const ask=PV.pr.a,vd=BLOCK_VARIANT_DAYS[g0.blockId]||+ask.days;
+        const disp=Object.assign({},ask,{days:vd,daysAsked:+ask.daysAsked||+ask.days,variant:g0.blockId});
+        PV.pr=Object.assign({},PV.pr,{a:disp});try{orig()}finally{PV.pr=Object.assign({},PV.pr,{a:ask})}}
+      else orig();
       const gen=typeof PV!=='undefined'&&PV&&PV.gen;
       if(gen&&gen.variantOpts&&gen.variantOpts.length>1&&typeof app!=='undefined'&&app&&app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin',blockVariantHTML(gen));
       if(typeof app!=='undefined'&&app&&app.querySelectorAll)app.querySelectorAll('[data-bv]').forEach(x=>x.onclick=()=>{PV.pr.a=Object.assign({},PV.pr.a,{variant:x.dataset.bv});PV.gen=generate(PV.pr.a);renderPreview()});
@@ -542,7 +591,8 @@ function renderBlockToday(pick){
         if(S.program===was)return;
         const g=typeof PV!=='undefined'&&PV&&PV.gen;
         blockOnApplied(g);
-        if(g&&g.variantOf){S.prof=Object.assign({},S.prof||{},{variant:g.blockId});if(g.variantDays){S.days=g.variantDays;S.prof.days=g.variantDays}}
+        if(g&&g.variantOf){const vd=BLOCK_VARIANT_DAYS[g.blockId]||g.variantDays||S.days;S.prof=Object.assign({},S.prof||{},{variant:g.blockId,days:vd});S.days=vd;
+          if(!S.prof.daysAsked)S.prof.daysAsked=vd}
         if(typeof save==='function')save();
       };
     };

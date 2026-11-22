@@ -89,6 +89,12 @@
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
     (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
     if(p.pg&&typeof p.pg==='object') Object.keys(p.pg).forEach(k=>{const n=p.pg[k]&&p.pg[k].next;if(n&&n.note==='pain') n.note='same'});
+    // tech-fix-1/2: limitation notes and acknowledgements in the plan / history name the limitation — health data too.
+    const clean=it=>{if(it&&typeof it==='object'){delete it.limAck;delete it.swapped}};
+    (Array.isArray(p.program)?p.program:[]).forEach(d=>{if(!d||typeof d!=='object')return;delete d.limWarn;delete d.limAckWuCd;(d.items||[]).forEach(clean)});
+    (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(clean));
+    if(p.active&&typeof p.active==='object')(p.active.items||[]).forEach(clean);
+    delete p.limLog;
   }
   // Облако без ограничений не должно стирать их на этом устройстве.
   function keepLocalLimits(L){

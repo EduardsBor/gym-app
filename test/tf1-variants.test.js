@@ -62,9 +62,11 @@ test('variants: switch on → defaults orig-equipment and B; A / free only by ch
   assert.equal(q({ goal: 'mass', level: 'nov', days: 3, place: 'g' }), 'mass_nov_3_g_b36_v3');
   assert.equal(q({ goal: 'loss', level: 'mid', days: 4, place: 'g', acc: 'abs' }), 'loss_mid_4_g_pr_abs_b36_v3');
   assert.equal(q({ goal: 'mass', level: 'mid', days: 4, place: 'g' }), 'mass_mid_4_g_b36'); // other 239 programs: no variants
-  const gen = b.J(`(()=>{const g=generate({goal:'loss',level:'nov',days:6,place:'g',sex:'m',lim:[],prio:[],len:75});return{id:g.blockId,of:g.variantOf,opts:g.variantOpts,days:g.variantDays,html:blockVariantHTML(g)}})()`);
+  const gen = b.J(`(()=>{const g=generate({goal:'loss',level:'nov',days:6,place:'g',sex:'m',lim:[],prio:[],len:75});return{id:g.blockId,of:g.variantOf,base:g.variantBase,opts:g.variantOpts,days:g.variantDays,html:blockVariantHTML(g)}})()`);
   assert.equal(gen.id, 'loss_nov_4_g_b36_vb');
-  assert.equal(gen.of, 'loss_nov_6_g_b36');
+  // tech-fix-2: home base of B is loss_nov_4 (file variant_of); the 6-day questionnaire base only offers it
+  assert.equal(gen.of, 'loss_nov_4_g_b36');
+  assert.equal(gen.base, 'loss_nov_6_g_b36');
   assert.deepEqual(gen.opts, ['loss_nov_4_g_b36_vb', 'loss_nov_6_g_b36_va']);
   assert.equal(gen.days, 4);
   assert.match(gen.html, /Вариант B — 4 тренировки в неделю/);

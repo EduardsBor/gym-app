@@ -43,6 +43,7 @@ const FILES = [
   'sync.js',
   'blocks.js',
   'exscreen.js',
+  'limguard.js',
   'tech.js',
   'warm.js',
   'notify.js',
