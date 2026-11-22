@@ -129,7 +129,11 @@ const _awWV=workoutView;workoutView=function(){_awWV();awDecorate()};
 
 // After a workout is saved: update per-exercise state; the saved workout itself is not changed
 function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
- W.items.forEach(it=>{const c=awCls(it.exId);if(!c)return;const s=it.sug||{},p=P[it.exId]||(P[it.exId]={});
+ W.items.forEach(it=>{const c=awCls(it.exId);if(!c)return;
+  // tech-fix-2.2: stopped for a limitation (limStop: «Остановить», or the source of «Заменить остаток») → S.pg of this exercise
+  // stays as it was (no success, no miss); a replacement (limFrom) counts for its own exId only when all its sets are done.
+  if(it.limStop||(it.limFrom&&(it.sets||[]).filter(x=>x.done).length<(+it.ns||(it.sets||[]).length)))return;  // saved items keep only done sets → compare with ns
+  const s=it.sug||{},p=P[it.exId]||(P[it.exId]={});
   p.first=p.first||W.start;
   // tech-fix-1 GC-07: deload workouts (calendar, early or of the block) never change progression, also without auto-weight.
   const wdl=s.dl||W.dl;if(wdl){p.last=W.start;if(wdl==='block')p.afterDl=1;return}

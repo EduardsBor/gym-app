@@ -44,17 +44,26 @@ function lgAuditDay(day,a){
 }
 // tech-fix-2.1: a finished plan day is never changed by the plan check (only upcoming days are).
 // Block plan (linear, S.block.next): days before S.block.next, plus a day done out of order in the current pass (history:
-// same dayIdx + name, newer than the start of the pass). Plain plan of the old generator (cyclic, S.next): its days are
+// same dayIdx + name + number, not older than the start of the pass — lgPassStart, tech-fix-2.2). Plain plan of the old generator (cyclic, S.next): its days are
 // templates of the coming sessions — history keeps its own copy of every done workout, so only the day of the open workout is
 // locked. The open workout itself is handled by the workout card. Old data without these fields → the day counts as upcoming.
-function lgHist(i){const p=S.program&&S.program[i];if(!p)return[];
-  return(S.workouts||[]).filter(w=>w&&w.dayIdx===i&&w.dayName===p.name&&!w.fromTemplate&&(w.n==null||p.n==null||+w.n===+p.n))}
+function lgIsDay(w,i){const p=S.program&&S.program[i];return!!(p&&w&&w.dayIdx===i&&w.dayName===p.name&&!w.fromTemplate&&(w.n==null||p.n==null||+w.n===+p.n))}
+function lgHist(i){return(S.workouts||[]).filter(w=>lgIsDay(w,i))}
+// tech-fix-2.2: start of the current pass of the block. S.block.passAt (set on block start / repeat / next level).
+// Old data without it: the in-order completions of days next-1 … 1 are found back in history (newest first); the pass
+// began after the last workout of the LAST day before them (end of the previous pass), or at the start of history.
+function lgPassStart(){
+  const b=S.block||{};if(isFinite(+b.passAt)&&+b.passAt>0)return+b.passAt;
+  const n=S.program.length,nx=b.next|0,t=w=>+w.start||0;
+  const H=(S.workouts||[]).filter(w=>w&&w.dayIdx!=null&&lgIsDay(w,w.dayIdx)).sort((x,y)=>t(y)-t(x));
+  let e=nx-1,t0=Infinity;for(const w of H){if(e<0)break;if(w.dayIdx===e&&t(w)<t0){t0=t(w);e--}}
+  const prev=H.find(w=>w.dayIdx===n-1&&t(w)<t0&&!(nx>=n));return prev?t(prev)+1:0;
+}
 function lgDayLocked(i){
   if(typeof S==='undefined'||!S||!Array.isArray(S.program))return false;const p=S.program[i];if(!p)return true;
   if(S.active&&S.active.dayIdx===i&&S.active.dayName===p.name&&!S.active.fromTemplate)return'active';
-  if(typeof blockActive==='function'&&blockActive()){const nx=S.block.next|0;if(i<nx)return'done';const W=lgHist(i);
-    const last=Math.max(0,...lgHist(nx>0?0:S.program.length-1).map(w=>+w.start||0));
-    return W.some(w=>(+w.start||0)>last)?'done':false}
+  if(typeof blockActive==='function'&&blockActive()){const nx=S.block.next|0;if(i<nx)return'done';
+    const t0=lgPassStart();return lgHist(i).some(w=>(+w.start||0)>=t0)?'done':false}
   return false;
 }
 function lgAuditPlan(){
@@ -152,7 +161,7 @@ function lgActiveFix(k,mode){
       const l=S.autoW!==false&&typeof lastSets==='function'?lastSets(x.to,A.id):null;
       const n={exId:x.to,ns:left,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,limFrom:it.exId,swapped:1,
         sets:Array.from({length:left},(_,j)=>{const p=l&&(l[j]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})};
-      it.sets=done;A.items.splice(k+1,0,n);lgLog({kind:'split',active:A.id,from:x.exId,to:x.to,lim:x.lim,done:done.length,left})}
+      it.sets=done;it.limStop=1;A.items.splice(k+1,0,n);lgLog({kind:'split',active:A.id,from:x.exId,to:x.to,lim:x.lim,done:done.length,left})}
     else{it.sets=done;it.limStop=1;lgLog({kind:'stop',active:A.id,ex:x.exId,lim:x.lim,done:done.length,left})}
     if(typeof save==='function')save();return true;
   }

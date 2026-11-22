@@ -192,8 +192,10 @@ function migrateBlockState(state){
   let n=state.block.next;
   if(typeof n!=='number'||!isFinite(n)||n<0)n=0;
   const dueOn=typeof state.block.dueOn==='string'?state.block.dueOn:undefined;
+  const passAt=+state.block.passAt;  // tech-fix-2.2: start of the current pass (limguard.js lgPassStart)
   state.block={id:state.block.id,next:n|0};
   if(dueOn)state.block.dueOn=dueOn;
+  if(isFinite(passAt)&&passAt>0)state.block.passAt=passAt;
   return state;
 }
 
@@ -226,13 +228,14 @@ function repeatBlock(state){
   state.block.next=0;
   state.next=0;
   delete state.block.dueOn;
+  state.block.passAt=Date.now();
 }
 
 function goNextLevel(state,block){
   const ea=normalizeEndActions(unwrapBlock(block)&&unwrapBlock(block).end_actions);
   if(!ea.next_level)return false;
   if(!state)return false;
-  state.block={id:ea.next_level,next:0};
+  state.block={id:ea.next_level,next:0,passAt:Date.now()};
   state.next=0;
   return true;
 }
@@ -498,7 +501,7 @@ function cacheBlockFile(id){
 }
 function blockOnApplied(gen){
   if(typeof S==='undefined'||!S)return;
-  if(gen&&gen.blockId)S.block={id:gen.blockId,next:0};
+  if(gen&&gen.blockId)S.block={id:gen.blockId,next:0,passAt:Date.now()};
   else if(S.block)delete S.block;
   if(S.block&&S.block.id)cacheBlockFile(S.block.id);
 }
