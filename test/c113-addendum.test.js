@@ -81,7 +81,7 @@ test('C-113 addendum: no muscle field contains «(кардио)»', () => {
   assert.deepEqual(muscleHits(run, /\(cardio\)/i), []);
 });
 
-test('C-113 addendum: deadlift why uses the simpler quad clause; SW cache is moyzal-v146', () => {
+test('C-113 addendum: deadlift why uses the simpler quad clause; SW cache is moyzal-v147', () => {
   const { run } = boot();
   const ru = run('LIB["mk-barbell-deadlift"][2]');
   const en = run('LIB_EN["mk-barbell-deadlift"][2]');
@@ -92,6 +92,6 @@ test('C-113 addendum: deadlift why uses the simpler quad clause; SW cache is moy
   assert.doesNotMatch(en, /knee-extending moment/);
   assert.match(lv, /četrgalvainais muskulis iztaisno ceļus vilkmes sākumā no zemes/);
   assert.doesNotMatch(lv, /iztaisnošanas momentu/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v146'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v147'/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-C113-ADD.md')));
 });

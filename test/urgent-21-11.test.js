@@ -56,13 +56,13 @@ test('no «ИИ-советы скоро» card; top «Завершить» hidde
   assert.doesNotMatch(a, /Все данные хранятся только на этом телефоне/);
 });
 
-test('«Профиль» by screens: profile.js loads last (site, offline cache, Android build) with the 7 sections', () => {
+test('«Профиль» by screens: profile.js loads last (site, offline cache, Android build) with the sections', () => {
   const html = read('index.html');
   assert.match(html, /<script src="notify\.js"><\/script><script src="profile\.js"><\/script>/);
   assert.match(read('sw.js'), /'profile\.js'/);
   assert.match(read('scripts/build-web.js'), /'profile\.js'/);
   const p = read('profile.js');
-  for (const t of ['Аккаунт', 'Программа', 'Оборудование', 'Тренировка', 'Данные', 'Язык и оформление', 'Справка']) assert.match(p, new RegExp("t:'" + t + "'"));
+  for (const t of ['Аккаунт', 'Программа', 'Оборудование', 'Настройки тренировки', 'Уведомления', 'Данные', 'Язык и оформление', 'Справка']) assert.match(p, new RegExp("t:'" + t + "'"));
   const d3 = read('i18n/dict3.js');
   for (const t of ['Аккаунт', 'Данные', 'Язык и оформление', '← Профиль']) assert.match(d3, new RegExp("\\['" + t + "','[^']+','[^']+'\\]"));
 });

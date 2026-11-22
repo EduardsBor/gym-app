@@ -159,7 +159,7 @@ function P(id, name, places, at, preset) {
 }
 
 test('P-304: cache is moyzal-v67; equipProfile is free; video stays gated', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v146'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v147'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.equal(read('sw.js').includes("C='moyzal-v59'"), false);
   const b = boot(seed());

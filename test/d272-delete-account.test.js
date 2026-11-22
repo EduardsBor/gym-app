@@ -24,43 +24,43 @@ test('D-272: wording matches 24-play-forms-deletion.md; in-app path uses real UI
   const h = read('delete-account.html');
   assert.match(h, /<h1>Удаление аккаунта GymCaptain<\/h1>/);
   assert.match(h, /Удалить аккаунт и все данные можно двумя способами\./);
-  assert.match(h, /Профиль → Данные → «Удалить все данные»/);
+  assert.match(h, /Профиль → Данные → «Удалить аккаунт»/);
   assert.match(h, /тема «Удаление аккаунта»/);
   assert.match(h, /Мы удалим аккаунт в течение 30 дней и ответим письмом\./);
   assert.match(h, /журнал согласий/);
   assert.match(h, /удаляются через 13 месяцев;/);
   assert.match(h, /по сроку хранения Sentry;/);
   assert.match(h, /политику конфиденциальности<\/a>, раздел 7/);
-  assert.match(h, /кнопкой «Удалить все данные»/);
+  assert.match(h, /кнопкой «Удалить аккаунт»/);
 
   assert.match(h, /<h1>Delete your GymCaptain account<\/h1>/);
   assert.match(h, /You can delete your account and all your data in two ways\./);
-  assert.match(h, /Profile → Data → “Delete all data”/);
+  assert.match(h, /Profile → Data → “Delete account”/);
   assert.match(h, /subject “Account deletion”/);
   assert.match(h, /We will delete the account within 30 days and confirm by email\./);
   assert.match(h, /the consent log/);
   assert.match(h, /deleted after 13 months;/);
   assert.match(h, /Sentry’s retention period;/);
-  assert.match(h, /with “Delete all data”/);
+  assert.match(h, /with “Delete account”/);
 
   assert.match(h, /<h1>GymCaptain konta dzēšana<\/h1>/);
   assert.match(h, /Kontu un visus datus vari dzēst divos veidos\./);
-  assert.match(h, /Profils → Dati → “Dzēst visus datus”/);
+  assert.match(h, /Profils → Dati → “Dzēst kontu”/);
   assert.match(h, /tēmu “Konta dzēšana”/);
   assert.match(h, /Mēs dzēsīsim kontu 30 dienu laikā un nosūtīsim apstiprinājumu e-pastā\./);
   assert.match(h, /piekrišanas žurnāls/);
   assert.match(h, /pēc 13 mēnešiem;/);
   assert.match(h, /Sentry glabāšanas termiņā;/);
-  assert.match(h, /pogu “Dzēst visus datus”/);
+  assert.match(h, /pogu “Dzēst kontu”/);
 
-  // Brief said «Удалить аккаунт», but the real button is «Удалить все данные» — page follows the UI.
-  assert.doesNotMatch(h, /→ «Удалить аккаунт»/);
-  assert.doesNotMatch(h, /→ “Delete account”/);
-  assert.doesNotMatch(h, /→ “Dzēst kontu”/);
+  // D-290: in-app path is «Удалить аккаунт» (account + cloud). Local-only clear is a separate button.
+  assert.match(h, /→ «Удалить аккаунт»/);
+  assert.match(h, /→ “Delete account”/);
+  assert.match(h, /→ “Dzēst kontu”/);
   const feat = read('features.js');
-  assert.match(feat, /id="wipe"[^>]*>🗑 Удалить все данные/);
-  const d2 = read('i18n/dict2.js');
-  assert.match(d2, /\['🗑 Удалить все данные','🗑 Delete all data','🗑 Dzēst visus datus'\]/);
+  assert.match(feat, /id="wipe"[^>]*>Удалить аккаунт/);
+  const d3w = read('i18n/dict3.js');
+  assert.match(d3w, /\['Удалить аккаунт','Delete account','Dzēst kontu'\]/);
   const d3 = read('i18n/dict3.js');
   assert.match(d3, /\['Профиль','Profile','Profils'\]/);
   assert.match(d3, /\['Данные','Data','Dati'\]/);
@@ -71,7 +71,7 @@ test('D-272: delete-account.html is excluded from the service worker cache, like
   assert.match(sw, /\(privacy\|terms\|auth-callback\|delete-account\)\\\.html\$\/\.test\(u\.pathname\)\)return;/);
   const precache = sw.slice(0, sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(precache, /delete-account/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v146'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v147'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   // GitHub Pages / Play Console link; not bundled into the Android www copy (same as privacy.html).
   const build = read('scripts/build-web.js');

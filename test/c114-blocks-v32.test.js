@@ -122,7 +122,7 @@ test('C-114: mk-hanging-knee-raises is hidden; hanging-knee-raise stays; no bloc
   assert.deepEqual(hits, []);
 });
 
-test('C-114: blocks-index duration_label matches the JSON files; SW cache is moyzal-v146', () => {
+test('C-114: blocks-index duration_label matches the JSON files; SW cache is moyzal-v147', () => {
   const { run } = boot();
   const idx = run('BLOCK_INDEX');
   assert.equal(idx.length, 244);
@@ -131,6 +131,6 @@ test('C-114: blocks-index duration_label matches the JSON files; SW cache is moy
   assert.equal(sample.duration_label, '80–85 мин');
   const file = JSON.parse(read('data/blocks/mass_adv_2_g_b32.json'));
   assert.equal(sample.duration_label, file.duration_label);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v146'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v147'/);
   assert.match(read('CHANGELOG.md'), /C-114 программы v3\.2 \(v145\)/);
 });
