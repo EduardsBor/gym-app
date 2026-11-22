@@ -147,7 +147,7 @@ function boot(stored, opts) {
   }
   for (const f of files) {
     let src = read(f);
-    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;window.__mzApplyMerged=applyMerged;window.__mzSync=sync;window.__mzDeleteCloud=mzDeleteCloud;\n  init();\n})();');
+    if (f === 'sync.js') src = src.replace('  init();\n})();', '  window.__mzApplyRemoteFresh=applyRemoteFresh;window.__mzApplyMerged=applyMerged;window.__mzPull=pullAndMerge;window.__mzSync=sync;window.__mzDeleteCloud=mzDeleteCloud;\n  init();\n})();');
     vm.runInContext(src, ctx, { filename: f });
   }
   return { run: code => vm.runInContext(code, ctx), store: data, idb: idb.dbs, g };
@@ -313,19 +313,22 @@ test('account deletion calls delete_my_account, then clears local data and auth 
   assert.equal(b.g.__reloaded, true);
 });
 
-test('if delete_my_account fails, wipe falls back to user_state delete and still clears local', async () => {
+test('if delete_my_account fails, local data stays and the alert does not claim the data was deleted', async () => {
   const cloud = { inserts: [], upserts: [], deletes: [], rpcs: [], user: USER, rpcError: { message: 'not found' } };
   const b = boot(seed({ workouts: [W('w1', 100, 60)] }), { cloud });
   for (let i = 0; i < 6; i++) await tick();
+  const before = b.store.get('gym');
   await b.run('wipeAll()');
   for (let i = 0; i < 8; i++) await tick();
-  assert.ok(cloud.rpcs.some(r => r.name === 'delete_my_account'));
-  assert.equal(cloud.deletes.length, 1);
-  assert.equal(cloud.deletes[0].table, 'user_state');
-  assert.equal(cloud.deletes[0].val, USER.id);
-  assert.equal(b.store.has('gym'), false);
-  assert.equal(b.g.__reloaded, true);
-  assert.ok(b.g.__alerts.some(a => /Аккаунт \(почту для входа\) удалить не удалось/.test(a)));
+  assert.ok(cloud.rpcs.filter(r => r.name === 'delete_my_account').length >= 1);
+  assert.ok(cloud.rpcs.some(r => r.name === 'account_is_deleted'));
+  assert.equal(cloud.deletes.length, 0); // no user_state-only fallback
+  assert.equal(b.store.get('gym'), before);
+  assert.equal(b.g.__reloaded, false);
+  const alerts = b.g.__alerts.join('\n');
+  assert.match(alerts, /Сервер не подтвердил удаление аккаунта/);
+  assert.match(alerts, /Удалить аккаунт/);
+  assert.doesNotMatch(alerts, /Данные удалены/);
 });
 
 test('if the cloud delete fails, local data and IndexedDB stay and the page does not reload', async () => {
@@ -341,5 +344,6 @@ test('if the cloud delete fails, local data and IndexedDB stay and the page does
   assert.equal(b.store.get('gym'), before);
   assert.equal(JSON.parse(before).workouts[0].id, 'w1');
   assert.equal(b.g.__reloaded, false);
-  assert.ok(b.g.__alerts.some(a => /Не удалось удалить данные в облаке/.test(a)));
+  assert.ok(b.g.__alerts.some(a => /Сервер не подтвердил удаление аккаунта/.test(a)));
+  assert.ok(!b.g.__alerts.some(a => /Данные удалены/.test(a)));
 });

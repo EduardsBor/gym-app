@@ -35,8 +35,8 @@ function sections() {
   return vm.runInNewContext('(' + m[1] + ')');
 }
 
-test('D-290: cache is moyzal-v148', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v148'/);
+test('D-290: cache is moyzal-v149', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v149'/);
 });
 
 test('D-290: profile.js sections — rename, notifications item, data danger block', () => {
@@ -123,7 +123,7 @@ test('D-290: Аккаунт row status — email or «Не выполнен вх
   bag.user = { email: 'a@b.c' }; bag.status = 'ok';
   assert.equal(bag.fn(), 'a@b.c · Синхронизировано');
   bag.status = 'syncing';
-  assert.equal(bag.fn(), 'a@b.c · Синхронизировано');
+  assert.equal(bag.fn(), 'a@b.c · Синхронизация…');
   bag.status = 'offline';
   assert.equal(bag.fn(), 'a@b.c · Нет сети');
   bag.status = 'err';

@@ -9,7 +9,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 var(--font);le
 header{padding:calc(12px + env(safe-area-inset-top)) 16px 8px;position:sticky;top:0;background:var(--bg);z-index:5}
 h1{margin:0;font-size:24px}h2{font-size:19px;margin:18px 0 8px}h3{margin:0 0 6px;font-size:17px}
 main{padding:0 14px}.card{background:var(--card);border-radius:var(--radius);border:var(--line-w) solid var(--card-bd);padding:14px;margin:10px 0}
-.mut{color:var(--mut);font-size:14px}.row{display:flex;gap:8px;align-items:center}.grow{flex:1}
+.mut{color:var(--mut);font-size:14px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1;min-width:0}
 button,.btn{font:inherit;border:0;border-radius:var(--radius-btn);background:var(--card2);color:var(--txt);min-height:48px;padding:0 16px;cursor:pointer}
 .pri{background:var(--acc);color:var(--on-acc);font-weight:600}.full{width:100%}.sm{min-height:38px;padding:0 10px;font-size:14px}
 .ok{background:var(--ok);color:var(--on-ok)}.danger{background:var(--danger-bg)}
@@ -32,7 +32,7 @@ nav button span{font-size:11px;color:var(--mut)}nav button.on span{color:var(--a
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--on-gold);padding:12px 18px;border-radius:14px;font-weight:700;z-index:30}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cal div{padding:8px 0;border-radius:10px;font-size:14px}
 .cal .has{background:var(--acc);color:var(--on-acc);font-weight:700;cursor:pointer}.cal .h{color:var(--mut);font-size:12px}
-.li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}.li>.grow{min-width:0;flex:1 1 8rem}.wu-dose{white-space:normal;overflow-wrap:anywhere}
 canvas{width:100%;height:200px;background:var(--card2);border-radius:12px}.tabs{display:flex;gap:6px;margin:8px 0}.tabs button{flex:1}.tabs .on{background:var(--acc)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chip{padding:0 14px;min-height:44px;text-align:center}.chips.sm2{margin:6px 0}.chips.sm2 .chip{min-height:36px;font-size:14px;padding:0 10px}
 details summary{cursor:pointer;min-height:30px}
@@ -150,3 +150,8 @@ body.exv #timer{display:none!important}
 .nutart{line-height:1.5}.nutart h2{margin:4px 0 10px}.nutart h3{margin:18px 0 6px}.nutart ul,.nutart ol{padding-left:20px;margin:6px 0}.nutart li{margin:4px 0}.nsrc{font-size:13px;color:var(--mut,inherit)}
 .excap{margin:6px 0 0;font-size:13px}
 .gcboot{text-align:center;padding:48px 16px}.gcboot h2{margin:0 0 6px;font-size:28px}.gcboot p{margin:0;color:var(--mut)}
+/* v149: 320 px — warm-up dose, ⇄/✕ and the Data-section links stay inside the screen */
+.row.exo>h3,.row.exo>.grow{min-width:0;overflow-wrap:anywhere}
+.row.exo>.sm,.row.exo>.tbtn{flex:0 0 auto}
+#privdata .row>button,#lpriv,#lterms{flex:1 1 100%;min-width:0;height:auto;white-space:normal;line-height:1.25;padding:10px 12px;overflow-wrap:anywhere}
+#eqswitch .chip,#eqswedit .chip{max-width:100%;height:auto;white-space:normal;line-height:1.2;padding:8px 12px}

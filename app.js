@@ -85,7 +85,7 @@ function warmPlan(d,a){a=a||{};const g=warmGroups(d),lim=a.lim||[],home=a.place!
 function warmItems(P){return[{k:'gen',n:P.gen,d:'3 мин'},...P.mob.map(id=>({k:id,n:WMOV[id][0],d:WMOV[id][1],x:WMOV[id][2]})),...P.ramp.map((r,i)=>({k:'r'+i,n:'Подводящий подход',d:(r.w==null&&r.t!=='Лёгкий подход'?r.t+' × '+r.r:r.t==='Лёгкий подход'?'× '+r.r:r.t+' · '+r.w+' кг × '+r.r),ramp:1,pct:r.t}))]}
 function wuId(it){if(it.ramp)return null;if(it.k==='gen'){const n=it.n;return /Гребн/.test(n)?'mk-rowing-machine-steady-state':/Велотр/.test(n)?'mk-indoor-cycling-spin':/Эллипс/.test(n)?'mk-elliptical':/Джампинг/.test(n)?'jump':'mk-walking-knee-hugs'}return ({march:'mk-walking-knee-hugs',hip:'w_hip',legsw:'w_legsw',glb:'w_glb',gm:'mk-hip-hinge-drill',armc:'mk-arm-circles-front-back',dislo:'mk-broomstick-pass-throughs',pa:'mk-band-high-face-pull',catcow:'mk-cat-camel',scpull:'w_scpull',bandrow:'mk-band-row',bwsq:'bwsq'})[it.k]||null}
 function warmHTML(P,chk){const L=warmItems(P);const noW=P.ramp.some(r=>r.w==null&&r.t!=='Лёгкий подход');
- const row=(it,i)=>`<div class="li wu exo${chk&&chk[i]?' done':''}" data-exo="w,${i}">${chk?`<button class="sm ${chk[i]?'ok':''}" data-wu="${i}" aria-label="Готово">✓</button>`:''}${(()=>{const v=it.ramp?P.main:wuId(it);return v?animShot(v):''})()}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort==='function'&&exShort(it.d)!==it.d&&it.d?`<div class="mut" style="font-size:12px">${esc(it.d)}</div>`:''}${it.x?`<div class="mut" style="font-size:12px">${esc(it.x)}</div>`:''}</div>${(()=>{const v=wuId(it);return v?techBtn(v).replace('data-ti=','data-wf="1" data-ti='):''})()}<span class="mut" style="white-space:nowrap">${esc(typeof exShort==='function'?exShort(it.d):it.d)}</span></div>`;
+ const row=(it,i)=>`<div class="li wu exo${chk&&chk[i]?' done':''}" data-exo="w,${i}">${chk?`<button class="sm ${chk[i]?'ok':''}" data-wu="${i}" aria-label="Готово">✓</button>`:''}${(()=>{const v=it.ramp?P.main:wuId(it);return v?animShot(v):''})()}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort==='function'&&exShort(it.d)!==it.d&&it.d?`<div class="mut" style="font-size:12px">${esc(it.d)}</div>`:''}${it.x?`<div class="mut" style="font-size:12px">${esc(it.x)}</div>`:''}</div>${(()=>{const v=wuId(it);return v?techBtn(v).replace('data-ti=','data-wf="1" data-ti='):''})()}<span class="mut wu-dose">${esc(typeof exShort==='function'?exShort(it.d):it.d)}</span></div>`;
  return `<div class="mut" style="font-size:13px;margin:4px 0"><span>1) Общая разминка — 3 мин</span> · <span>2) Подвижность суставов — ~2 мин</span>${P.ramp.length?` · <span>3) Подводящие подходы</span>`:''}</div>${L.map((it,i)=>(it.k==='r0'?`<div class="row" style="margin-top:10px"><b class="grow"><span>3) Подводящие подходы</span>: <span>${esc(exBy(P.main).name)}</span></b>${techBtn(P.main)}</div>`:'')+row(it,i)).join('')}${noW?'<div class="mut" style="font-size:12px;margin-top:4px">% — от твоего рабочего веса. Разминочные подходы не записываются в историю и рекорды.</div>':'<div class="mut" style="font-size:12px;margin-top:4px">Разминочные подходы не записываются в историю и рекорды.</div>'}`}
 
 function pickFor(slot,a,used,off,acc){const[c,safe]=SLOT[slot];const allow=id=>okEx(id,a)&&(typeof autoOk!=='function'||autoOk(id,a,!!acc))&&!used.has(id);let L=c.filter(allow);let swapped=false;
@@ -456,7 +456,9 @@ function playFanfareOnly(){if(!soundOn()||taCovers())return;armAudio(0,true,true
 let tEnd=0,tInt,lastWarn=-1;
 const soundOn=()=>S.sound!==false;
 function endSignal(){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
-function startTimer(sec){armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
+// Rest is 0 (use the program) or 5…600 s, in steps of 5. Anything under 5 s, empty, or not a number becomes 0.
+function clampRest(v){v=+v;if(!Number.isFinite(v)||v<5)return 0;v=Math.round(v/5)*5;if(v<5)return 0;return v>600?600:v}
+function startTimer(sec){sec=clampRest(sec);if(!(sec>0))return;armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
 function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
  if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
@@ -466,12 +468,12 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(t
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
 const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};
 let TA=null;const getTA=()=>{if(!TA){TA=new Audio();TA.setAttribute('playsinline','');TA.volume=1}return TA};let taURL=null,taEndAt=0;
-function wavFor(sec,fan,noEnd){const R=11025,tail=1.2,n=Math.ceil((Math.max(sec,fan?1:0)+tail)*R),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+function wavFor(sec,fan,noEnd){sec=+sec;if(!Number.isFinite(sec)||sec<0)sec=0;if(sec>600)sec=600;const R=11025,tail=1.2,dur=Math.max(sec,fan?1:0)+tail;if(!Number.isFinite(dur)||dur>602)return null;const n=Math.ceil(dur*R);if(!Number.isFinite(n)||n<=0||n>R*602)return null;const buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
  const ws=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
  const beep=(t,d,f,amp)=>{const s=Math.floor(t*R),e=Math.min(n,s+Math.floor(d*R));for(let i=Math.max(0,s);i<e;i++){const k=i-s,env=Math.min(1,k/60,(e-i)/60);v.setInt16(44+i*2,Math.round(amp*env*(Math.sin(2*Math.PI*f*k/R)>=0?1:-1)),true)}};
  if(fan)[[523,0],[659,.13],[784,.26],[1047,.39],[784,.6],[1047,.72]].forEach(([f,t])=>beep(t,t>.5?.22:.12,f,24000));if(!noEnd){[3,2,1].forEach(k=>{if(sec-k>(fan?1.1:0.2))beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000))}
  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
-function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;setSession();if(!soundOn()){TA&&TA.pause();return}getTA();if(taURL)URL.revokeObjectURL(taURL);taURL=wavFor(Math.max(0,sec),fan,noEnd);TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
+function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;sec=+sec;if(!Number.isFinite(sec)||sec<0)sec=0;if(sec>600)sec=600;setSession();if(!soundOn()){TA&&TA.pause();return}getTA();const url=wavFor(sec,fan,noEnd);if(!url){try{TA.pause()}catch(e){}return}if(taURL)URL.revokeObjectURL(taURL);taURL=url;TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
  const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
 const taCovers=()=>TA&&taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
@@ -622,8 +624,9 @@ async function migrateHistory(){
  catch(e){return{ok:false,fallback:'localStorage'}}
 }
 async function clearLocalData(){
- try{['gym','gym_hist_backup','gym_hist_idb','gymPersist'].forEach(k=>localStorage.removeItem(k))}catch(e){}
- try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(IDB_NAME);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
+ // QA-03: вместе с основными данными — гостевые и аварийные копии.
+ try{['gym','gym_hist_backup','gym_hist_idb','gymPersist','gym_guest_copy','gym_broken'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+ for(const db of [IDB_NAME,'moyzal_guest'])try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(db);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
 }
 let persistAsked=false;
 function requestPersist(){
@@ -745,10 +748,48 @@ function cleanImport(d){
   p.days=+p.days||3;p.len=+p.len||60;p.sex=p.sex==='f'?'f':'m';p.prio=arr(p.prio).filter(g=>str(g)&&g in PRIO_SLOT);p.lim=arr(p.lim).filter(l=>str(l)&&l in LIMN);if(p.acc!=null&&!['none','back','arms','glutes','abs'].includes(p.acc))p.acc='none'}
  if(d.why!=null)d.why=arr(d.why).filter(w=>Array.isArray(w)&&str(w[0])).map(w=>[w[0],arr(w[1]).filter(str)]);
  ['height','weightKg','age','restOverride','next','days'].forEach(k=>{if(d[k]!=null)d[k]=+d[k]||0});
- if(d.progName!=null)d.progName=String(d.progName);
- delete d.active;delete d.tEnd;
- return d}
+ // QA-04: numbers stay inside the ranges the profile already uses. Out-of-range values become 0 (not imported).
+ let clamped=false;
+ const rng=(k,lo,hi)=>{if(d[k]!=null&&!(d[k]>=lo&&d[k]<=hi)){d[k]=0;clamped=true}};
+ rng('age',14,100);rng('weightKg',30,300);rng('height',100,250);
+ if(d.restOverride!=null){const was=d.restOverride;d.restOverride=clampRest(d.restOverride);if(d.restOverride!==was&&!(was>=5&&was<=600&&Math.round(was/5)*5===was))clamped=true}
+ if(d.days!=null&&!(d.days>=1&&d.days<=7)){d.days=0;clamped=true}
+ if(d.next!=null&&!(d.next>=0&&d.next<400)){d.next=0;clamped=true}
+ if(d.progName!=null)d.progName=String(d.progName).slice(0,120);
+ if(d.exportedAt!=null){d.exportedAt=+d.exportedAt;if(!Number.isFinite(d.exportedAt)||d.exportedAt<=0)delete d.exportedAt;else if(d.exportedAt>Date.now()+60000)d.exportedAt=Date.now()}
+ // Allowlist: a backup may only carry these fields. owner, premium, entitlements, consents and demoStart never come from the file.
+ const ALLOW=['v','schema','workouts','deletedWorkouts','body','deletedBody','custom','deletedCustom','templates','deletedTemplates','eqProfiles','deletedEqProfiles','eqActive','eqActiveAt','program','progName','why','prof','goal','days','next','block','progAt','height','weightKg','age','weightAsked','ageAsked','restOverride','sound','wake','autoW','pg','pgSince','equip','dlLast','obDone','obOffer','exportedAt','photos','updatedAt'];
+ const out={};ALLOW.forEach(k=>{if(d[k]!==undefined)out[k]=d[k]});
+ if(clamped)out._clamped=1;
+ return out}
 // ---------- Профиль (was «Ещё», D-248)
+ async function importBackup(text){let d,hadBody=false,fileDemo=0,clamped=false,raw;
+  try{raw=JSON.parse(text);hadBody=!!raw&&Array.isArray(raw.body);if(raw&&typeof raw.demoStart==='number'&&isFinite(raw.demoStart)&&raw.demoStart>0)fileDemo=raw.demoStart;d=cleanImport(raw);clamped=!!d._clamped;delete d._clamped}catch(_){alert('Не удалось прочитать файл');return}
+  const prev=S;
+  if(prev.active){alert('Сейчас идёт тренировка. Сначала заверши или отмени её — заменить данные во время тренировки нельзя.');return}
+  const noProg=d.program==null;
+  let q='Заменить текущие данные данными из файла?';if(noProg&&prev.program)q+=' В файле нет программы — текущая программа останется.';
+  if(typeof mzSignedIn==='function'&&mzSignedIn())q+=' Данные в облаке тоже будут заменены. Записи, сделанные на других устройствах после этой копии, сохранятся.';
+  if(clamped)q+=' Некоторые значения из файла были вне допустимых границ и не перенесены.';
+  if(!confirm(q))return;
+  const P=d.photos;delete d.photos;delete d._clamped;d.body=d.body||[];d.custom=d.custom||[];
+  if(noProg)['program','progName','why','prof','goal','days','next','block','progAt'].forEach(k=>{if(prev[k]!==undefined)d[k]=prev[k]}); // QA-11
+  // Device-owned fields. demoStart is the earlier of the two, so a file cannot restart a trial.
+  ['ownerUid','ownerPremium','premium','consentHealth','consentAnalytics','healthConsentRevokedAt','healthConsentQueue','installId','azFirstWo','azInstall','azOpen','_azOb','lang'].forEach(k=>{if(prev[k]!==undefined)d[k]=prev[k];else delete d[k]});
+  const devDemo=(typeof prev.demoStart==='number'&&isFinite(prev.demoStart)&&prev.demoStart>0)?prev.demoStart:0;
+  if(devDemo&&fileDemo)d.demoStart=Math.min(devDemo,fileDemo);else if(devDemo)d.demoStart=devDemo;else if(fileDemo)d.demoStart=fileDemo;
+  if(typeof mzSignedIn==='function'&&mzSignedIn()){d.replacePending=Date.now();if(hadBody)d.replaceBody=1} // QA-02
+  try{localStorage.setItem('gym',JSON.stringify(d))}catch(_){alert('Не удалось сохранить данные из файла: память устройства заполнена. Текущие данные не изменены.');return} // QA-12
+  if(prev.active&&typeof stopTimer==='function'){try{stopTimer()}catch(_){}}
+  S=d;
+  try{ // QA-08: только используемые фото; ключ и формат проверяются
+   const used=new Set();(S.body||[]).forEach(b=>(b.photos||[]).forEach(k=>used.add(k)));
+   const okKey=k=>/^[\w.-]{1,60}$/.test(k),okImg=v=>typeof v==='string'&&/^data:image\/(png|jpe?g|webp);base64,/.test(v)&&v.length<4e6;
+   if(P)for(const k in P)if(okKey(k)&&used.has(k)&&okImg(P[k]))await idb.put(k,P[k]);
+   if(hadBody){const all=await idb.all()||{};for(const k of Object.keys(all))if(!used.has(k))await idb.del(k)}
+  }catch(_){}
+  save();toast('Данные восстановлены');go('today')}
+
 function libCountText(){const n=(typeof EX!=='undefined'&&EX.length)||0;const n10=n%10,n100=n%100;const w=(n10===1&&n100!==11)?'упражнение':(n10>=2&&n10<=4&&(n100<10||n100>=20))?'упражнения':'упражнений';return n+' '+w+': 3D-анимация, техника, твоя история'}
 function more(){$('#title').textContent='Профиль';
  app.innerHTML=`${S.program&&S.program.length?progRowHTML():''}${typeof themeCardHTML==='function'?themeCardHTML():''}
@@ -758,7 +799,7 @@ function more(){$('#title').textContent='Профиль';
  ${typeof ntfCardHTML==='function'?ntfCardHTML():''}
  <div class="card"><b>Тренировка</b><label class="li"><span class="grow">🏋️ Подставлять последний вес</span><input type="checkbox" id="aw" style="width:28px;min-height:28px" ${S.autoW!==false?'checked':''}></label><p class="mut">Вес и повторы подставляются из прошлой тренировки с этим упражнением (серым). Можно изменить; ✓ сохраняет то, что видно.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
- <div class="row"><input type="number" id="ro" placeholder="Из программы" value="${esc(S.restOverride||'')}"><span class="mut">сек</span></div></div>
+ <div class="row"><input type="number" id="ro" inputmode="numeric" min="0" max="600" step="5" placeholder="Из программы" value="${esc(S.restOverride||'')}"><span class="mut">сек</span></div></div>
  <div class="card"><b>Калории</b>
  <label class="mut">Вес тела, кг<input type="number" id="bwkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="не указан" value="${esc(S.weightKg||'')}"></label>
  <label class="mut">Возраст<input type="number" id="agey" inputmode="numeric" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
@@ -771,11 +812,13 @@ function more(){$('#title').textContent='Профиль';
  if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
  if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
- $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');if($('#nut'))$('#nut').onclick=()=>go('nutrition');progRowBind();$('#ro').onchange=e=>{S.restOverride=+e.target.value||0;save()};
+ $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');if($('#nut'))$('#nut').onclick=()=>go('nutrition');progRowBind();$('#ro').onchange=e=>{S.restOverride=clampRest(e.target.value);e.target.value=S.restOverride||'';save()};
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
- $('#exp').onclick=async()=>{const D={...S};if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
- $('#imp').onchange=async e=>{try{const d=cleanImport(JSON.parse(await e.target.files[0].text()));if(confirm('Заменить текущие данные данными из файла?')){const P=d.photos;delete d.photos;d.body=d.body||[];d.custom=d.custom||[];S=d;if(P)for(const k in P)await idb.put(k,P[k]);save();toast('Данные восстановлены');go('today')}}catch(_){alert('Не удалось прочитать файл')}};
- $('#reset').onclick=()=>{if(confirm('Удалятся данные только на этом устройстве. Аккаунт, копия в облаке и подписка останутся. Чтобы удалить аккаунт и данные в облаке — «Удалить аккаунт».')){Promise.resolve(typeof clearLocalData==='function'?clearLocalData():localStorage.removeItem('gym')).finally(()=>location.reload())}}}
+ $('#exp').onclick=async()=>{const D={...S,exportedAt:Date.now()};delete D.replacePending;delete D.replaceBody;if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+ $('#imp').onchange=async e=>{const input=e.target;try{await importBackup(await input.files[0].text())}catch(_){alert('Не удалось прочитать файл')}if(input)input.value=''};
+ $('#reset').onclick=()=>{const signed=typeof mzSignedIn==='function'&&mzSignedIn();
+  if(signed){if(confirm('Ты вошёл в аккаунт: если только очистить, данные сразу снова загрузятся из облака. Очистить данные на этом телефоне и выйти из аккаунта? Аккаунт, копия в облаке и подписка останутся. Удалить всё — «Удалить аккаунт».')&&typeof mzDoLogout==='function')mzDoLogout({wipeLocal:true});return}
+  if(confirm('Удалятся данные только на этом устройстве. Аккаунт, копия в облаке и подписка останутся. Чтобы удалить аккаунт и данные в облаке — «Удалить аккаунт».')){Promise.resolve(typeof clearLocalData==='function'?clearLocalData():localStorage.removeItem('gym')).finally(()=>location.reload())}}}
 function library(){libView()}
 // ---------- Научная основа
 const SRC={

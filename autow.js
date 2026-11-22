@@ -126,17 +126,20 @@ function awEquipHTML(){const e=Object.assign({},PR_EQUIP,{bands:[1]},S.equip||{}
  return`<div class="card" id="awequip"><b>🏋️ Моё оборудование</b><p class="mut">Шаги для авто-веса. По умолчанию — как в правилах тренера; поменяй, если у тебя другие гантели или блоки.</p>
  <label class="mut">Гантели, кг (через запятую; дробные — через точку)<input id="eqdb" value="${esc(j(e.db))}"></label>
  <label class="mut">Гири, кг (через запятую; дробные — через точку)<input id="eqkb" value="${esc(j(e.kb))}"></label>
- <div class="grid2"><label class="mut">Гриф, кг<input type="number" inputmode="decimal" step="0.5" id="eqbar" value="${esc(e.bar)}"></label><label class="mut">Шаг штанги, кг<input type="number" inputmode="decimal" step="0.25" id="eqplate" value="${esc(e.plate)}"></label>
+ <div class="grid2"><label class="mut">Гриф, кг<input type="number" inputmode="decimal" step="0.5" id="awbar" value="${esc(e.bar)}"></label><label class="mut">Шаг штанги, кг<input type="number" inputmode="decimal" step="0.25" id="eqplate" value="${esc(e.plate)}"></label>
  <label class="mut">Шаг тренажёра, кг<input type="number" inputmode="decimal" step="0.5" id="eqmachine" value="${esc(e.machine)}"></label><label class="mut">Шаг блока, кг<input type="number" inputmode="decimal" step="0.5" id="eqcable" value="${esc(e.cable)}"></label></div>
  <label class="mut">Резинок дома (уровней 1–5)<input type="number" inputmode="numeric" min="1" max="5" id="eqbands" value="${esc((e.bands||[1]).length)}"></label>
  <p class="mut">Одна резинка: когда станет легко, приложение предложит взять её короче и замедлить темп.</p>
  <button class="full" id="eqsave">Сохранить оборудование</button></div>`}
 function awEquipSave(){const num=v=>+String(v).replace(',','.'),list=v=>String(v).split(/[;,\s]+/).map(num).filter(x=>x>0);
  const n=Math.max(1,Math.min(5,Math.round(num($('#eqbands').value))||1));
- S.equip={db:list($('#eqdb').value),kb:list($('#eqkb').value),bar:num($('#eqbar').value)||20,plate:num($('#eqplate').value)||2.5,machine:num($('#eqmachine').value)||5,cable:num($('#eqcable').value)||2.5,bands:Array.from({length:n},(_,i)=>i+1)};
+ S.equip={db:list($('#eqdb').value),kb:list($('#eqkb').value),bar:num($('#awbar').value)||20,plate:num($('#eqplate').value)||2.5,machine:num($('#eqmachine').value)||5,cable:num($('#eqcable').value)||2.5,bands:Array.from({length:n},(_,i)=>i+1)};
  const e=prEquip(S.equip);S.equip.db=e.db;S.equip.kb=e.kb;save();toast('Оборудование сохранено')}
 const _awMore=more;more=function(){_awMore();const aw=$('#aw');const card=aw&&aw.closest?aw.closest('.card'):null;if(!card)return;
- card.insertAdjacentHTML('afterend',awEquipHTML());$('#eqsave').onclick=awEquipSave};
+ card.insertAdjacentHTML('afterend',awEquipHTML());$('#eqsave').onclick=awEquipSave;
+ // QA-06: вход в профили оборудования (Зал / Дом / Без инвентаря) — от активного профиля зависят упражнения тренировки.
+ const eq=$('#eqsave');if(eq&&typeof eqEditor==='function'&&!$('#eqprofs')){eq.insertAdjacentHTML('afterend','<button class="full" id="eqprofs" style="margin-top:8px">🏠 Профили оборудования (зал / дом / без инвентаря)</button>');$('#eqprofs').onclick=()=>eqEditor()}
+ if(typeof eqSwitchHTML==='function'&&!$('#eqswitch')){const host=$('#eqprofs')||eq;if(host){host.insertAdjacentHTML('afterend',eqSwitchHTML('eqswitch'));if(typeof eqBindSwitch==='function')eqBindSwitch(host.parentNode,()=>{if(typeof more==='function')more()})}}};
 // P-305b: demo paywall moments (premium.js) — only after the workout is saved, never mid-set; not over the summary sheet.
 function awMoment(W){if(typeof premMarkDemo==='function'){premMarkDemo(W);save()}if(typeof mzOnWorkoutFinished==='function')mzOnWorkoutFinished(W);if(typeof premMoment!=='function')return;
  setTimeout(()=>{const m=$('#modal');if(S.active||(m&&m.classList&&!m.classList.contains('hidden')))return;premMoment()},800)}
