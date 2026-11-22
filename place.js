@@ -165,7 +165,9 @@ const HIDDEN=new Set(["chest-supported-1db","smith-split-squat","smith-rdl","sta
   "deep-squat-hold","inchworm","stretch-hip-flexor","stretch-chest-doorway","stretch-hamstring","stretch-glute-figure4",
   "stretch-calf","wall-slide","med-ball-slam",
   // Заминка без ролика, в программах v1.2c заменена роликами MoveKit (thoracic-rotation / dead-hang, hip-flexor-rock, shoulder-rolls).
-  "cd_lat","cd_quad","cd_xbody"]);
+  "cd_lat","cd_quad","cd_xbody",
+  // C-114 / blocks-v3.2: дубль заменён на hanging-knee-raise во всех новых блоках.
+  "mk-hanging-knee-raises"]);
 const HIDDEN_EX=[];
 for(let i=EX.length-1;i>=0;i--)if(HIDDEN.has(EX[i].id))HIDDEN_EX.unshift(EX.splice(i,1)[0]);
 const isHidden=id=>HIDDEN.has(id);

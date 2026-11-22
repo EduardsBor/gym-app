@@ -140,7 +140,7 @@ test('C-113: no dorsāl or plantār anywhere in LV strings', () => {
   assert.deepEqual(hits, []);
 });
 
-test('C-113: cooldown safety uses Claude wording in RU/EN/LV; hanging-knee-raises stay visible', () => {
+test('C-113: cooldown safety uses Claude wording in RU/EN/LV; mk-hanging-knee-raises is hidden (C-114)', () => {
   const { run } = boot();
   const packOf = (key, id) => pack(arr(run(key + '[' + JSON.stringify(id) + ']')));
   assert.equal(packOf('TECH', 'cd_lat').safety, 'Если беспокоят плечи — пропусти (замени на дыхание лёжа).');
@@ -153,8 +153,8 @@ test('C-113: cooldown safety uses Claude wording in RU/EN/LV; hanging-knee-raise
   assert.equal(packOf('TECH_LV', 'cd_quad').safety, 'Ja traucē ceļi, izlaid šo vingrinājumu.');
   assert.equal(packOf('TECH_LV', 'cd_xbody').safety, 'Ja traucē pleci, izlaid šo vingrinājumu.');
   const ids = arr(run('EX.map(e => e.id)'));
-  assert.equal(ids.includes('mk-hanging-knee-raises'), true);
-  assert.equal(run('typeof isHidden==="function" && isHidden("mk-hanging-knee-raises")'), false);
+  assert.equal(ids.includes('mk-hanging-knee-raises'), false);
+  assert.equal(run('typeof isHidden==="function" && isHidden("mk-hanging-knee-raises")'), true);
 });
 
 test('C-113: 45 ids use the Amplitude and safety heading; dictionary has RU/EN/LV', () => {
@@ -166,11 +166,12 @@ test('C-113: 45 ids use the Amplitude and safety heading; dictionary has RU/EN/L
   assert.match(dict, /\['Амплитуда и безопасность','Range and safety','Amplitūda un drošība'\]/);
 });
 
-test('C-113: upright-row rename is in the catalog and DICT; hanging-knee-raises stay visible; no Forearms group', () => {
+test('C-113: upright-row rename is in the catalog and DICT; hanging-knee-raise stays in the catalog; no Forearms group', () => {
   const { run } = boot();
   const ids = arr(run('EX.map(e => e.id)'));
   assert.equal(ids.includes('mk-barbell-upright-row'), true);
-  assert.equal(ids.includes('mk-hanging-knee-raises'), true);
+  assert.equal(ids.includes('mk-hanging-knee-raises'), false);
+  assert.equal(run('isHidden("mk-hanging-knee-raises")'), true);
   assert.equal(ids.includes('hanging-knee-raise'), true);
   assert.equal(run('exBy("mk-barbell-upright-row").name'), 'Тяга штанги к груди широким хватом');
   const dict = read('i18n/dict.js');

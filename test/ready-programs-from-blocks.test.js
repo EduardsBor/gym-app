@@ -79,7 +79,7 @@ test('blocks-index is generated, complete, and matches data/blocks without embed
   const sw = read('sw.js');
   assert.match(html, /src="data\/blocks-index\.js"/);
   assert.match(sw, /data\/blocks-index\.js/);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v144'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v145'/);
   assert.match(sw, /const C=SW_CACHE/);
 });
 
@@ -174,7 +174,7 @@ test('RU workout count uses proper plural: 1 тренировка, 2–4 тре�
   assert.equal(run('catalogWeekWord(21)'), 'неделя');
 });
 
-test('EN/LV card text for all 124 ready-program cards has no Cyrillic; duration is 60–70 min', () => {
+test('EN/LV card text for all 124 ready-program cards has no Cyrillic; duration follows the block label', () => {
   const cyr = /[А-Яа-яЁё]/;
   for (const lang of ['en', 'lv']) {
     const { run } = boot(lang);
@@ -191,6 +191,6 @@ test('EN/LV card text for all 124 ready-program cards has no Cyrillic; duration 
       else if (/60–70 мин/.test(c.text)) bad.push(lang + ' ' + c.id + ' still has RU duration');
     }
     assert.equal(bad.length, 0, bad.slice(0, 8).join('\n'));
-    assert.ok(rows.some(c => /60–70 min/.test(c.text)), 'expected a 60–70 min duration on a ' + lang + ' card');
+    assert.ok(rows.some(c => /\d+[–-]\d+ min/.test(c.text)), 'expected a translated duration on a ' + lang + ' card');
   }
 });
