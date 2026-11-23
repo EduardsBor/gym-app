@@ -550,6 +550,8 @@ const DICT3=[
 ['(подходы добавлены:','(sets added:','(pievienoti piegājieni:'],
 ['Ограничения хранятся только на этом устройстве и не отправляются в облако.','Limitations are stored only on this device and are not sent to the cloud.','Ierobežojumi tiek glabāti tikai šajā ierīcē un netiek sūtīti uz mākoni.'],
 ['Продолжить','Continue','Turpināt'],
+// v161: the same dialog when the health consent is given (limitations then sync, privacy policy 3.2); LV with Grok, gender-neutral.
+['Ограничения сохраняются в облаке вместе с другими данными о здоровье — по твоему согласию. Отозвать его можно в «Профиле».','Limitations are saved in the cloud with your other health data, based on your consent. You can withdraw it in “Profile”.','Ierobežojumi tiek saglabāti mākonī kopā ar citiem veselības datiem, jo ir dota tava piekrišana. To vari atsaukt sadaļā «Profils».'],
 ['⚠ Плечи: хват на ширине плеч или нейтральный, без рывков, амплитуда — комфортная','⚠ Shoulders: shoulder-width or neutral grip, no jerking, a comfortable range of motion','⚠ Pleci: tvēriens plecu platumā vai neitrāls, bez rāvieniem, kustības amplitūda — ērta'],
 ['Верх диапазона во всех подходах — дальше усложнять не будем, держи этот уровень','Top of the range in all sets — no further step for this exercise, keep this level','Diapazona augšējā robeža visos piegājienos — tālāk šo vingrinājumu neapgrūtināsim, noturi šo līmeni'],
 ['Запиши противовес в кг — без него прогрессию не посчитать','Log the assistance weight in kg — without it, progression can\'t be calculated','Ieraksti pretsvaru (kg) — bez tā progresiju nevar aprēķināt'],

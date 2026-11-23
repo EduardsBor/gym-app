@@ -78,6 +78,8 @@
     delete p.azFirstWo;
     delete p.healthConsentQueue;
     delete p.replacePending;delete p.replaceBody;
+    // v161: «limitations confirmed on this device» is a device flag — never in the cloud, with or without the health consent.
+    delete p.limSeen;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
     if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
