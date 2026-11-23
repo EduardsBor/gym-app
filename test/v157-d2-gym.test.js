@@ -69,7 +69,9 @@ test('fix 2: chin → gravitron by the button → counterweight to 0 → «По�
 
 test('fix 2: the ladder button code also clears downFrom (source check)', () => {
   const src = read('autow.js');
-  assert.match(src, /it\.exId=to;delete it\.downFrom;const d=S\.program\[A\.dayIdx\];if\(d\)\{const pi=d\.items\.find\(x=>x\.exId===from\);if\(pi\)\{pi\.exId=to;delete pi\.downFrom\}\}/);
+  // v160: the button logic is in awLadderSwap (tested by behaviour in v160-live.test.js)
+  assert.match(src, /\[data-awlad\]'\)\.forEach\(b=>b\.onclick=\(\)=>\{if\(awLadderSwap\(A,\+b\.dataset\.awlad\)\)workoutView\(\)\}\)/);
+  assert.match(src, /it\.exId=to;delete it\.downFrom;if\(pi\)\{pi\.exId=to;delete pi\.downFrom\}/);
   assert.match(src, /if\(to&&o\.note==='ladder'&&df\)to=df;/);
 });
 
@@ -84,5 +86,5 @@ test('pull → gravitron → back to pull; need_w note has RU/EN/LV', () => {
 });
 
 test('v157: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v160'/);
 });

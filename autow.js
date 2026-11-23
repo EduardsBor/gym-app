@@ -12,7 +12,8 @@ break14:'После перерыва 2+ недели: вес −10 %',
  deload_block:'Разгрузка по программе: вес тот же, запас +2 повтора',
  break28:'После перерыва 4+ недели: вес −20 %, запас на 1 повтор больше',deload_scheduled:'Разгрузка: подходов вдвое меньше, вес тот же',
  deload_early:'Разгрузка: подходов вдвое меньше, вес −10 %',time_up:'↑ Цель удержания выше',time_down:'↓ Цель удержания ниже',hold_max:'Максимум удержания',ladder:'Пора усложнить',
- need_w:'Запиши противовес в кг — без него прогрессию не посчитать'};
+ need_w:'Запиши противовес в кг — без него прогрессию не посчитать',
+ top_hold:'Верх диапазона во всех подходах — дальше усложнять не будем, держи этот уровень'};
 const AW_MOD={tempo:'Усложнение: опускание 3–4 с',pause:'Усложнение: пауза 2 с в нижней точке',load:'Усложнение: рюкзак с грузом',
  shorter:'Тяжелее резинки нет: возьми резинку короче или встань дальше от крепления'};
 if(S&&!S.pgSince){S.pgSince=Date.now();save()}
@@ -104,6 +105,7 @@ function awStart(){const A=S.active;if(!A)return;const dc=awDayCtx();
  A.items.forEach(it=>awApply(it,dl));save()}
 const _awSW=startW;startW=function(i){_awSW(i);awStart();if(S.active)workoutView()};
 
+const AW_P_CAUTION=new Set(['pull','chin','assisted-pullup','scap-pullup','lat','close-pulldown','band-pulldown']);
 function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';const L=[];
  if(!awOn()||!it.sug){if(it.rirShow&&c.eq!=='time')L.push(`<span>Запас</span> ${it.rirShow[0]}–${it.rirShow[1]} <span>повт.</span>`)}else if(s.cal)L.push(`<span>Калибровка:</span> <span>подбери вес, с которым выйдет верх диапазона и останется 3–4 повтора в запасе</span>`);
  else{const u=c.eq==='band'?'ур. резинки':c.eq==='assisted'?'кг противовеса':c.eq==='bodyweight'?'кг доп. веса':'кг';
@@ -115,6 +117,9 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
   if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
   else if(awDownOk(s.down,it.exId))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
+ // v160 (task 2): shoulder limitation + vertical pull (arms overhead). Not forbidden (decision C: no «p» letter, the swap does not
+ // remove them; progression is already careful: RIR +1, 2 sessions), but the user sees how to do it with the limitation.
+ if(AW_P_CAUTION.has(it.exId)&&((S.prof&&S.prof.lim)||[]).includes('p'))L.push(`<span>⚠ Плечи: хват на ширине плеч или нейтральный, без рывков, амплитуда — комфортная</span>`);
  // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
  // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
  return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
@@ -130,14 +135,22 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  A.items.forEach((it,i)=>{const rm=app.querySelector(`[data-rm="${i}"]`);if(!rm||!rm.closest)return;const card=rm.closest('.card');if(!card)return;
   const c=awCls(it.exId);if(!c)return;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i))});
- app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return;
-  it.exId=to;delete it.downFrom;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi){pi.exId=to;delete pi.downFrom}}
-  const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}awApply(it,A.dl);save();workoutView()});
+ app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{if(awLadderSwap(A,+b.dataset.awlad))workoutView()});
  // review-nov-2 task 2: the easier step (pull / chin → gravitron in the gym, scap pull-ups at home) — only on this button.
  // History of the old exercise stays under its exId; the way back is the normal ladder (2 sessions at the top → pull).
  app.querySelectorAll('[data-awdown]').forEach(b=>b.onclick=()=>{if(awDownSwap(A,+b.dataset.awdown))workoutView()});
  const dlb=$('#awdl');if(dlb)dlb.onclick=()=>{S.dl={type:'early',start:Date.now()};S.dlLast=S.dl.start;A.dl='early';A.items.forEach(it=>awApply(it,'early'));save();workoutView()};
  const fin=$('#fin');if(fin&&fin.onclick){const o=fin.onclick;fin.onclick=()=>{const id=A.id,n=S.workouts.length;o();if(S.workouts.length>n&&S.workouts[S.workouts.length-1].id===id){awFinish(S.workouts[S.workouts.length-1]);save();awMoment(S.workouts[S.workouts.length-1])}}}}
+// «Пора усложнить» button: item i goes to the next ladder step (it.sug.to). v160 (task 5): when this is the way BACK from the
+// D2 easier step to the exercise the user came from, the old failure counters of that exercise (miss / cut, the «2 misses» note
+// and the old offer) are cleared — they belong to the time before the gravitron. Weight, success history and S.workouts stay.
+function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return false;
+ const d=S.program&&S.program[A.dayIdx],pi=d&&(d.items||[]).find(x=>x.exId===from),back=it.downFrom||(pi&&pi.downFrom)||null;
+ it.exId=to;delete it.downFrom;if(pi){pi.exId=to;delete pi.downFrom}
+ const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}
+ if(back&&back===to){const q=awPg()[to];if(q){q.st=Object.assign({},q.st||{});q.st.miss=0;delete q.st.cut;
+   if(q.next){delete q.next.down;if(/^miss/.test(q.next.note||''))q.next.note='same'}q.upd=Date.now()}}
+ awApply(it,A.dl);save();return true}
 // review-nov-2 task 2: switch item i of the open workout to the offered easier step (button «Заменить» only).
 // v158: the step is offered only when it is not against the user's limitations (limguard) and the equipment profile has it.
 function awDownOk(to,cur){if(!to||to===cur)return false;if(typeof lgConf==='function'&&lgConf(to).length)return false;
@@ -178,7 +191,11 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const o=prNext(inp,awEq());let to=o.id!==it.exId?awAppId(o.id):null;
   if(to&&o.note==='ladder'&&df)to=df;  // closeout fix 2: back to the exercise the user came from (chin stays chin)
   // v2 notes: inc with a big equipment step, first of the 2 sessions at the top, grace session after a big step
-  const note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
+  let note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
+  // v160 (task 4): «one more such workout — and a step up» only when the rules really have a next step. Same workout again
+  // with the new state: if nothing would change (no heavier weight, modifier cap, e.g. towel-leg-curl with knees) → top_hold.
+  if(note==='top1'){const o2=prNext(Object.assign({},inp,{state:Object.assign({},o.state)}),awEq());
+   if(o2.id===o.id&&o2.weight===o.weight&&(o2.mod|0)===(o.state.mod|0)&&!/^(inc|ladder|mod|cal_up)$/.test(o2.note))note='top_hold'}
   delete p.afterDl;
   p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note,modKey:o.modKey};if(to)p.next.id=to;
   if(o.down)p.next.down=awAppId(o.down);  // review-nov-2 task 2: easier step offered (button), never switched silently

@@ -86,11 +86,12 @@
   const isLimWhy=w=>Array.isArray(w)&&typeof w[0]==='string'&&/^Ограничения \(/.test(w[0]);
   function stripLimits(p){
     if(p.prof&&typeof p.prof==='object') delete p.prof.lim;
+    delete p.limSeen;  // v160: local «limitations confirmed on this device» flag
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
     (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
     if(p.pg&&typeof p.pg==='object') Object.keys(p.pg).forEach(k=>{const n=p.pg[k]&&p.pg[k].next;if(n&&n.note==='pain') n.note='same'});
     // tech-fix-1/2: limitation notes and acknowledgements in the plan / history name the limitation — health data too.
-    const clean=it=>{if(it&&typeof it==='object'){delete it.limAck;delete it.swapped;delete it.limFrom;delete it.limStop}};  // tech-fix-2.1: + limFrom / limStop (partly done exercise)
+    const clean=it=>{if(it&&typeof it==='object'){delete it.limAck;delete it.swapped;delete it.limFrom;delete it.limStop;delete it.merged}};  // v160: + merged (sets added for a limitation)  // tech-fix-2.1: + limFrom / limStop (partly done exercise)
     (Array.isArray(p.program)?p.program:[]).forEach(d=>{if(!d||typeof d!=='object')return;delete d.limWarn;delete d.limAckWuCd;(d.items||[]).forEach(clean)});
     (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(clean));
     if(p.active&&typeof p.active==='object')(p.active.items||[]).forEach(clean);

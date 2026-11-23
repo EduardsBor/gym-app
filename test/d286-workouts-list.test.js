@@ -65,8 +65,8 @@ function startBetween(h, due) {
   if (nextAt >= 0) assert.ok(startAt < nextAt, 'Start should sit before the next workout row');
 }
 
-test('v144: version is moyzal-v159; new LV back-string is in the dictionary', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
+test('v144: version is moyzal-v160; new LV back-string is in the dictionary', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v160'/);
   assert.match(read('i18n/dict3.js'), /\['← К списку тренировок','← Back to the workout list','← Uz treniņu sarakstu'\]/);
   assert.ok(fs.existsSync(path.join(root, 'docs/LV-NEW-WORKOUTS-LIST.md')));
 });

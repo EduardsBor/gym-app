@@ -54,7 +54,9 @@ function exClock(s){s=Math.max(0,Math.round(+s||0));return String(Math.floor(s/6
 function exInfo(e){const{A}=exDay();
  if(e.src==='m'){const it=e.it,c=isCardio(e.id),plan=it.ns||(Array.isArray(it.sets)?it.sets.length:+it.sets||0),done=A?it.sets.filter(s=>s.done).length:0;
   const rng=it.min==it.max?String(it.min):it.min+'–'+it.max,side=exSide(e.id,'');
-  return{rng,cap:c?'Минут':it.sec?(side?'Секунд '+side:'Секунд'):(side?'Повторов '+side:'Повторов'),rest:c?0:((typeof S!=='undefined'&&S.restOverride)||+it.rest||0),done,plan,noW:exNoW(e.id,it),unit:c?'min':it.sec?'sec':'reps'}}
+  // v160 (task 6): a hold added by hand / from an old plan has no it.sec — plank, towel-iso-curl are still seconds
+  const sec=!c&&(!!it.sec||(typeof isSecEx==='function'&&isSecEx(e.id)));
+  return{rng,cap:c?'Минут':sec?(side?'Секунд '+side:'Секунд'):(side?'Повторов '+side:'Повторов'),rest:c?0:((typeof S!=='undefined'&&S.restOverride)||+it.rest||0),done,plan,noW:exNoW(e.id,it),unit:c?'min':sec?'sec':'reps'}}
  let ds=exDose(e.r.d);if((ds.unit==='reps'||!ds.val)&&e.r){const ds2=exDose([e.r.d,e.r.x,e.r.c].filter(Boolean).join(' '));if(ds2.unit!=='reps'&&ds2.val)ds={sets:ds.sets||ds2.sets,val:ds2.val,unit:ds2.unit}}
  const box=A&&(e.src==='w'?A.warm:A.cool),side=exSide(e.id,e.r.d);
  const done=box?((box.n&&box.n[e.i])||(box.c&&box.c[e.i]?ds.sets:0)):0;

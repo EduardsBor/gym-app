@@ -358,9 +358,30 @@ function blockLimSwap(items,a,warn){
     const ok=blockLimPick(it,a,used);
     if(ok){used.add(ok);out.push(Object.assign({},it,{exId:ok,swapped:1}));if(warn)warn.push({from:it.exId,to:ok,lim});return}
     // No safe replacement: the exercise is not kept silently — it is left out of this workout with a visible note.
-    if(warn)warn.push({from:it.exId,to:null,lim});
+    out.push({__rm:it,lim});
   });
-  return out;
+  // v160 (task 3): the only safe replacement is often already in this workout (knees at home: reverse-lunge / bwsq → step-bw).
+  // Then its sets are added to that exercise (same main muscles, no risk letter, clip, place), up to BLOCK_MERGE_CAP sets per
+  // exercise, so the training goal and the muscle volume stay. Nothing risky comes back. Otherwise: left out with a note.
+  const res=out.filter(x=>!x.__rm);
+  out.filter(x=>x.__rm).forEach(({__rm:it,lim})=>{
+    const add=blockLimMerge(it,res,a);
+    if(warn)warn.push(add?{from:it.exId,to:add.to,lim,add:add.n}:{from:it.exId,to:null,lim});
+  });
+  return res;
+}
+const BLOCK_MERGE_CAP=5;
+// Adds the sets of a removed item to the safe same-muscle exercise already in list (copy of that item; list changed in place).
+// Returns {to, n} or null. Used by the plan builder (blockLimSwap) and by the fix of a saved plan (limguard lgApplyDay).
+function blockLimMerge(it,list,a,skip){
+  if(!it||blockIsCardio(it))return null;
+  const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]),avail=blockLimAvail(a);
+  const same=x=>typeof eqSameMuscle!=='function'||eqSameMuscle(it.exId,x);
+  const ok=(y,k)=>y&&!y.cardio&&!(skip&&skip.has(k))&&blockLimOk(y.exId,a)&&avail(y.exId)&&blockClipOk(y.exId,a)&&(fb.has(y.exId)||same(y.exId))&&(+y.sets||0)<BLOCK_MERGE_CAP;
+  let k=-1;for(const id of blockLimCands(it.exId)){k=list.findIndex((y,j)=>y&&y.exId===id&&ok(y,j));if(k>=0)break}
+  if(k<0)return null;
+  const n=Math.min(+it.sets||1,BLOCK_MERGE_CAP-(+list[k].sets||0)),cp=Object.assign({},list[k]);
+  cp.sets=(+cp.sets||0)+n;cp.merged=(cp.merged||0)+n;list[k]=cp;return{to:cp.exId,n};
 }
 // tech-fix-2: warm-up and cool-down of a block day (wu.cardio / wu.mob / wu.ramp / cd.cardio / cd.stretch) were built
 // without the limitations (shell profile lim:[]) and the ramp followed the original first exercise. Same rule here:
@@ -385,7 +406,7 @@ function blockLimWarnHTML(day){
   const nm=id=>{const e=typeof exBy==='function'?exBy(id):null;const n=e&&e.name&&e.name!=='?'?e.name:id;return typeof esc==='function'?esc(n):n};
   const lims=l=>(l||[]).map(x=>BLOCK_LIM_RU[x]||x).map(x=>`<span>${x}</span>`).join(', ');
   const pt=w=>w.part==='wu'?'<span>Разминка</span>: ':w.part==='cd'?'<span>Заминка</span>: ':'';
-  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> → <b>${nm(w.to)}</b></div>`
+  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> → <b>${nm(w.to)}</b>${w.add?` <span>(подходы добавлены:</span> +${w.add})`:''}</div>`
     :`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> — <span>убрано из тренировки: безопасной замены нет</span></div>`);
   const removed=W.some(w=>!w.to);
   return`<div class="mut limwarn" style="font-size:13px;margin:4px 0">${rows.join('')}${removed?'<div><span>Если хочешь вернуть упражнение — сначала посоветуйся с врачом или тренером.</span></div>':''}</div>`;

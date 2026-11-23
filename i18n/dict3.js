@@ -545,6 +545,13 @@ const DICT3=[
 // D2 (v152 QA): ⇄ on an exercise whose sets are all done
 ['Упражнение уже выполнено — замена не нужна','This exercise is already done — no need to replace it','Vingrinājums jau ir izpildīts — aizstāt nav vajadzības'],
 // review-nov-2 task 2 (v155, prepared; shown only when PR_DOWN_ON): easier step for pull-ups. LV checked with Grok.
+// v160: holds (plank, towel-iso-curl) column; honest top-of-range note when no next step exists. LV checked with Grok.
+['Доп. вес, кг','Extra weight, kg','Papildu svars, kg'],
+['(подходы добавлены:','(sets added:','(pievienoti piegājieni:'],
+['Ограничения хранятся только на этом устройстве и не отправляются в облако.','Limitations are stored only on this device and are not sent to the cloud.','Ierobežojumi tiek glabāti tikai šajā ierīcē un netiek sūtīti uz mākoni.'],
+['Продолжить','Continue','Turpināt'],
+['⚠ Плечи: хват на ширине плеч или нейтральный, без рывков, амплитуда — комфортная','⚠ Shoulders: shoulder-width or neutral grip, no jerking, a comfortable range of motion','⚠ Pleci: tvēriens plecu platumā vai neitrāls, bez rāvieniem, kustības amplitūda — ērta'],
+['Верх диапазона во всех подходах — дальше усложнять не будем, держи этот уровень','Top of the range in all sets — no further step for this exercise, keep this level','Diapazona augšējā robeža visos piegājienos — tālāk šo vingrinājumu neapgrūtināsim, noturi šo līmeni'],
 ['Запиши противовес в кг — без него прогрессию не посчитать','Log the assistance weight in kg — without it, progression can\'t be calculated','Ieraksti pretsvaru (kg) — bez tā progresiju nevar aprēķināt'],
 ['Нижняя граница пока не выходит — можно взять более лёгкий вариант','You can\'t reach the minimum reps yet — you can switch to an easier variation','Vēl nevari sasniegt apakšējo robežu — vari izvēlēties vieglāku variantu'],
 ['Заменить упражнения и в этой тренировке плана? Если она уже выполнена, история и рабочие веса не изменятся.','Replace the exercises in this plan workout too? If it is already done, history and working weights are not changed.','Aizstāt vingrinājumus arī šajā plāna treniņā? Ja tas jau ir izpildīts, vēsture un darba svari netiek mainīti.'],

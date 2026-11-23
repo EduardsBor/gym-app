@@ -102,8 +102,12 @@ function lgApplyDay(di,force){
   const warn=Array.isArray(day.limWarn)?day.limWarn.slice():[];
   const rm=[];
   r.items.forEach(x=>{const it=day.items[x.i];if(!it)return;
-    if(x.to){day.items[x.i]=Object.assign({},it,{exId:x.to,swapped:1});delete day.items[x.i].limAck}else rm.push(x.i);
-    warn.push({from:x.exId,to:x.to||null,lim:x.lim,user:1});lgLog({kind:'fix',d:di,from:x.exId,to:x.to||null,lim:x.lim})});
+    if(x.to){day.items[x.i]=Object.assign({},it,{exId:x.to,swapped:1});delete day.items[x.i].limAck}else rm.push(x.i)});
+  // v160 (task 3): a removed item gives its sets to the safe exercise already in the day (same rule as the plan builder)
+  const rmSet=new Set(rm),a=lgA();
+  r.items.forEach(x=>{const it=day.items[x.i];if(!it)return;let to=x.to||null,add=0;
+    if(!x.to&&typeof blockLimMerge==='function'){const m=blockLimMerge(it,day.items,a,rmSet);if(m){to=m.to;add=m.n}}
+    warn.push(Object.assign({from:x.exId,to,lim:x.lim,user:1},add?{add}:{}));lgLog({kind:'fix',d:di,from:x.exId,to,lim:x.lim})});
   rm.sort((p,q)=>q-p).forEach(i=>day.items.splice(i,1));
   if(r.wucd.length&&r.fixed){if(r.fixed.wu)day.wu=r.fixed.wu;else delete day.wu;if(r.fixed.cd)day.cd=r.fixed.cd;else delete day.cd;
     r.wucd.forEach(w=>{warn.push(Object.assign({},w,{user:1}));lgLog({kind:'fix',d:di,from:w.from,to:w.to||null,lim:w.lim,part:w.part})})}

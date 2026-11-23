@@ -274,7 +274,17 @@ let PV=null;
 // generated and checked with them (same limitation path as the questionnaire). The questionnaire / onboarding pass their own answers.
 function withPersonal(a){const P=typeof S!=='undefined'&&S&&S.prof&&typeof S.prof==='object'?S.prof:null;if(!P)return a;
  const lim=[...new Set([].concat(Array.isArray(a.lim)?a.lim:[],Array.isArray(P.lim)?P.lim:[]))];const o=Object.assign({},a,{lim});if(P.sex==='m'||P.sex==='f')o.sex=P.sex;return o}
-function preview(pr,back){if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
+// v160 (task 7): limitations are health data and never go to the cloud (sync.js stripLimits). After signing in on another device
+// S.prof.lim is empty, so a ready program would be built without them. Before the first new pick on THIS device of a signed-in
+// user the limitations are confirmed locally (S.limSeen is local too, stripped from sync). The questionnaire asks them itself.
+function limConfirmNeeded(back){return(back==='catalog'||back==='onb')&&S.limSeen!==1&&typeof window!=='undefined'&&typeof window.mzSignedIn==='function'&&!!window.mzSignedIn()}
+function limConfirm(cb){const m=$('#modal');m.classList.remove('hidden');const sel=new Set(S.prof&&Array.isArray(S.prof.lim)?S.prof.lim:[]);
+ const draw=()=>{m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">Ограничения (заменим рискованные упражнения)</h2><p class="mut">Ограничения хранятся только на этом устройстве и не отправляются в облако.</p><div class="chips">${[['s','Спина'],['k','Колени'],['p','Плечи']].map(([k,t])=>`<button class="opt chip ${sel.has(k)?'sel':''}" data-lim="${k}">${t}</button>`).join('')}</div><button class="pri full" id="limok" style="margin-top:12px">Продолжить</button></div>`;
+  m.querySelectorAll('[data-lim]').forEach(b=>b.onclick=()=>{const k=b.dataset.lim;if(sel.has(k))sel.delete(k);else sel.add(k);draw()});
+  $('#limok').onclick=()=>{m.classList.add('hidden');const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
+function preview(pr,back){
+ if(limConfirmNeeded(back))return limConfirm(lim=>{const p2=Object.assign({},pr,{a:Object.assign({},pr.a,{lim:[...new Set([].concat(pr.a.lim||[],lim))]})});preview(p2,back)});
+ if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
@@ -285,7 +295,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;PV.open=+di;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
-  S.prof=a;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
+  S.prof=a;if(PV.back==='quiz')S.limSeen=1;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
 const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
@@ -417,10 +427,14 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok hidden" id="fin" aria-hidden="true" tabindex="-1">Завершить</button></div>
  ${typeof healthPanel==='function'?healthPanel():''}
  ${A.warm?(()=>{if(A.warm.t)return`<div class="card wucard">${wuHTML(A.warm.wu,A.warm.c)}</div>`;const n=A.warm.c.filter(Boolean).length,all=n===A.warm.c.length;return`<div class="card wucard"><details ${all?'':'open'}><summary>🔥 <b>Разминка</b> <span class="mut">${n}/${A.warm.c.length}${all?' ✓':''}</span></summary>${warmHTML(A.warm.P,A.warm.c)}</details></div>`})():''}
- ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);return`<div class="card"><div class="row exo" data-exo="m,${i}">${animShot(it.exId)}<h3 class="grow">${esc(exBy(it.exId).name)}</h3>${techBtn(it.exId)}${altCands(it.exId).length?`<button class="sm" data-ws="${i}">⇄</button>`:''}<button class="sm" data-rm="${i}">✕</button></div>
- <div class="mut">Цель: ${esc(c?it.min+'–'+it.max+' мин':it.sec?(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' с':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest))}</div>
- <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':'Вес, кг'}</span><span>${c?'Минуты':'Повторы'}</span><span></span></div>
- ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''} ${s.pf&&!s.done?'pf':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${esc(s.w)}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${esc(s.r)}" data-i="${i}" data-k="${k}" data-f="r"><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">прошлый раз: ${esc(l[k].w)} × ${esc(l[k].r)}</div>`:''}</div>`).join('')}
+ ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);
+  // v160 (task 6): holds (plank, towel-iso-curl) — the second column is seconds, the first one optional extra weight; data unchanged.
+  const sec=!c&&(!!it.sec||(typeof isSecEx==='function'&&isSecEx(it.exId)));
+  const prev=p=>{const w=p.w!==''&&p.w!=null&&+p.w!==0?esc(p.w)+(sec?' <span>кг</span> · ':' × '):'';return`<span>прошлый раз:</span> ${w}${esc(p.r)}${sec?' <span>с</span>':w?'':' <span>повт.</span>'}`};
+  return`<div class="card"><div class="row exo" data-exo="m,${i}">${animShot(it.exId)}<h3 class="grow">${esc(exBy(it.exId).name)}</h3>${techBtn(it.exId)}${altCands(it.exId).length?`<button class="sm" data-ws="${i}">⇄</button>`:''}<button class="sm" data-rm="${i}">✕</button></div>
+ <div class="mut">Цель: ${esc(c?it.min+'–'+it.max+' мин':sec?(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' с':(it.ns||it.sets.length)+' × '+it.min+'–'+it.max+' повт., отдых '+fmtT(it.rest))}</div>
+ <div class="set mut" style="font-size:12px"><span>#</span><span>${c?'Уровень/км':sec?'Доп. вес, кг':'Вес, кг'}</span><span>${c?'Минуты':sec?'Секунды':'Повторы'}</span><span></span></div>
+ ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''} ${s.pf&&!s.done?'pf':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${esc(s.w)}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${esc(s.r)}" data-i="${i}" data-k="${k}" data-f="r"${sec?' aria-label="Секунды"':''}><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">${prev(l[k])}</div>`:''}</div>`).join('')}
  <div class="row"><button class="sm grow" data-add="${i}">+ подход</button><button class="sm grow" data-del="${i}">− подход</button></div></div>`}).join('')}
  ${A.cool?`<div class="card wucard">${cdHTML(A.cool.cd,A.cool.c)}</div>`:''}
  <button class="full" id="addex">+ Добавить упражнение</button>
