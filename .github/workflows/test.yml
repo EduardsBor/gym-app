@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 26
       - name: Chrome path
         shell: bash
         run: |
@@ -26,15 +26,19 @@ jobs:
           node -e "console.log('chrome:', require('./test/fixtures/chrome-path.js').findChrome())"
       - name: node --test (no npm install needed — tests use only Node built-ins)
         shell: bash
-        run: node --test --test-reporter=tap --test-reporter-destination=test-${{ matrix.os }}.tap test/*.test.js
+        run: |
+          set +e
+          node --test --test-reporter=tap --test-reporter-destination=test-${{ matrix.os }}.tap test/*.test.js 2> stderr-${{ matrix.os }}.txt
+          code=$?
+          echo "::notice title=${{ matrix.os }} exit::node --test exit code $code"
+          grep -vE '^\s*$' stderr-${{ matrix.os }}.txt | head -n 8 | while read -r l; do echo "::warning title=${{ matrix.os }} stderr::$l"; done
+          exit $code
       - name: summary (public annotations — logs need a sign-in, annotations do not)
         if: always()
         shell: bash
         run: |
           f=test-${{ matrix.os }}.tap
           if [ ! -s "$f" ]; then echo "::error::no TAP output — node --test did not run"; exit 0; fi
-          echo "::notice title=${{ matrix.os }}::$(grep -E '^# ' "$f" | tr '\n' ' ')"
-          grep -nE 'cancelled|Error|ERR_' "$f" | grep -vE '^\s*#' | head -n 15 | while read -r l; do echo "::warning title=${{ matrix.os }} err::$l"; done
-          tail -n 15 "$f" | while read -r l; do echo "::notice title=${{ matrix.os }} tail::$l"; done
+          echo "::notice title=${{ matrix.os }} totals::$(tail -n 8 "$f" | tr '\n' ' ')"
           grep -E '^not ok' "$f" | head -n 20 | while read -r l; do echo "::error title=${{ matrix.os }}::$l"; done
           grep -nE '^\s+(error|message|code|failureType|expected|actual):' "$f" | head -n 30 | while read -r l; do echo "::warning title=${{ matrix.os }} detail::$l"; done
