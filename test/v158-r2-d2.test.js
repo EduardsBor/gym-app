@@ -28,9 +28,10 @@ test('r2 files: exactly the 7 accepted programs, locked by md5, own id <id>_r2, 
   assert.equal(fs.readdirSync(path.join(root, 'data/blocks')).filter(f => f.endsWith('.json')).length, 244, 'old blocks: same files');
 });
 
-test('R2_ON=false (LIVE): new assignment still gets the current block', () => {
+test('R2_ON=false (LIVE): with R2_ACTIVE empty every new assignment gets the current block (GC-164: five are active by R2_ACTIVE)', () => {
   const b = boot();
   assert.equal(b.run('R2_ON'), false);
+  b.run('R2_ACTIVE=[]');
   for (const id of READY) assert.equal(b.run(`blockIdForProfile(${JSON.stringify(prof(id))})`), id, id);
 });
 
@@ -154,5 +155,5 @@ test('D2: old data without down / downFrom works as before (need_w only for the 
 });
 
 test('v158: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v163'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v164'/);
 });

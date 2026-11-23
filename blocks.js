@@ -68,8 +68,8 @@ const R2_OF={};R2_READY.forEach(id=>{R2_OF[id+'_r2']=id});
 let R2_ON=false;
 // GC-163-01: per-program switch. Ids listed here (only from R2_READY) get «<id>_r2» for NEW assignments; R2_ON=true = all of R2_READY.
 // Instant rollback = empty list: no file is deleted, plans already started on r2 keep loading (blockFilePath does not read this).
-// Candidates waiting for the owner's approval: mass_nov_4_g_b36, mass_nov_4_b_nobar_b36, mass_nov_5_g_b35, mass_nov_6_g_b36, fit_nov_6_g_b36.
-let R2_ACTIVE=[];
+// GC-164-01 (owner approval via GPT, 23.11.2026): exactly these five. NOT fit_nov_6_b_nobar / loss_nov_6_b_nobar (audit) and NOT the 3 b_bar (R2_BLOCKED).
+let R2_ACTIVE=['mass_nov_4_g_b36','mass_nov_4_b_nobar_b36','mass_nov_5_g_b35','mass_nov_6_g_b36','fit_nov_6_g_b36'];
 function r2On(id){return!!id&&R2_READY.includes(id)&&!R2_BLOCKED.includes(id)&&(R2_ON||R2_ACTIVE.includes(id))}
 function blockR2For(id){return r2On(id)?id+'_r2':id}
 function blockFilePath(id){return R2_OF[id]?('data/blocks/r2/'+id+'.json'):BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}

@@ -31,10 +31,14 @@ test('GC-163-01: exact files — SHA256 of the 7 r2 and the 7 base programs are 
   }
 });
 
-test('GC-163-01: LIVE default — R2_ON=false, R2_ACTIVE empty → every new assignment gets the old program', () => {
+test('GC-164-01: LIVE — R2_ON=false, R2_ACTIVE = exactly the five approved; the two home programs and the 3 b_bar stay old', () => {
   const b = boot();
   assert.equal(b.run('R2_ON'), false);
-  assert.equal(b.run('R2_ACTIVE.length'), 0);
+  assert.deepEqual(b.J('R2_ACTIVE'), FIVE);
+  for (const id of FIVE) assert.equal(b.run(`blockIdForProfile(${JSON.stringify(prof(id))})`), id + '_r2', id);
+  for (const id of [...TWO, ...BLOCKED]) assert.equal(b.run(`blockIdForProfile(${JSON.stringify(prof(id))})`), id, id);
+  // rollback switch: empty list → every new assignment gets the old program again
+  b.run('R2_ACTIVE=[]');
   for (const id of [...FIVE, ...TWO, ...BLOCKED]) assert.equal(b.run(`blockIdForProfile(${JSON.stringify(prof(id))})`), id, id);
 });
 
@@ -60,7 +64,8 @@ test('GC-163-01: instant rollback — emptying R2_ACTIVE keeps a plan already st
   b0.run(`R2_ACTIVE=${JSON.stringify(FIVE)};S.block={id:blockIdForProfile(S.prof),next:5};S.program=planFromBlock(getBlock(S.block.id),S.prof).days;save()`);
   const saved = JSON.parse(b0.run(`localStorage.getItem('gym')`));
   assert.equal(saved.block.id, id + '_r2');
-  const b = boot({ state: saved });   // R2_ACTIVE back to [] (rollback build)
+  const b = boot({ state: saved });
+  b.run('R2_ACTIVE=[]');   // rollback build
   assert.equal(b.run('R2_ACTIVE.length'), 0);
   assert.equal(b.run('S.block.id'), id + '_r2');
   assert.equal(b.run('getBlock(S.block.id).id'), id + '_r2', 'r2 file still loads after rollback');

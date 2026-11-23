@@ -98,7 +98,7 @@ test('10. card: RU / EN / LV incl. safe anchoring of the loop band; no pain word
 test('r2: switching R2 off keeps users already on r2 — the r2 file path does not depend on the switch; R2 stays off', () => {
   const src = read('blocks.js');
   assert.match(src, /let R2_ON=false/);
-  assert.match(src, /let R2_ACTIVE=\[\];/);
+  assert.match(src, /let R2_ACTIVE=\['mass_nov_4_g_b36','mass_nov_4_b_nobar_b36','mass_nov_5_g_b35','mass_nov_6_g_b36','fit_nov_6_g_b36'\];/);
   assert.match(src, /function blockFilePath\(id\)\{return R2_OF\[id\]\?\('data\/blocks\/r2\/'\+id\+'\.json'\)/);
   assert.match(src, /function blockR2For\(id\)\{return r2On\(id\)\?id\+'_r2':id\}/);
 });
