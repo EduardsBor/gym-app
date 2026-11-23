@@ -8,7 +8,7 @@ self.addEventListener('message',e=>{
   const d=e.data||{};
   if(d.type!=='cache-block')return;
   const url=String(d.url||'');
-  if(!/^data\/blocks\/[a-z0-9_]+\.json$/.test(url)&&!/^data\/blocks\/variants\/[a-z0-9_]+\.json$/.test(url))return;  // tech-fix-1: pilot variants
+  if(!/^data\/blocks\/[a-z0-9_]+\.json$/.test(url)&&!/^data\/blocks\/(variants|r2)\/[a-z0-9_]+\.json$/.test(url))return;  // tech-fix-1: pilot variants; v158: r2 revisions
   const p=caches.open(C).then(c=>fetch(new Request(url,{cache:'reload'})).then(r=>{if(r.ok)return c.put(url,r)}));
   if(e.waitUntil)e.waitUntil(p);
 });

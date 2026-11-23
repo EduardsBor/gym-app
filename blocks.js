@@ -58,7 +58,16 @@ function blockVariantOpts(id,baseId){const base=blockVariantBase(id,baseId);cons
 // tech-fix-2: reopening the questionnaire after a pilot variant: the answer «days» is what the user asked (6), not the
 // frequency of the accepted variant (B = 4), so the same base and the A / B choice come back.
 function quizDaysAsked(){const p=typeof S!=='undefined'&&S&&S.prof;return p&&p.variant&&BLOCK_VARIANT_OF[p.variant]&&+p.daysAsked>0?{days:+p.daysAsked}:{}}
-function blockFilePath(id){return BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}
+// v158 review-nov-2 r2: new revisions of 7 accepted novice pilot programs, ONLY for new assignments (questionnaire / catalog →
+// generate → blockBaseForProfile). Own ids <id>_r2 and files data/blocks/r2/ (draft files of review-nov-2-final-check, only "id"
+// changed so that loading never overwrites the old block). Saved plans keep S.block.id and the old file; history and S.pg untouched.
+// OFF until Eduards says yes (Grok PASS D1/D3 is there). The 3 b_bar programs stay blocked until D2 at home is ready.
+const R2_READY=['mass_nov_4_g_b36','mass_nov_4_b_nobar_b36','mass_nov_5_g_b35','mass_nov_6_g_b36','fit_nov_6_g_b36','fit_nov_6_b_nobar_b36','loss_nov_6_b_nobar_b36'];
+const R2_BLOCKED=['mass_nov_5_b_bar_b35','mass_nov_6_b_bar_b36','loss_nov_6_b_bar_b36'];
+const R2_OF={};R2_READY.forEach(id=>{R2_OF[id+'_r2']=id});
+let R2_ON=false;
+function blockR2For(id){return R2_ON&&id&&R2_READY.includes(id)?id+'_r2':id}
+function blockFilePath(id){return R2_OF[id]?('data/blocks/r2/'+id+'.json'):BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}
 
 function fetchBlockFile(id){
   if(!/^[a-z0-9_]+$/.test(String(id||''))||typeof XMLHttpRequest==='undefined')return null;
@@ -88,7 +97,7 @@ function blockBaseForProfile(a){
   if(!a||!blocksEnabled())return null;
   const key=blockKey(a);
   const acc=blockAcc(a);
-  return(acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null;
+  return blockR2For((acc&&PRIO_BLOCK_MAP[key+'_pr_'+acc])||BLOCK_MAP[key]||LEGACY_D_BLOCK_MAP[key]||null);
 }
 // D-229: accent (blocks-priority-v2, Claude 17.11.2026). Key {base}_pr_{muscle}; no block → base block. Sex is not used.
 // next_level of an accent block is the base advanced block (no advanced accent blocks yet), so the accent is dropped there.
@@ -485,7 +494,7 @@ function ymdPlus(iso,days){
 }
 
 
-function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?((typeof BLOCK_VARIANT_OF!=='undefined'&&BLOCK_VARIANT_OF[id])?'data/blocks/variants/'+id+'.json':'data/blocks/'+id+'.json'):null}
+function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?((typeof R2_OF!=='undefined'&&R2_OF[id])?'data/blocks/r2/'+id+'.json':(typeof BLOCK_VARIANT_OF!=='undefined'&&BLOCK_VARIANT_OF[id])?'data/blocks/variants/'+id+'.json':'data/blocks/'+id+'.json'):null}
 function cacheBlockFile(id){
   const url=blockFileUrl(id);
   if(!url)return;

@@ -300,7 +300,8 @@ function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const 
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
  const place=a.place||'g';
- const L=altCands(cur).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b')));
+ // v158 (Eduards, decision D 23.11): the gravitron (clip of the machine) only in the gym — not even greyed out in the home list.
+ const L=altCands(cur).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b'))).filter(e=>e.id!=='assisted-pullup'||eqAvail(e.id,eqPlacesOf(a)));
  // tech-fix-2: exercises that conflict with the limitations (META + impact cardio) are not offered — shown greyed with the reason, no tap.
  const lc=e=>typeof blockLimConf==='function'?blockLimConf(e.id,a):[];const risky=L.filter(e=>lc(e).length);
  const good=L.filter(e=>!lc(e).length&&okEx(e.id,a)),other=L.filter(e=>!lc(e).length&&!okEx(e.id,a));

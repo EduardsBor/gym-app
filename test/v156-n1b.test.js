@@ -92,5 +92,5 @@ test('N1b: all planned rows at the top → top1 (was «same» when a row was mis
 });
 
 test('v156: cache version', () => {
-  assert.match(require('./fixtures/tf1-boot.js').read('cache-ver.js'), /var SW_CACHE='moyzal-v157'/);
+  assert.match(require('./fixtures/tf1-boot.js').read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
 });

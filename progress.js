@@ -35,6 +35,7 @@ const PR_LADDER={'ht-bw':{to:'sglb'},'assisted-pullup':{to:'pull'},'scap-pullup'
 // gym → assisted-pullup (gravitron); home with a bar → scap-pullup. Never the gravitron at home. The way back is PR_LADDER
 // (assisted-pullup / scap-pullup → pull). Only a suggestion (out.down): the user switches with a button, history stays by exId.
 const PR_DOWN={pull:{g:'assisted-pullup',b:'scap-pullup'},chin:{g:'assisted-pullup',b:'scap-pullup'}};
+// v158: stays OFF (GPT 23.11: «для зала механизм пока оставить выключенным»); home is off on its own by PR_DOWN_PLACE.
 let PR_DOWN_ON=false;
 // closeout (v157): per place. Gym only (owner decision A); home with a bar stays off until negative pull-ups have a card and a clip
 // (decision B: scap pull-ups → pull-ups is too big a step, the user would swing back and forth).

@@ -24,8 +24,8 @@ function loadCatalog() {
   return ctx;
 }
 
-test('D-291: cache is moyzal-v157', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v157'/);
+test('D-291: cache is moyzal-v158', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
 });
 
 test('D-291: LV sign-in and reset confirmation match the approved wording', () => {

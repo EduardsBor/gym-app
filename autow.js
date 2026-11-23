@@ -114,7 +114,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
   if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
-  else if(s.down&&s.down!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.down).length))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
+  else if(awDownOk(s.down,it.exId))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
  // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
  // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
  return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
@@ -139,7 +139,10 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  const dlb=$('#awdl');if(dlb)dlb.onclick=()=>{S.dl={type:'early',start:Date.now()};S.dlLast=S.dl.start;A.dl='early';A.items.forEach(it=>awApply(it,'early'));save();workoutView()};
  const fin=$('#fin');if(fin&&fin.onclick){const o=fin.onclick;fin.onclick=()=>{const id=A.id,n=S.workouts.length;o();if(S.workouts.length>n&&S.workouts[S.workouts.length-1].id===id){awFinish(S.workouts[S.workouts.length-1]);save();awMoment(S.workouts[S.workouts.length-1])}}}}
 // review-nov-2 task 2: switch item i of the open workout to the offered easier step (button «Заменить» only).
-function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.down;if(!to||to===from||(typeof lgConf==='function'&&lgConf(to).length))return false;
+// v158: the step is offered only when it is not against the user's limitations (limguard) and the equipment profile has it.
+function awDownOk(to,cur){if(!to||to===cur)return false;if(typeof lgConf==='function'&&lgConf(to).length)return false;
+ const pl=(S.prof&&(S.prof.places||S.prof.place))||'g';return typeof eqAvail!=='function'||eqAvail(to,pl)}
+function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.down;if(!awDownOk(to,from))return false;
  // closeout fix 2 (v157): remember the exercise we came from (pull or chin) — the way back leads to it, not always to pull.
  const back=it.downFrom||from;
  it.exId=to;it.downFrom=back;delete it.sug;delete it.awx;const d=S.program&&S.program[A.dayIdx];if(d){const pi=(d.items||[]).find(x=>x.exId===from);if(pi){pi.exId=to;pi.downFrom=back}}
@@ -162,12 +165,14 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const wdl=s.dl||W.dl;if(wdl){p.last=W.start;p.upd=upd;if(wdl==='block')p.afterDl=1;return}
   const sets=it.sets.filter(x=>x.done);if(!sets.length)return;
   const rir=sets.map(()=>null);if(it.feel&&PR_FEEL[it.feel]!=null)rir[rir.length-1]=PR_FEEL[it.feel];
-  const R=c.eq==='time'?(PR_TIME[c.id]||[it.min,it.max]):[it.min,it.max],w=c.eq==='time'?null:awWork(sets);
+  // v158: «0» typed as the gravitron counterweight in every set = no help (real pull-ups) — not «nothing written» (awWork drops 0)
+  const zeroHelp=c.eq==='assisted'&&sets.every(x=>x.w!==''&&x.w!=null&&+x.w===0);
+  const R=c.eq==='time'?(PR_TIME[c.id]||[it.min,it.max]):[it.min,it.max],w=c.eq==='time'?null:zeroHelp?0:awWork(sets);
   const dcF=awDayCtx(W.dayIdx);
   // closeout (v157): an easier step taken with the D2 button — the plan item (or this workout item) remembers where it came from
   const pdi=S.program&&W.dayIdx!=null&&S.program[W.dayIdx],pit=pdi&&(pdi.items||[]).find(x=>x.exId===it.exId),df=it.downFrom||(pit&&pit.downFrom)||null;
   const inp={id:it.exId,level:awLevel(),role:awRole(it,W.dayIdx),range:R,sets_plan:it.ns||sets.length,weight:w,results:sets.map(x=>+x.r||0),rir,
-   state:Object.assign({},s.st||p.st||{}),flags:lim,ctx:s.after||p.afterDl?{after_deload:true}:{},calibration:!!s.cal,pain:!!it.pain,place:S.prof&&S.prof.place,hang,need_w:!!df};
+   state:Object.assign({},s.st||p.st||{}),flags:lim,ctx:s.after||p.afterDl?{after_deload:true}:{},calibration:!!s.cal,pain:!!it.pain,place:S.prof&&S.prof.place,hang,need_w:!!df&&!zeroHelp};
   if(c.eq==='time')inp.target=s.target!=null?s.target:R[0];
   if(dcF&&dcF.rirTarget)inp.rir_target=dcF.rirTarget;
   const o=prNext(inp,awEq());let to=o.id!==it.exId?awAppId(o.id):null;
