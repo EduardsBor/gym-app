@@ -151,5 +151,5 @@ test('7: signed in on a device without confirmed limitations → catalog pick as
 });
 
 test('v160: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v165'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v166'/);
 });

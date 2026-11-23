@@ -257,7 +257,7 @@ test('clearLocalData removes gym, the history backup and the IndexedDB database'
 
 test('service worker cache is moyzal-v67 and still precaches app.js and sync.js', () => {
   const sw = read('sw.js');
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v165'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v166'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.equal(sw.includes("C='moyzal-v62'"), false);
   assert.match(sw, /'app\.js'/);
@@ -286,15 +286,20 @@ test('startup: a workout deleted locally is not resurrected from IDB', async () 
   assert.deepEqual(JSON.parse(b.store.get('gym')).deletedWorkouts, ['w2']);
 });
 
-test('startup: workouts in both IDB and localStorage are not duplicated; IDB-only ones are kept; newer edit wins', async () => {
+test('startup: workouts in both IDB and localStorage are not duplicated; newer edit wins; IDB-only ones of an UNMARKED base are isolated (GC-166), not merged', async () => {
+  // GC-166: an IndexedDB written before v165 has no owner mark — its IDB-only records cannot be proven to belong to this device's
+  // data (another account could have used the device), so they are kept in the isolated 'quarantine' instead of being merged.
+  // Same-owner merging of IDB-only records is covered by gc165-history / gc166-history-owner (04b).
   const w1 = W('w1', 1_700_000_000_000, 'bp', 60), w2 = W('w2', 1_700_100_000_000, 'sq', 80), w3 = W('w3', 1_700_200_000_000, 'dl', 100);
   const w2edited = Object.assign(jclone(w2), { updatedAt: 1_700_300_000_000, notes: 'edited' });
   const b = boot(seed({ workouts: [w1, w2edited] }), { preHist: [jclone(w1), jclone(w2), jclone(w3)] });
   await b.run('histReady');
   const ids = JSON.parse(b.run('JSON.stringify(S.workouts.map(w=>w.id))'));
-  assert.deepEqual(ids, ['w1', 'w2', 'w3']);
+  assert.deepEqual(ids, ['w1', 'w2']);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(b.run('S.workouts[1].notes'), 'edited');
-  assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1', 'w2', 'w3']);
+  assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1', 'w2']);
+  const qb = jclone(b.idb.get('moyzal').stores.get('history').get('quarantine'));
+  assert.deepEqual(qb.map(x => [x.owner, x.workouts.map(w => w.id)]), [['legacy', ['w3']]], 'w3 kept, isolated');
   assert.deepEqual(b.run('JSON.stringify(mergeHist([{id:"a",end:2}],[{id:"a",end:1}],[]))'), '[{"id":"a","end":2}]');
 });

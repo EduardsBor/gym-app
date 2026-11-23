@@ -171,7 +171,8 @@ test('6. «clear data on this device» removes only this device’s copies (loca
 test('7a. GC-165 defect: IndexedDB history of ANOTHER account is not mixed into this account (device copy wins, IDB rewritten)', async () => {
   const b = boot(seed({ ownerUid: 'U2', workouts: [W('b1', 5000)] }), { preHist: [W('a1', 1000), W('a2', 2000)], preOwner: 'U1' });
   const r = await b.run('histReady');
-  assert.equal(r.source, 'local-foreign-idb');
+  assert.equal(r.source, 'isolated');   // GC-166: the other account's history is isolated (kept), not destroyed
+  assert.deepEqual(ids(hist(b).get('quarantine')[0].workouts), ['a1', 'a2']);
   assert.deepEqual(ids(b.J('S.workouts')), ['b1']);
   assert.deepEqual(ids(JSON.parse(b.store.get('gym')).workouts), ['b1']);
   assert.deepEqual(ids(hist(b).get('workouts')), ['b1']);
@@ -184,10 +185,11 @@ test('7b. a guest who did not transfer (IDB owner = guest) is not mixed into the
   assert.deepEqual(ids(b.J('S.workouts')), ['b1']);
 });
 
-test('7c. compatibility: history written before v165 (no owner mark) and guest↔guest still merge as before', async () => {
+test('7c. history written before v165 (no owner mark): IDB-only records are isolated (GC-166), not merged; guest↔guest still merges', async () => {
   const old = boot(seed({ ownerUid: 'U1', workouts: [W('w2', 2000)] }), { preHist: [W('w1', 1000)] });
   await old.run('histReady');
-  assert.deepEqual(ids(old.J('S.workouts')), ['w1', 'w2']);
+  assert.deepEqual(ids(old.J('S.workouts')), ['w2']);
+  assert.deepEqual(ids(hist(old).get('quarantine')[0].workouts), ['w1']);
   assert.equal(hist(old).get('owner'), 'U1', 'owner mark written from now on');
   const guest = boot(seed({ workouts: [W('w2', 2000)] }), { preHist: [W('w1', 1000)], preOwner: null });
   await guest.run('histReady');
@@ -204,8 +206,8 @@ test('7d. localStorage lost, IndexedDB of account U1 survives → history restor
 test('7e. switching accounts: adoptAccountFromCloud writes the new history + owner to IndexedDB (awaited) BEFORE localStorage', () => {
   const s = read('sync.js');
   const fn = s.slice(s.indexOf('async function adoptAccountFromCloud'), s.indexOf('function clearBodyPhotos'));
-  const iPut = fn.indexOf('await idb.histPut(Array.isArray(S.workouts)?S.workouts:[],S.ownerUid)'), iLS = fn.indexOf('persistLocal();');
+  const iPut = fn.indexOf('await histWrite(Array.isArray(S.workouts)?S.workouts:[],S.ownerUid)'), iLS = fn.indexOf('persistLocal();');   // GC-166: guarded write
   assert.ok(iPut > 0 && iLS > iPut, 'IDB first, then localStorage');
   assert.ok(fn.indexOf('S.ownerUid=user.id;') < iPut);
-  assert.match(read('app.js'), /histPut:\(list,owner\)=>tx\('history','readwrite',s=>\{if\(owner!==undefined\)s\.put\(owner,'owner'\);return s\.put\(list,'workouts'\)\}\)/);
+  assert.match(read('app.js'), /histPut:\(list,owner,quarantine\)=>tx\('history','readwrite',s=>\{if\(quarantine!==undefined\)s\.put\(quarantine,'quarantine'\);if\(owner!==undefined\)s\.put\(owner,'owner'\);return s\.put\(list,'workouts'\)\}\)/);
 });

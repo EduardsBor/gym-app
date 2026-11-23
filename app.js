@@ -636,17 +636,58 @@ const idb=(()=>{let p,live,epoch=0;
   histGet:()=>tx('history','readonly',s=>s.get('workouts')),
   // GC-165: 'owner' = account (ownerUid) the IDB history belongs to; null = guest; absent = written before v165.
   histOwner:()=>tx('history','readonly',s=>s.get('owner')),
-  // list + owner in ONE transaction: a save() at start-up must not slip in between the two reads.
-  histRead:()=>tx('history','readonly',s=>{const a=s.get('workouts'),o=s.get('owner');return{get result(){return{list:a.result,owner:o.result}}}}),
-  histPut:(list,owner)=>tx('history','readwrite',s=>{if(owner!==undefined)s.put(owner,'owner');return s.put(list,'workouts')})}})();
+  // list + owner (+ GC-166 quarantine) in ONE transaction: a save() at start-up must not slip in between the reads.
+  histRead:()=>tx('history','readonly',s=>{const a=s.get('workouts'),o=s.get('owner'),q=s.get('quarantine');return{get result(){return{list:a.result,owner:o.result,quarantine:q.result}}}}),
+  histPut:(list,owner,quarantine)=>tx('history','readwrite',s=>{if(quarantine!==undefined)s.put(quarantine,'quarantine');if(owner!==undefined)s.put(owner,'owner');return s.put(list,'workouts')}),
+  // GC-166: read-modify-write in ONE readwrite transaction (what is in IDB is isolated before it is replaced; all-or-nothing).
+  histSwap:fn=>tx('history','readwrite',s=>{const r=[s.get('workouts'),s.get('owner'),s.get('quarantine')];let n=r.length;
+   const go=()=>{if(--n)return;const w=fn(r[0].result,r[1].result,r[2].result);if(!w)return;
+    if(w.quarantine!==undefined)s.put(w.quarantine,'quarantine');if(w.owner!==undefined)s.put(w.owner,'owner');if(w.list)s.put(w.list,'workouts')};
+   r.forEach(q=>{if(q.readyState==='pending')q.onsuccess=go;else go()});return null})}})();
 function histOwnerNow(){return(typeof S!=='undefined'&&S&&S.ownerUid)||null}
 // D-207: workout history lives in IndexedDB 'history'. localStorage 'gym' still keeps a copy this version;
 // a one-time snapshot is stored in gym_hist_backup and is never overwritten. If IndexedDB is missing (private mode), we keep using localStorage.
 function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
 function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
+// GC-166: history whose owner differs from this device's owner, or cannot be proven (IDB written before v165, no mark), is
+// never merged and never destroyed: it goes to an isolated 'quarantine' (IndexedDB only, never synced), one bundle per owner
+// ('legacy' = unknown, 'guest' = guest, otherwise the account id). Tombstones (S.deletedWorkouts) are honoured everywhere.
+function histQKey(owner){return owner===undefined?'legacy':owner===null?'guest':String(owner)}
+function histQAdd(Q,owner,list,keep,deleted){
+ const del=new Set(Array.isArray(deleted)?deleted:[]),k=new Set((Array.isArray(keep)?keep:[]).map(w=>w&&w.id));
+ const extra=(Array.isArray(list)?list:[]).filter(w=>w&&typeof w==='object'&&w.id!=null&&!k.has(w.id)&&!del.has(w.id));
+ const out=Array.isArray(Q)?Q.filter(x=>x&&typeof x==='object'&&x.owner):[];
+ if(!extra.length)return out;
+ const key=histQKey(owner);let b=out.find(x=>x.owner===key);
+ if(!b){b={owner:key,at:Date.now(),workouts:[]};out.push(b)}
+ b.workouts=mergeHist(b.workouts,extra,deleted);b.at=Date.now();
+ return out}
+// One write of the device history to IDB: whatever is there and does not belong to the current owner is isolated first.
+function histWriteFn(list,owner,deleted){return(l0,o0,q0)=>{
+ let Q=Array.isArray(q0)?q0:[];
+ if(Array.isArray(l0)&&l0.length&&o0!==owner)Q=histQAdd(Q,o0,l0,list,deleted);
+ return{list:Array.isArray(list)?list:[],owner,quarantine:Q}}}
+function histWrite(list,owner){if(S_RO||typeof indexedDB==='undefined')return Promise.resolve(false);
+ return idb.histSwap(histWriteFn(list,owner===undefined?histOwnerNow():owner,S.deletedWorkouts)).then(()=>{try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}return true})}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
  const gen=idb.gen();
- Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await idb.histPut(histList(),histOwnerNow());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
+ Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await histWrite(histList(),histOwnerNow())}catch(e){}})}
+// Device copy present? (any guest / account data, not only workouts) — «localStorage lost» only when there is nothing at all.
+function histDeviceHasData(){return histList().length>0||!!(S&&(S.program||S.goal||S.prof||S.block))}
+// Isolated history: list (for a future UI / support) and an explicit restore. An account bundle only for that same account;
+// 'legacy' / 'guest' bundles only after the user confirms. Restored workouts are merged like any other (tombstones win).
+function histQuarantineList(){return(histQCache||[]).map(b=>({owner:b.owner,count:(b.workouts||[]).length,at:b.at}))}
+let histQCache=[];
+function histQuarantineRestore(key){
+ const b=(histQCache||[]).find(x=>x.owner===key);if(!b)return false;
+ const me=histOwnerNow();
+ if(key!=='legacy'&&key!=='guest'&&key!==me)return false;
+ if((key==='legacy'||key==='guest')&&typeof confirm==='function'&&!confirm('Вернуть в историю '+(b.workouts||[]).length+' тренировок, которые нашлись на этом устройстве без подтверждённого владельца? Делай это, только если это твои тренировки.'))return false;
+ S.workouts=mergeHist(b.workouts,histList(),S.deletedWorkouts);
+ histQCache=histQCache.filter(x=>x!==b);
+ try{localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
+ if(!S_RO&&typeof indexedDB!=='undefined')idb.histSwap((l0,o0,q0)=>({list:histList(),owner:histOwnerNow(),quarantine:(Array.isArray(q0)?q0:[]).filter(x=>x&&x.owner!==key)})).catch(()=>{});
+ return true}
 // Union of IDB + localStorage(+in-memory) history by workout id; tombstones in S.deletedWorkouts (same list sync uses) win;
 // on a conflict the newer one (updatedAt||end||start) wins, ties go to the local copy (written synchronously, so freshest).
 function histT(w){return +(w&&(w.updatedAt||w.end||w.start))||0}
@@ -658,27 +699,35 @@ function mergeHist(fromIdb,local,deleted){const del=new Set(Array.isArray(delete
 async function migrateHistory(){
  if(typeof indexedDB==='undefined')return{ok:false,fallback:'localStorage'};
  const gen=idb.gen();
- let fromIdb,idbOwner,idbAvail=true;
- try{const h=await idb.histRead();fromIdb=h&&h.list;idbOwner=h?h.owner:undefined}catch(e){idbAvail=false}
+ let fromIdb,idbOwner,idbQ,idbAvail=true;
+ try{const h=await idb.histRead();fromIdb=h&&h.list;idbOwner=h?h.owner:undefined;idbQ=h&&h.quarantine}catch(e){idbAvail=false}
  if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
  if(!idbAvail)return{ok:false,fallback:'localStorage'};
  if(Array.isArray(fromIdb)){
   // D-207 fix (Claude 15.11): union by id instead of replace. localStorage 'gym' is written synchronously,
   // the IDB write is async; if the app was closed before it finished, the last workout is only in localStorage.
-  // GC-165: IDB history written for ANOTHER account (or a guest whose data was not transferred) is never mixed into
-  // this account's history — the device copy (localStorage) wins and IDB is rewritten. No owner mark (before v165) → as before.
-  // localStorage lost (no owner on the device) + IDB of account X → history is restored together with its owner X, so another
-  // account signing in later is treated as foreign data (sync.js foreignData → adoptAccountFromCloud), never merged.
-  const me=histOwnerNow();
-  const foreign=idbOwner!==undefined&&me!==null&&idbOwner!==me;
-  if(!foreign&&me===null&&typeof idbOwner==='string'&&idbOwner&&Array.isArray(fromIdb)&&fromIdb.length)S.ownerUid=idbOwner;
-  const merged=mergeHist(foreign?[]:fromIdb,histList(),S.deletedWorkouts);
+  // GC-165/166 ownership rules (the decision depends only on the marks, so a failed / interrupted write gives the same result on
+  // the next start):
+  //  • IDB owner = device owner (same account, or guest↔guest) → merge as before;
+  //  • device copy lost (nothing on the device, no owner) → restore: with the PROVEN owner of a marked IDB, or as unbound device
+  //    data for an unmarked one (binding to an account then needs the transfer consent at sign-in);
+  //  • otherwise (another account, a guest with its own data on the device, or an unmarked IDB) → records already on the device
+  //    stay, the rest is isolated in the quarantine — never merged, never assigned, never destroyed.
+  const me=histOwnerNow(),local=histList(),del=S.deletedWorkouts,lost=me===null&&!histDeviceHasData();
+  let Q=Array.isArray(idbQ)?idbQ:[],merged,src='idb';
+  if(idbOwner!==undefined&&idbOwner===me)merged=mergeHist(fromIdb,local,del);
+  else if(lost){merged=mergeHist(fromIdb,local,del);if(typeof idbOwner==='string'&&idbOwner&&fromIdb.length)S.ownerUid=idbOwner;src='restored'}
+  else{const known=new Set(local.map(w=>w&&w.id)),n0=JSON.stringify(Q);merged=mergeHist(fromIdb.filter(w=>w&&known.has(w.id)),local,del);Q=histQAdd(Q,idbOwner,fromIdb,local,del);if(JSON.stringify(Q)!==n0)src='isolated'}
+  // the current account's own isolated bundle (e.g. after another account used the device) comes back automatically
+  const mine=histOwnerNow();
+  if(typeof mine==='string'){const b=Q.find(x=>x&&x.owner===mine);if(b){merged=mergeHist(b.workouts,merged,del);Q=Q.filter(x=>x!==b)}}
   if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
-  S.workouts=merged;
+  S.workouts=merged;histQCache=Q;
   try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
   try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
-  if(!S_RO)try{await idb.histPut(merged,histOwnerNow())}catch(e){}
-  return{ok:true,source:foreign?'local-foreign-idb':'idb'};
+  // all-or-nothing: workouts + owner + quarantine in one transaction
+  if(!S_RO)try{await idb.histPut(merged,histOwnerNow(),Q)}catch(e){}
+  return{ok:true,source:src};
  }
  const local=histList();
  writeHistBackupOnce(local);
