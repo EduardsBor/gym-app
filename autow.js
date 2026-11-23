@@ -69,9 +69,13 @@ function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg(
  const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:(nx.sets||plan),target:cx?o.target:(nx.target!=null?nx.target:null),
   rir:o.rir,note:cx?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,st:o.state};
  if(ctx.planned_return)s.st=Object.assign({},(p&&p.st)||{});
- if(dl)s.dl=dl;if(!dl&&(awAfterDeload()||(p&&p.afterDl)))s.after=1;return s}
+ if(dl)s.dl=dl;if(!dl&&(awAfterDeload()||(p&&p.afterDl)))s.after=1;
+ // N1 (v154): a replacement (manual ⇄ or limitation split) gets exactly the remaining sets of the source (ns),
+ // not the plan of its own S.pg — otherwise 1 done + 3 new = 4 sets instead of 3.
+ if((it.swFrom||it.limFrom)&&+it.ns>0)s.sets=+it.ns;
+ return s}
 function awApply(it,dl){if(!awOn())return awPrev(it);const s=awSuggest(it,dl);it.awx=1;it.sug=s;if(s&&/^(inc|inc_big|cal_up|time_up)$/.test(s.note||'')&&typeof premFlagInc==='function')premFlagInc();if(!s||S.autoW===false)return;
- const last=awLast(it.exId,S.active&&S.active.id),L=last?last.it.sets.filter(x=>x.done):null,n=Math.max(1,s.sets||it.sets.length);
+ const last=awLast(it.exId,S.active&&S.active.id),L=last?last.it.sets.filter(x=>x.done):null,n=Math.max(1,(it.swFrom||it.limFrom)&&+it.ns>0?+it.ns:(s.sets||it.sets.length));
  const done=it.sets.filter(x=>x.done);let rest=it.sets.filter(x=>!x.done);
  while(done.length+rest.length<n)rest.push({w:'',r:'',done:false});if(done.length+rest.length>n)rest=rest.slice(0,Math.max(0,n-done.length));
  rest.forEach((x,k)=>{const j=done.length+k,pv=L&&(L[j]||L[L.length-1]);
@@ -122,7 +126,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i))});
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return;
   it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}
-  const p=awPg()[from];if(p&&p.next)delete p.next.id;awApply(it,A.dl);save();workoutView()});
+  const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}awApply(it,A.dl);save();workoutView()});
  const dlb=$('#awdl');if(dlb)dlb.onclick=()=>{S.dl={type:'early',start:Date.now()};S.dlLast=S.dl.start;A.dl='early';A.items.forEach(it=>awApply(it,'early'));save();workoutView()};
  const fin=$('#fin');if(fin&&fin.onclick){const o=fin.onclick;fin.onclick=()=>{const id=A.id,n=S.workouts.length;o();if(S.workouts.length>n&&S.workouts[S.workouts.length-1].id===id){awFinish(S.workouts[S.workouts.length-1]);save();awMoment(S.workouts[S.workouts.length-1])}}}}
 const _awWV=workoutView;workoutView=function(){_awWV();awDecorate()};
@@ -137,7 +141,10 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const s=it.sug||{},p=P[it.exId]||(P[it.exId]={});
   p.first=p.first||W.start;
   // tech-fix-1 GC-07: deload workouts (calendar, early or of the block) never change progression, also without auto-weight.
-  const wdl=s.dl||W.dl;if(wdl){p.last=W.start;if(wdl==='block')p.afterDl=1;return}
+  // O1 (v154): upd = moment this entry was updated (end of the workout); sync.js mergePg orders entries of two devices by it.
+  // last stays the start of the workout (deload / staleness logic reads it).
+  const upd=Math.max(Date.now(),+W.end||0);
+  const wdl=s.dl||W.dl;if(wdl){p.last=W.start;p.upd=upd;if(wdl==='block')p.afterDl=1;return}
   const sets=it.sets.filter(x=>x.done);if(!sets.length)return;
   const rir=sets.map(()=>null);if(it.feel&&PR_FEEL[it.feel]!=null)rir[rir.length-1]=PR_FEEL[it.feel];
   const R=c.eq==='time'?(PR_TIME[c.id]||[it.min,it.max]):[it.min,it.max],w=c.eq==='time'?null:awWork(sets);
@@ -151,8 +158,8 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
   delete p.afterDl;
   p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note,modKey:o.modKey};if(to)p.next.id=to;
-  p.last=W.start;if(/^(inc|cal_up|ladder)$/.test(o.note))p.incAt=W.start;
-  if(to&&!P[to])P[to]={st:{success:0,miss:0},next:{target:o.target,sets:o.sets,weight:o.weight,note:'ladder'},first:W.start,last:W.start}})}
+  p.last=W.start;p.upd=upd;if(/^(inc|cal_up|ladder)$/.test(o.note))p.incAt=W.start;
+  if(to&&!P[to])P[to]={st:{success:0,miss:0},next:{target:o.target,sets:o.sets,weight:o.weight,note:'ladder'},first:W.start,last:W.start,upd}})}
 
 // Today: show the next suggestion instead of the old "+2,5 кг" hint
 const _awHint=hint;hint=function(item){const c=awCls(item.exId),p=awPg()[item.exId];if(!c||!p||!p.next)return _awHint(item);const n=p.next,u=c.eq==='band'?'ур.':'кг';

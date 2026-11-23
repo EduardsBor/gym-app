@@ -119,7 +119,9 @@
     // D1 (v152 QA): S.pg entries carry `last` (start of the workout that updated them), not at/updatedAt/ts — before this fix every
     // timestamp was 0 and the cloud copy (b) always won, so progression was rolled back after each sync. Now the newer `last` wins;
     // equal or missing timestamps keep the local entry (a). Non-object values never replace an object.
-    function ts(x){if(!x||typeof x!=='object')return 0;const v=+(x.last||x.at||x.updatedAt||x.ts||0);return isFinite(v)?v:0}
+    // O1 (v154): `upd` (moment of the update = end of the workout, set by awFinish) orders two overlapping workouts on two devices
+    // by which one finished later; entries written before v154 have no upd and fall back to `last` (backward compatible).
+    function ts(x){if(!x||typeof x!=='object')return 0;const v=+(x.upd||x.last||x.at||x.updatedAt||x.ts||0);return isFinite(v)?v:0}
     [a,b].forEach(src=>{
       if(!src||typeof src!=='object') return;
       Object.keys(src).forEach(k=>{

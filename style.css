@@ -33,7 +33,7 @@ nav button span{font-size:11px;color:var(--mut)}nav button.on span{color:var(--a
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cal div{padding:8px 0;border-radius:10px;font-size:14px}
 .cal .has{background:var(--acc);color:var(--on-acc);font-weight:700;cursor:pointer}.cal .h{color:var(--mut);font-size:12px}
 .li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}.li>.grow{min-width:0;flex:1 1 8rem}.wu-dose{white-space:normal;overflow-wrap:anywhere}
-canvas{width:100%;height:200px;background:var(--card2);border-radius:12px}.tabs{display:flex;gap:6px;margin:8px 0}.tabs button{flex:1}.tabs .on{background:var(--acc)}
+canvas{width:100%;height:200px;background:var(--card2);border-radius:12px}.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.tabs button{flex:1}.tabs .on{background:var(--acc)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chip{padding:0 14px;min-height:44px;text-align:center}.chips.sm2{margin:6px 0}.chips.sm2 .chip{min-height:36px;font-size:14px;padding:0 10px}
 details summary{cursor:pointer;min-height:30px}
 #prov{position:fixed;inset:0;z-index:40;background:var(--overlay);display:flex;align-items:center;justify-content:center;animation:fi .25s}
@@ -86,7 +86,7 @@ details summary{cursor:pointer;min-height:30px}
 .vlock .mkposter.mkwide{width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:var(--media-bg);flex:none}
 .vlock .mkposter.mkwide img{width:100%;height:100%;object-fit:contain;background:var(--media-bg);border-radius:12px;opacity:1}
 .consent ul{padding-left:18px}.consent li{margin:4px 0}
-.legal h3{margin:16px 0 6px}.legal h4{margin:12px 0 6px}.legal p,.legal li{line-height:1.45}.legal ul,.legal ol{padding-left:18px;margin:6px 0 12px}.legal table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}.legal th,.legal td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.legal h3{margin:16px 0 6px}.legal h4{margin:12px 0 6px}.legal p,.legal li{line-height:1.45}.legal ul,.legal ol{padding-left:18px;margin:6px 0 12px}.legal table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}.legal th,.legal td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:anywhere}.legal a,.legal code{overflow-wrap:anywhere}
 .plan{padding:10px 14px}.pwsheet .opt{padding:10px}
 .opts.c4{grid-template-columns:repeat(2,1fr)}
 .wu.done{opacity:.55}.wu .grow>div:first-child{font-weight:500}details.wud{margin:6px 0 8px;padding:6px 10px;border:1px solid var(--line);border-radius:10px}details.wud summary{padding:4px 0}
@@ -157,3 +157,5 @@ body.exv #timer{display:none!important}
 #eqswitch .chip,#eqswedit .chip{max-width:100%;height:auto;white-space:normal;line-height:1.2;padding:8px 12px}
 /* D6 (v152 QA): rest timer bar shown - room to scroll the last buttons above it */
 body.tmr{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
+/* N3 (v154): scrolling an element into view (focus, Playwright, scrollIntoView) keeps it above the fixed bottom nav / timer bar */
+html{scroll-padding-bottom:calc(72px + env(safe-area-inset-bottom))}html:has(body.tmr){scroll-padding-bottom:calc(132px + env(safe-area-inset-bottom))}
