@@ -66,7 +66,11 @@ function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg(
  const base={id:it.exId,level:awLevel(),role:role,range:R,sets_plan:plan,weight:w,state:Object.assign({},(p&&p.st)||{}),flags:(S.prof&&S.prof.lim)||[],ctx,target:nx.target!=null?nx.target:undefined};
  if(rt)base.rir_target=rt;
  const o=prNext(base,awEq()),cx=ctx.deload||ctx.days_since_last||ctx.planned_return;
- const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:(nx.sets||plan),target:cx?o.target:(nx.target!=null?nx.target:null),
+ // N1b (v156, QA v154): the number of sets comes from the plan of THIS day (it.ns). The stored next.sets was written by the last
+ // workout (a replacement's remaining sets, another day's plan, v153/v154 data) and cut the next plan (3 → 1). Only the
+ // «2 misses → one set less» rule (st.cut) still shortens it, counted from this day's plan as prReps does.
+ const cut=!!(p&&p.st&&p.st.cut),sets=cut?Math.min(plan,Math.max(2,plan-1)):plan;
+ const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:sets,target:cx?o.target:(nx.target!=null?nx.target:null),
   rir:o.rir,note:cx?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,down:nx.down||null,st:o.state};
  if(ctx.planned_return)s.st=Object.assign({},(p&&p.st)||{});
  if(dl)s.dl=dl;if(!dl&&(awAfterDeload()||(p&&p.afterDl)))s.after=1;
