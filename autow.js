@@ -67,7 +67,7 @@ function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg(
  if(rt)base.rir_target=rt;
  const o=prNext(base,awEq()),cx=ctx.deload||ctx.days_since_last||ctx.planned_return;
  const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:(nx.sets||plan),target:cx?o.target:(nx.target!=null?nx.target:null),
-  rir:o.rir,note:cx?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,st:o.state};
+  rir:o.rir,note:cx?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,down:nx.down||null,st:o.state};
  if(ctx.planned_return)s.st=Object.assign({},(p&&p.st)||{});
  if(dl)s.dl=dl;if(!dl&&(awAfterDeload()||(p&&p.afterDl)))s.after=1;
  // N1 (v154): a replacement (manual ⇄ or limitation split) gets exactly the remaining sets of the source (ns),
@@ -108,7 +108,8 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
 
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
-  if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`)}
+  if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
+  else if(s.down&&s.down!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.down).length))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
  // D-257 (Eduards: «Убери во всех случаях данное упоминание про боль»): no pain button and no pain notes on the card.
  // Old it.pain flags in history stay as they are (progression still reads them); nothing new can set them.
  return L.length?`<div class="awsug mut" style="font-size:13px;margin:4px 0">${L.join('<br>')}</div>`:''}
@@ -127,8 +128,15 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return;
   it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}
   const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}awApply(it,A.dl);save();workoutView()});
+ // review-nov-2 task 2: the easier step (pull / chin → gravitron in the gym, scap pull-ups at home) — only on this button.
+ // History of the old exercise stays under its exId; the way back is the normal ladder (2 sessions at the top → pull).
+ app.querySelectorAll('[data-awdown]').forEach(b=>b.onclick=()=>{if(awDownSwap(A,+b.dataset.awdown))workoutView()});
  const dlb=$('#awdl');if(dlb)dlb.onclick=()=>{S.dl={type:'early',start:Date.now()};S.dlLast=S.dl.start;A.dl='early';A.items.forEach(it=>awApply(it,'early'));save();workoutView()};
  const fin=$('#fin');if(fin&&fin.onclick){const o=fin.onclick;fin.onclick=()=>{const id=A.id,n=S.workouts.length;o();if(S.workouts.length>n&&S.workouts[S.workouts.length-1].id===id){awFinish(S.workouts[S.workouts.length-1]);save();awMoment(S.workouts[S.workouts.length-1])}}}}
+// review-nov-2 task 2: switch item i of the open workout to the offered easier step (button «Заменить» only).
+function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.down;if(!to||to===from||(typeof lgConf==='function'&&lgConf(to).length))return false;
+ it.exId=to;delete it.sug;delete it.awx;const d=S.program&&S.program[A.dayIdx];if(d){const pi=(d.items||[]).find(x=>x.exId===from);if(pi)pi.exId=to}
+ const p=awPg()[from];if(p&&p.next){delete p.next.down;p.upd=Date.now()}awApply(it,A.dl);save();return true}
 const _awWV=workoutView;workoutView=function(){_awWV();awDecorate()};
 
 // After a workout is saved: update per-exercise state; the saved workout itself is not changed
@@ -158,6 +166,7 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
   delete p.afterDl;
   p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note,modKey:o.modKey};if(to)p.next.id=to;
+  if(o.down)p.next.down=awAppId(o.down);  // review-nov-2 task 2: easier step offered (button), never switched silently
   p.last=W.start;p.upd=upd;if(/^(inc|cal_up|ladder)$/.test(o.note))p.incAt=W.start;
   if(to&&!P[to])P[to]={st:{success:0,miss:0},next:{target:o.target,sets:o.sets,weight:o.weight,note:'ladder'},first:W.start,last:W.start,upd}})}
 

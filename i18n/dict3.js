@@ -544,5 +544,7 @@ const DICT3=[
 ['Заменить и здесь','Replace here too','Aizstāt arī šeit'],
 // D2 (v152 QA): ⇄ on an exercise whose sets are all done
 ['Упражнение уже выполнено — замена не нужна','This exercise is already done — no need to replace it','Vingrinājums jau ir izpildīts — aizstāt nav vajadzības'],
+// review-nov-2 task 2 (v155, prepared; shown only when PR_DOWN_ON): easier step for pull-ups. LV checked with Grok.
+['Нижняя граница пока не выходит — можно взять более лёгкий вариант','You can\'t reach the minimum reps yet — you can switch to an easier variation','Vēl nevari sasniegt apakšējo robežu — vari izvēlēties vieglāku variantu'],
 ['Заменить упражнения и в этой тренировке плана? Если она уже выполнена, история и рабочие веса не изменятся.','Replace the exercises in this plan workout too? If it is already done, history and working weights are not changed.','Aizstāt vingrinājumus arī šajā plāna treniņā? Ja tas jau ir izpildīts, vēsture un darba svari netiek mainīti.'],
 ]

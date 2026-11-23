@@ -7,7 +7,20 @@
 const PR_EQ={B:'barbell',D:'dumbbell',M:'machine',C:'cable',K:'kettlebell',R:'band',A:'assisted',W:'bodyweight',T:'time'};
 const PR_REG={u:'upper',l:'lower',c:'core'};
 // id: equipment, region, unilateral, hard bodyweight, risk letters (limit_rules.forbidden)
-const PR_CLS={'assisted-pullup':'Au01','band-pulldown':'Ru00','bc':'Bu00','bd':'Wu00p','bdog':'Wc00','bp':'Bu00p','bpl':'Tc10','bss':'Dl10k','bwsq':'Wl00k','cable-crunch':'Cc00','cable-overhead-extension':'Cu00','calf':'Ml00','calf-bw':'Wl00','calf-db':'Dl00','cc':'Cu00','cgb':'Bu00p','chest-supported-2db':'Du00','chin':'Wu01','concentration-curl':'Du10','cr':'Mu00','cru':'Wc00','dbc':'Du00','dbp':'Du00','dbr':'Du10','dbug':'Wc00','dead-hang':'Tu00p','decline-db-press':'Du00','dip':'Wu01p','dl':'Bu00s','dpu':'Wu00','dsp':'Du00p','fly':'Du00p','fp':'Cu00','fsq':'Bl00k','gsq':'Dl00k','hack-squat':'Ml00k','hanging-knee-raise':'Wc01','hc':'Du00','hip-abduction':'Ml00','hlr':'Wc01','ht':'Bl00','ht-bw':'Wl00','ht-db':'Dl00','hyp':'Wu00s','ibp':'Bu00p','idb':'Du00','incline-db-curl':'Du00','incline-db-fly':'Du00p','inv':'Wu00','lat':'Cu00','lc':'Ml00','lc-seated':'Ml00','le':'Ml00k','lp':'Ml00k','lr':'Du00','lun':'Dl10k','mch':'Mu00','mch-incline':'Mu00p','meadows-row':'Bu00s','mk-band-row':'Ru00','mk-rkc-plank':'Tc00s','nlc':'Wl01k','ohp':'Bu00sp','ote':'Du00p','pc':'Bu00','pec-deck':'Mu00','pendlay-row':'Bu00s','pl':'Tc00','ppu':'Wu00p','pu':'Wu00','pull':'Wu01','rdl':'Bl00s','rdl-band':'Rl00s','rdl-db':'Dl00s','rdl-kb':'Kl00s','reverse-hyper':'Ml00s','reverse-lunge':'Wl10k','reverse-lunge-db':'Dl10k','reverse-pec-deck':'Mu00','rfly':'Du00','row':'Bu00s','scap-pullup':'Wu00','seated-calf':'Ml00','sglb':'Wl10','shr':'Du00','single-arm-cable-lateral':'Cu10','single-leg-press':'Ml10k','skull':'Bu00p','skull-db':'Du00p','sl-rdl':'Dl10s','smith-bench':'Bu00','smith-calf':'Bl00','smith-close-grip':'Bu00p','smith-incline-bench':'Bu00p','smith-row':'Bu00s','smith-seated-press':'Bu00p','smith-shrug':'Bu00','smith-squat':'Bl00sk','sq':'Bl00sk','standing-db-press':'Du00p','step':'Dl10','step-bw':'Wl10','straight-arm-pulldown':'Cu00','suitcase-carry':'Dc00','tbar-row':'Bu00s','tibialis-raise':'Wl00','tpd':'Cu00','ur':'Bu00p','yr':'Wu00'};
+const PR_CLS={'assisted-pullup':'Au01','band-pulldown':'Ru00','bc':'Bu00','bd':'Wu00p','bdog':'Wc00','bp':'Bu00p','bpl':'Tc10','bss':'Dl10k','bwsq':'Wl00k','cable-crunch':'Cc00','cable-overhead-extension':'Cu00','calf':'Ml00','calf-bw':'Wl00','calf-db':'Dl00','cc':'Cu00','cgb':'Bu00p','chest-supported-2db':'Du00','chin':'Wu01','concentration-curl':'Du10','cr':'Mu00','cru':'Wc00','dbc':'Du00','dbp':'Du00','dbr':'Du10','dbug':'Wc00','dead-hang':'Tu00p','decline-db-press':'Du00','dip':'Wu01p','dl':'Bu00s','dpu':'Wu00','dsp':'Du00p','fly':'Du00p','fp':'Cu00','fsq':'Bl00k','gsq':'Dl00k','hack-squat':'Ml00k','hanging-knee-raise':'Wc01','hc':'Du00','hip-abduction':'Ml00','hlr':'Wc01','ht':'Bl00','ht-bw':'Wl00','ht-db':'Dl00','hyp':'Wu00s','ibp':'Bu00p','idb':'Du00','incline-db-curl':'Du00','incline-db-fly':'Du00p','inv':'Wu00','lat':'Cu00','lc':'Ml00','lc-seated':'Ml00','le':'Ml00k','lp':'Ml00k','lr':'Du00','lun':'Dl10k','mch':'Mu00','mch-incline':'Mu00p','meadows-row':'Bu00s','mk-band-row':'Ru00','mk-rkc-plank':'Tc00s','nlc':'Wl01k','ohp':'Bu00sp','ote':'Du00p','pc':'Bu00','pec-deck':'Mu00','pendlay-row':'Bu00s','pl':'Tc00','ppu':'Wu00p','pu':'Wu00','pull':'Wu01','rdl':'Bl00s','rdl-band':'Rl00s','rdl-db':'Dl00s','rdl-kb':'Kl00s','reverse-hyper':'Ml00s','reverse-lunge':'Wl10k','reverse-lunge-db':'Dl10k','reverse-pec-deck':'Mu00','rfly':'Du00','row':'Bu00s','scap-pullup':'Wu00','seated-calf':'Ml00','sglb':'Wl10','shr':'Du00','single-arm-cable-lateral':'Cu10','single-leg-press':'Ml10k','skull':'Bu00p','skull-db':'Du00p','sl-rdl':'Dl10s','smith-bench':'Bu00','smith-calf':'Bl00','smith-close-grip':'Bu00p','smith-incline-bench':'Bu00p','smith-row':'Bu00s','smith-seated-press':'Bu00p','smith-shrug':'Bu00','smith-squat':'Bl00sk','sq':'Bl00sk','standing-db-press':'Du00p','step':'Dl10','step-bw':'Wl10','straight-arm-pulldown':'Cu00','suitcase-carry':'Dc00','tbar-row':'Bu00s','tibialis-raise':'Wl00','tpd':'Cu00','ur':'Bu00p','yr':'Wu00',
+ // review-nov-2 (v155): home b_nobar exercises of the pilot programs (were without a class → no RIR line, default upper bodyweight).
+ // towel-row: horizontal pull, bodyweight, difficulty = body angle. backpack-row: the load is the backpack itself (kg) → steps like
+ // a free weight (next available kg), hinge → s as in META. towel-leg-curl: knee flexion (hamstrings) → region lower, so a knee
+ // limitation adds RIR +1 and asks 2 sessions; META risk letters unchanged (owner question 8). towel-iso-curl: logged in seconds
+ // (5–10 s holds) → time class. superman: spinal erectors → core, s as in META.
+ 'towel-row':'Wu00','backpack-row':'Du00s','towel-leg-curl':'Wl00','towel-iso-curl':'Tu00','superman':'Wc00s'};
+// Highest modifier step per bodyweight exercise (index in PR_MODS: 1 tempo, 2 pause). Without an entry: full ladder incl. the backpack.
+// towel-row: a backpack on a towel doorframe row adds nothing safe (body angle is the real progression); towel-leg-curl: no backpack
+// on the hips, and with a knee limitation no automatic step above the rep range at all; superman: a pause «at the bottom» and a load
+// on the lower back do not fit → tempo only.
+const PR_MOD_CAP={'towel-row':2,'towel-leg-curl':2,'superman':1};
+const PR_MOD_CAP_LIM={'towel-leg-curl':{k:0}};
+function prModCap(id,fl){let cap=PR_MOD_CAP[id];const L=PR_MOD_CAP_LIM[id];if(L)(fl||[]).forEach(f=>{if(L[f]!=null)cap=Math.min(cap==null?3:cap,L[f])});return cap}
 // Default equipment profile (available_weights). The user can change it in «Моё оборудование».
 const PR_EQUIP={bar:20,plate:2.5,db:[1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50],machine:5,cable:2.5,
  kb:[4,6,8,10,12,14,16,20,24,28,32,36,40,48],bands:[1,2,3,4,5],assist:5};
@@ -17,8 +30,15 @@ const PR_PCT={upper:0.02,lower:0.05,core:0.02},PR_BIG=0.10;
 // Bodyweight ladders: from -> {to, places allowed (null = any), needs}
 const PR_LADDER={'ht-bw':{to:'sglb'},'assisted-pullup':{to:'pull'},'scap-pullup':{to:'pull',pl:'gb'},'inv':{to:'pull',pl:'gb'},
  'dbug':{to:'hanging-knee-raise',pl:'gb',hang:30},'hanging-knee-raise':{to:'hlr'},'pl':{to:'mk-rkc-plank'}};
+// review-nov-2 task 2 (v155, prepared, OFF until the owner decides questions 2–4): pull / chin below the lower bound of the range in
+// every set (calibration, or the 2nd miss in a row) → offer ONE easier step that already has a card and a clip for the place:
+// gym → assisted-pullup (gravitron); home with a bar → scap-pullup. Never the gravitron at home. The way back is PR_LADDER
+// (assisted-pullup / scap-pullup → pull). Only a suggestion (out.down): the user switches with a button, history stays by exId.
+const PR_DOWN={pull:{g:'assisted-pullup',b:'scap-pullup'},chin:{g:'assisted-pullup',b:'scap-pullup'}};
+let PR_DOWN_ON=false;
+function prDownStep(id,place,lim){if(!PR_DOWN_ON)return null;const D=PR_DOWN[id];const to=D&&D[place];return to&&!prForbidden(to,lim)?to:null}
 const PR_TIME={pl:[20,45],bpl:[20,40],'mk-rkc-plank':[10,20]};
-const PR_TSTEP={pl:5,bpl:5,'mk-rkc-plank':2,'dead-hang':5};
+const PR_TSTEP={pl:5,bpl:5,'mk-rkc-plank':2,'dead-hang':5,'towel-iso-curl':1};
 const PR_PLANK_CAP=60;
 // Modifier ladder: 1 tempo 3–4 s down, 2 pause 2 s at the bottom, 3 backpack +5 kg, 4+ backpack +2.5 kg per step.
 const PR_MODS=['','tempo','pause','load'];
@@ -126,7 +146,8 @@ function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prW
  delete st.pain;
  if(inp.calibration){reset();
   if(allTop){prInc(inp,c,e,lim,out,lo);out.note=out.note==='inc'?'cal_up':out.note}
-  else if(miss){if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(w+e.assist):prDown(w,0.9,c,e);out.target=lo;out.note='cal_down'}
+  else if(miss){if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(w+e.assist):prDown(w,0.9,c,e);out.target=lo;out.note='cal_down';
+   if(res.length&&res.every(x=>x<lo)){const d=prDownStep(c.id,inp.place,lim);if(d)out.down=d}}
   return}
  if(miss){st.success=0;
   if(inp.ctx&&inp.ctx.after_deload){out.note='same';return}
@@ -136,6 +157,7 @@ function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prW
    if(c.eq==='assisted')out.weight=pr2((w||0)+e.assist);else if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=prDown(w,0.9,c,e)}
   else if(st.miss===2){st.cut=1;out.sets=Math.max(2,plan-1);out.note='miss2'}
   else out.note='miss1';
+  if(st.miss>=2||out.note==='miss3'){if(res.length&&res.every(x=>x<lo)){const d=prDownStep(c.id,inp.place,lim);if(d)out.down=d}}
   return}
  delete st.cut;st.miss=0;
  if(!allTop){st.success=0;out.note='same';return}
@@ -152,15 +174,16 @@ function prInc(inp,c,e,lim,out,lo){const st=out.state,w=inp.weight,fl=prFlags(c,
   st.mod=3;out.mod=3;out.note='no_heavier';out.band='shorter';return}
  if(c.eq==='bodyweight'){const L=PR_LADDER[c.id];
   if(L&&!prForbidden(L.to,lim)&&(!L.pl||!inp.place||L.pl.includes(inp.place))&&(!L.hang||(inp.hang||0)>=L.hang)){out.id=L.to;out.weight=null;st.mod=0;out.mod=0;out.note='ladder';return}
-  prMod(out,st,'bw');return}
+  prMod(out,st,'bw',prModCap(c.id,fl));return}
  const n=w>0?prUp(w,c,e,fl.length>0):null;
  if(n!=null){out.weight=n;out.note='inc';if((n-w)/w>PR_BIG+PR_EPS){out.big_jump=true;st.grace=1}return}
  prMod(out,st,'weighted')}
 // Modifier ladder (no heavier equipment / bodyweight without an id ladder)
-function prMod(out,st,kind){let m=(st.mod|0)+1;out.note='no_heavier';
+function prMod(out,st,kind,cap){let m=(st.mod|0)+1;out.note='no_heavier';
+ if(cap!=null){m=Math.min(m,cap);out.mod_cap=cap}
  if(kind==='weighted'){m=Math.min(m,2)}
  else if(kind==='band'){if(m===1){out.band='shorter'}else{m=Math.min(m,3)}}
  st.mod=m;out.mod=m;
  if(kind==='bw'&&m>=3)out.weight=m===3?5:pr2(5+2.5*(m-3))}
 
-if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS,PR_SESS,PR_PCT};
+if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prModCap,PR_MOD_CAP,prDownStep,PR_DOWN,PR_DOWN_ON,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS,PR_SESS,PR_PCT};

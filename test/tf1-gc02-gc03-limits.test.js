@@ -16,7 +16,7 @@ globalThis.__check=function(id,lim){const B=getBlock(id);const a=__prof(B,lim);c
   p.days.forEach((d,di)=>{const W=d.limWarn||[];warn.push(...W);
     d.items.forEach(it=>{if(!blockLimOk(it.exId,a)){bad.push(d.n+':'+it.exId);if(!W.some(w=>w.to===it.exId||w.from===it.exId))silent.push(d.n+':'+it.exId)}});
     if(!d.items.some(it=>!it.cardio))empty.push(d.n);
-    W.forEach(w=>{if(w.to){const ok=eqAvail(w.to,a.place)&&blockHasClip(w.to)&&blockLimOk(w.to,a)&&(isCardio(w.from)?isCardio(w.to):((BLOCK_LIM_FALLBACK[w.from]||[]).includes(w.to)||eqSameMuscle(w.from,w.to)));if(!ok)bad.push('badswap '+w.from+'->'+w.to)}})});
+    W.forEach(w=>{if(w.to){const ok=eqAvail(w.to,a.place)&&blockClipOk(w.to,a)&&blockLimOk(w.to,a)&&(isCardio(w.from)?isCardio(w.to):((BLOCK_LIM_FALLBACK[w.from]||[]).includes(w.to)||eqSameMuscle(w.from,w.to)));if(!ok)bad.push('badswap '+w.from+'->'+w.to)}})});
   return{bad,silent,warn:warn.length,removed:warn.filter(w=>!w.to).length,empty}}`);
 
 test('GC-02/03: pilot programs and their variants — no risky exercise left in the plan, every change has a note (all limitation sets)', () => {
@@ -40,12 +40,14 @@ test('GC-02: str_adv_5_g_b35 orig-equipment with knees — 0 silent risky positi
 });
 
 test('GC-02: no safe replacement → the exercise is left out with a visible note (RU text), not kept silently', () => {
-  const r = b.J(`(()=>{const W=[];const out=blockLimSwap([{exId:'jump',cardio:1,sets:1,min:10,max:12,rest:0},{exId:'pu',sets:3,min:8,max:12,rest:60}],{lim:['k'],place:'b',bar:false},W);
+  // v155 (review-nov-2 task 3): jump with knees at home now becomes walk-brisk (allowed without a clip), so the
+  // «no replacement» case is checked with the dead hang and a shoulder limitation at home with a bar.
+  const r = b.J(`(()=>{const W=[];const out=blockLimSwap([{exId:'dead-hang',sets:2,min:20,max:30,rest:60},{exId:'pu',sets:3,min:8,max:12,rest:60}],{lim:['p'],place:'b',bar:true},W);
     return{out:out.map(i=>i.exId),W,html:blockLimWarnHTML({limWarn:W})}})()`);
   assert.deepEqual(r.out, ['pu']);
-  assert.deepEqual(r.W, [{ from: 'jump', to: null, lim: ['k'] }]);
+  assert.deepEqual(r.W, [{ from: 'dead-hang', to: null, lim: ['p'] }]);
   assert.match(r.html, /Ограничение/);
-  assert.match(r.html, /колени/);
+  assert.match(r.html, /плечи/);
   assert.match(r.html, /убрано из тренировки: безопасной замены нет/);
   assert.match(r.html, /посоветуйся с врачом или тренером/);
 });

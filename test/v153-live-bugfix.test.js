@@ -131,6 +131,6 @@ test('D6: rest timer bar adds bottom room (body.tmr) on start / resume, removed 
 });
 
 test('v153: cache version and new RU/EN/LV string', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v154'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v155'/);
   assert.match(read('i18n/dict3.js'), /\['Упражнение уже выполнено — замена не нужна','[^']+','[^']+'\]/);
 });

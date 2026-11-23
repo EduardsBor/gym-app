@@ -11,6 +11,8 @@ function st(lim) {
     workouts: [], custom: [], body: [], pg: {}, pgSince: now - 40 * DAY };
 }
 const BID = 'fit_nov_3_b_bar_b36';
+// v155: with knees jump → walk-brisk at home (nothing removed in BID); removals are checked on a block that still drops exercises.
+const BIDK = 'fit_mid_4_b_bar_b36';
 
 test('tf2.1 duration: without limitations the minutes are est_min of the block, as before', () => {
   const b = boot({ state: st() });
@@ -21,7 +23,7 @@ test('tf2.1 duration: without limitations the minutes are est_min of the block, 
 
 test('tf2.1 duration: an exercise removed for the limitation shortens the shown minutes (by its sets × (40 s + rest))', () => {
   const b = boot({ state: st(['k']) });
-  const r = b.J(`(()=>{const B=getBlock('${BID}');const P=planFromBlock(B,{goal:'loss',level:'nov',days:3,place:'b',bar:'1',lim:['k']}).days;
+  const r = b.J(`(()=>{const B=getBlock('${BIDK}');const P=planFromBlock(B,{goal:'loss',level:'mid',days:4,place:'b',bar:'1',lim:['k']}).days;
     return P.map((d,i)=>{const w=B.workouts[i];const rm=(w.items||[]).map(itemFromBlock).reduce((t,x)=>t+itemTime(x),0)-d.items.reduce((t,x)=>t+itemTime(x),0);return{est:d.est,min:dayMin(d),rm:rm/60,removed:(d.limWarn||[]).some(x=>!x.to&&!x.part)}})})()`);
   const R = r.filter(x => x.removed);
   assert.ok(R.length > 0, 'the block has removals with knees');
@@ -30,7 +32,7 @@ test('tf2.1 duration: an exercise removed for the limitation shortens the shown 
 
 test('tf2.1 duration: an old saved plan (no est0) fixed later — the minutes follow the change (base from the block file)', () => {
   const b = boot({ state: st() });
-  b.run(`S.block={id:'${BID}',next:0};S.program=planFromBlock(getBlock('${BID}'),{goal:'loss',level:'nov',days:3,place:'b',bar:'1',lim:[]}).days;S.program.forEach(d=>delete d.est0);S.prof.lim=['k'];save()`);
+  b.run(`S.block={id:'${BIDK}',next:0};S.program=planFromBlock(getBlock('${BIDK}'),{goal:'loss',level:'mid',days:4,place:'b',bar:'1',lim:[]}).days;S.program.forEach(d=>delete d.est0);S.prof.lim=['k'];save()`);
   const before = b.J('S.program.map(d=>dayMin(d))');
   b.run('lgFixAll()');
   const after = b.J('S.program.map(d=>[dayMin(d),(d.limWarn||[]).some(x=>!x.to&&!x.part),d.est])');

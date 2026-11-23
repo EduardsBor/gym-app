@@ -318,6 +318,9 @@ function blockLimCands(id){
 // Home without a pull-up bar: these need the bar (same split as the b_bar / b_nobar blocks).
 const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','inv','pull','scap-pullup','dead-hang']);
 function blockHasClip(id){return typeof movekitFile!=='function'||!!movekitFile(id)}
+// review-nov-2 (v155): a limitation swap may pick an exercise Eduards allowed without a clip (plan.js NO_CLIP_OK: walk-brisk only at
+// home / bodyweight). Before, jump with a knee limitation found walk-brisk but dropped it for the missing clip → cardio removed.
+function blockClipOk(id,a){const place=(a&&a.place)||'g';return typeof clipOk==='function'?clipOk(id,place):blockHasClip(id)}
 function blockIsCardio(it){return!!(it&&it.cardio)||(typeof isCardio==='function'&&isCardio(it.exId))}
 // tech-fix-2: one safe pick for one item (block builder, plan check of saved plans, open workout).
 // used = ids already in the workout. a.places (equipment profile) wins over a.place.
@@ -333,7 +336,7 @@ function blockLimPick(it,a,used){
   const avail=blockLimAvail(a);
   const cardio=blockIsCardio(it);
   const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]);  // trainer fallback table: may cross the muscle group (hyp → hip thrust)
-  return blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockHasClip(x)&&
+  return blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockClipOk(x,a)&&
     (cardio?(typeof isCardio!=='function'||isCardio(x)):((fb.has(x)||same(it.exId,x))&&!(typeof isCardio==='function'&&isCardio(x)))))||null;
 }
 function blockLimSwap(items,a,warn){

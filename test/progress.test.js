@@ -30,7 +30,10 @@ for (const t of rules.tests) {
 
 test('every exercise class from the rules is in progress.js', () => {
   const items = rules.exercise_classes.items;
-  assert.equal(Object.keys(P.PR_CLS).length, Object.keys(items).length);
+  // v155 (review-nov-2): + 5 home b_nobar exercises that the trainer table does not list (checked in v155-review-nov2.test.js)
+  const V155 = ['towel-row', 'backpack-row', 'towel-leg-curl', 'towel-iso-curl', 'superman'];
+  assert.equal(Object.keys(P.PR_CLS).length, Object.keys(items).length + V155.length);
+  V155.forEach(id => assert.ok(!items[id] && P.PR_CLS[id], id));
   for (const [id, v] of Object.entries(items)) {
     const c = P.prCls(id);
     assert.ok(c, id);
