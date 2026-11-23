@@ -210,11 +210,16 @@
     else if(R.eqActive){S.eqActive=R.eqActive;S.eqActiveAt=R.eqActiveAt||0}
     if(typeof eqEnsure==='function') eqEnsure();
     // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
+    const blkL=S.block,blkR=R.block;
     const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
     ['program','progName','why','prof','goal','days','block'].forEach(k=>{
       const v=progLocal?(S[k]!==undefined?S[k]:R[k]):(R[k]!==undefined?R[k]:S[k]);
       if(v!==undefined) S[k]=v;
     });
+    // tech-fix-2.3: a copy without S.block.passAt (older app) must not drop it: same block, not restarted (next not lower,
+    // no last day done since passAt) → keep the other side's passAt; otherwise limguard derives the pass from history.
+    {const B=S.block,O=B===blkL?blkR:blkL,oPa=O&&+O.passAt,n=Array.isArray(S.program)?S.program.length:0;
+      if(B&&typeof B==='object'&&!(+B.passAt>0)&&O&&O.id===B.id&&oPa>0&&(B.next|0)>=(O.next|0)&&!(S.workouts||[]).some(w=>w&&w.dayIdx===n-1&&(+w.start||0)>=oPa)) B.passAt=oPa}
     const pa=Math.max(S.progAt||0,R.progAt||0);if(pa) S.progAt=pa;
     ['next','lang','sound','wake','autoW','restOverride','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;

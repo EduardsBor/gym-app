@@ -539,4 +539,8 @@ const DICT3=[
 ['Выполненные подходы и веса сохраняются.','Done sets and weights are kept.','Izpildītie piegājieni un svari saglabājas.'],
 ['Это упражнение отмечено как рискованное при твоих ограничениях. Продолжить подходы? Лучше заменить его или остановиться.','This exercise is marked as risky with your limitations. Continue the sets? It is better to replace it or stop.','Šis vingrinājums ir atzīmēts kā riskants ar taviem ierobežojumiem. Turpināt piegājienus? Labāk to aizstāt vai apstāties.'],
 ['Завершённые тренировки не меняются.','Finished workouts are not changed.','Pabeigtie treniņi netiek mainīti.'],
+// tech-fix-2.3: old data, the end of the previous block pass is not certain
+['Не удалось точно определить, выполнена ли эта тренировка в текущем проходе блока, поэтому она не изменена:','Could not tell for sure whether this workout was already done in the current pass of the block, so it was not changed:','Nevarēja droši noteikt, vai šis treniņš jau ir izpildīts pašreizējā bloka ciklā, tāpēc tas netika mainīts:'],
+['Заменить и здесь','Replace here too','Aizstāt arī šeit'],
+['Заменить упражнения и в этой тренировке плана? Если она уже выполнена, история и рабочие веса не изменятся.','Replace the exercises in this plan workout too? If it is already done, history and working weights are not changed.','Aizstāt vingrinājumus arī šajā plāna treniņā? Ja tas jau ir izpildīts, vēsture un darba svari netiek mainīti.'],
 ]

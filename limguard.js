@@ -52,19 +52,31 @@ function lgHist(i){return(S.workouts||[]).filter(w=>lgIsDay(w,i))}
 // tech-fix-2.2: start of the current pass of the block. S.block.passAt (set on block start / repeat / next level).
 // Old data without it: the in-order completions of days next-1 … 1 are found back in history (newest first); the pass
 // began after the last workout of the LAST day before them (end of the previous pass), or at the start of history.
-function lgPassStart(){
-  const b=S.block||{};if(isFinite(+b.passAt)&&+b.passAt>0)return+b.passAt;
+// tech-fix-2.3: that last-day workout is a sure end of the previous pass only if the history since the last-day workout
+// before it holds every day of the block (a full pass). Otherwise it may be the last day done out of order in THIS pass
+// → the days done in that stretch are 'unsure': not changed automatically, the user is asked (lgPlanCardHTML).
+function lgPassInfo(){
+  const b=S.block||{};if(isFinite(+b.passAt)&&+b.passAt>0)return{t0:+b.passAt,unsure:[]};
   const n=S.program.length,nx=b.next|0,t=w=>+w.start||0;
   const H=(S.workouts||[]).filter(w=>w&&w.dayIdx!=null&&lgIsDay(w,w.dayIdx)).sort((x,y)=>t(y)-t(x));
   let e=nx-1,t0=Infinity;for(const w of H){if(e<0)break;if(w.dayIdx===e&&t(w)<t0){t0=t(w);e--}}
-  const prev=H.find(w=>w.dayIdx===n-1&&t(w)<t0&&!(nx>=n));return prev?t(prev)+1:0;
+  const L=nx>=n?[]:H.filter(w=>w.dayIdx===n-1&&t(w)<t0);if(!L.length)return{t0:0,unsure:[]};
+  const end=t(L[0]),from=L[1]?t(L[1]):-Infinity,seg=H.filter(w=>t(w)>from&&t(w)<=end);
+  const full=new Set(seg.map(w=>w.dayIdx)).size>=n;
+  return{t0:end+1,unsure:full?[]:[...new Set(seg.map(w=>w.dayIdx))]};
 }
+function lgPassStart(){return lgPassInfo().t0}
 function lgDayLocked(i){
   if(typeof S==='undefined'||!S||!Array.isArray(S.program))return false;const p=S.program[i];if(!p)return true;
   if(S.active&&S.active.dayIdx===i&&S.active.dayName===p.name&&!S.active.fromTemplate)return'active';
   if(typeof blockActive==='function'&&blockActive()){const nx=S.block.next|0;if(i<nx)return'done';
-    const t0=lgPassStart();return lgHist(i).some(w=>(+w.start||0)>=t0)?'done':false}
+    const I=lgPassInfo();return lgHist(i).some(w=>(+w.start||0)>=I.t0)?'done':I.unsure.includes(i)?'unsure':false}
   return false;
+}
+// tech-fix-2.3: days that may be finished in this pass (old data, see lgPassInfo) and have flagged exercises.
+function lgAuditUnsure(){
+  if(typeof S==='undefined'||!S||!Array.isArray(S.program)||!lgLim().length)return[];
+  const a=lgA(),out=[];S.program.forEach((d,i)=>{if(lgDayLocked(i)!=='unsure')return;const r=lgAuditDay(d,a);if(r)out.push(Object.assign({d:i},r))});return out;
 }
 function lgAuditPlan(){
   if(typeof S==='undefined'||!S||!Array.isArray(S.program)||!lgLim().length)return[];
@@ -101,24 +113,31 @@ function lgRowsHTML(r){
   return r.items.concat(r.wucd).map(x=>`<div>⚠ ${part(x)}<b>${E(lgName(x.exId||x.from))}</b> (${lgLimSpans(x.lim)}) → ${x.to?`<b>${E(lgName(x.to))}</b>`:`<span>безопасной замены нет — будет убрано</span>`}</div>`).join('');
 }
 // Today card: saved plan (made before tech-fix-2, synced from another device, or limitations changed later).
-function lgPlanCardHTML(P){
-  const n=P.reduce((s,x)=>s+x.items.length+x.wucd.length,0);const E=typeof esc==='function'?esc:(x=>x);
-  const days=P.map(x=>`<div style="margin-top:6px"><b>${E(typeof workoutLabel==='function'?workoutLabel(S.program[x.d],x.d):'#'+(x.d+1))}</b>${lgRowsHTML(x)}</div>`).join('');
+function lgPlanCardHTML(P,U){
+  U=U||[];const n=P.concat(U).reduce((s,x)=>s+x.items.length+x.wucd.length,0);const E=typeof esc==='function'?esc:(x=>x);
+  const lbl=d=>E(typeof workoutLabel==='function'?workoutLabel(S.program[d],d):'#'+(d+1));
+  const unsure=U.length?`<div class="mut" id="lgunsure" style="margin-top:8px;font-size:13px"><span>Не удалось точно определить, выполнена ли эта тренировка в текущем проходе блока, поэтому она не изменена:</span> ${U.map(x=>`<b>${lbl(x.d)}</b>`).join(', ')}
+<button class="full" id="lgfixunsure" style="margin-top:6px">Заменить и здесь</button></div>`:'';
+  const days=P.concat(U).map(x=>`<div style="margin-top:6px"><b>${E(typeof workoutLabel==='function'?workoutLabel(S.program[x.d],x.d):'#'+(x.d+1))}</b>${lgRowsHTML(x)}</div>`).join('');
   return`<div class="card limwarn" id="lgplan"><b>⚠ <span>Проверка ограничений</span></b> <span class="mut">(${lgLimSpans(lgLim())}) · ${n}</span>
 <p class="mut" style="margin:6px 0"><span>Некоторые упражнения программы не подходят к твоим ограничениям.</span> <span>Без твоего согласия ничего не меняется. История и рабочие веса сохраняются.</span> <span>Завершённые тренировки не меняются.</span></p>
 <details><summary><span>Показать</span></summary><div style="font-size:13px">${days}</div></details>
-<button class="pri full" id="lgfixall" style="margin-top:8px">Заменить безопасными</button><button class="full" id="lgkeepall" style="margin-top:6px">Оставить как есть</button></div>`;
+${P.length?'<button class="pri full" id="lgfixall" style="margin-top:8px">Заменить безопасными</button><button class="full" id="lgkeepall" style="margin-top:6px">Оставить как есть</button>':''}${unsure}</div>`;
 }
 const LG_KEEP_Q='Оставить эти упражнения? Они отмечены как рискованные при твоих ограничениях. Лучше сначала посоветоваться с врачом или тренером.';
+const LG_UNSURE_Q='Заменить упражнения и в этой тренировке плана? Если она уже выполнена, история и рабочие веса не изменятся.';
+// tech-fix-2.3: only after the user confirms (the day may be finished in this pass); history / S.pg untouched as everywhere.
+function lgFixUnsure(){const U=lgAuditUnsure();let n=0;U.forEach(x=>{n+=lgApplyDay(x.d,true)});if(n&&typeof save==='function')save();return n}
 function lgFixAll(){const P=lgAuditPlan();let n=0;P.forEach(x=>{n+=lgApplyDay(x.d)});if(n&&typeof save==='function')save();return n}
 function lgKeepAll(){const P=lgAuditPlan();let n=0;P.forEach(x=>{n+=lgAckDay(x.d)});if(n&&typeof save==='function')save();return n}
 function lgMountToday(){
   if(typeof S==='undefined'||!S||S.active||typeof app==='undefined'||!app||!app.insertAdjacentHTML)return;
   if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('lgplan')&&document.getElementById('lgplan').isConnected)return;
-  const P=lgAuditPlan();if(!P.length)return;
-  app.insertAdjacentHTML('afterbegin',lgPlanCardHTML(P));
+  const P=lgAuditPlan(),U=lgAuditUnsure();if(!P.length&&!U.length)return;
+  app.insertAdjacentHTML('afterbegin',lgPlanCardHTML(P,U));
   const f=$('#lgfixall');if(f)f.onclick=()=>{const n=lgFixAll();if(typeof toast==='function')toast(lgT('Программа исправлена')+': '+n);today(TSEL!=null&&TOPEN?TSEL:undefined)};
   const k=$('#lgkeepall');if(k)k.onclick=()=>{if(typeof confirm==='function'&&!confirm(lgT(LG_KEEP_Q)))return;lgKeepAll();today(TSEL!=null&&TOPEN?TSEL:undefined)};
+  const u=$('#lgfixunsure');if(u)u.onclick=()=>{if(typeof confirm==='function'&&!confirm(lgT(LG_UNSURE_Q)))return;const n=lgFixUnsure();if(typeof toast==='function')toast(lgT('Программа исправлена')+': '+n);today(TSEL!=null&&TOPEN?TSEL:undefined)};
 }
 if(typeof today==='function'){const _lgToday=today;today=function(sel){const r=_lgToday(sel);try{lgMountToday()}catch(e){}return r}}
 
@@ -138,7 +157,7 @@ let LG_GO=false;
 // tech-fix-2.1: starting a finished day again (opened from the list) → the decision goes into this workout only; the plan day
 // of the finished part of the block stays as it was.
 function lgStartWith(i,fn){
-  const locked=lgDayLocked(i)==='done',orig=S.program[i];
+  const lk=lgDayLocked(i),locked=lk==='done'||lk==='unsure',orig=S.program[i];  // tech-fix-2.3: + unsure
   if(locked)S.program[i]=JSON.parse(JSON.stringify(orig));
   fn(i,true);if(typeof save==='function')save();LG_GO=true;
   try{startW(i)}finally{LG_GO=false;LG_PENDING=null;if(locked){S.program[i]=orig;if(typeof save==='function')save()}}
