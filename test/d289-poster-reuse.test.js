@@ -26,7 +26,7 @@ test('D-289: reuseMkPosters only reuses same-kind thumbnails', () => {
   assert.match(g, /athumb/);
   assert.match(g, /mkwide/);
   assert.match(g, /className/);
-  assert.match(read('cache-ver.js'), /moyzal-v162/);
+  assert.match(read('cache-ver.js'), /moyzal-v163/);
 });
 
 function gymState() {
@@ -273,10 +273,8 @@ function startServer(harness) {
 }
 
 function chromePath() {
-  for (const p of ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/opt/google/chrome/chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser']) {
-    if (fs.existsSync(p)) return p;
-  }
-  return 'google-chrome';
+  // GC-163-04: Linux / Windows / macOS (fixtures/chrome-path.js); the old fallback name stays for PATH lookups
+  return require('./fixtures/chrome-path.js').findChrome() || 'google-chrome';
 }
 
 

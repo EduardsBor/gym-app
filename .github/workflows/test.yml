@@ -1,0 +1,33 @@
+# GC-163-04: reproducible test runs on Linux and Windows (read-only: no secrets, no deploy, no writes to the repo).
+name: tests
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Chrome path
+        shell: bash
+        run: |
+          if [ -n "$CHROME_PATH" ]; then echo "CHROME_PATH=$CHROME_PATH"; fi
+          node -e "console.log('chrome:', require('./test/fixtures/chrome-path.js').findChrome())"
+      - name: node --test (no npm install needed — tests use only Node built-ins)
+        shell: bash
+        run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=test-${{ matrix.os }}.tap test/
+      - name: summary
+        if: always()
+        shell: bash
+        run: grep -E '^# (tests|pass|fail|skipped)' test-${{ matrix.os }}.tap || true

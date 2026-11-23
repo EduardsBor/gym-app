@@ -41,7 +41,7 @@ test('D-286: tick/set-log handlers no longer rebuild the workout list; timers on
   const movekit = read('movekit.js');
   assert.match(movekit, /mkPosterPathUrls/);
   assert.match(movekit, /function posterUrlForPath\(/);
-  assert.match(read('cache-ver.js'), /moyzal-v162/);
+  assert.match(read('cache-ver.js'), /moyzal-v163/);
 });
 
 function gymState() {
@@ -281,10 +281,8 @@ function startServer(harness) {
 }
 
 function chromePath() {
-  for (const p of ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/opt/google/chrome/chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser']) {
-    if (fs.existsSync(p)) return p;
-  }
-  return 'google-chrome';
+  // GC-163-04: Linux / Windows / macOS (fixtures/chrome-path.js); the old fallback name stays for PATH lookups
+  return require('./fixtures/chrome-path.js').findChrome() || 'google-chrome';
 }
 
 test('D-286: headless Chrome 390×844 — tick keeps other poster img nodes and src, and saves the tick', async t => {

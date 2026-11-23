@@ -13,7 +13,7 @@ const { boot } = require('./fixtures/tf1-boot.js');
 
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-const chrome = ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(p => fs.existsSync(p));
+const chrome = require('./fixtures/chrome-path.js').findChrome();  // GC-163-04: Linux / Windows / macOS
 
 function scripts() {
   const skip = new Set(['vendor/supabase.js', 'supabase-config.js', 'sync.js', 'notify.js', 'profile.js', 'sentry.js']);
