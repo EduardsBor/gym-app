@@ -91,6 +91,25 @@ test(`tf2.3.3 matrix: ${cases.length} saves (next 0/1/2, passAt, w.blk, other pr
   assert.ok(unsureSeen > 0 && doneSeen > 0);
 });
 
+test('tf2.3.3 (GPT condition): an unsure day is still checked before it is done again — Start shows the limitation modal; history, S.pg and the plan day unchanged until the user decides', () => {
+  const b = boot({ state: st() });
+  assign(b, OLD, null); hist(b, 1, now - 10 * DAY);                 // old app: only day 2 of mass
+  assign(b, NEW, null); hist(b, 0, now - 5 * DAY); fin(b);          // old app switch, fit day 1 → next 1
+  b.run(`S.prof.lim=['k'];save()`);
+  assert.equal(b.J('lgDayLocked(1)'), 'unsure');
+  assert.ok(b.J('!!lgAuditDay(S.program[1])'), 'fit day 2 is knee-risky');
+  const before = b.run('JSON.stringify({p:S.program[1],w:S.workouts,pg:S.pg})');
+  b.run('today()'); b.run('startW(1)');
+  assert.equal(b.run('!!S.active'), false, 'not started silently');
+  assert.match(b.run(`$('#modal').innerHTML`), /id="lgstart"/, 'limitation modal shown');
+  assert.equal(b.run('JSON.stringify({p:S.program[1],w:S.workouts,pg:S.pg})'), before, 'nothing changed before the user decides');
+  b.run('lgStartFix(1)');                                             // user: «Заменить и начать»
+  assert.equal(b.run(`S.active.items.every(i=>blockLimOk(i.exId,{lim:['k']}))`), true, 'started workout is safe');
+  assert.equal(b.run('JSON.stringify(S.program[1])'), JSON.stringify(JSON.parse(before).p), 'unsure plan day itself kept (only this workout changed)');
+  assert.equal(b.run('JSON.stringify(S.workouts)'), JSON.stringify(JSON.parse(before).w));
+  assert.equal(b.run('JSON.stringify(S.pg)'), JSON.stringify(JSON.parse(before).pg));
+});
+
 test('tf2.3.3 repeat on the old app (no passAt): full first pass, next back to 0, day 1 again → days of the 1st pass are upcoming; untagged out-of-order day of the 2nd pass before its day 1 is unsure', () => {
   const b = boot({ state: st() });
   assign(b, NEW, null);
