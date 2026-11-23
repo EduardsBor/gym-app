@@ -118,11 +118,11 @@ test('P1: finishing a workout writes S.pg for the five; history unchanged; repea
 });
 
 // ---------- 2. pull-up easier step (prepared, OFF)
-test('P2: OFF by default — pull with 0 reps gives no easier-step suggestion (no change on LIVE)', () => {
-  assert.equal(P.PR_DOWN_ON, false);
-  const o = P.prNext({ id: 'pull', level: 'nov', range: [5, 8], sets_plan: 3, weight: null, results: [0, 0, 0], state: { miss: 1 }, place: 'g' });
-  assert.equal(o.down, undefined);
-  assert.equal(o.note, 'miss2');
+test('P2 (v159: ON in the gym) — pull with 0 reps: gym offers the gravitron, home with a bar offers nothing', () => {
+  assert.equal(P.PR_DOWN_ON, true);
+  const q = place => P.prNext({ id: 'pull', level: 'nov', range: [5, 8], sets_plan: 3, weight: null, results: [0, 0, 0], state: { miss: 1 }, place });
+  assert.deepEqual([q('g').note, q('g').down], ['miss2', 'assisted-pullup']);
+  assert.deepEqual([q('b').note, q('b').down], ['miss2', undefined]);
 });
 
 test('P2: when switched on — gym → gravitron, home with a bar → scap pull-ups (never the gravitron at home); not on the first miss', () => {
@@ -216,5 +216,5 @@ test('P4: r2 revisions are not connected — no *_r2 blocks in data/blocks, save
 });
 
 test('v155: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
 });

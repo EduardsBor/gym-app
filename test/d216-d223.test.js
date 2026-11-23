@@ -92,7 +92,7 @@ test('D-223: §6 legal bases mention analytics consent and Sentry legitimate int
 });
 
 test('D-216/D-223: sw is moyzal-v67; changelog; new LV strings only in docs/LV-NEW-D223.md', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-216, D-223/);

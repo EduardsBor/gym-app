@@ -100,8 +100,8 @@ test('decision D: the gravitron is not offered at home (⇄ list, place check), 
 });
 
 // ---------- D2 (still OFF on LIVE)
-test('D2: OFF on LIVE; home off on its own; decisions C (no «p») kept', () => {
-  assert.equal(P.PR_DOWN_ON, false);
+test('D2: ON in the gym (v159), home off on its own; decisions C (no «p») kept', () => {
+  assert.equal(P.PR_DOWN_ON, true);
   assert.deepEqual(P.PR_DOWN_PLACE, { g: true, b: false });
   assert.equal(P.prCls('pull').risk, '');
   assert.equal(P.prCls('assisted-pullup').risk, '');
@@ -154,5 +154,5 @@ test('D2: old data without down / downFrom works as before (need_w only for the 
 });
 
 test('v158: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
 });

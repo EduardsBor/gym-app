@@ -8,9 +8,11 @@ const { boot, read } = require('./fixtures/tf1-boot.js');
 const P = require('../progress.js');
 const DAY = 864e5, now = Date.now();
 
-test('LIVE stays off: PR_DOWN_ON=false, gym only when switched on', () => {
-  assert.equal(P.PR_DOWN_ON, false);
+test('v159: ON in the gym only (Eduards, decision A); home off', () => {
+  assert.equal(P.PR_DOWN_ON, true);
   assert.deepEqual(P.PR_DOWN_PLACE, { g: true, b: false });
+  assert.equal(P.prDownStep('pull', 'g', []), 'assisted-pullup');
+  assert.equal(P.prDownStep('pull', 'b', []), null);
 });
 
 test('fix 1: need_w + empty counterweight → stays on the gravitron (need_w), also on calibration; with kg → normal steps', () => {
@@ -82,5 +84,5 @@ test('pull → gravitron → back to pull; need_w note has RU/EN/LV', () => {
 });
 
 test('v157: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v158'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v159'/);
 });
