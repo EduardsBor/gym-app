@@ -651,24 +651,43 @@ function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
 function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
 // GC-166: history whose owner differs from this device's owner, or cannot be proven (IDB written before v165, no mark), is
 // never merged and never destroyed: it goes to an isolated 'quarantine' (IndexedDB only, never synced), one bundle per owner
-// ('legacy' = unknown, 'guest' = guest, otherwise the account id). Tombstones (S.deletedWorkouts) are honoured everywhere.
+// ('legacy' = unknown, 'guest' = guest, otherwise the account id).
+// GC-166-F1: tombstones belong to an owner — the device owner's S.deletedWorkouts are NEVER applied to another owner's records;
+// they apply only when a bundle is restored into the device owner's own history. A same id of different owners is no proof of
+// anything: only a byte-identical record counts as «already on the device»; a different record under the same id is isolated whole.
 function histQKey(owner){return owner===undefined?'legacy':owner===null?'guest':String(owner)}
-function histQAdd(Q,owner,list,keep,deleted){
- const del=new Set(Array.isArray(deleted)?deleted:[]),k=new Set((Array.isArray(keep)?keep:[]).map(w=>w&&w.id));
- const extra=(Array.isArray(list)?list:[]).filter(w=>w&&typeof w==='object'&&w.id!=null&&!k.has(w.id)&&!del.has(w.id));
+const histSig=w=>{try{return JSON.stringify(w)}catch(e){return''}};
+function histQAdd(Q,owner,list,keep){
+ const same=new Set((Array.isArray(keep)?keep:[]).map(histSig));
+ const extra=(Array.isArray(list)?list:[]).filter(w=>w&&typeof w==='object'&&w.id!=null&&!same.has(histSig(w)));
  const out=Array.isArray(Q)?Q.filter(x=>x&&typeof x==='object'&&x.owner):[];
  if(!extra.length)return out;
  const key=histQKey(owner);let b=out.find(x=>x.owner===key);
  if(!b){b={owner:key,at:Date.now(),workouts:[]};out.push(b)}
- b.workouts=mergeHist(b.workouts,extra,deleted);b.at=Date.now();
+ // lossless union: every distinct record is kept (no «newer wins» inside the quarantine)
+ const have=new Set((b.workouts||[]).map(histSig));b.workouts=(b.workouts||[]).slice();
+ extra.forEach(w=>{const s=histSig(w);if(!have.has(s)){have.add(s);b.workouts.push(w)}});b.at=Date.now();
  return out}
-// One write of the device history to IDB: whatever is there and does not belong to the current owner is isolated first.
-function histWriteFn(list,owner,deleted){return(l0,o0,q0)=>{
- let Q=Array.isArray(q0)?q0:[];
- if(Array.isArray(l0)&&l0.length&&o0!==owner)Q=histQAdd(Q,o0,l0,list,deleted);
- return{list:Array.isArray(list)?list:[],owner,quarantine:Q}}}
+// Own bundle of `owner` (an account) goes back into its history; its own tombstones apply.
+function histQTakeOwn(Q,owner,list,deleted){
+ if(typeof owner!=='string'||!owner)return{Q,list};
+ const b=Q.find(x=>x&&x.owner===owner);if(!b)return{Q,list};
+ return{Q:Q.filter(x=>x!==b),list:mergeHist(b.workouts,list,deleted)}}
+// One write of the device history to IDB: whatever is there and does not belong to the current owner is isolated first,
+// and the current owner's own isolated bundle comes back (U1 → U2 → U1 in one session, no restart needed).
+function histWriteFn(list,owner,deleted,res){return(l0,o0,q0)=>{
+ let Q=Array.isArray(q0)?q0:[],L=Array.isArray(list)?list:[];
+ if(Array.isArray(l0)&&l0.length&&o0!==owner)Q=histQAdd(Q,o0,l0,L);
+ const t=histQTakeOwn(Q,owner,L,deleted);Q=t.Q;
+ if(res){res.list=t.list;res.restored=t.list!==L;res.quarantine=Q}
+ return{list:t.list,owner,quarantine:Q}}}
 function histWrite(list,owner){if(S_RO||typeof indexedDB==='undefined')return Promise.resolve(false);
- return idb.histSwap(histWriteFn(list,owner===undefined?histOwnerNow():owner,S.deletedWorkouts)).then(()=>{try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}return true})}
+ const own=owner===undefined?histOwnerNow():owner,res={};
+ return idb.histSwap(histWriteFn(list,own,S.deletedWorkouts,res)).then(()=>{try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
+  if(res.quarantine)histQCache=res.quarantine;
+  // the device owner's own records came back from the quarantine → show them now and keep the device copy in step
+  if(res.restored&&own===histOwnerNow()){S.workouts=res.list;try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}}
+  return true})}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
  const gen=idb.gen();
  Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await histWrite(histList(),histOwnerNow())}catch(e){}})}
@@ -717,10 +736,11 @@ async function migrateHistory(){
   let Q=Array.isArray(idbQ)?idbQ:[],merged,src='idb';
   if(idbOwner!==undefined&&idbOwner===me)merged=mergeHist(fromIdb,local,del);
   else if(lost){merged=mergeHist(fromIdb,local,del);if(typeof idbOwner==='string'&&idbOwner&&fromIdb.length)S.ownerUid=idbOwner;src='restored'}
-  else{const known=new Set(local.map(w=>w&&w.id)),n0=JSON.stringify(Q);merged=mergeHist(fromIdb.filter(w=>w&&known.has(w.id)),local,del);Q=histQAdd(Q,idbOwner,fromIdb,local,del);if(JSON.stringify(Q)!==n0)src='isolated'}
+  // GC-166-F1: different / unproven owner → the device keeps ONLY its own records (a same id from IndexedDB never replaces them,
+  // whatever its date); every IndexedDB record that is not byte-identical to a device record is isolated whole.
+  else{const n0=JSON.stringify(Q);merged=mergeHist([],local,del);Q=histQAdd(Q,idbOwner,fromIdb,local);if(JSON.stringify(Q)!==n0)src='isolated'}
   // the current account's own isolated bundle (e.g. after another account used the device) comes back automatically
-  const mine=histOwnerNow();
-  if(typeof mine==='string'){const b=Q.find(x=>x&&x.owner===mine);if(b){merged=mergeHist(b.workouts,merged,del);Q=Q.filter(x=>x!==b)}}
+  {const t=histQTakeOwn(Q,histOwnerNow(),merged,del);Q=t.Q;merged=t.list}
   if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
   S.workouts=merged;histQCache=Q;
   try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}

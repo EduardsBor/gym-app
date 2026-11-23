@@ -257,7 +257,7 @@ test('clearLocalData removes gym, the history backup and the IndexedDB database'
 
 test('service worker cache is moyzal-v67 and still precaches app.js and sync.js', () => {
   const sw = read('sw.js');
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v166'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v167'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.equal(sw.includes("C='moyzal-v62'"), false);
   assert.match(sw, /'app\.js'/);
@@ -300,6 +300,7 @@ test('startup: workouts in both IDB and localStorage are not duplicated; newer e
   assert.equal(b.run('S.workouts[1].notes'), 'edited');
   assert.deepEqual(jclone(histFromDb(b.idb)).map(w => w.id), ['w1', 'w2']);
   const qb = jclone(b.idb.get('moyzal').stores.get('history').get('quarantine'));
-  assert.deepEqual(qb.map(x => [x.owner, x.workouts.map(w => w.id)]), [['legacy', ['w3']]], 'w3 kept, isolated');
+  // GC-166-F1: the IDB version of w2 differs from the device one (owner unproven) → kept too, isolated; nothing lost
+  assert.deepEqual(qb.map(x => [x.owner, x.workouts.map(w => w.id).sort()]), [['legacy', ['w2', 'w3']]], 'w2 (other version) and w3 kept, isolated');
   assert.deepEqual(b.run('JSON.stringify(mergeHist([{id:"a",end:2}],[{id:"a",end:1}],[]))'), '[{"id":"a","end":2}]');
 });

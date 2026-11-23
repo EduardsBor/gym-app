@@ -149,10 +149,10 @@ test('03e: another account cannot restore an account bundle by hand; legacy / gu
 });
 
 // ---------- GC-166-04
-test('04: tombstones win over every bundle and every restore; quarantine never reaches the cloud copy', async () => {
+test('04: tombstones apply by owner — kept in an unproven bundle, applied when it is restored into this account; quarantine never reaches the cloud copy', async () => {
   const b = boot(seed({ ownerUid: 'U1', workouts: [W('w1', 1000)], deletedWorkouts: ['w3'] }), { preHist: [W('w2', 2000), W('w3', 3000)] });
   await b.run('histReady');
-  assert.deepEqual(q(b, 'legacy'), ['w2'], 'deleted w3 not even isolated');
+  assert.deepEqual(q(b, 'legacy'), ['w2', 'w3'], 'GC-166-F1: owner of w3 unknown → this device owner’s tombstone does not destroy it');
   b.run('histQuarantineRestore("legacy")');
   await settle();
   assert.deepEqual(ids(b.J('S.workouts')), ['w1', 'w2']);

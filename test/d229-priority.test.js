@@ -119,7 +119,7 @@ test('D-229: questionnaire strings have RU/EN/LV and LV follows D-216', () => {
   assert.doesNotMatch(lv.replace(/atspiedien|asinsspiedien/gi, ''), /spiedien/i);
 });
 
-test('D-229 / C-114: SW cache is moyzal-v166; four accent blocks still validate', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v166'/);
+test('D-229 / C-114: SW cache is moyzal-v167; four accent blocks still validate', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v167'/);
   assert.equal(Object.keys(boot().run('PRIO_BLOCK_MAP')).length, 4);
 });
