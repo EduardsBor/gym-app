@@ -334,6 +334,6 @@ test('Library hides «Мои шаблоны» entry points and does not delete s
   assert.equal(run('S.workouts[0].fromTemplate'), true);
   const hist = run('historyLabel(S.workouts[0])');
   assert.equal(hist, 'Своя тренировка');
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v167'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v168'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
 });

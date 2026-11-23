@@ -658,7 +658,10 @@ function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)=
 function histQKey(owner){return owner===undefined?'legacy':owner===null?'guest':String(owner)}
 const histSig=w=>{try{return JSON.stringify(w)}catch(e){return''}};
 function histQAdd(Q,owner,list,keep){
- const same=new Set((Array.isArray(keep)?keep:[]).map(histSig));
+ // GC-167: «byte-identical = already on the device» holds only for an UNMARKED base (owner unknown, same device data).
+ // For a KNOWN other owner (account or guest) even an identical record is its own copy and is isolated — otherwise that owner
+ // would lose an unsynced workout just because the current owner happens to have the same bytes.
+ const same=new Set(owner===undefined?(Array.isArray(keep)?keep:[]).map(histSig):[]);
  const extra=(Array.isArray(list)?list:[]).filter(w=>w&&typeof w==='object'&&w.id!=null&&!same.has(histSig(w)));
  const out=Array.isArray(Q)?Q.filter(x=>x&&typeof x==='object'&&x.owner):[];
  if(!extra.length)return out;
