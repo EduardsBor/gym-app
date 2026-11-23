@@ -86,5 +86,5 @@ test('pull → gravitron → back to pull; need_w note has RU/EN/LV', () => {
 });
 
 test('v157: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v161'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v162'/);
 });

@@ -143,5 +143,5 @@ test('v161 P1: the confirmation text matches the consent state (no «only on thi
 });
 
 test('v161: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v161'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v162'/);
 });

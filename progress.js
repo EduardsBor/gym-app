@@ -148,6 +148,9 @@ function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prW
  // Pain 2 workouts in a row: note pain2 (suggest −10 % or a swap, see a doctor if it persists); the weight is not cut automatically.
  if(inp.pain){st.success=0;delete st.cut;out.target=lo;st.pain=(st.pain|0)+1;out.note=st.pain>=2?'pain2':'pain';out.suggest_swap=true;return}
  delete st.pain;
+ // v162 (Grok QA v160 P2): the D2 gravitron with no counterweight written asks for it on EVERY path (first top / same / miss /
+ // calibration), not only on a success — an empty field is not «0 kg of help», and the session does not count for the ladder.
+ if(c.eq==='assisted'&&inp.need_w&&!(+w>0)){out.note='need_w';out.weight=null;out.target=lo;return}
  if(inp.calibration){reset();
   if(allTop){prInc(inp,c,e,lim,out,lo);out.note=out.note==='inc'?'cal_up':out.note}
   else if(miss){if(w>0&&c.eq!=='band'&&c.eq!=='bodyweight')out.weight=c.eq==='assisted'?pr2(w+e.assist):prDown(w,0.9,c,e);out.target=lo;out.note='cal_down';

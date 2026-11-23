@@ -86,8 +86,12 @@
   }
   // D-217: ограничения из анкеты (спина/колени/плечи) и отметки «боль» — тоже данные о здоровье: без согласия только на устройстве.
   const isLimWhy=w=>Array.isArray(w)&&typeof w[0]==='string'&&/^Ограничения \(/.test(w[0]);
+  // v162 (GC-161-01, Grok QA v160 P1): sex is synced only with the health consent too (privacy policy 3.2 / 9(2)(a)) —
+  // prof.sex and the «Пол: …» line of the plan explanation stay on the device without it.
+  const isSexWhy=w=>Array.isArray(w)&&((Array.isArray(w[1])&&w[1].includes('sx'))||(typeof w[0]==='string'&&/^Пол: /.test(w[0])));
   function stripLimits(p){
-    if(p.prof&&typeof p.prof==='object') delete p.prof.lim;
+    if(p.prof&&typeof p.prof==='object'){delete p.prof.lim;delete p.prof.sex}
+    if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isSexWhy(w));
     delete p.limSeen;  // v160: local «limitations confirmed on this device» flag
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
     (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
@@ -103,7 +107,9 @@
   function keepLocalLimits(L){
     if(!L) return;
     if(S.prof&&typeof S.prof==='object'&&S.prof.lim===undefined&&L.lim) S.prof.lim=L.lim;
-    if(Array.isArray(S.why)&&L.why&&!S.why.some(isLimWhy)) S.why=S.why.concat(L.why);
+    if(S.prof&&typeof S.prof==='object'&&S.prof.sex===undefined&&L.sex) S.prof.sex=L.sex;
+    if(Array.isArray(S.why)&&L.why&&!S.why.some(isLimWhy)) S.why=S.why.concat(L.why.filter(isLimWhy));
+    if(Array.isArray(S.why)&&L.why&&!S.why.some(isSexWhy)) S.why=S.why.concat(L.why.filter(isSexWhy));
     // Без согласия облако без отметок «боль» не должно стирать их в истории на этом устройстве.
     (L.pain||[]).forEach(p=>{
       const w=(S.workouts||[]).find(x=>x&&x.id===p.id);if(!w||!w.items) return;
@@ -115,7 +121,7 @@
   function localLimits(){
     const pain=[];
     (S.workouts||[]).forEach(w=>(w&&w.items||[]).forEach((it,i)=>{if(it&&it.pain) pain.push({id:w.id,i,exId:it.exId})}));
-    return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,why:Array.isArray(S.why)?S.why.filter(isLimWhy):null,pain};
+    return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,sex:S.prof&&(S.prof.sex==='m'||S.prof.sex==='f')?S.prof.sex:null,why:Array.isArray(S.why)?S.why.filter(w=>isLimWhy(w)||isSexWhy(w)):null,pain};
   }
   function mergePg(a,b){
     const o={};
