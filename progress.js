@@ -36,7 +36,10 @@ const PR_LADDER={'ht-bw':{to:'sglb'},'assisted-pullup':{to:'pull'},'scap-pullup'
 // (assisted-pullup / scap-pullup → pull). Only a suggestion (out.down): the user switches with a button, history stays by exId.
 const PR_DOWN={pull:{g:'assisted-pullup',b:'scap-pullup'},chin:{g:'assisted-pullup',b:'scap-pullup'}};
 let PR_DOWN_ON=false;
-function prDownStep(id,place,lim){if(!PR_DOWN_ON)return null;const D=PR_DOWN[id];const to=D&&D[place];return to&&!prForbidden(to,lim)?to:null}
+// closeout (v157): per place. Gym only (owner decision A); home with a bar stays off until negative pull-ups have a card and a clip
+// (decision B: scap pull-ups → pull-ups is too big a step, the user would swing back and forth).
+const PR_DOWN_PLACE={g:true,b:false};
+function prDownStep(id,place,lim){if(!PR_DOWN_ON||!PR_DOWN_PLACE[place])return null;const D=PR_DOWN[id];const to=D&&D[place];return to&&!prForbidden(to,lim)?to:null}
 const PR_TIME={pl:[20,45],bpl:[20,40],'mk-rkc-plank':[10,20]};
 const PR_TSTEP={pl:5,bpl:5,'mk-rkc-plank':2,'dead-hang':5,'towel-iso-curl':1};
 const PR_PLANK_CAP=60;
@@ -167,6 +170,9 @@ function prReps(inp,c,e,lv,lim,fl,out,lo,hi,plan,rir){const st=out.state,res=prW
 
 // One step of progression for a success
 function prInc(inp,c,e,lim,out,lo){const st=out.state,w=inp.weight,fl=prFlags(c,lim);out.target=lo;
+ // closeout fix 1 (v157): a gravitron taken as the easier step (need_w) with no counterweight written must not count as 0 kg
+ // help and send the user back to pull-ups after one session — stay and ask for the counterweight.
+ if(c.eq==='assisted'&&inp.need_w&&!(+w>0)){out.note='need_w';out.weight=null;return}
  if(c.eq==='assisted'){const n=pr2((w||0)-e.assist);if(n<=0){out.id='pull';out.weight=null;out.note='ladder'}else{out.weight=n;out.note='inc'}return}
  // Band: tempo -> pause -> next band from the profile (variant back to 0) -> shorter grip / further from the anchor.
  if(c.eq==='band'){const m=st.mod|0;if(m<2){st.mod=m+1;out.mod=m+1;out.note='mod';return}
@@ -186,4 +192,4 @@ function prMod(out,st,kind,cap){let m=(st.mod|0)+1;out.note='no_heavier';
  st.mod=m;out.mod=m;
  if(kind==='bw'&&m>=3)out.weight=m===3?5:pr2(5+2.5*(m-3))}
 
-if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prModCap,PR_MOD_CAP,prDownStep,PR_DOWN,PR_DOWN_ON,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS,PR_SESS,PR_PCT};
+if(typeof module!=='undefined'&&module.exports)module.exports={prNext,prModKey,prModCap,PR_MOD_CAP,prDownStep,PR_DOWN,PR_DOWN_ON,PR_DOWN_PLACE,prCls,prFlags,prUp,prDown,prEquip,prGrid,prRir,PR_CLS,PR_EQUIP,PR_LADDER,PR_TIME,PR_TSTEP,PR_FEEL,PR_MODS,PR_SESS,PR_PCT};

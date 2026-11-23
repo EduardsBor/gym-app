@@ -129,6 +129,10 @@ test('P2: when switched on — gym → gravitron, home with a bar → scap pull-
   const b = boot();
   b.run('PR_DOWN_ON=true');
   const q = (place, st, res, extra) => b.J(`prNext(Object.assign({id:'pull',level:'nov',range:[5,8],sets_plan:3,weight:null,results:${JSON.stringify(res)},state:${JSON.stringify(st)},place:${JSON.stringify(place)}},${JSON.stringify(extra || {})}))`);
+  // v157 (closeout, decision B): home with a bar is off on its own until negative pull-ups exist
+  assert.deepEqual(b.J('PR_DOWN_PLACE'), { g: true, b: false });
+  assert.equal(q('b', { miss: 1 }, [0, 0, 0]).down, undefined, 'home: off by default');
+  b.run('PR_DOWN_PLACE.b=true');
   assert.equal(q('g', { miss: 1 }, [0, 0, 0]).down, 'assisted-pullup');
   assert.equal(q('b', { miss: 1 }, [0, 1, 0]).down, 'scap-pullup');
   assert.equal(q('d', { miss: 1 }, [0, 0, 0]).down, undefined, 'no bar at home with dumbbells: no step');
@@ -212,5 +216,5 @@ test('P4: r2 revisions are not connected — no *_r2 blocks in data/blocks, save
 });
 
 test('v155: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v156'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v157'/);
 });

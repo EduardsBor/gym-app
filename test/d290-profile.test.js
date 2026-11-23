@@ -35,8 +35,8 @@ function sections() {
   return vm.runInNewContext('(' + m[1] + ')');
 }
 
-test('D-290: cache is moyzal-v156', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v156'/);
+test('D-290: cache is moyzal-v157', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v157'/);
 });
 
 test('D-290: profile.js sections — rename, notifications item, data danger block', () => {

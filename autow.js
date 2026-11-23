@@ -11,7 +11,8 @@ break14:'После перерыва 2+ недели: вес −10 %',
  return_planned:'Упражнение вернулось по плану программы: вес прежний, начни с нижней границы повторов',
  deload_block:'Разгрузка по программе: вес тот же, запас +2 повтора',
  break28:'После перерыва 4+ недели: вес −20 %, запас на 1 повтор больше',deload_scheduled:'Разгрузка: подходов вдвое меньше, вес тот же',
- deload_early:'Разгрузка: подходов вдвое меньше, вес −10 %',time_up:'↑ Цель удержания выше',time_down:'↓ Цель удержания ниже',hold_max:'Максимум удержания',ladder:'Пора усложнить'};
+ deload_early:'Разгрузка: подходов вдвое меньше, вес −10 %',time_up:'↑ Цель удержания выше',time_down:'↓ Цель удержания ниже',hold_max:'Максимум удержания',ladder:'Пора усложнить',
+ need_w:'Запиши противовес в кг — без него прогрессию не посчитать'};
 const AW_MOD={tempo:'Усложнение: опускание 3–4 с',pause:'Усложнение: пауза 2 с в нижней точке',load:'Усложнение: рюкзак с грузом',
  shorter:'Тяжелее резинки нет: возьми резинку короче или встань дальше от крепления'};
 if(S&&!S.pgSince){S.pgSince=Date.now();save()}
@@ -130,7 +131,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
   const c=awCls(it.exId);if(!c)return;
   const goal=card.querySelector('.mut');if(goal)goal.insertAdjacentHTML('afterend',awSugHTML(it,i))});
  app.querySelectorAll('[data-awlad]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.awlad],from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return;
-  it.exId=to;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi)pi.exId=to}
+  it.exId=to;delete it.downFrom;const d=S.program[A.dayIdx];if(d){const pi=d.items.find(x=>x.exId===from);if(pi){pi.exId=to;delete pi.downFrom}}
   const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}awApply(it,A.dl);save();workoutView()});
  // review-nov-2 task 2: the easier step (pull / chin → gravitron in the gym, scap pull-ups at home) — only on this button.
  // History of the old exercise stays under its exId; the way back is the normal ladder (2 sessions at the top → pull).
@@ -139,7 +140,9 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
  const fin=$('#fin');if(fin&&fin.onclick){const o=fin.onclick;fin.onclick=()=>{const id=A.id,n=S.workouts.length;o();if(S.workouts.length>n&&S.workouts[S.workouts.length-1].id===id){awFinish(S.workouts[S.workouts.length-1]);save();awMoment(S.workouts[S.workouts.length-1])}}}}
 // review-nov-2 task 2: switch item i of the open workout to the offered easier step (button «Заменить» only).
 function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.down;if(!to||to===from||(typeof lgConf==='function'&&lgConf(to).length))return false;
- it.exId=to;delete it.sug;delete it.awx;const d=S.program&&S.program[A.dayIdx];if(d){const pi=(d.items||[]).find(x=>x.exId===from);if(pi)pi.exId=to}
+ // closeout fix 2 (v157): remember the exercise we came from (pull or chin) — the way back leads to it, not always to pull.
+ const back=it.downFrom||from;
+ it.exId=to;it.downFrom=back;delete it.sug;delete it.awx;const d=S.program&&S.program[A.dayIdx];if(d){const pi=(d.items||[]).find(x=>x.exId===from);if(pi){pi.exId=to;pi.downFrom=back}}
  const p=awPg()[from];if(p&&p.next){delete p.next.down;p.upd=Date.now()}awApply(it,A.dl);save();return true}
 const _awWV=workoutView;workoutView=function(){_awWV();awDecorate()};
 
@@ -161,11 +164,14 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   const rir=sets.map(()=>null);if(it.feel&&PR_FEEL[it.feel]!=null)rir[rir.length-1]=PR_FEEL[it.feel];
   const R=c.eq==='time'?(PR_TIME[c.id]||[it.min,it.max]):[it.min,it.max],w=c.eq==='time'?null:awWork(sets);
   const dcF=awDayCtx(W.dayIdx);
+  // closeout (v157): an easier step taken with the D2 button — the plan item (or this workout item) remembers where it came from
+  const pdi=S.program&&W.dayIdx!=null&&S.program[W.dayIdx],pit=pdi&&(pdi.items||[]).find(x=>x.exId===it.exId),df=it.downFrom||(pit&&pit.downFrom)||null;
   const inp={id:it.exId,level:awLevel(),role:awRole(it,W.dayIdx),range:R,sets_plan:it.ns||sets.length,weight:w,results:sets.map(x=>+x.r||0),rir,
-   state:Object.assign({},s.st||p.st||{}),flags:lim,ctx:s.after||p.afterDl?{after_deload:true}:{},calibration:!!s.cal,pain:!!it.pain,place:S.prof&&S.prof.place,hang};
+   state:Object.assign({},s.st||p.st||{}),flags:lim,ctx:s.after||p.afterDl?{after_deload:true}:{},calibration:!!s.cal,pain:!!it.pain,place:S.prof&&S.prof.place,hang,need_w:!!df};
   if(c.eq==='time')inp.target=s.target!=null?s.target:R[0];
   if(dcF&&dcF.rirTarget)inp.rir_target=dcF.rirTarget;
-  const o=prNext(inp,awEq()),to=o.id!==it.exId?awAppId(o.id):null;
+  const o=prNext(inp,awEq());let to=o.id!==it.exId?awAppId(o.id):null;
+  if(to&&o.note==='ladder'&&df)to=df;  // closeout fix 2: back to the exercise the user came from (chin stays chin)
   // v2 notes: inc with a big equipment step, first of the 2 sessions at the top, grace session after a big step
   const note=o.note==='inc'&&o.big_jump?'inc_big':o.note==='same'&&(o.state.success|0)===1&&c.eq!=='time'?'top1':o.note;
   delete p.afterDl;
