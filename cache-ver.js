@@ -1,1 +1,1 @@
-var SW_CACHE='moyzal-v151';
+var SW_CACHE='moyzal-v152';

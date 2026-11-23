@@ -41,7 +41,7 @@ test('D-286: tick/set-log handlers no longer rebuild the workout list; timers on
   const movekit = read('movekit.js');
   assert.match(movekit, /mkPosterPathUrls/);
   assert.match(movekit, /function posterUrlForPath\(/);
-  assert.match(read('cache-ver.js'), /moyzal-v151/);
+  assert.match(read('cache-ver.js'), /moyzal-v152/);
 });
 
 function gymState() {
