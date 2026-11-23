@@ -216,5 +216,5 @@ test('P4: r2 revisions are not connected — no *_r2 blocks in data/blocks, save
 });
 
 test('v155: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v164'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v165'/);
 });

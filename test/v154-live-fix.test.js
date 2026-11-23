@@ -155,5 +155,5 @@ test('N4: tab rows (science goal tabs) wrap on narrow screens', () => {
 });
 
 test('v154: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v164'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v165'/);
 });

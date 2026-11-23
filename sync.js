@@ -556,6 +556,9 @@
     S.deletedWorkouts=[];S.deletedBody=[];S.deletedCustom=[];S.deletedTemplates=[];S.deletedEqProfiles=[];
     if(data&&data.payload) applyRemoteFresh(data.payload);
     S.ownerUid=user.id;
+    // GC-165: the history in IndexedDB is replaced (with the owner mark) BEFORE localStorage, so closing the app in between
+    // can never mix the previous account's / declined guest's workouts into this account on the next start.
+    try{if(!(typeof S_RO!=='undefined'&&S_RO)&&typeof idb!=='undefined'&&idb&&idb.histPut) await idb.histPut(Array.isArray(S.workouts)?S.workouts:[],S.ownerUid)}catch(e){}
     persistLocal();
     if(!data) await pushNow();
     else {lastAt=S.updatedAt||Date.now();status='ok'}

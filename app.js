@@ -634,14 +634,19 @@ const idb=(()=>{let p,live,epoch=0;
  return{close:drop,gen:()=>epoch,get:k=>tx('photos','readonly',s=>s.get(k)),put:(k,v)=>tx('photos','readwrite',s=>s.put(v,k)),del:k=>tx('photos','readwrite',s=>s.delete(k)),
   all:()=>tx('photos','readonly',s=>s.getAllKeys()).then(async ks=>{const o={};for(const k of ks)o[k]=await idb.get(k);return o}),
   histGet:()=>tx('history','readonly',s=>s.get('workouts')),
-  histPut:list=>tx('history','readwrite',s=>s.put(list,'workouts'))}})();
+  // GC-165: 'owner' = account (ownerUid) the IDB history belongs to; null = guest; absent = written before v165.
+  histOwner:()=>tx('history','readonly',s=>s.get('owner')),
+  // list + owner in ONE transaction: a save() at start-up must not slip in between the two reads.
+  histRead:()=>tx('history','readonly',s=>{const a=s.get('workouts'),o=s.get('owner');return{get result(){return{list:a.result,owner:o.result}}}}),
+  histPut:(list,owner)=>tx('history','readwrite',s=>{if(owner!==undefined)s.put(owner,'owner');return s.put(list,'workouts')})}})();
+function histOwnerNow(){return(typeof S!=='undefined'&&S&&S.ownerUid)||null}
 // D-207: workout history lives in IndexedDB 'history'. localStorage 'gym' still keeps a copy this version;
 // a one-time snapshot is stored in gym_hist_backup and is never overwritten. If IndexedDB is missing (private mode), we keep using localStorage.
 function histList(){return Array.isArray(S.workouts)?S.workouts:[]}
 function writeHistBackupOnce(list){try{if(localStorage.getItem(HIST_BACKUP_KEY)==null)localStorage.setItem(HIST_BACKUP_KEY,JSON.stringify(list||[]))}catch(e){}}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
  const gen=idb.gen();
- Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await idb.histPut(histList());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
+ Promise.resolve().then(async()=>{if(idb.gen()!==gen)return;try{await idb.histPut(histList(),histOwnerNow());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}}catch(e){}})}
 // Union of IDB + localStorage(+in-memory) history by workout id; tombstones in S.deletedWorkouts (same list sync uses) win;
 // on a conflict the newer one (updatedAt||end||start) wins, ties go to the local copy (written synchronously, so freshest).
 function histT(w){return +(w&&(w.updatedAt||w.end||w.start))||0}
@@ -653,24 +658,31 @@ function mergeHist(fromIdb,local,deleted){const del=new Set(Array.isArray(delete
 async function migrateHistory(){
  if(typeof indexedDB==='undefined')return{ok:false,fallback:'localStorage'};
  const gen=idb.gen();
- let fromIdb,idbAvail=true;
- try{fromIdb=await idb.histGet()}catch(e){idbAvail=false}
+ let fromIdb,idbOwner,idbAvail=true;
+ try{const h=await idb.histRead();fromIdb=h&&h.list;idbOwner=h?h.owner:undefined}catch(e){idbAvail=false}
  if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
  if(!idbAvail)return{ok:false,fallback:'localStorage'};
  if(Array.isArray(fromIdb)){
   // D-207 fix (Claude 15.11): union by id instead of replace. localStorage 'gym' is written synchronously,
   // the IDB write is async; if the app was closed before it finished, the last workout is only in localStorage.
-  const merged=mergeHist(fromIdb,histList(),S.deletedWorkouts);
+  // GC-165: IDB history written for ANOTHER account (or a guest whose data was not transferred) is never mixed into
+  // this account's history — the device copy (localStorage) wins and IDB is rewritten. No owner mark (before v165) → as before.
+  // localStorage lost (no owner on the device) + IDB of account X → history is restored together with its owner X, so another
+  // account signing in later is treated as foreign data (sync.js foreignData → adoptAccountFromCloud), never merged.
+  const me=histOwnerNow();
+  const foreign=idbOwner!==undefined&&me!==null&&idbOwner!==me;
+  if(!foreign&&me===null&&typeof idbOwner==='string'&&idbOwner&&Array.isArray(fromIdb)&&fromIdb.length)S.ownerUid=idbOwner;
+  const merged=mergeHist(foreign?[]:fromIdb,histList(),S.deletedWorkouts);
   if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};
   S.workouts=merged;
   try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
   try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}
-  if(!S_RO)try{await idb.histPut(merged)}catch(e){}
-  return{ok:true,source:'idb'};
+  if(!S_RO)try{await idb.histPut(merged,histOwnerNow())}catch(e){}
+  return{ok:true,source:foreign?'local-foreign-idb':'idb'};
  }
  const local=histList();
  writeHistBackupOnce(local);
- try{if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};await idb.histPut(local);try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
+ try{if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};await idb.histPut(local,histOwnerNow());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
  catch(e){return{ok:false,fallback:'localStorage'}}
 }
 async function clearLocalData(){

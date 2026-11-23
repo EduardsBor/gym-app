@@ -23,7 +23,9 @@ function page(state, lang, ls, body) {
 <script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(ls || {}).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}window.confirm=()=>true;</script></head>
 <body><header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" hidden></span></header><main id="app"></main><div id="timer" class="hidden"><b id="tval">0:00</b></div><nav id="nav"></nav><div id="modal" class="hidden"></div>
 ${scripts().map(s => `<script src="${s}"></script>`).join('\n')}
-<script>(function(){const wait=ms=>new Promise(r=>setTimeout(r,ms));const R={errors:[]};window.onerror=(m)=>{R.errors.push(String(m))};
+<script>(function(){const wait=ms=>new Promise(r=>setTimeout(r,ms));
+// GC-165-03: wait for a state, not for a fixed time (async block-file loads were slower than 60 ms under a full parallel run)
+const until=async(f,ms)=>{const t=Date.now();while(Date.now()-t<(ms||5000)){try{if(f())return true}catch(e){}await wait(20)}return false};const R={errors:[]};window.onerror=(m)=>{R.errors.push(String(m))};
 async function run(){try{${body}}catch(e){R.errors.push(String(e&&e.stack||e))}await fetch('/__result',{method:'POST',body:JSON.stringify(R)})}
 if(document.readyState==='complete')setTimeout(run,80);else addEventListener('load',()=>setTimeout(run,80))})();</script></body></html>`;
 }
@@ -106,12 +108,13 @@ test('tf2 headless web: LV — the plan check card is translated (no Cyrillic)',
 test('tf2 headless web: pilot variant chooser — asked 6 days → B with 4×/нед; tap A → 6×/нед; tap B → 4×/нед', { skip }, async () => {
   const st = { lang: 'ru', weightAsked: 1, obDone: 1, workouts: [], custom: [], templates: [], body: [], pg: {} };
   const r = await inChrome(st, 'ru', { gc_pilot: '1' }, `
-    preview({name:'P',desc:'',a:{goal:'loss',level:'nov',days:6,place:'g',sex:'m',lim:[],prio:[],len:75}},'catalog');await wait(60);
+    preview({name:'P',desc:'',a:{goal:'loss',level:'nov',days:6,place:'g',sex:'m',lim:[],prio:[],len:75}},'catalog');
     const tags=()=>[...document.querySelectorAll('#app .badge')].map(x=>x.textContent).join('|');
+    await until(()=>document.querySelectorAll('[data-bv]').length===2&&/×\\/нед/.test(tags()));
     R.t1=tags();R.bv=[...document.querySelectorAll('[data-bv]')].map(x=>x.dataset.bv);
-    document.querySelector('[data-bv="loss_nov_6_g_b36_va"]').click();await wait(60);R.t2=tags();R.id2=PV.gen.blockId;
-    document.querySelector('[data-bv="loss_nov_4_g_b36_vb"]').click();await wait(60);R.t3=tags();R.id3=PV.gen.blockId;
-    document.getElementById('pstart').click();await wait(60);R.days=[S.days,S.prof.days,S.prof.daysAsked,S.block&&S.block.id];`);
+    document.querySelector('[data-bv="loss_nov_6_g_b36_va"]').click();await until(()=>PV.gen.blockId==='loss_nov_6_g_b36_va'&&/6×\\/нед/.test(tags()));R.t2=tags();R.id2=PV.gen.blockId;
+    document.querySelector('[data-bv="loss_nov_4_g_b36_vb"]').click();await until(()=>PV.gen.blockId==='loss_nov_4_g_b36_vb'&&/4×\\/нед/.test(tags()));R.t3=tags();R.id3=PV.gen.blockId;
+    document.getElementById('pstart').click();await until(()=>S.block&&S.block.id==='loss_nov_4_g_b36_vb');R.days=[S.days,S.prof.days,S.prof.daysAsked,S.block&&S.block.id];`);
   assert.deepEqual(r.errors, []);
   assert.deepEqual(r.bv, ['loss_nov_4_g_b36_vb', 'loss_nov_6_g_b36_va']);
   assert.match(r.t1, /4×\/нед/); assert.match(r.t2, /6×\/нед/); assert.match(r.t3, /4×\/нед/);
