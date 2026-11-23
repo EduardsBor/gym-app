@@ -26,8 +26,13 @@ jobs:
           node -e "console.log('chrome:', require('./test/fixtures/chrome-path.js').findChrome())"
       - name: node --test (no npm install needed — tests use only Node built-ins)
         shell: bash
-        run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=test-${{ matrix.os }}.tap test/
-      - name: summary
+        run: node --test --test-reporter=tap --test-reporter-destination=test-${{ matrix.os }}.tap test/*.test.js
+      - name: summary (public annotations — logs need a sign-in, annotations do not)
         if: always()
         shell: bash
-        run: grep -E '^# (tests|pass|fail|skipped)' test-${{ matrix.os }}.tap || true
+        run: |
+          f=test-${{ matrix.os }}.tap
+          if [ ! -s "$f" ]; then echo "::error::no TAP output — node --test did not run"; exit 0; fi
+          echo "::notice title=${{ matrix.os }}::$(grep -E '^# (tests|pass|fail|skipped)' "$f" | tr '\n' ' ')"
+          grep -E '^not ok' "$f" | head -n 20 | while read -r l; do echo "::error title=${{ matrix.os }}::$l"; done
+          grep -nE '^\s+(error|message|code|failureType|expected|actual):' "$f" | head -n 30 | while read -r l; do echo "::warning title=${{ matrix.os }} detail::$l"; done
