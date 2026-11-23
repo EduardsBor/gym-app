@@ -316,24 +316,49 @@
     if(typeof toast==='function')toast('В облако ушла сокращённая копия истории. На устройстве все данные на месте.');
     return true;
   }
+  // QA-02b (Claude 23.11): syncedAt = when a record first reached the cloud. «Заменить» keeps records that
+  // reached the cloud after the backup even if the workout itself is older (done offline, synced later).
+  // Records already in the cloud before this version get syncedAt=1 («long ago») so old records are not kept by mistake.
+  const SYNC_LISTS=['workouts','custom','templates','eqProfiles','body'];
+  let cloudKnown=null; // ids per list from the last select/upsert in this session; null = cloud not read yet, nothing is stamped
+  // id → syncedAt of the cloud copy (1 when the cloud copy has none: it was there before this version).
+  function noteCloudIds(R){const k={};SYNC_LISTS.forEach(l=>{const m=new Map();(Array.isArray(R&&R[l])?R[l]:[]).forEach(x=>{if(x&&x.id!=null)m.set(x.id,+x.syncedAt>0?+x.syncedAt:1)});k[l]=m});cloudKnown=k}
+  // Returns the records stamped now; if the upload fails, the caller removes the stamp (the record has not reached the cloud).
+  function stampSyncedAt(now){
+    const done=[];
+    if(!cloudKnown) return done;
+    SYNC_LISTS.forEach(l=>(Array.isArray(S[l])?S[l]:[]).forEach(x=>{
+      if(!x||typeof x!=='object'||x.id==null||x.syncedAt!=null) return;
+      if(cloudKnown[l].has(x.id)){x.syncedAt=cloudKnown[l].get(x.id);return} // already in the cloud: keep its time
+      x.syncedAt=now;done.push(x);
+    }));
+    return done;
+  }
   async function pushNow(){
     if(!sb||!user) return;
     if(await checkAccountTombstone()) return;
     await flushHealthConsentLog();
     ensureMeta();
     S.updatedAt=Date.now();
+    const stamped=stampSyncedAt(S.updatedAt);
+    const unstamp=xs=>xs.forEach(x=>{try{delete x.syncedAt}catch(e){}});
     const up=payloadForUpload();
     if(!up.payload){
+      unstamp(stamped);
       persistLocal();
       if(typeof toast==='function')toast('Слишком много данных для облака. На устройстве всё на месте.');
       return;
     }
-    const {error}=await sb.from('user_state').upsert({
+    let res;
+    try{res=await sb.from('user_state').upsert({
       user_id:user.id,
       payload:up.payload,
       updated_at:new Date(S.updatedAt).toISOString()
-    });
-    if(error) throw error;
+    })}catch(e){unstamp(stamped);throw e}
+    if(res.error){unstamp(stamped);throw res.error}
+    noteCloudIds(up.payload);
+    // A shortened copy (trim) may leave some records out: they have not reached the cloud yet.
+    unstamp(stamped.filter(x=>!SYNC_LISTS.some(l=>cloudKnown[l].has(x.id)&&(S[l]||[]).includes(x))));
     persistLocal();
     if(up.trimmed) toastTrimmedCopy();
     lastAt=S.updatedAt||Date.now();
@@ -352,14 +377,18 @@
     await flushHealthConsentLog();
     const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
     if(error) throw error;
-    if(!data){await pushNow();return}
+    if(!data){noteCloudIds(null);await pushNow();return}
     const remoteAt=data.updated_at?Date.parse(data.updated_at):0;
     const R=data.payload||{};
+    noteCloudIds(R);
     if(S.replacePending){ // QA-02: «Заменить». Records another device wrote after the backup (exportedAt) stay.
       const cutoff=+S.exportedAt>0?+S.exportedAt:(+S.replacePending>0?+S.replacePending:0);
       let keptN=0;
-      const tsOf=(kind,x)=>{if(!x||typeof x!=='object')return 0;if(kind==='workouts')return +x.end||+x.start||0;
-        if(kind==='body'){const t=Date.parse(x.date||'');return Number.isFinite(t)?t+86400000-1:(+x.updatedAt||0)}return +x.updatedAt||0};
+      const tsOf=(kind,x)=>{if(!x||typeof x!=='object')return 0;let t;
+        if(kind==='workouts')t=+x.end||+x.start||0;
+        else if(kind==='body'){const d=Date.parse(x.date||'');t=Number.isFinite(d)?d+86400000-1:(+x.updatedAt||0)}
+        else t=+x.updatedAt||0;
+        return Math.max(t||0,+x.syncedAt||0)}; // QA-02b: reached the cloud after the backup → stays
       const mark=(lk,dk,idk,kind)=>{const keep=new Set((S[lk]||[]).map(x=>x&&x[idk]));const del=new Set([].concat(S[dk]||[],R[dk]||[]));const newer=[];
         (R[lk]||[]).forEach(x=>{if(!x||x[idk]==null||keep.has(x[idk]))return;if(cutoff&&tsOf(kind,x)>cutoff){newer.push(x);del.delete(x[idk]);return}del.add(x[idk])});
         keep.forEach(id=>del.delete(id));newer.forEach(x=>del.delete(x[idk]));S[dk]=[...del];
