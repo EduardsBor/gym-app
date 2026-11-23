@@ -542,5 +542,7 @@ const DICT3=[
 // tech-fix-2.3: old data, the end of the previous block pass is not certain
 ['Не удалось точно определить, выполнена ли эта тренировка в текущем проходе блока, поэтому она не изменена:','Could not tell for sure whether this workout was already done in the current pass of the block, so it was not changed:','Nevarēja droši noteikt, vai šis treniņš jau ir izpildīts pašreizējā bloka ciklā, tāpēc tas netika mainīts:'],
 ['Заменить и здесь','Replace here too','Aizstāt arī šeit'],
+// D2 (v152 QA): ⇄ on an exercise whose sets are all done
+['Упражнение уже выполнено — замена не нужна','This exercise is already done — no need to replace it','Vingrinājums jau ir izpildīts — aizstāt nav vajadzības'],
 ['Заменить упражнения и в этой тренировке плана? Если она уже выполнена, история и рабочие веса не изменятся.','Replace the exercises in this plan workout too? If it is already done, history and working weights are not changed.','Aizstāt vingrinājumus arī šajā plāna treniņā? Ja tas jau ir izpildīts, vēsture un darba svari netiek mainīti.'],
 ]

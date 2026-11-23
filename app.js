@@ -270,7 +270,11 @@ function progSummary(days){const t=[...new Set(days.map(d=>stripDayLetter(dayWee
 // D-228: «Здоровая спина» и «Бережно к коленям» скрыты до отдельных блоков Тренера без запрещённых упражнений:
 // ['Здоровая спина','Укрепление здоровья без осевой нагрузки на позвоночник.',{goal:'fit',level:'nov',days:2,len:45,place:'g',lim:['s']}], ['Бережно к коленям','Без глубоких приседов и выпадов.',{goal:'fit',level:'mid',days:3,len:45,place:'g',lim:['k']}]
 let PV=null;
-function preview(pr,back){PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
+// D3 (v152 QA): a catalog card has no personal data — the user's limitations (S.prof.lim) and sex are kept, so the program is
+// generated and checked with them (same limitation path as the questionnaire). The questionnaire / onboarding pass their own answers.
+function withPersonal(a){const P=typeof S!=='undefined'&&S&&S.prof&&typeof S.prof==='object'?S.prof:null;if(!P)return a;
+ const lim=[...new Set([].concat(Array.isArray(a.lim)?a.lim:[],Array.isArray(P.lim)?P.lim:[]))];const o=Object.assign({},a,{lim});if(!a.sex&&(P.sex==='m'||P.sex==='f'))o.sex=P.sex;return o}
+function preview(pr,back){if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
  app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
@@ -308,6 +312,17 @@ function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=
  $('#mc').onclick=()=>m.classList.add('hidden');m.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{m.classList.add('hidden');cb(b.dataset.p)})}
 
 // ---------- Сегодня
+// D2 (v152 QA): manual ⇄ in an open workout. Done sets stay with the original exercise (history, records, S.pg untouched);
+// only the remaining sets move to the new exercise as a new item (swFrom, own progression only when all its sets are done;
+// the source gets swStop → neutral for auto-weight, like a stopped exercise). Nothing done yet → the whole item is replaced as before.
+// All sets done → nothing to move: the exercise stays, a toast says so. Returns 'replace' | 'split' | 'done' | null.
+function swapActiveItem(A,idx,nid){const it=A&&A.items&&A.items[idx];if(!it||!nid||nid===it.exId)return null;
+ const sets=Array.isArray(it.sets)?it.sets:[],done=sets.filter(s=>s&&s.done),left=sets.length-done.length;
+ const l=S.autoW!==false?lastSets(nid,A.id):null,fill=(s,k)=>{const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p;return s};
+ if(!done.length){it.exId=nid;sets.forEach((s,k)=>{if(!s.done)fill(s,k)});return'replace'}
+ if(!left){toast('Упражнение уже выполнено — замена не нужна');return'done'}
+ const n={exId:nid,ns:left,rest:it.rest,min:it.min,max:it.max,swFrom:it.exId,sets:Array.from({length:left},(_,j)=>fill({w:'',r:it.max,done:false},j))};
+ if(it.sec)n.sec=it.sec;it.sets=done;it.swStop=1;A.items.splice(idx+1,0,n);return'split'}
 function lastSets(exId,beforeId){for(let i=S.workouts.length-1;i>=0;i--){const w=S.workouts[i];if(w.id===beforeId)continue;const it=w.items.find(x=>x.exId===exId);if(it&&it.sets.some(s=>s.done))return it.sets.filter(s=>s.done)}return null}
 function hint(item){const l=lastSets(item.exId);if(!l||isCardio(item.exId))return'';
  if(l.length>=item.sets&&l.every(s=>s.r>=item.max))return`<div class="pr" style="font-size:13px">⬆ В прошлый раз все подходы на ${esc(item.max)}+ — добавь вес (+2,5 кг)</div>`;return''}
@@ -420,7 +435,7 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push(S.autoW!==false?{w:l.w,r:l.r,pf:l.w!=='',done:false}:{w:'',r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
- app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{it.exId=id;const l=S.autoW!==false?lastSets(id,A.id):null;it.sets.forEach((s,k)=>{if(!s.done){const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p}});save();workoutView()})});
+ app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{swapActiveItem(A,+b.dataset.ws,id);save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false})),limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);go('today')}};
@@ -466,11 +481,13 @@ const soundOn=()=>S.sound!==false;
 function endSignal(){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}
 // Rest is 0 (use the program) or 5…600 s, in steps of 5. Anything under 5 s, empty, or not a number becomes 0.
 function clampRest(v){v=+v;if(!Number.isFinite(v)||v<5)return 0;v=Math.round(v/5)*5;if(v<5)return 0;return v>600?600:v}
-function startTimer(sec){sec=clampRest(sec);if(!(sec>0))return;armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');clearInterval(tInt);tInt=setInterval(tt,200);tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
+// D6 (v152 QA): while the rest timer bar is shown the page gets extra bottom space, so «Отменить тренировку» can scroll above it.
+function tmrPad(on){try{const b=document.body;if(b&&b.classList)b.classList.toggle('tmr',!!on)}catch(_){}}
+function startTimer(sec){sec=clampRest(sec);if(!(sec>0))return;armAudio(sec);tEnd=Date.now()+sec*1000;S.tEnd=tEnd;save();lastWarn=-1;$('#timer').classList.remove('hidden');tmrPad(1);clearInterval(tInt);tInt=setInterval(tt,200);tt();typeof NTF!=='undefined'&&NTF.restStart(tEnd)}
 function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=fmtT(Math.max(0,l));
  if(l<=3&&l>=1&&l!==lastWarn){lastWarn=l;}
  if(l<=0){const c=taCovers();stopTimer(true);if(c){navigator.vibrate&&navigator.vibrate([400,150,400,150,400]);toast('⏰ Отдых окончен — следующий подход!')}else endSignal()}}
-function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden')}
+function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden');tmrPad(0)}
 // D-288: no skip/stop button. Rest ends on its own (tt → stopTimer) or is restarted by startTimer when the next set is logged.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
 // iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
@@ -485,7 +502,7 @@ function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;sec=+sec;if(
  const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
 const taCovers=()=>TA&&taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
-setTimeout(()=>{if(S.tEnd&&S.active){tEnd=S.tEnd;if(tEnd>Date.now()){$('#timer').classList.remove('hidden');tInt=setInterval(tt,200)}else{S.tEnd=0;save();toast('⏰ Отдых окончен')}}},0);
+setTimeout(()=>{if(S.tEnd&&S.active){tEnd=S.tEnd;if(tEnd>Date.now()){$('#timer').classList.remove('hidden');tmrPad(1);tInt=setInterval(tt,200)}else{S.tEnd=0;save();toast('⏰ Отдых окончен')}}},0);
 // Не гасить экран во время тренировки
 let wl=null;async function wake(){try{if(S.active&&S.wake!==false&&'wakeLock'in navigator&&!wl&&!document.hidden){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>wl=null)}if((!S.active||S.wake===false)&&wl){wl.release();wl=null}}catch(e){}}
 setInterval(wake,3000);

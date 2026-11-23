@@ -116,13 +116,16 @@
   }
   function mergePg(a,b){
     const o={};
-    function ts(x){return x&&typeof x==='object'?+(x.at||x.updatedAt||x.ts||0):0}
+    // D1 (v152 QA): S.pg entries carry `last` (start of the workout that updated them), not at/updatedAt/ts — before this fix every
+    // timestamp was 0 and the cloud copy (b) always won, so progression was rolled back after each sync. Now the newer `last` wins;
+    // equal or missing timestamps keep the local entry (a). Non-object values never replace an object.
+    function ts(x){if(!x||typeof x!=='object')return 0;const v=+(x.last||x.at||x.updatedAt||x.ts||0);return isFinite(v)?v:0}
     [a,b].forEach(src=>{
       if(!src||typeof src!=='object') return;
       Object.keys(src).forEach(k=>{
         const x=src[k],y=o[k];
         if(y==null) o[k]=x;
-        else o[k]=ts(x)>=ts(y)?x:y;
+        else if(x&&typeof x==='object'&&(!y||typeof y!=='object'||ts(x)>ts(y))) o[k]=x;
       });
     });
     return o;

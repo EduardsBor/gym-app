@@ -99,7 +99,7 @@ details summary{cursor:pointer;min-height:30px}
 /* stage 2 account */
 #mzacc input[type=email],#mzacc input[type=password],#mzacc input[type=text],#mzacc input[inputmode=numeric]{width:100%;margin:6px 0}#mzacc #mzmsg{min-height:1.2em}
 
-.volrow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}.volname{width:72px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.voltrack{flex:1;height:10px;background:var(--card2);border-radius:6px;overflow:hidden}.voltrack i{display:block;height:100%;background:var(--acc);border-radius:6px;min-width:4px}.voln{width:118px;flex:none;text-align:right;color:var(--mut);font-size:12px}
+.volrow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}.volname{width:84px;flex:none;overflow-wrap:anywhere;line-height:1.2}.voltrack{flex:1;height:10px;background:var(--card2);border-radius:6px;overflow:hidden}.voltrack i{display:block;height:100%;background:var(--acc);border-radius:6px;min-width:4px}.voln{width:118px;flex:none;text-align:right;color:var(--mut);font-size:12px}
 .prnote{margin:8px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:12px;background:var(--gold-bg)}
 .prnote>b{color:var(--gold);display:block;margin-bottom:4px}
 .thsw{display:flex;flex-direction:column;gap:6px;margin:10px 0 2px}.thsw button{background:var(--card2);min-height:48px;padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:12px;font-size:15px;color:var(--txt);width:100%;text-align:left;border:var(--line-w) solid var(--card-bd);border-radius:var(--radius-btn)}
@@ -155,3 +155,5 @@ body.exv #timer{display:none!important}
 .row.exo>.sm,.row.exo>.tbtn{flex:0 0 auto}
 #privdata .row>button,#lpriv,#lterms{flex:1 1 100%;min-width:0;height:auto;white-space:normal;line-height:1.25;padding:10px 12px;overflow-wrap:anywhere}
 #eqswitch .chip,#eqswedit .chip{max-width:100%;height:auto;white-space:normal;line-height:1.2;padding:8px 12px}
+/* D6 (v152 QA): rest timer bar shown - room to scroll the last buttons above it */
+body.tmr{padding-bottom:calc(160px + env(safe-area-inset-bottom))}

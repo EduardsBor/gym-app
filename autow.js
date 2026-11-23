@@ -132,7 +132,8 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
  W.items.forEach(it=>{const c=awCls(it.exId);if(!c)return;
   // tech-fix-2.2: stopped for a limitation (limStop: «Остановить», or the source of «Заменить остаток») → S.pg of this exercise
   // stays as it was (no success, no miss); a replacement (limFrom) counts for its own exId only when all its sets are done.
-  if(it.limStop||(it.limFrom&&(it.sets||[]).filter(x=>x.done).length<(+it.ns||(it.sets||[]).length)))return;  // saved items keep only done sets → compare with ns
+  // D2 (v152 QA): the same for a manual ⇄ of a partly done exercise (swStop on the source, swFrom on the new item).
+  if(it.limStop||it.swStop||((it.limFrom||it.swFrom)&&(it.sets||[]).filter(x=>x.done).length<(+it.ns||(it.sets||[]).length)))return;  // saved items keep only done sets → compare with ns
   const s=it.sug||{},p=P[it.exId]||(P[it.exId]={});
   p.first=p.first||W.start;
   // tech-fix-1 GC-07: deload workouts (calendar, early or of the block) never change progression, also without auto-weight.

@@ -19,7 +19,8 @@ function tr(s){if(LANG==='ru'||s==null)return s;s=String(s);if(!CYR.test(s))retu
 const SKIP=new Set(['SCRIPT','STYLE','TEXTAREA']);
 function trText(n){const p=n.parentNode;if(!p||SKIP.has(p.nodeName)||(p.closest&&p.closest('[data-noi18n]')))return;if(!CYR.test(n.data))return;const v=tr(n.data);if(v!==n.data)n.data=v}
 function trAttrs(el){if(el.closest('[data-noi18n]'))return;for(const a of ['placeholder','aria-label','title']){const v=el.getAttribute(a);if(v&&CYR.test(v)){const t=tr(v);if(t!==v)el.setAttribute(a,t)}}}
-function trTree(root){if(LANG==='ru')return;if(root.nodeType===3)return trText(root);if(root.nodeType!==1||SKIP.has(root.nodeName))return;
+// D5 (v152 QA): a TEXTAREA added directly (e.g. #notes right under #app) keeps its typed text, but its placeholder is translated.
+function trTree(root){if(LANG==='ru')return;if(root.nodeType===3)return trText(root);if(root.nodeType!==1)return;if(SKIP.has(root.nodeName)){if(root.nodeName==='TEXTAREA')trAttrs(root);return}
  trAttrs(root);root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(trAttrs);
  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;const L=[];while((n=w.nextNode()))L.push(n);L.forEach(trText)}
 if(LANG!=='ru'){

@@ -148,7 +148,7 @@ test('display strips the A/B/C letter and keeps «разгрузка»; RU/EN/LV
   assert.doesNotMatch(sum, /Всё тело [ABC]/);
 });
 
-test('preview and program editor use the same running numbers; SW cache is moyzal-v152', () => {
+test('preview and program editor use the same running numbers; SW cache is moyzal-v153', () => {
   const { run, app } = withProgram();
   run('preview(CATALOG[0],"catalog")');
   const prev = app();
@@ -158,7 +158,7 @@ test('preview and program editor use the same running numbers; SW cache is moyza
   const pr = app();
   assert.match(pr, /<summary><b>1\. /);
   assert.match(pr, /<summary><b>36\. /);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v152'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v153'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
 });
 
