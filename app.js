@@ -273,7 +273,7 @@ let PV=null;
 // D3 (v152 QA): a catalog card has no personal data — the user's limitations (S.prof.lim) and sex are kept, so the program is
 // generated and checked with them (same limitation path as the questionnaire). The questionnaire / onboarding pass their own answers.
 function withPersonal(a){const P=typeof S!=='undefined'&&S&&S.prof&&typeof S.prof==='object'?S.prof:null;if(!P)return a;
- const lim=[...new Set([].concat(Array.isArray(a.lim)?a.lim:[],Array.isArray(P.lim)?P.lim:[]))];const o=Object.assign({},a,{lim});if(!a.sex&&(P.sex==='m'||P.sex==='f'))o.sex=P.sex;return o}
+ const lim=[...new Set([].concat(Array.isArray(a.lim)?a.lim:[],Array.isArray(P.lim)?P.lim:[]))];const o=Object.assign({},a,{lim});if(P.sex==='m'||P.sex==='f')o.sex=P.sex;return o}
 function preview(pr,back){if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
  const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
