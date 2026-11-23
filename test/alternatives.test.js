@@ -111,7 +111,8 @@ test('swapModal offers only the trainer list, same muscles, trainer order', () =
   assert.deepEqual(arr(split.good), arr(expHome.good));
   assert.deepEqual(arr(split.other), arr(expHome.other));
   assert.ok(split.other.length > 0);
-  assert.match(modalHtml('bp', home), /Другое оборудование или риск при ограничениях:/);
+  // tech-fix-2: the dimmed group is only other equipment now; limitation conflicts are a separate, non-tappable group (tf2 tests)
+  assert.match(modalHtml('bp', home), /Другое оборудование:/);
   assert.match(modalHtml('bp', home), /opacity:\.6/);
 });
 

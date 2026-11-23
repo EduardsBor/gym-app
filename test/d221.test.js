@@ -169,7 +169,7 @@ test('D-221: gym trainer templates do not use walk-brisk; home and bodyweight pr
 });
 
 test('D-221: sw is moyzal-v67 and changelog mentions D-221', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v151'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v152'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   assert.match(read('CHANGELOG.md'), /D-221/);
   assert.equal(read('sw.js').includes("C='moyzal-v64'"), false);

@@ -89,6 +89,12 @@
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
     (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
     if(p.pg&&typeof p.pg==='object') Object.keys(p.pg).forEach(k=>{const n=p.pg[k]&&p.pg[k].next;if(n&&n.note==='pain') n.note='same'});
+    // tech-fix-1/2: limitation notes and acknowledgements in the plan / history name the limitation — health data too.
+    const clean=it=>{if(it&&typeof it==='object'){delete it.limAck;delete it.swapped;delete it.limFrom;delete it.limStop}};  // tech-fix-2.1: + limFrom / limStop (partly done exercise)
+    (Array.isArray(p.program)?p.program:[]).forEach(d=>{if(!d||typeof d!=='object')return;delete d.limWarn;delete d.limAckWuCd;(d.items||[]).forEach(clean)});
+    (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(clean));
+    if(p.active&&typeof p.active==='object')(p.active.items||[]).forEach(clean);
+    delete p.limLog;
   }
   // Облако без ограничений не должно стирать их на этом устройстве.
   function keepLocalLimits(L){
@@ -204,11 +210,16 @@
     else if(R.eqActive){S.eqActive=R.eqActive;S.eqActiveAt=R.eqActiveAt||0}
     if(typeof eqEnsure==='function') eqEnsure();
     // Программа сравнивается по своей метке progAt; если её нет ни там, ни там — по общей updatedAt, как раньше.
+    const blkL=S.block,blkR=R.block;
     const progLocal=(S.progAt||R.progAt)?(S.progAt||0)>=(R.progAt||0):localNewer;
     ['program','progName','why','prof','goal','days','block'].forEach(k=>{
       const v=progLocal?(S[k]!==undefined?S[k]:R[k]):(R[k]!==undefined?R[k]:S[k]);
       if(v!==undefined) S[k]=v;
     });
+    // tech-fix-2.3: a copy without S.block.passAt (older app) must not drop it: same block, not restarted (next not lower,
+    // no last day done since passAt) → keep the other side's passAt; otherwise limguard derives the pass from history.
+    {const B=S.block,O=B===blkL?blkR:blkL,oPa=O&&+O.passAt,n=Array.isArray(S.program)?S.program.length:0;
+      if(B&&typeof B==='object'&&!(+B.passAt>0)&&O&&O.id===B.id&&oPa>0&&(B.next|0)>=(O.next|0)&&!(S.workouts||[]).some(w=>w&&w.dayIdx===n-1&&(+w.start||0)>=oPa)) B.passAt=oPa}
     const pa=Math.max(S.progAt||0,R.progAt||0);if(pa) S.progAt=pa;
     ['next','lang','sound','wake','autoW','restOverride','consentAnalytics','obDone','obOffer','schema','v','weightAsked','ageAsked'].forEach(k=>{
       const v=pick(k);if(v!==undefined) S[k]=v;

@@ -163,7 +163,9 @@ test('D-222: first_workout props allow only place and goal (no extra fields)', a
   const ev = events(cloud).filter(e => e.name === 'first_workout');
   assert.equal(ev.length, 1);
   assert.deepEqual(ev[0].props, { place: 'g', goal: 'mass' });
-  const json = JSON.stringify(ev[0]);
+  // tech-fix-1: install_id is a random 32-hex id and contains «80» in ~11 % of runs (the old flake) — leave it out of the substring check
+  const json = JSON.stringify(Object.assign({}, ev[0], { install_id: undefined }));
+  assert.match(String(ev[0].install_id || ''), /^[0-9a-f]{32}$/);
   assert.equal(json.includes('e@x') || json.includes('secret') || json.includes('80') || json.includes('user_id'), false);
 });
 
@@ -197,7 +199,7 @@ test('D-222: built-in privacy policy mentions Sentry in RU, EN and LV (B-410 §3
 });
 
 test('D-222: sw is moyzal-v67; changelog; LV strings only in docs/LV-NEW-D222.md; hooks present; not via Sentry', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v151'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v152'/);
   assert.match(read('sw.js'), /const C=SW_CACHE/);
   const log = read('CHANGELOG.md');
   assert.match(log, /D-222/);

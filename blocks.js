@@ -18,9 +18,51 @@ function registerBlock(raw){
   return b;
 }
 
+// tech-fix-1: program variants (pilot-rework-3). Own ids and files in data/blocks/variants/ — not in BLOCK_INDEX / the catalog,
+// so there is one catalog card per base program. The base block id and file do not change; active plans keep S.block.id.
+// Variants are used only with the pilot switch (?pilot=1 or localStorage gc_pilot=1); default off = old behaviour.
+const BLOCK_VARIANTS={
+  loss_nov_6_g_b36:{def:'loss_nov_4_g_b36_vb',opts:['loss_nov_4_g_b36_vb','loss_nov_6_g_b36_va']},
+  loss_nov_4_g_b36:{def:'loss_nov_4_g_b36_vb',opts:['loss_nov_4_g_b36_vb']},
+  mass_nov_3_g_b36:{def:'mass_nov_3_g_b36_v3',opts:['mass_nov_3_g_b36_v3']},
+  str_adv_5_g_b35:{def:'str_adv_5_g_b35_voe',opts:['str_adv_5_g_b35_voe','str_adv_5_g_b35_vfree']},
+  loss_mid_4_g_pr_abs_b36:{def:'loss_mid_4_g_pr_abs_b36_v3',opts:['loss_mid_4_g_pr_abs_b36_v3']}
+};
+const BLOCK_VARIANT_RU={loss_nov_4_g_b36_vb:['Вариант B — 4 тренировки в неделю','Рекомендуем: между тренировками есть дни отдыха.'],
+  loss_nov_6_g_b36_va:['Вариант A — 6 тренировок в неделю','Дополнительный вариант: шесть тренировок в неделю без дня отдыха — только при хорошем восстановлении.'],
+  str_adv_5_g_b35_voe:['Исходное оборудование (Смит)','Рекомендуем: жим и присед в Смите, можно без страхующего.'],
+  str_adv_5_g_b35_vfree:['Свободная штанга','Для опытных: нужен уверенный жим и присед со штангой и страхующий.'],
+  mass_nov_3_g_b36_v3:['Доработанная версия',''],loss_mid_4_g_pr_abs_b36_v3:['Доработанная версия','']};
+// tech-fix-2: home base of every variant = variant_of of its file (one fixed value). Before it was built from BLOCK_VARIANTS
+// in key order, so B (4 days) was tied back to the 6-day base and a 4-day user got the 6-day A offered.
+// The base that OFFERS a variant (the questionnaire base) is passed separately (generate → variantBase).
+const BLOCK_VARIANT_OF={loss_nov_4_g_b36_vb:'loss_nov_4_g_b36',loss_nov_6_g_b36_va:'loss_nov_6_g_b36',mass_nov_3_g_b36_v3:'mass_nov_3_g_b36',
+  str_adv_5_g_b35_voe:'str_adv_5_g_b35',str_adv_5_g_b35_vfree:'str_adv_5_g_b35',loss_mid_4_g_pr_abs_b36_v3:'loss_mid_4_g_pr_abs_b36'};
+// Workouts per week of each variant (= days_per_week of its file; checked by test).
+const BLOCK_VARIANT_DAYS={loss_nov_4_g_b36_vb:4,loss_nov_6_g_b36_va:6,mass_nov_3_g_b36_v3:3,str_adv_5_g_b35_voe:5,str_adv_5_g_b35_vfree:5,loss_mid_4_g_pr_abs_b36_v3:4};
+function blockVariantsOn(){
+  try{
+    const search=(typeof location!=='undefined'&&location.search)||'';
+    const m=/[?&]pilot=(0|1)\b/.exec(search);const ls=typeof localStorage!=='undefined'?localStorage:null;
+    if(m){if(ls)ls.setItem('gc_pilot',m[1]);return m[1]==='1'}
+    return!!(ls&&ls.getItem('gc_pilot')==='1');
+  }catch(e){return false}
+}
+function blockVariantFor(baseId,a){
+  const v=baseId&&BLOCK_VARIANTS[baseId];if(!v||!blockVariantsOn())return baseId;
+  const pick=a&&a.variant;return v.opts.includes(pick)?pick:v.def;
+}
+// Options shown for a variant id: those of the questionnaire base when it offers this id, else of its home base.
+function blockVariantBase(id,baseId){if(baseId&&BLOCK_VARIANTS[baseId]&&(baseId===id||BLOCK_VARIANTS[baseId].opts.includes(id)))return baseId;return BLOCK_VARIANT_OF[id]||(BLOCK_VARIANTS[id]?id:null)}
+function blockVariantOpts(id,baseId){const base=blockVariantBase(id,baseId);const v=base&&BLOCK_VARIANTS[base];return v&&blockVariantsOn()?v.opts.slice():[]}
+// tech-fix-2: reopening the questionnaire after a pilot variant: the answer «days» is what the user asked (6), not the
+// frequency of the accepted variant (B = 4), so the same base and the A / B choice come back.
+function quizDaysAsked(){const p=typeof S!=='undefined'&&S&&S.prof;return p&&p.variant&&BLOCK_VARIANT_OF[p.variant]&&+p.daysAsked>0?{days:+p.daysAsked}:{}}
+function blockFilePath(id){return BLOCK_VARIANT_OF[id]?('data/blocks/variants/'+id+'.json'):('data/blocks/'+id+'.json')}
+
 function fetchBlockFile(id){
   if(!/^[a-z0-9_]+$/.test(String(id||''))||typeof XMLHttpRequest==='undefined')return null;
-  try{const x=new XMLHttpRequest();x.open('GET','data/blocks/'+id+'.json',false);x.send();
+  try{const x=new XMLHttpRequest();x.open('GET',blockFilePath(id),false);x.send();
     if(x.status>=200&&x.status<300&&x.responseText)return registerBlock(JSON.parse(x.responseText));}catch(e){}
   return null;
 }
@@ -40,7 +82,9 @@ function blocksEnabled(){
   }catch(e){return true}
 }
 
-function blockIdForProfile(a){
+function blockIdForProfile(a){return blockVariantFor(blockBaseForProfile(a),a)}
+// Base block of the questionnaire (before the pilot variant).
+function blockBaseForProfile(a){
   if(!a||!blocksEnabled())return null;
   const key=blockKey(a);
   const acc=blockAcc(a);
@@ -148,8 +192,10 @@ function migrateBlockState(state){
   let n=state.block.next;
   if(typeof n!=='number'||!isFinite(n)||n<0)n=0;
   const dueOn=typeof state.block.dueOn==='string'?state.block.dueOn:undefined;
+  const passAt=+state.block.passAt;  // tech-fix-2.2: start of the current pass (limguard.js lgPassStart)
   state.block={id:state.block.id,next:n|0};
   if(dueOn)state.block.dueOn=dueOn;
+  if(isFinite(passAt)&&passAt>0)state.block.passAt=passAt;
   return state;
 }
 
@@ -182,13 +228,14 @@ function repeatBlock(state){
   state.block.next=0;
   state.next=0;
   delete state.block.dueOn;
+  state.block.passAt=Date.now();
 }
 
 function goNextLevel(state,block){
   const ea=normalizeEndActions(unwrapBlock(block)&&unwrapBlock(block).end_actions);
   if(!ea.next_level)return false;
   if(!state)return false;
-  state.block={id:ea.next_level,next:0};
+  state.block={id:ea.next_level,next:0,passAt:Date.now()};
   state.next=0;
   return true;
 }
@@ -197,27 +244,139 @@ function itemFromBlock(it){
   const row={exId:resolveExId(it.exId),sets:+it.sets,min:+it.min,max:+it.max,rest:+it.rest};
   if(it.cardio){row.cardio=1;row.sets=1;row.rest=0;return row}  // cardio finish: min/max are minutes
   if(it.unit==='sec'||it.sec)row.sec=1;
+  if(it.role==='c'||it.role==='a')row.role=it.role;  // tech-fix-1 UI RIR: optional trainer role in the block JSON
   return row;
 }
 
-// Limitations (back / knees / shoulders): swap inside the block for a trainer alternative of the same main muscles.
-function blockLimOk(id,a){
-  const lim=(a&&a.lim)||[];if(!lim.length)return true;
-  const m=typeof META!=='undefined'&&META[id];if(!m)return true;
-  const r=String(m).split('|')[1]||'';return!lim.some(l=>r.includes(l));
+// tech-fix-1 UI RIR: role of an exercise for the RIR table — 'c' main multi-joint, 'a' accessory / single-joint.
+const BLOCK_ROLE_A=new Set(['calf-bw','calf-db','calf','seated-calf','smith-calf','mk-standing-calf-raise-machine','hip-abduction','lc','lc-seated','le','nlc','towel-leg-curl','reverse-hyper','sglb','tibialis-raise',
+  'fly','incline-db-fly','mk-cable-pec-fly','pec-deck','straight-arm-pulldown','mk-dumbbell-shrug','smith-shrug','shr','superman','hyp',
+  'lr','mk-dumbbell-rear-delt-fly','mk-prone-y-t-raises','reverse-pec-deck','rfly','single-arm-cable-lateral','mk-cable-seated-rope-face-pull','fp','mk-barbell-upright-row','yr','mk-band-row']);
+const BLOCK_ROLE_C=new Set(['cgb','smith-close-grip','chin']);
+const BLOCK_ROLE_A_GROUPS=new Set(['Бицепс','Трицепс','Пресс','Разминка']);
+function blockRole(it){
+  if(it&&(it.role==='c'||it.role==='a'))return it.role;
+  const id=it&&it.exId;if(!id)return'c';
+  if(BLOCK_ROLE_C.has(id))return'c';
+  if(BLOCK_ROLE_A.has(id))return'a';
+  const e=typeof exBy==='function'?exBy(id):null;
+  return e&&BLOCK_ROLE_A_GROUPS.has(e.group)?'a':'c';
 }
-function blockLimSwap(items,a){
+// rir_target of one workout: phase (by workout number) → block → null (the app falls back to PR_RIR of the level).
+// tech-fix-2: also lo ≤ hi (an inverted range [3,1] is invalid → level fallback)
+function blockRirOk(t){return!!(t&&Array.isArray(t.c)&&Array.isArray(t.a)&&t.c.length===2&&t.a.length===2&&[...t.c,...t.a].every(x=>typeof x==='number'&&isFinite(x)&&x>=0&&x<=6)&&t.c[0]<=t.c[1]&&t.a[0]<=t.a[1])}
+function blockRirTarget(b,w){
+  if(!b||!w)return null;const n=+w.n;
+  const ph=(b.phases||[]).find(p=>p&&Array.isArray(p.workouts)&&n>=p.workouts[0]&&n<=p.workouts[1]&&blockRirOk(p.rir_target));
+  const t=ph?ph.rir_target:(blockRirOk(b.rir_target)?b.rir_target:null);
+  return t?{c:t.c.slice(),a:t.a.slice()}:null;
+}
+// Workout of the block for a plan day (by its number n): used at run time, so plans saved before this change work too.
+function blockWorkoutOf(b,day,dayIdx){
+  b=unwrapBlock(b);if(!b||!Array.isArray(b.workouts))return null;
+  const n=day&&day.n!=null?+day.n:(dayIdx|0)+1;
+  return b.workouts.find(w=>+w.n===n)||b.workouts[n-1]||null;
+}
+// Day context for auto-weight: block deload (GC-07), block has its own deloads (awDeload), rir_target (UI RIR).
+function blockDayCtx(dayIdx){
+  if(typeof S==='undefined'||!S||!S.block||!S.block.id)return null;
+  const b=getBlock(S.block.id);if(!b)return null;
+  const day=S.program&&S.program[dayIdx];
+  const w=blockWorkoutOf(b,day,dayIdx);
+  return{deload:!!((w&&w.deload)||(day&&day.deload)),blockHasDeload:(b.workouts||[]).some(x=>x&&x.deload),rirTarget:(day&&day.rirTarget)||blockRirTarget(b,w)};
+}
+
+// Limitations (back / knees / shoulders): swap inside the block for a trainer alternative of the same main muscles.
+// tech-fix-1 GC-03: impact cardio has a knee risk letter here (jump / jump-rope already have «k» in META).
+const BLOCK_CARDIO_RISK={'mk-treadmill-run':'k'};
+function blockRisk(id){
+  const m=typeof META!=='undefined'&&META[id];
+  return(m?(String(m).split('|')[1]||''):'')+(BLOCK_CARDIO_RISK[id]||'');
+}
+function blockLimOk(id,a){
+  const lim=Array.isArray(a&&a.lim)?a.lim:[];if(!lim.length)return true;  // tech-fix-2: old data may hold a non-array
+  const r=blockRisk(id);return!lim.some(l=>r.includes(l));
+}
+// tech-fix-1 GC-02: replacement candidates in order: 1) trainer ALT of the exercise; 2) ALT of those alternatives;
+// 3) exercises that list this one as their alternative (and their ALT); 4) BLOCK_LIM_FALLBACK (trainer table for ids with an empty ALT).
+const BLOCK_LIM_FALLBACK={'rdl-db':['ht-db','ht','ht-bw','sglb','lc','lc-seated'],'rdl-kb':['ht-db','ht-bw','sglb'],'rdl-band':['ht-bw','sglb'],
+  'hyp':['ht','ht-db','ht-bw','sglb','lc'],'superman':['ht-bw','sglb'],'mk-rkc-plank':['mk-front-plank','dbug','bdog'],'suitcase-carry':['mk-front-plank','dbug','bdog'],
+  'mk-barbell-deadlift':['ht','ht-db','ht-bw','sglb','lc'],'backpack-row':['towel-row','inv'],'nlc':['towel-leg-curl','sglb','ht-bw'],
+  // overhead press with a shoulder limitation → lateral / rear-delt work below shoulder height (proposal, see questions.md)
+  'ohp':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'dsp':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'standing-db-press':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],
+  'smith-seated-press':['lr','single-arm-cable-lateral','mk-prone-y-t-raises'],'ppu':['mk-prone-y-t-raises','lr']};
+function blockLimCands(id){
+  const A=(typeof ALT!=='undefined'&&ALT)||{};const L=[],seen=new Set([id]);
+  const add=x=>{if(x&&!seen.has(x)){seen.add(x);L.push(x)}};
+  const own=A[id]||[];
+  own.forEach(add);
+  own.forEach(x=>(A[x]||[]).forEach(add));
+  for(const k in A){const l=A[k];if(Array.isArray(l)&&l.includes(id)){add(k);l.forEach(add)}}
+  (BLOCK_LIM_FALLBACK[id]||[]).forEach(add);
+  return L;
+}
+// Home without a pull-up bar: these need the bar (same split as the b_bar / b_nobar blocks).
+const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','inv','pull','scap-pullup','dead-hang']);
+function blockHasClip(id){return typeof movekitFile!=='function'||!!movekitFile(id)}
+function blockIsCardio(it){return!!(it&&it.cardio)||(typeof isCardio==='function'&&isCardio(it.exId))}
+// tech-fix-2: one safe pick for one item (block builder, plan check of saved plans, open workout).
+// used = ids already in the workout. a.places (equipment profile) wins over a.place.
+function blockLimAvail(a){
+  const place=(a&&a.place)||'g',places=(a&&a.places)||place;
+  const noBar=place==='b'&&!(a.bar===true||a.bar==='1'||a.bar===1);
+  return x=>(typeof eqAvail!=='function'||eqAvail(x,places))&&!(noBar&&BLOCK_NEEDS_BAR.has(x));
+}
+function blockLimConf(id,a){const lim=Array.isArray(a&&a.lim)?a.lim:[];if(!id||!lim.length)return[];const r=blockRisk(id);return lim.filter(l=>r.includes(l))}
+function blockLimPick(it,a,used){
+  used=used||new Set();
+  const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
+  const avail=blockLimAvail(a);
+  const cardio=blockIsCardio(it);
+  const fb=new Set(BLOCK_LIM_FALLBACK[it.exId]||[]);  // trainer fallback table: may cross the muscle group (hyp → hip thrust)
+  return blockLimCands(it.exId).find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&avail(x)&&blockHasClip(x)&&
+    (cardio?(typeof isCardio!=='function'||isCardio(x)):((fb.has(x)||same(it.exId,x))&&!(typeof isCardio==='function'&&isCardio(x)))))||null;
+}
+function blockLimSwap(items,a,warn){
   if(!a||!(a.lim||[]).length)return items;
   const used=new Set(items.map(i=>i.exId));
-  return items.map(it=>{
-    if(it.cardio||blockLimOk(it.exId,a))return it;
-    const alts=(typeof ALT!=='undefined'&&ALT[it.exId])||[];
-    const same=(x,y)=>typeof eqSameMuscle!=='function'||eqSameMuscle(x,y);
-    const place=a.place||'g';
-    const ok=alts.find(x=>x&&!used.has(x)&&blockLimOk(x,a)&&same(it.exId,x)&&(typeof eqAvail!=='function'||eqAvail(x,place)));
-    if(!ok)return it;
-    used.add(ok);return Object.assign({},it,{exId:ok,swapped:1});
+  const out=[];
+  items.forEach(it=>{
+    if(blockLimOk(it.exId,a)){out.push(it);return}
+    const lim=blockLimConf(it.exId,a);
+    const ok=blockLimPick(it,a,used);
+    if(ok){used.add(ok);out.push(Object.assign({},it,{exId:ok,swapped:1}));if(warn)warn.push({from:it.exId,to:ok,lim});return}
+    // No safe replacement: the exercise is not kept silently — it is left out of this workout with a visible note.
+    if(warn)warn.push({from:it.exId,to:null,lim});
   });
+  return out;
+}
+// tech-fix-2: warm-up and cool-down of a block day (wu.cardio / wu.mob / wu.ramp / cd.cardio / cd.stretch) were built
+// without the limitations (shell profile lim:[]) and the ramp followed the original first exercise. Same rule here:
+// cardio → safe cardio with a clip; ramp → the exercise that replaced the main lift, or no ramp; mobility / stretch with a
+// risk letter → left out with a note. Returns {wu,cd} copies; notes go to warn with part 'wu' / 'cd'.
+function blockLimWuCd(wu,cd,a,swapMap,warn){
+  const lim=(a&&a.lim)||[];if(!lim.length)return{wu,cd};
+  const W=wu?JSON.parse(JSON.stringify(wu)):wu,C=cd?JSON.parse(JSON.stringify(cd)):cd;
+  const note=(part,from,to)=>{if(warn&&!warn.some(w=>w.part===part&&w.from===from))warn.push({from,to:to||null,lim:blockLimConf(from,a),part})};
+  const cardio=(part,o)=>{if(!o||!o.cardio||!o.cardio.id||blockLimOk(o.cardio.id,a))return;const from=o.cardio.id;
+    const to=blockLimPick({exId:from,cardio:1},a,new Set());note(part,from,to);if(to)o.cardio.id=to;else delete o.cardio};
+  const list=(part,arr,key)=>(arr||[]).filter(x=>{const id=x&&x[key];if(!id||blockLimOk(id,a))return true;note(part,id,null);return false});
+  if(W){cardio('wu',W);if(W.mob)W.mob=list('wu',W.mob,'id');
+    if(W.ramp){W.ramp=W.ramp.map(r=>{if(!r||!r.exId||blockLimOk(r.exId,a))return r;const to=swapMap&&swapMap[r.exId];note('wu',r.exId,to);return to?Object.assign({},r,{exId:to}):null}).filter(Boolean);if(!W.ramp.length)delete W.ramp}}
+  if(C){cardio('cd',C);if(C.stretch)C.stretch=list('cd',C.stretch,'id')}
+  return{wu:W,cd:C};
+}
+// Text of the limitation notes of a day (RU source; i18n translates the fixed phrases and exercise names).
+const BLOCK_LIM_RU={s:'спина',k:'колени',p:'плечи'};
+function blockLimWarnHTML(day){
+  const W=(day&&day.limWarn)||[];if(!W.length)return'';
+  const nm=id=>{const e=typeof exBy==='function'?exBy(id):null;const n=e&&e.name&&e.name!=='?'?e.name:id;return typeof esc==='function'?esc(n):n};
+  const lims=l=>(l||[]).map(x=>BLOCK_LIM_RU[x]||x).map(x=>`<span>${x}</span>`).join(', ');
+  const pt=w=>w.part==='wu'?'<span>Разминка</span>: ':w.part==='cd'?'<span>Заминка</span>: ':'';
+  const rows=W.map(w=>w.to?`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> → <b>${nm(w.to)}</b></div>`
+    :`<div>⚠ <span>Ограничение</span> (${lims(w.lim)}): ${pt(w)}<b>${nm(w.from)}</b> — <span>убрано из тренировки: безопасной замены нет</span></div>`);
+  const removed=W.some(w=>!w.to);
+  return`<div class="mut limwarn" style="font-size:13px;margin:4px 0">${rows.join('')}${removed?'<div><span>Если хочешь вернуть упражнение — сначала посоветуйся с врачом или тренером.</span></div>':''}</div>`;
 }
 
 // day_code → template day index: codes in order of first appearance follow the template rotation (FA,FB,FC / U1,L1,U2,L2 / PU,PL,LG,…).
@@ -258,16 +417,38 @@ function attachWarmCool(shellDays,workout,dayIdx){
 
 const DAY_RU={U1:'Верх тела A',U2:'Верх тела B',L1:'Низ тела A',L2:'Низ тела B',FA:'Всё тело A',FB:'Всё тело B',FC:'Всё тело C',PU:'Жимовая A',PL:'Тяговая A',LG:'Ноги A',PU2:'Жимовая B',PL2:'Тяговая B',LG2:'Ноги B'};
 function blockDayName(w){const t=DAY_RU[w.day_code]||('Тренировка '+w.n);return w.week?('Неделя '+w.week+' · '+t+(w.deload?' (разгрузка)':'')):t}
+// tech-fix-2.1: workout duration after limitation / equipment swaps and removals. est_min of the block is kept as the base;
+// the difference of the main items (same item time as dayMin: sets × (40 s + rest), cardio = max minutes) is added.
+// est0 = item minutes of the block workout as written; old saved plans without est0 → taken from the block file by the day number.
+function blockItemsMin(items){return typeof itemTime==='function'?(items||[]).reduce((t,i)=>t+(i&&i.exId?itemTime(i):0),0)/60:null}
+function blockEstBase(d){
+  if(!d)return null;if(d.est0!=null)return d.est0;
+  if(typeof S==='undefined'||!S||!S.block||!S.block.id||typeof getBlock!=='function')return null;
+  const b=unwrapBlock(getBlock(S.block.id)),w=b&&(b.workouts||[]).find(x=>+x.n===+d.n);
+  return w&&w.est_min!=null&&+w.est_min===+d.est?blockItemsMin((w.items||[]).map(itemFromBlock)):null;
+}
+function blockEstMin(d){
+  const base=blockEstBase(d),now=blockItemsMin(d&&d.items);
+  if(base==null||now==null)return Math.round(d.est);
+  return Math.max(1,Math.round(d.est+now-base));
+}
 function planFromBlock(block,a){
   const b=unwrapBlock(block);
   const shell=warmCoolShell(b,a||{});
   const dayIdx=blockDayIndex(b);
   const days=(b.workouts||[]).map((w,i)=>{
     const wc=attachWarmCool(shell,w,dayIdx);
-    const day={name:blockDayName(w),n:w.n!=null&&+w.n>0?+w.n:i+1,items:blockLimSwap((w.items||[]).map(itemFromBlock),a)};
-    if(wc.wu)day.wu=wc.wu;
-    if(wc.cd)day.cd=wc.cd;
-    if(w.est_min!=null)day.est=w.est_min;
+    const warn=[];
+    const day={name:blockDayName(w),n:w.n!=null&&+w.n>0?+w.n:i+1,items:blockLimSwap((w.items||[]).map(itemFromBlock),a,warn)};
+    if(w.deload)day.deload=1;  // tech-fix-1 GC-07: the block deload reaches auto-weight
+    const rt=blockRirTarget(b,w);if(rt)day.rirTarget=rt;
+    // tech-fix-2: warm-up / cool-down pass the same limitation check (ramp follows the replaced main lift)
+    const sm={};warn.forEach(w=>{if(w.to)sm[w.from]=w.to});
+    const wc2=blockLimWuCd(wc.wu,wc.cd,a,sm,warn);
+    if(warn.length)day.limWarn=warn;
+    if(wc2.wu)day.wu=wc2.wu;
+    if(wc2.cd)day.cd=wc2.cd;
+    if(w.est_min!=null){day.est=w.est_min;day.est0=blockItemsMin((w.items||[]).map(itemFromBlock))}  // tech-fix-2.1: base for the duration after swaps
     if(w.week)day.week=w.week;
     return day;
   });
@@ -301,7 +482,7 @@ function ymdPlus(iso,days){
 }
 
 
-function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?('data/blocks/'+id+'.json'):null}
+function blockFileUrl(id){return id&&/^[a-z0-9_]+$/.test(id)?((typeof BLOCK_VARIANT_OF!=='undefined'&&BLOCK_VARIANT_OF[id])?'data/blocks/variants/'+id+'.json':'data/blocks/'+id+'.json'):null}
 function cacheBlockFile(id){
   const url=blockFileUrl(id);
   if(!url)return;
@@ -320,7 +501,7 @@ function cacheBlockFile(id){
 }
 function blockOnApplied(gen){
   if(typeof S==='undefined'||!S)return;
-  if(gen&&gen.blockId)S.block={id:gen.blockId,next:0};
+  if(gen&&gen.blockId)S.block={id:gen.blockId,next:0,passAt:Date.now()};
   else if(S.block)delete S.block;
   if(S.block&&S.block.id)cacheBlockFile(S.block.id);
 }
@@ -333,6 +514,12 @@ function blockOnFinished(A){
   const planned=S.block.next|0;
   if(A&&A.dayIdx!=null&&A.dayIdx!==planned)return;
   finishBlockWorkout(S,b);
+}
+
+function blockVariantHTML(gen){
+  const cur=gen.blockId,E=typeof esc==='function'?esc:(x=>x);
+  return`<div class="card bvar"><b>Вариант программы</b>${gen.variantOpts.map(id=>{const t=BLOCK_VARIANT_RU[id]||[id,''];
+    return`<button class="full${id===cur?' pri sel':''}" data-bv="${E(id)}" style="margin-top:6px;text-align:left;height:auto;padding:10px 12px">${id===cur?'✓ ':''}${E(t[0])}${t[1]?`<br><span class="mut" style="font-size:13px">${E(t[1])}</span>`:''}</button>`}).join('')}</div>`;
 }
 
 function blockActive(){return !!(typeof S!=='undefined'&&S&&S.block&&S.block.id&&getBlock(S.block.id))}
@@ -385,7 +572,10 @@ function renderBlockToday(pick){
       if(blocksEnabled()){
         const id=blockIdForProfile(a);
         const b=id&&getBlock(id);
-        if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;else if(b.equipment_note_ru)p.advice=b.equipment_note_ru;return p}
+        if(b){const p=planFromBlock(b,a);const note=blockAccNote(a);if(note)p.advice=note;else if(b.equipment_note_ru)p.advice=b.equipment_note_ru;
+          if(BLOCK_VARIANT_OF[b.id]){const base=blockBaseForProfile(a);p.variantOf=BLOCK_VARIANT_OF[b.id];p.variantBase=blockVariantBase(b.id,base);p.variantOpts=blockVariantOpts(b.id,base);
+            const vd=BLOCK_VARIANT_DAYS[b.id]||+b.days_per_week||0;if(vd&&a&&+a.days!==vd)p.variantDays=vd}
+          return p}
       }
       return orig(a);
     };
@@ -400,7 +590,16 @@ function renderBlockToday(pick){
   if(typeof renderPreview==='function'){
     const orig=renderPreview;
     renderPreview=function(){
-      orig();
+      // tech-fix-2: the preview shows the real frequency of the chosen variant (B = 4×/week even when 6 was asked);
+      // PV.pr.a keeps the questionnaire answer so the A / B choice stays available on the next click.
+      const g0=typeof PV!=='undefined'&&PV&&PV.gen;
+      if(g0&&g0.variantOf&&PV.pr&&PV.pr.a){const ask=PV.pr.a,vd=BLOCK_VARIANT_DAYS[g0.blockId]||+ask.days;
+        const disp=Object.assign({},ask,{days:vd,daysAsked:+ask.daysAsked||+ask.days,variant:g0.blockId});
+        PV.pr=Object.assign({},PV.pr,{a:disp});try{orig()}finally{PV.pr=Object.assign({},PV.pr,{a:ask})}}
+      else orig();
+      const gen=typeof PV!=='undefined'&&PV&&PV.gen;
+      if(gen&&gen.variantOpts&&gen.variantOpts.length>1&&typeof app!=='undefined'&&app&&app.insertAdjacentHTML)app.insertAdjacentHTML('afterbegin',blockVariantHTML(gen));
+      if(typeof app!=='undefined'&&app&&app.querySelectorAll)app.querySelectorAll('[data-bv]').forEach(x=>x.onclick=()=>{PV.pr.a=Object.assign({},PV.pr.a,{variant:x.dataset.bv});PV.gen=generate(PV.pr.a);renderPreview()});
       const btn=typeof $==='function'?$('#pstart'):null;
       if(!btn)return;
       const prev=btn.onclick;
@@ -408,7 +607,10 @@ function renderBlockToday(pick){
         const was=S.program;
         if(prev)prev.apply(this,arguments);
         if(S.program===was)return;
-        blockOnApplied(typeof PV!=='undefined'&&PV&&PV.gen);
+        const g=typeof PV!=='undefined'&&PV&&PV.gen;
+        blockOnApplied(g);
+        if(g&&g.variantOf){const vd=BLOCK_VARIANT_DAYS[g.blockId]||g.variantDays||S.days;S.prof=Object.assign({},S.prof||{},{variant:g.blockId,days:vd});S.days=vd;
+          if(!S.prof.daysAsked)S.prof.daysAsked=vd}
         if(typeof save==='function')save();
       };
     };

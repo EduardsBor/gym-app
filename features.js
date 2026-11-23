@@ -231,7 +231,7 @@ function tplView(){if(!TE)return go('library');$('#title').textContent=TE.id?'Ш
  app.querySelectorAll('[data-tup]').forEach(b=>b.onclick=()=>mv(+b.dataset.tup,-1));
  app.querySelectorAll('[data-tdn]').forEach(b=>b.onclick=()=>mv(+b.dataset.tdn,1));
  app.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{TE.items.splice(+b.dataset.tx,1);tplView()});
- $('#tpladd').onclick=()=>pickEx(id=>{TE.items.push(tplDefaults(id));tplView()});
+ $('#tpladd').onclick=()=>pickEx(id=>{TE.items.push(Object.assign(tplDefaults(id),typeof lgAckOf==='function'&&lgAckOf(id)?{limAck:lgAckOf(id)}:{}));tplView()});
  $('#tplback').onclick=()=>{TE=null;go('library')};
  $('#tplsave').onclick=()=>{const name=String(TE.name||'').trim();if(!name){toast('Введи название шаблона');return}if(!TE.items.length){toast('Добавь хотя бы одно упражнение');return}
   const saved=tplSave({id:TE.id,name,items:TE.items});if(!saved){toast('Не удалось сохранить шаблон');return}TE=null;toast('Шаблон сохранён');go('library')}}
@@ -266,10 +266,14 @@ function eqSave(t){if(typeof can==='function'&&!can('equipProfile'))return null;
 function eqDelete(id){eqEnsure();if(!id||eqIsPreset(id))return false;S.eqProfiles=S.eqProfiles.filter(p=>p.id!==id);S.deletedEqProfiles=S.deletedEqProfiles||[];if(!S.deletedEqProfiles.includes(id))S.deletedEqProfiles.push(id);
  if(S.eqActive===id)eqSetActive((eqAll()[0]||EQ_PRESETS[0]).id,{silent:true});if(typeof save==='function')save();return true}
 function eqSameMuscle(a,b){const ea=typeof exBy==='function'?exBy(a):null,eb=typeof exBy==='function'?exBy(b):null;if(ea&&eb&&ea.group&&eb.group)return ea.group===eb.group;return false}
+// tech-fix-2: the equipment swap never brings in an exercise that conflicts with the limitations of the profile
+// (S.prof.lim, same risk letters as the block builder incl. impact cardio). If only risky swaps exist the exercise stays
+// as it is and the plan check (limguard.js) shows it before the start.
+function eqLimSafe(x){const lim=typeof lgLim==='function'?lgLim():(Array.isArray(typeof S!=='undefined'&&S&&S.prof&&S.prof.lim)?S.prof.lim:[]);if(!lim.length)return true;return typeof blockLimOk==='function'?blockLimOk(x,{lim}):true}
 function eqSwapFor(id,places,used){places=eqNormPlaces(places||eqPlaces());used=used||new Set();if(eqAvail(id,places))return id;
- if(typeof PLACE_VARIANTS!=='undefined'&&PLACE_VARIANTS[id]){for(const p of places){const v=PLACE_VARIANTS[id][p];if(v&&eqAvail(v,places)&&!used.has(v)&&eqSameMuscle(id,v))return v}}
+ if(typeof PLACE_VARIANTS!=='undefined'&&PLACE_VARIANTS[id]){for(const p of places){const v=PLACE_VARIANTS[id][p];if(v&&eqAvail(v,places)&&!used.has(v)&&eqSameMuscle(id,v)&&eqLimSafe(v))return v}}
  const cands=typeof altCands==='function'?altCands(id).map(e=>e.id):(((typeof ALT!=='undefined'&&ALT[id])||[]));
- for(const x of cands){if(x&&eqAvail(x,places)&&!used.has(x)&&eqSameMuscle(id,x))return x}return id}
+ for(const x of cands){if(x&&eqAvail(x,places)&&!used.has(x)&&eqSameMuscle(id,x)&&eqLimSafe(x))return x}return id}
 function eqAdaptItems(items,places){places=eqNormPlaces(places||eqPlaces());const used=new Set();return(items||[]).map(it=>{if(!it||!it.exId)return it;const id=eqSwapFor(it.exId,places,used);used.add(id);return id===it.exId?it:Object.assign({},it,{exId:id})})}
 function eqAdaptDay(d,places){if(!d)return d;return Object.assign({},d,{items:eqAdaptItems(d.items,places)})}
 function eqAdaptMisses(items,places){places=eqNormPlaces(places||eqPlaces());return(items||[]).filter(it=>it&&it.exId&&!eqAvail(it.exId,places)&&eqSwapFor(it.exId,places,new Set())===it.exId).map(it=>it.exId)}
@@ -297,5 +301,5 @@ const _eqStartW=startW;startW=function(i){_eqStartW(i);if(!S.active||S.active.fr
  S.active.items=adapted.map(it=>{const l=S.autoW!==false?lastSets(it.exId,S.active.id):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}});
  S.active.eqProfile=eqActiveId();if(typeof save==='function')save()};
 const _eqSwap=swapModal;swapModal=function(cur,a,cb){_eqSwap(cur,a&&a.places?a:Object.assign({},a||S.prof||{},{places:eqPlaces(),place:eqPrimaryPlace()}),cb)};
-const _eqQuiz=quiz;quiz=function(){const p=typeof eqPrimaryPlace==='function'&&eqPrimaryPlace();if(p&&!Q){Q={goal:'mass',sex:'m',level:'mid',days:3,len:60,place:p,prio:[],lim:[],...(S.prof||{}),place:p}}_eqQuiz()};
+const _eqQuiz=quiz;quiz=function(){const p=typeof eqPrimaryPlace==='function'&&eqPrimaryPlace();if(p&&!Q){Q={goal:'mass',sex:'m',level:'mid',days:3,len:60,place:p,prio:[],lim:[],...(S.prof||{}),...(typeof quizDaysAsked==='function'?quizDaysAsked():{}),place:p}}_eqQuiz()};
 eqEnsure();

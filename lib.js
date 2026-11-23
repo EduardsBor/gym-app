@@ -117,6 +117,6 @@ function exCard(id){const e=exBy(id),L=LIB[id],T=TECH[id],m0=(META[id]||'gdb|').
  m.className='';m.scrollTop=0;document.body.style.overflow='hidden';
  const v=m.querySelector('video');startAnim(v);
  const close=()=>{m.className='hidden';document.body.style.overflow='';const x=m.querySelector('video');if(x)stopAnim(x);if(v&&v!==x)stopAnim(v);if(view==='library'){const y=scrollY;libView();scrollTo(0,y)}};$('#exb').onclick=close;
- const ad=$('#exadd');if(ad)ad.onclick=()=>{const p=prmMe().a;
-  if(S.active){S.active.items.push({exId:id,ns:cardio?1:3,rest:cardio?0:p[3],min:cardio?10:p[1],max:cardio?20:p[2],sets:Array.from({length:cardio?1:3},()=>({w:'',r:cardio?20:p[2],done:false}))});save();toast('Добавлено в тренировку')}
-  else{const di=+$('#exday').value;S.program[di].items.push(cardio?{exId:id,sets:1,min:10,max:20,rest:0}:{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]});save();toast('Добавлено: '+S.program[di].name)}}}
+ const ad=$('#exadd');if(ad)ad.onclick=()=>{if(typeof lgConfirmAdd==='function'&&!lgConfirmAdd(id))return;const p=prmMe().a;const ack=typeof lgAckOf==='function'?lgAckOf(id):undefined;
+  if(S.active){S.active.items.push({exId:id,ns:cardio?1:3,rest:cardio?0:p[3],min:cardio?10:p[1],max:cardio?20:p[2],sets:Array.from({length:cardio?1:3},()=>({w:'',r:cardio?20:p[2],done:false})),limAck:ack});save();toast('Добавлено в тренировку')}
+  else{const di=+$('#exday').value;S.program[di].items.push(Object.assign(cardio?{exId:id,sets:1,min:10,max:20,rest:0}:{exId:id,sets:3,min:p[1],max:p[2],rest:p[3]},ack?{limAck:ack}:{}));save();toast('Добавлено: '+S.program[di].name)}}}
