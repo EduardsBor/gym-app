@@ -33,6 +33,8 @@ jobs:
         run: |
           f=test-${{ matrix.os }}.tap
           if [ ! -s "$f" ]; then echo "::error::no TAP output — node --test did not run"; exit 0; fi
-          echo "::notice title=${{ matrix.os }}::$(grep -E '^# (tests|pass|fail|skipped)' "$f" | tr '\n' ' ')"
+          echo "::notice title=${{ matrix.os }}::$(grep -E '^# ' "$f" | tr '\n' ' ')"
+          grep -nE 'cancelled|Error|ERR_' "$f" | grep -vE '^\s*#' | head -n 15 | while read -r l; do echo "::warning title=${{ matrix.os }} err::$l"; done
+          tail -n 15 "$f" | while read -r l; do echo "::notice title=${{ matrix.os }} tail::$l"; done
           grep -E '^not ok' "$f" | head -n 20 | while read -r l; do echo "::error title=${{ matrix.os }}::$l"; done
           grep -nE '^\s+(error|message|code|failureType|expected|actual):' "$f" | head -n 30 | while read -r l; do echo "::warning title=${{ matrix.os }} detail::$l"; done
