@@ -67,11 +67,12 @@ function lgPassInfo(){
   // tech-fix-2.3.1: doing day 1 of the pass moves S.block.next, so an old record (no w.blk) of day 1 older than the in-order
   // day 1 of this pass (any such record while next = 0) is from an earlier pass or ANOTHER program with the same day name.
   // From it on the history is not certain → those days are 'unsure' (asked, not changed automatically); older records → not this pass.
-  const Z=H.find(w=>w.dayIdx===0&&!w.blk&&t(w)>=r.t0&&t(w)<A);
-  if(Z){const u=new Set(r.unsure);H.forEach(w=>{if(!w.blk&&t(w)>=t(Z)&&t(w)<A)u.add(w.dayIdx)});r={t0:A,unsure:[...u]}}
-  // tech-fix-2.3.2: next = 0 with no day-1 record (e.g. only day 2 of another program with the same day): nothing confirms this
-  // pass, so no record without w.blk can count as done here → the days of the untagged records after r.t0 are 'unsure' too.
-  else if(nx===0){const U=H.filter(w=>!w.blk&&t(w)>=r.t0);if(U.length){const u=new Set(r.unsure);U.forEach(w=>u.add(w.dayIdx));r={t0:A,unsure:[...u]}}}
+  // tech-fix-2.3.3 (QA-232-01, root cause): without passAt only the in-order chain (day 1 … next) proves this pass. An untagged
+  // record (no w.blk) older than its day 1 (A; any record while next = 0, A = Infinity) cannot be told apart from the same day of
+  // ANOTHER program (or an earlier pass) → never 'done' by itself, always 'unsure' (asked, not changed automatically) — for every
+  // next, not only next = 0 (2.3.2). Records of this block with w.blk stay 'done' (lgDayLocked); S.workouts / S.pg are not touched.
+  const Z=H.find(w=>w.dayIdx===0&&!w.blk&&t(w)>=r.t0&&t(w)<A),U=H.filter(w=>!w.blk&&t(w)>=(Z?t(Z):r.t0)&&t(w)<A);
+  if(Z||U.length){const u=new Set(r.unsure);U.forEach(w=>u.add(w.dayIdx));r={t0:A,unsure:[...u]}}
   return r;
 }
 function lgPassStart(){return lgPassInfo().t0}

@@ -113,13 +113,34 @@ test('tf2.3.1: mixed history — old mass records without w.blk + new fit record
   assert.equal(b.J('lgDayLocked(2)'), 'unsure', 'old untagged record before fit day 1, after an earlier day 1 → unsure');
 });
 
-test('tf2.3.1: old data, first pass of one block, day done out of order before day 1, no earlier day 1 → still done (2.2 behaviour)', () => {
+// tech-fix-2.3.3 (QA-232-01): until 2.3.2 this case expected 'done' (2.2 behaviour). By the stored data (no passAt, no w.blk)
+// it is the SAME state as «day 3 of ANOTHER program with the same name, then day 1 of this one» (Grok/GPT, next ≥ 1), where
+// 'done' silently left a risky day out of the limitation check. So the record now gives 'unsure'. Data safety is unchanged:
+// the day is still NOT changed by «Заменить безопасными» (lgFixAll), S.workouts / S.pg / working weights stay as they are,
+// the user is asked («Заменить и здесь» / leave it). With passAt or with w.blk (new app) the day stays 'done' (checked below).
+test('tf2.3.3: old data, first pass of one block, day done out of order before day 1, no earlier day 1 → unsure (asked), kept by lgFixAll, history unchanged', () => {
   const b = boot({ state: st() });
   assign(b, NEW, 0);
   hist(b, 2, now - 5 * DAY); hist(b, 0, now - 4 * DAY);
   b.run(`finishBlockWorkout(S,getBlock(${JSON.stringify(NEW)}))`);
   lim(b);
-  assert.equal(b.J('lgDayLocked(2)'), 'done');
+  assert.equal(b.J('lgDayLocked(2)'), 'unsure');
+  assert.ok(!b.J('lgAuditPlan().map(x=>x.d)').includes(2), 'not changed by the plan check');
+  const before = snap(b, 2), H = HP(b);
+  b.run('lgFixAll()');
+  assert.equal(snap(b, 2), before, 'day 3 unchanged without the user');
+  assert.equal(HP(b), H, 'S.workouts and S.pg unchanged');
+});
+
+test('tf2.3.3: the same out-of-order day on the new app (record has w.blk, or passAt stored) → still done', () => {
+  for (const mode of ['blk', 'passAt']) {
+    const b = boot({ state: st() });
+    assign(b, NEW, 0, mode === 'passAt' ? now - 6 * DAY : null);
+    hist(b, 2, now - 5 * DAY, mode === 'blk' ? { blk: NEW } : {}); hist(b, 0, now - 4 * DAY, mode === 'blk' ? { blk: NEW } : {});
+    b.run(`finishBlockWorkout(S,getBlock(${JSON.stringify(NEW)}))`);
+    lim(b);
+    assert.equal(b.J('lgDayLocked(2)'), 'done', mode);
+  }
 });
 
 test('tf2.3.1: old data, another program fully finished before the switch → the new program is all upcoming, no question', () => {

@@ -35,7 +35,11 @@ for (const stored of [true, false]) {
     b.run(`finishBlockWorkout(S,getBlock(${JSON.stringify(BID)}));S.prof.lim=['k'];save()`);
     assert.equal(b.run('S.block.next'), 1);
     const before = snap(b, d4), H = b.run('JSON.stringify({w:S.workouts,pg:S.pg})');
-    assert.equal(b.J(`lgDayLocked(${d4})`), 'done');
+    // tech-fix-2.3.3 (QA-232-01): without passAt an untagged record before day 1 cannot be told apart from the same day of
+    // another program → 'unsure' (asked) instead of 'done'. Data safety is the same: the day is still not changed by
+    // «Заменить безопасными» (lgFixAll), S.workouts / S.pg are untouched; only the user's «Заменить и здесь» may change it.
+    assert.equal(b.J(`lgDayLocked(${d4})`), stored ? 'done' : 'unsure');
+    if (!stored) assert.ok(b.J('lgAuditUnsure().map(x=>x.d)').includes(d4), 'the user is asked about the day');
     assert.ok(!b.J('lgAuditPlan().map(x=>x.d)').includes(d4));
     b.run('lgFixAll()');
     assert.equal(snap(b, d4), before, 'day №' + (d4 + 1) + ' unchanged');
@@ -71,7 +75,12 @@ test('tf2.2 second pass, old data without passAt: the end of the 1st pass (its l
   const d4 = riskyDay(b, 3);
   hist(b, d4, now - 2 * DAY); hist(b, 0, now - 1 * DAY);
   b.run(`S.block={id:${JSON.stringify(BID)},next:1};S.prof.lim=['k'];save()`);
-  assert.equal(b.J(`lgDayLocked(${d4})`), 'done');
+  // tech-fix-2.3.3 (QA-232-01): untagged record before day 1 of this pass, no passAt → 'unsure' (asked, kept by lgFixAll), not 'done'
+  assert.equal(b.J(`lgDayLocked(${d4})`), 'unsure');
+  const before = snap(b, d4), H = b.run('JSON.stringify({w:S.workouts,pg:S.pg})');
+  b.run('lgFixAll()');
+  assert.equal(snap(b, d4), before, 'not changed without the user');
+  assert.equal(b.run('JSON.stringify({w:S.workouts,pg:S.pg})'), H);
   const d5 = riskyDay(b, d4 + 1);
   if (d5 > 0) assert.equal(b.J(`lgDayLocked(${d5})`), false, 'done only in the 1st pass → upcoming');
 });
