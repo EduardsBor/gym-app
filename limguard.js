@@ -47,7 +47,8 @@ function lgAuditDay(day,a){
 // same dayIdx + name + number, not older than the start of the pass — lgPassStart, tech-fix-2.2). Plain plan of the old generator (cyclic, S.next): its days are
 // templates of the coming sessions — history keeps its own copy of every done workout, so only the day of the open workout is
 // locked. The open workout itself is handled by the workout card. Old data without these fields → the day counts as upcoming.
-function lgIsDay(w,i){const p=S.program&&S.program[i];return!!(p&&w&&w.dayIdx===i&&w.dayName===p.name&&!w.fromTemplate&&(w.n==null||p.n==null||+w.n===+p.n))}
+// tech-fix-2.3.1: a workout that stores its block id (w.blk, new records) matches only a day of that block.
+function lgIsDay(w,i){const p=S.program&&S.program[i];return!!(p&&w&&w.dayIdx===i&&w.dayName===p.name&&!w.fromTemplate&&(w.n==null||p.n==null||+w.n===+p.n)&&(!w.blk||!S.block||w.blk===S.block.id))}
 function lgHist(i){return(S.workouts||[]).filter(w=>lgIsDay(w,i))}
 // tech-fix-2.2: start of the current pass of the block. S.block.passAt (set on block start / repeat / next level).
 // Old data without it: the in-order completions of days next-1 … 1 are found back in history (newest first); the pass
@@ -60,17 +61,23 @@ function lgPassInfo(){
   const n=S.program.length,nx=b.next|0,t=w=>+w.start||0;
   const H=(S.workouts||[]).filter(w=>w&&w.dayIdx!=null&&lgIsDay(w,w.dayIdx)).sort((x,y)=>t(y)-t(x));
   let e=nx-1,t0=Infinity;for(const w of H){if(e<0)break;if(w.dayIdx===e&&t(w)<t0){t0=t(w);e--}}
-  const L=nx>=n?[]:H.filter(w=>w.dayIdx===n-1&&t(w)<t0);if(!L.length)return{t0:0,unsure:[]};
-  const end=t(L[0]),from=L[1]?t(L[1]):-Infinity,seg=H.filter(w=>t(w)>from&&t(w)<=end);
-  const full=new Set(seg.map(w=>w.dayIdx)).size>=n;
-  return{t0:end+1,unsure:full?[]:[...new Set(seg.map(w=>w.dayIdx))]};
+  const A=t0,L=nx>=n?[]:H.filter(w=>w.dayIdx===n-1&&t(w)<t0);let r={t0:0,unsure:[]};
+  if(L.length){const end=t(L[0]),from=L[1]?t(L[1]):-Infinity,seg=H.filter(w=>t(w)>from&&t(w)<=end);
+    const full=new Set(seg.map(w=>w.dayIdx)).size>=n;r={t0:end+1,unsure:full?[]:[...new Set(seg.map(w=>w.dayIdx))]}}
+  // tech-fix-2.3.1: doing day 1 of the pass moves S.block.next, so an old record (no w.blk) of day 1 older than the in-order
+  // day 1 of this pass (any such record while next = 0) is from an earlier pass or ANOTHER program with the same day name.
+  // From it on the history is not certain → those days are 'unsure' (asked, not changed automatically); older records → not this pass.
+  const Z=H.find(w=>w.dayIdx===0&&!w.blk&&t(w)>=r.t0&&t(w)<A);
+  if(Z){const u=new Set(r.unsure);H.forEach(w=>{if(!w.blk&&t(w)>=t(Z)&&t(w)<A)u.add(w.dayIdx)});r={t0:A,unsure:[...u]}}
+  return r;
 }
 function lgPassStart(){return lgPassInfo().t0}
 function lgDayLocked(i){
   if(typeof S==='undefined'||!S||!Array.isArray(S.program))return false;const p=S.program[i];if(!p)return true;
   if(S.active&&S.active.dayIdx===i&&S.active.dayName===p.name&&!S.active.fromTemplate)return'active';
   if(typeof blockActive==='function'&&blockActive()){const nx=S.block.next|0;if(i<nx)return'done';
-    const I=lgPassInfo();return lgHist(i).some(w=>(+w.start||0)>=I.t0)?'done':I.unsure.includes(i)?'unsure':false}
+    const I=lgPassInfo(),pa=+S.block.passAt>0;  // tech-fix-2.3.1: no passAt + own block id → done on the new app, this pass (repeat / new block store passAt)
+    return lgHist(i).some(w=>(+w.start||0)>=I.t0||(!pa&&w.blk))?'done':I.unsure.includes(i)?'unsure':false}
   return false;
 }
 // tech-fix-2.3: days that may be finished in this pass (old data, see lgPassInfo) and have flagged exercises.

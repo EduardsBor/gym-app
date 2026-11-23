@@ -336,7 +336,7 @@ function renderTodayScreen(pick){$('#title').textContent='Тренировки';
  else app.innerHTML=`${todayOpenCardHTML(sel)}${dayListHTML(sel,false)}`;
  todayBind(sel)}
 function today(sel){if(!S.program||!S.program.length){$('#title').textContent='Тренировки';return catalog()}return renderTodayScreen(sel)}
-function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,n:dayNum(d,i),notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
+function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,n:dayNum(d,i),blk:typeof blockActive==='function'&&blockActive()?S.block.id:undefined,notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
  items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
 let durInt;
 // D-235: one place that marks a set done (workout list ✓ and the exercise screen «+»): auto-weight carry-over, PR check, rest timer.
