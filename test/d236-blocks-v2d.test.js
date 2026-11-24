@@ -101,7 +101,7 @@ test('D-236: home strength label lives in one constant and has an EN/LV triple',
   assert.ok(read('docs/LV-NEW-BLOCKS-V2D.md').includes('Spēks un ķermeņa kontrole'));
 });
 
-test('D-236 / C-114: SW cache is moyzal-v168; BLOCK_MAP keys stay at 180', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v168'/);
+test('D-236 / C-114: SW cache is moyzal-v169; BLOCK_MAP keys stay at 180', () => {
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v169'/);
   assert.equal(Object.keys(boot().run('BLOCK_MAP')).length, 180);
 });

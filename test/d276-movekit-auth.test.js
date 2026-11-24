@@ -9,9 +9,9 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
-test('D-276: sw cache is moyzal-v168; movekit.js and sync.js are in the precache', () => {
+test('D-276: sw cache is moyzal-v169; movekit.js and sync.js are in the precache', () => {
   const sw = read('sw.js');
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v168'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v169'/);
   assert.match(sw, /const C=SW_CACHE/);
   assert.match(sw, /'movekit\.js'/);
   assert.match(sw, /'sync\.js'/);

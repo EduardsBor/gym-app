@@ -429,6 +429,9 @@
     if(protectGuestOnAuth&&isUnboundGuest()){return 'held'}
     if(!hasLocalData()) applyRemoteFresh(R);
     else applyMerged(R,remoteAt);
+    // GC-167b: the device data is this account's from here on (the guarded cases returned above) — bind it BEFORE the first save,
+    // otherwise the account history is written once without an owner and the next save isolates it as a «guest» copy.
+    if(user&&S.ownerUid!==user.id) S.ownerUid=user.id;
     progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
     persistLocal();
     await pushNow();

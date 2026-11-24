@@ -135,7 +135,7 @@ test('site files do not load Sentry and do not contain a DSN-like ingest URL', (
   assert.equal(index.includes('sentry-sdk.js'), false);
   assert.equal(sw.includes('sentry.js'), false);
   assert.equal(sw.includes('sentry-config'), false);
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v168'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v169'/);
   assert.match(sw, /const C=SW_CACHE/);
   assert.equal(/https:\/\/[A-Za-z0-9._-]+@[^'"\s]+sentry\.io/.test(index + sw + read('sentry.js') + read('scripts/build-web.js')), false);
 });

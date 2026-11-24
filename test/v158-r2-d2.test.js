@@ -155,5 +155,5 @@ test('D2: old data without down / downFrom works as before (need_w only for the 
 });
 
 test('v158: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v168'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v169'/);
 });

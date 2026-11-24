@@ -661,7 +661,9 @@ function histQAdd(Q,owner,list,keep){
  // GC-167: «byte-identical = already on the device» holds only for an UNMARKED base (owner unknown, same device data).
  // For a KNOWN other owner (account or guest) even an identical record is its own copy and is isolated — otherwise that owner
  // would lose an unsynced workout just because the current owner happens to have the same bytes.
- const same=new Set(owner===undefined?(Array.isArray(keep)?keep:[]).map(histSig):[]);
+ // GC-167b: a GUEST source being bound to an account on this device (transfer / empty account) is the device's own data —
+ // byte-identical records are not copied into a «guest» bundle. Different ACCOUNTS stay strict (identical records isolated).
+ const same=new Set(owner===undefined||owner===null?(Array.isArray(keep)?keep:[]).map(histSig):[]);
  const extra=(Array.isArray(list)?list:[]).filter(w=>w&&typeof w==='object'&&w.id!=null&&!same.has(histSig(w)));
  const out=Array.isArray(Q)?Q.filter(x=>x&&typeof x==='object'&&x.owner):[];
  if(!extra.length)return out;
