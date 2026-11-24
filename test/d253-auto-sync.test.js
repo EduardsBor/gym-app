@@ -259,7 +259,7 @@ test('D-253: no «Синхронизировать сейчас»; «Выйти�
   await r.run('__mzLogout()');
   await ticks();
   assert.equal(sel(r), n + 1, 'final sync before sign-out');
-  assert.equal(r.cloud.signedOut, 1);
+  assert.equal(r.cloud.signedOut, 2, 'GC-167c: server sign-out (online) + device-local sign-out (always)');
   const r2 = await signedIn();
   r2.g.navigator.onLine = false;
   const n2 = sel(r2);

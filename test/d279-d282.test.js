@@ -81,7 +81,7 @@ test('D-279: profile shows 1.0 (vNNN) from a single SW cache-version source', ()
   const feat = read('features.js');
   const html = read('index.html');
   const build = read('scripts/build-web.js');
-  assert.match(ver, /var SW_CACHE='moyzal-v169'/);
+  assert.match(ver, /var SW_CACHE='moyzal-v170'/);
   assert.equal((ver.match(/moyzal-v\d+/g) || []).length, 1);
   assert.equal(app.includes("SW_CACHE='moyzal-"), false);
   assert.equal(sw.includes("const C='moyzal-"), false);

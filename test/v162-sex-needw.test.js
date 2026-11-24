@@ -169,5 +169,5 @@ test('Grok v160 P2: D2 gravitron, empty counterweight → need_w on every path (
 });
 
 test('v162: cache version', () => {
-  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v169'/);
+  assert.match(read('cache-ver.js'), /var SW_CACHE='moyzal-v170'/);
 });

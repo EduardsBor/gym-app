@@ -700,7 +700,12 @@
   }
   async function finishLogout(clearLocal){
     clearTimeout(timer);
-    try{if(sb) await sb.auth.signOut()}catch(e){}
+    // GC-167c: the default sign-out revokes the session on the server and NEEDS the network; offline it fails and the saved
+    // session stayed — when the network came back the «online» handler restored it and signed the user back in by itself.
+    // So: try the server sign-out (online), then ALWAYS drop the session on this device (scope 'local' + the stored token).
+    try{if(sb&&!isOffline()) await sb.auth.signOut()}catch(e){}
+    try{if(sb) await sb.auth.signOut({scope:'local'})}catch(e){}
+    try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
     user=null;status='off';
     try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
     if(clearLocal){

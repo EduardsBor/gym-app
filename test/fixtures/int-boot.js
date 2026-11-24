@@ -48,7 +48,9 @@ function fakeSupabase(srv, dev) {
         auth: {
           onAuthStateChange() {},
           getSession() { return Promise.resolve({ data: { session: dev.user ? { user: clone(dev.user) } : null } }); },
-          signOut() { dev.user = null; return Promise.resolve({ error: null }); },
+          // like supabase-js: the default (global) sign-out calls the server → fails offline and the saved session stays;
+          // scope 'local' only drops the session on this device (no network needed)
+          signOut(o) { if (!dev.online && !(o && o.scope === 'local')) return Promise.reject(new TypeError('Failed to fetch')); dev.user = null; dev.ls.delete('sb-example-auth-token'); return Promise.resolve({ error: null }); },
           updateUser() { return Promise.resolve({}); },
           signInWithOtp() { return Promise.resolve({ error: null }); },
           verifyOtp() { return Promise.resolve({ data: { user: clone(dev.user) }, error: null }); },
@@ -117,9 +119,10 @@ function launch(srv, dev) {
       append() {}, addEventListener() {}, insertAdjacentHTML() {}, setAttribute() {}, getAttribute() { return null; }, closest() { return null; }, querySelector() { return null; }, querySelectorAll() { return []; } };
     if (id) nodes.set(id, n); return n;
   };
+  const listeners = {};
   const g = {
     console, setTimeout() { return 0; }, clearTimeout() {}, setInterval() { return 0; }, clearInterval() {}, scrollTo() {}, crypto: require('crypto').webcrypto,
-    addEventListener() {}, prompt() { return null; }, confirm() { return true; }, alert() {}, URL, Blob, TextEncoder,
+    addEventListener(t, f) { (listeners[t] = listeners[t] || []).push(f); }, prompt() { return null; }, confirm() { return true; }, alert() {}, URL, Blob, TextEncoder,
     navigator: { language: 'ru', languages: ['ru'], get onLine() { return dev.online; }, storage: { persist() { return Promise.resolve(true); } } },
     localStorage: ls, location: { href: 'http://127.0.0.1/', origin: 'http://127.0.0.1', pathname: '/', search: '', hash: '', reload() {} },
     history: { replaceState() {} },
@@ -128,7 +131,7 @@ function launch(srv, dev) {
     caches: { keys() { return Promise.resolve([]); }, delete() { return Promise.resolve(true); } }
   };
   g.indexedDB = fakeIDB(dev);
-  g.MZ_SB = { url: 'https://example.invalid', anon: 'test-anon' };
+  g.MZ_SB = { url: 'https://example.supabase.invalid', anon: 'test-anon' };   // → AUTH_KEY 'sb-example-auth-token'
   g.supabase = fakeSupabase(srv, dev);
   g.window = g; g.globalThis = g; g.self = g;
   const ctx = vm.createContext(g);
@@ -148,8 +151,10 @@ function launch(srv, dev) {
     hist: () => { const db = dev.dbs.get('moyzal'); const h = db && db.stores.get('history'); return h ? clone(Object.fromEntries(h)) : {}; },
     bundle: owner => { const db = dev.dbs.get('moyzal'); const h = db && db.stores.get('history'); const Q = (h && h.get('quarantine')) || []; const b = Q.find(x => x && x.owner === owner); return b ? b.workouts.map(w => w.id).sort() : null; }
   };
-  // sign in (the code step is done by the person in real life; here the server just opens the session)
-  app.signIn = async user => { dev.user = clone(user); app.run('__mz.user=' + JSON.stringify(user)); await app.run('__mz.afterAuth()'); await app.settle(); };
+  // sign in (the code step is done by the person in real life; here the server just opens the session and supabase-js saves it)
+  app.signIn = async user => { dev.user = clone(user); dev.ls.set('sb-example-auth-token', JSON.stringify({ user })); app.run('__mz.user=' + JSON.stringify(user)); await app.run('__mz.afterAuth()'); await app.settle(); };
+  // a browser event (e.g. «online» when the network is back)
+  app.fire = async type => { for (const f of listeners[type] || []) await f({ type }); await app.settle(); };
   app.sync = async () => { await app.run('__mz.sync()'); await app.settle(); };
   // finish a workout the way the app stores it: list + save() (localStorage sync, IndexedDB async)
   app.addWorkout = async (w) => { app.run('S.workouts.push(' + JSON.stringify(w) + ');save()'); await app.settle(); };
