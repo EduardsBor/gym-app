@@ -3,6 +3,8 @@
 (function(){
   const CFG=window.MZ_SB||(typeof MZ_SB!=='undefined'?MZ_SB:null);const READY=!!(CFG&&CFG.url&&CFG.anon&&window.supabase&&supabase.createClient);
   let sb=null,user=null,status='off',lastErr='',lastAt=0,timer=0,running=null,again=false;
+  let localRevision=0, logoutSequence=0;
+  const sameSession=(uid,seq)=>!!user&&user.id===uid&&logoutSequence===seq;
   const AUTH_FLAG='gc_auth';
   // D-232: fixed storage key = the Supabase default for this project, so existing sessions stay valid across versions.
   const AUTH_KEY=(()=>{try{return 'sb-'+new URL(CFG.url).hostname.split('.')[0]+'-auth-token'}catch(e){return 'sb-gym-auth-token'}})();
@@ -71,7 +73,7 @@
   }
   function payloadOf(src){
     const p=JSON.parse(JSON.stringify(src));
-    delete p.ownerPremium;delete p.premium;delete p.active;delete p.tEnd;delete p.ownerUid;
+    delete p.ownerPremium;delete p.premium;delete p.active;delete p.tEnd;delete p.ownerUid;delete p.syncPending;
     // D-217: install_id остаётся только на устройстве, чтобы анонимные события нельзя было связать с аккаунтом.
     delete p.installId;
     // D-222: флаг first_workout тоже только на устройстве.
@@ -175,10 +177,12 @@
   function applyRemoteFresh(R){
     const keepOwner=S.ownerPremium,keepPrem=S.premium,keepActive=S.active,keepTEnd=S.tEnd,installId=S.installId,azFirst=S.azFirstWo;
     const locCons=S.consentHealth,locRev=S.healthConsentRevokedAt;
-    const prevBody=S.body;
+    const prevBody=S.body, pending=S.syncPending;
     const az=S.consentAnalytics,lang=S.lang,LL=localLimits(),ds=S.demoStart;
     Object.keys(R).forEach(k=>{S[k]=R[k]});
     keepEarliestDemo(ds,R.demoStart);
+    // Local-only metadata must not be overridden by cloud bytes.
+    if(pending===undefined) delete S.syncPending; else S.syncPending=pending;
     // premium is never taken from the cloud: the row is writable by the client. Keep the device value.
     if(keepPrem!==undefined) S.premium=keepPrem; else delete S.premium;
     keepLocalLimits(LL);
@@ -279,6 +283,7 @@
     }
   }
   async function onAccountGone(){
+    logoutSequence++;
     clearTimeout(timer);
     try{if(sb&&sb.auth) await sb.auth.signOut({scope:'local'})}catch(e){}
     try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
@@ -298,8 +303,10 @@
   }
   async function checkAccountTombstone(){
     if(!sb||!user) return false;
+    const uid=user.id, seq=logoutSequence;
     try{
       const {data,error}=await sb.rpc('account_is_deleted');
+      if(!sameSession(uid,seq)) return false;
       if(!error&&data===true){await onAccountGone();return true}
     }catch(e){}
     return false;
@@ -361,11 +368,13 @@
   }
   async function pushNow(){
     if(!sb||!user) return;
-    if(await checkAccountTombstone()) return;
+    const uid=user.id, seq=logoutSequence;
+    if(await checkAccountTombstone()||!sameSession(uid,seq)) return;
     await flushHealthConsentLog();
+    if(!sameSession(uid,seq)) return;
     ensureMeta();
-    S.updatedAt=Date.now();
-    const stamped=stampSyncedAt(S.updatedAt);
+    const uploadedAt=S.updatedAt=Date.now(), revision=localRevision;
+    const stamped=stampSyncedAt(uploadedAt);
     const unstamp=xs=>xs.forEach(x=>{try{delete x.syncedAt}catch(e){}});
     const up=payloadForUpload();
     if(!up.payload){
@@ -376,17 +385,20 @@
     }
     let res;
     try{res=await sb.from('user_state').upsert({
-      user_id:user.id,
+      user_id:uid,
       payload:up.payload,
-      updated_at:new Date(S.updatedAt).toISOString()
+      updated_at:new Date(uploadedAt).toISOString()
     })}catch(e){unstamp(stamped);throw e}
     if(res.error){unstamp(stamped);throw res.error}
+    if(!sameSession(uid,seq)) return;
     noteCloudIds(up.payload);
     // A shortened copy (trim) may leave some records out: they have not reached the cloud yet.
     unstamp(stamped.filter(x=>!SYNC_LISTS.some(l=>cloudKnown[l].has(x.id)&&(S[l]||[]).includes(x))));
+    // Only acknowledge the snapshot that was actually uploaded, not a save made while upsert was in flight.
+    if(localRevision===revision) S.syncPending=!!up.trimmed;
     persistLocal();
     if(up.trimmed) toastTrimmedCopy();
-    lastAt=S.updatedAt||Date.now();
+    lastAt=uploadedAt;
   }
   function remoteHasData(R){
     return !!(R&&(R.program||(R.workouts&&R.workouts.length)||(R.body&&R.body.length)||R.goal||(R.templates&&R.templates.length)));
@@ -398,11 +410,23 @@
   function isUnboundGuest(){return hasLocalData()&&!S.ownerUid}
   async function pullAndMerge(){
     if(!sb||!user) return;
+    const uid=user.id, seq=logoutSequence;
     if(await checkAccountTombstone()) return 'gone';
+    if(!sameSession(uid,seq)) return;
     await flushHealthConsentLog();
-    const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
+    if(!sameSession(uid,seq)) return;
+    const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',uid).maybeSingle();
+    if(!sameSession(uid,seq)) return;
     if(error) throw error;
-    if(!data){noteCloudIds(null);await pushNow();return}
+    if(!data){
+      noteCloudIds(null);
+      if(!isUnboundGuest()&&typeof histWrite==='function'){
+        S.ownerUid=uid;
+        await restoreOwnedHistory(uid,seq);
+      }
+      if(sameSession(uid,seq)) await pushNow();
+      return;
+    }
     const remoteAt=data.updated_at?Date.parse(data.updated_at):0;
     const R=data.payload||{};
     noteCloudIds(R);
@@ -431,8 +455,10 @@
     else applyMerged(R,remoteAt);
     // GC-167b: the device data is this account's from here on (the guarded cases returned above) — bind it BEFORE the first save,
     // otherwise the account history is written once without an owner and the next save isolates it as a «guest» copy.
-    if(user&&S.ownerUid!==user.id) S.ownerUid=user.id;
+    if(S.ownerUid!==uid) S.ownerUid=uid;
     progSig=progSigOf(); // программа из облака — не «локальная правка», метку progAt не трогаем
+    await restoreOwnedHistory(uid,seq);
+    if(!sameSession(uid,seq)) return;
     persistLocal();
     await pushNow();
   }
@@ -453,16 +479,18 @@
     if(isOffline()){status='offline';paint();return Promise.resolve()}
     if(foreignData()){status='err';lastErr='на устройстве данные другого аккаунта. Выйди и войди заново';paint();return Promise.resolve()}
     status='syncing';lastErr='';paint();
+    const uid=user.id, seq=logoutSequence;
     running=(async()=>{
       try{
         const r=await pullAndMerge();
-        if(r==='gone'||!user){status='off'}
-        else {status='ok';if(r!=='held'&&S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
+        if(sameSession(uid,seq)&&r!=='gone'){status='ok';if(r!=='held'&&S.ownerUid!==user.id){S.ownerUid=user.id;persistLocal()}}
       }
       catch(e){
-        if(isAccountDeletedErr(e)){await onAccountGone();status='off'}
-        else if(isOffline()||netErr(e))status='offline';
-        else {status='err';lastErr=friendly(e)}
+        if(sameSession(uid,seq)){
+          if(isAccountDeletedErr(e)){await onAccountGone();status='off'}
+          else if(isOffline()||netErr(e))status='offline';
+          else {status='err';lastErr=friendly(e)}
+        }
       }
       finally{running=null;paint()}
       if(again&&user){again=false;return sync()}
@@ -471,15 +499,27 @@
   }
   function syncNow(){clearTimeout(timer);return sync()}
   const SYNC_DEBOUNCE=3000,SYNC_EVERY=5*60e3;
+  function markPending(){
+    S.syncPending=true;
+    localRevision++;
+    S.updatedAt=Date.now();
+  }
+  async function restoreOwnedHistory(uid,seq){
+    if(typeof histWrite!=='function') return;
+    const before=S.workouts;
+    try{await histWrite(before,uid)}catch(e){return}
+    if(sameSession(uid,seq)&&S.workouts!==before) markPending();
+  }
   function schedule(){
     if(!user||syncHold>0) return;
-    S.updatedAt=Date.now();
-    persistLocal();
     clearTimeout(timer);
     timer=setTimeout(()=>sync(),SYNC_DEBOUNCE);
   }
-  window.mzOnSave=function(){
+  window.mzBeforeSave=function(){
+    if(user?!foreignData():S.ownerUid&&storedSession()) markPending();
     const sg=progSigOf();if(sg!==progSig){progSig=sg;S.progAt=Date.now()}
+  };
+  window.mzOnSave=function(){
     if(S.obDone&&!S._azOb){S._azOb=1;persistLocal();mzTrack('onboarding_done')}
     schedule();
   };
@@ -549,24 +589,28 @@
 
   async function adoptAccountFromCloud(){
     if(!sb||!user) return;
-    const lang=S&&S.lang;
+    const lang=S&&S.lang, uid=user.id, seq=logoutSequence;
     if(isOffline()) throw new Error('offline');
-    const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
+    const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',uid).maybeSingle();
+    if(!sameSession(uid,seq)) return;
     if(error) throw error;
     Object.keys(S||{}).forEach(k=>{delete S[k]});
     if(lang) S.lang=lang;
     S.workouts=[];S.body=[];S.custom=[];S.templates=[];S.eqProfiles=[];
     S.deletedWorkouts=[];S.deletedBody=[];S.deletedCustom=[];S.deletedTemplates=[];S.deletedEqProfiles=[];
     if(data&&data.payload) applyRemoteFresh(data.payload);
-    S.ownerUid=user.id;
+    S.ownerUid=uid;
     // GC-165: the history in IndexedDB is replaced (with the owner mark) BEFORE localStorage, so closing the app in between
     // can never mix the previous account's / declined guest's workouts into this account on the next start.
     // GC-166: guarded write — what is in IndexedDB (previous account / guest) is isolated first, never destroyed. If the write fails,
     // IndexedDB keeps its old owner mark (or none), and migrateHistory on the next start isolates it instead of merging.
     // GC-166-F1: the same write gives this account its own isolated workouts back (S.workouts updated before persistLocal).
+    const before=S.workouts;
     try{if(typeof histWrite==='function') await histWrite(Array.isArray(S.workouts)?S.workouts:[],S.ownerUid)}catch(e){}
+    if(!sameSession(uid,seq)) return;
+    if(S.workouts!==before) markPending();
     persistLocal();
-    if(!data) await pushNow();
+    if(!data||S.syncPending) await pushNow();
     else {lastAt=S.updatedAt||Date.now();status='ok'}
   }
   function clearBodyPhotos(){
@@ -637,8 +681,14 @@
     markAuthed();
     // Previous signed-in user's data on this device is never offered to another account and must not be visible.
     if(foreignData()){
-      try{await clearBodyPhotos();await adoptAccountFromCloud()}
-      catch(e){status='err';lastErr=friendly(e);toast('Не удалось загрузить данные аккаунта: '+lastErr);authView();return}
+      try{
+        // If the last local save reached only localStorage, do not switch owners before securing its history in IndexedDB.
+        if(hasUnsyncedWorkouts()&&S.workouts&&S.workouts.length&&
+          !(typeof histWrite==='function'&&await histWrite(S.workouts,S.ownerUid)))
+          throw new Error('Не удалось сохранить локальную историю предыдущего аккаунта');
+        await clearBodyPhotos();await adoptAccountFromCloud();
+      }
+      catch(e){const why=friendly(e);await finishLogout(false,false,true);toast('Не удалось загрузить данные аккаунта: '+why);return}
       await finishSignedIn();
       return;
     }
@@ -688,7 +738,8 @@
     user=data.user;await afterAuth();
   }
   function hasUnsyncedWorkouts(){
-    return (S.updatedAt||0)>(lastAt||0);
+    // Old local snapshots have no marker until this version saves or syncs them.
+    return S.syncPending===true||(S.syncPending===undefined&&(S.updatedAt||0)>(lastAt||0));
   }
   let logoutWipe=false;
   function resetLocalState(){
@@ -698,18 +749,20 @@
     S.workouts=[];S.body=[];S.custom=[];S.templates=[];S.eqProfiles=[];
     S.deletedWorkouts=[];S.deletedBody=[];S.deletedCustom=[];S.deletedTemplates=[];S.deletedEqProfiles=[];
   }
-  async function finishLogout(clearLocal){
+  async function finishLogout(clearLocal,wipeLocal=false,localOnly=false){
     clearTimeout(timer);
+    const owner=user&&user.id;
+    logoutSequence++;again=false;
     // GC-167c: the default sign-out revokes the session on the server and NEEDS the network; offline it fails and the saved
     // session stayed — when the network came back the «online» handler restored it and signed the user back in by itself.
     // So: try the server sign-out (online), then ALWAYS drop the session on this device (scope 'local' + the stored token).
-    try{if(sb&&!isOffline()) await sb.auth.signOut()}catch(e){}
+    try{if(sb&&!isOffline()&&!localOnly) await sb.auth.signOut()}catch(e){}
     try{if(sb) await sb.auth.signOut({scope:'local'})}catch(e){}
     try{Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
-    user=null;status='off';
+    user=null;status='off';lastAt=0;cloudKnown=null;
     try{localStorage.removeItem(AUTH_FLAG)}catch(e){}
     if(clearLocal){
-      try{if(typeof clearLocalData==='function') await clearLocalData()}catch(e){}
+      try{if(typeof clearLocalData==='function') await clearLocalData(wipeLocal?undefined:{logoutOwner:owner})}catch(e){}
       resetLocalState();
       toast('Выход выполнен. Данные остаются в облаке и вернутся после входа');
     }else{
@@ -722,7 +775,7 @@
     const wipe=logoutWipe;
     const lead=wipe?'Есть тренировки, которые ещё не сохранены в облаке. Очистка удалит их с этого телефона. Аккаунт и облако не изменятся.':'Есть тренировки, которые ещё не сохранены в облаке';
     app.innerHTML=`<div class="card" id="mzunsynced"><p style="margin-top:0">${lead}</p>
-      <p class="mut">Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся.</p>
+      ${wipe?'':'<p class="mut">Тренировки останутся на этом устройстве и будут доступны после входа в тот же аккаунт. При смене аккаунта фото тела могут быть удалены.</p>'}
       <button class="pri full" id="mzwaitsync">Подождать синхронизацию</button>
       <button class="full" id="mzoutanyway" style="margin-top:8px">Выйти всё равно</button>
       ${wipe?'<button class="full" id="mzclearcancel" style="margin-top:8px">Отмена</button>':''}</div>`;
@@ -731,9 +784,9 @@
       if(!isOffline()) await syncNow();
       if(wipe) holdSync();
       if(hasUnsyncedWorkouts()){toast('Синхронизация не удалась. Данные на устройстве на месте');return}
-      await finishLogout(true);
+      await finishLogout(true,wipe);
     };
-    if($('#mzoutanyway')) $('#mzoutanyway').onclick=()=>finishLogout(!!wipe);
+    if($('#mzoutanyway')) $('#mzoutanyway').onclick=()=>finishLogout(!!wipe,!!wipe);
     if($('#mzclearcancel')) $('#mzclearcancel').onclick=()=>{logoutWipe=false;resetSyncHold();if(typeof more==='function')more()};
   }
   async function doLogout(opts){
@@ -742,7 +795,7 @@
     if(user&&!isOffline()) await sync(); // D-253: last changes go to the cloud before signing out
     if(logoutWipe) holdSync();
     if(hasUnsyncedWorkouts()){showUnsyncedLogout();return}
-    await finishLogout(true);
+    await finishLogout(true,logoutWipe);
   }
   // Удаление данных в облаке. Возвращает:
   //  'none'    — входа нет, в облаке удалять нечего;
@@ -768,6 +821,7 @@
       try{const {data,error}=await sb.rpc('account_is_deleted');if(!error&&data===true) res='account';else if(error) err=err||error}catch(e){err=err||e}
     }
     if(res==='fail') return (isOffline()||netErr(err))?'offline':'fail';
+    logoutSequence++;
     clearTimeout(timer);
     try{await sb.auth.signOut({scope:'local'})}catch(e){}
     // На случай, если signOut не сработал (аккаунт уже удалён): убираем сохранённую сессию вручную.
