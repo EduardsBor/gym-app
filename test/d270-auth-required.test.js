@@ -307,14 +307,14 @@ test('D-270: logout when synced clears the local copy and returns to sign-in; da
 test('D-270: logout with unsynced workouts warns; wait-for-sync then clears; sign-out anyway keeps local data', async () => {
   const r = bootA(seed({ workouts: [W('w1', 5000)] }), { ls: { gc_auth: USER.id }, cloud: { user: USER, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   await go(r);
-  r.run('S.workouts.push({id:"w-new",start:9000,end:10000,dayName:"A",items:[]}); S.updatedAt=Date.now()+1e12');
+  r.run('S.workouts.push({id:"w-new",start:9000,end:10000,dayName:"A",items:[]}); save()');
   r.g.navigator.onLine = false;
   assert.equal(r.run('mzHasUnsyncedWorkouts()'), true);
   await r.run('mzDoLogout()');
   for (let i = 0; i < 10; i++) await tick();
   assert.match(r.html(), /id="mzunsynced"/);
   assert.match(r.html(), /Есть тренировки, которые ещё не сохранены в облаке/);
-  assert.match(r.html(), /Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся\./);
+  assert.match(r.html(), /Тренировки останутся на этом устройстве и будут доступны после входа в тот же аккаунт\./);
   assert.match(r.html(), /id="mzwaitsync"/);
   assert.match(r.html(), /id="mzoutanyway"/);
   // anyway: stay signed out but keep local workouts
@@ -326,7 +326,7 @@ test('D-270: logout with unsynced workouts warns; wait-for-sync then clears; sig
 
   const r2 = bootA(seed({ workouts: [W('w1', 5000)] }), { ls: { gc_auth: USER.id }, cloud: { user: USER, inserts: [], upserts: [], deletes: [], rpcs: [], oauth: [] } });
   await go(r2);
-  r2.run('S.workouts.push({id:"w-new",start:9000,end:10000,dayName:"A",items:[]}); S.updatedAt=Date.now()+1e12');
+  r2.run('S.workouts.push({id:"w-new",start:9000,end:10000,dayName:"A",items:[]}); save()');
   r2.g.navigator.onLine = false;
   await r2.run('mzDoLogout()');
   for (let i = 0; i < 10; i++) await tick();

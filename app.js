@@ -180,6 +180,7 @@ if(!S||typeof S!=='object'||Array.isArray(S))S={custom:[],workouts:[],next:0};
 if(S.goal&&!S.prof){S.prof={goal:S.goal,sex:'m',level:'mid',days:S.days||3,len:60,place:'g',prio:[],lim:[]};S.progName='Моя программа: '+GOALS[S.goal]}S.custom=S.custom||[];S.body=S.body||[];S.workouts=S.workouts||[];S.templates=S.templates||[];S.deletedTemplates=S.deletedTemplates||[];S.eqProfiles=S.eqProfiles||[];S.deletedEqProfiles=S.deletedEqProfiles||[];S.v=2;
 let saveWarnAt=0;
 function save(){if(S_RO)return;
+ if(window.mzBeforeSave)window.mzBeforeSave();
  try{localStorage.setItem('gym',JSON.stringify(S))}
  catch(e){if(Date.now()-saveWarnAt>30000){saveWarnAt=Date.now();toast('⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Профиле».')}return}
  if(typeof saveHistory==='function')try{saveHistory()}catch(e){}
@@ -691,7 +692,7 @@ function histWrite(list,owner){if(S_RO||typeof indexedDB==='undefined')return Pr
  return idb.histSwap(histWriteFn(list,own,S.deletedWorkouts,res)).then(()=>{try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){}
   if(res.quarantine)histQCache=res.quarantine;
   // the device owner's own records came back from the quarantine → show them now and keep the device copy in step
-  if(res.restored&&own===histOwnerNow()){S.workouts=res.list;try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}}
+  if(res.restored&&own===histOwnerNow()){S.workouts=mergeHist(res.list,histList(),S.deletedWorkouts);try{if(!S_RO)localStorage.setItem('gym',JSON.stringify(S))}catch(e){}}
   return true})}
 function saveHistory(){if(S_RO||typeof indexedDB==='undefined')return;
  const gen=idb.gen();
@@ -759,12 +760,22 @@ async function migrateHistory(){
  try{if(idb.gen()!==gen)return{ok:false,fallback:'cleared'};await idb.histPut(local,histOwnerNow());try{localStorage.setItem(HIST_IDB_KEY,'1')}catch(e){};return{ok:true,source:'migrated'}}
  catch(e){return{ok:false,fallback:'localStorage'}}
 }
-async function clearLocalData(){
+async function clearLocalData({logoutOwner}={}){
  // QA-03: вместе с основными данными — гостевые и аварийные копии.
  try{['gym','gym_hist_backup','gym_hist_idb','gymPersist','gym_guest_copy','gym_broken'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+ if(logoutOwner!==undefined&&typeof indexedDB!=='undefined'){
+  // Ordinary logout clears the active account, not other accounts' isolated history. An explicit wipe still deletes the DB.
+  await idb.histSwap((list,owner,q)=>{
+   let keep=(Array.isArray(q)?q:[]).filter(b=>b&&b.owner!==logoutOwner&&b.owner!=='guest'&&b.owner!=='legacy');
+   if(typeof owner==='string'&&owner!==logoutOwner)keep=histQAdd(keep,owner,list,[]);
+   return{list:[],owner:null,quarantine:keep};
+  }).catch(()=>{}); // Never fall back to dropping the whole DB after a failed targeted clear.
+  try{for(const k of Object.keys(await idb.all()))await idb.del(k)}catch(e){}
+ }
  // Close the cached moyzal connection first, otherwise deleteDatabase stays blocked until the page dies.
  try{if(typeof idb!=='undefined'&&idb&&idb.close)idb.close()}catch(e){}
- for(const db of [IDB_NAME,'moyzal_guest'])try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(db);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
+ histQCache=[];
+ for(const db of logoutOwner===undefined?[IDB_NAME,'moyzal_guest']:['moyzal_guest'])try{await new Promise(r=>{if(typeof indexedDB==='undefined')return r();const q=indexedDB.deleteDatabase(db);q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}
 }
 let persistAsked=false;
 function requestPersist(){
@@ -952,7 +963,7 @@ function more(){$('#title').textContent='Профиль';
  if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');if($('#nut'))$('#nut').onclick=()=>go('nutrition');progRowBind();$('#ro').onchange=e=>{S.restOverride=clampRest(e.target.value);e.target.value=S.restOverride||'';save()};
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
- $('#exp').onclick=async()=>{const D={...S,exportedAt:Date.now()};delete D.replacePending;delete D.replaceBody;if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+ $('#exp').onclick=async()=>{const D={...S,exportedAt:Date.now()};delete D.replacePending;delete D.replaceBody;delete D.syncPending;if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
  $('#imp').onchange=async e=>{const input=e.target;try{await importBackup(await input.files[0].text())}catch(_){alert('Не удалось прочитать файл')}if(input)input.value=''};
  $('#reset').onclick=()=>{const signed=typeof mzSignedIn==='function'&&mzSignedIn();
   if(signed){if(confirm('Ты вошёл в аккаунт: если только очистить, данные сразу снова загрузятся из облака. Очистить данные на этом телефоне и выйти из аккаунта? Аккаунт, копия в облаке и подписка останутся. Удалить всё — «Удалить аккаунт».')&&typeof mzDoLogout==='function')mzDoLogout({wipeLocal:true});return}

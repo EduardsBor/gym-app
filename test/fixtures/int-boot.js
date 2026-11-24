@@ -30,7 +30,9 @@ function fakeSupabase(srv, dev) {
             if (!dev.user || row.user_id !== dev.user.id) return { error: { message: 'RLS: not your row' } };
             srv.rows.set(row.user_id, { payload: clone(row.payload), updated_at: row.updated_at });
             srv.log.push({ op: 'upsert', dev: dev.name, user: row.user_id, ids: (row.payload.workouts || []).map(w => w.id) });
-            return { error: null };
+            const ack = dev.nextUpsertAck;
+            dev.nextUpsertAck = null;
+            return ack ? ack.then(() => ({ error: null })) : { error: null };
           });
         },
         select() {

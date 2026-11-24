@@ -428,7 +428,7 @@ const DICT3=[
 ['Не удалось загрузить данные аккаунта: ','Could not load the account data: ','Neizdevās ielādēt konta datus: '],
 ['Объединить с аккаунтом','Merge with the account','Apvienot ar kontu'],
 ['Не переносить','Do not transfer','Nepārnest datus'],
-['Если на этом устройстве войдёт другой аккаунт, несохранённые тренировки и фото тела удалятся.','If someone signs in with another account on this device, unsaved workouts and body photos will be deleted.','Ja šajā ierīcē kāds piesakās ar citu kontu, nesaglabātie treniņi un ķermeņa foto tiks dzēsti.'],
+['Тренировки останутся на этом устройстве и будут доступны после входа в тот же аккаунт. При смене аккаунта фото тела могут быть удалены.','Workouts stay on this device and are available when you sign back into the same account. Switching accounts may remove body photos.','Treniņi paliks šajā ierīcē un būs pieejami, kad atkal pieteiksies tajā pašā kontā. Mainot kontu, ķermeņa fotoattēli var tikt dzēsti.'],
 // Urgent fixes 21.11 (Claude; LV checked Claude + Grok): transfer card text, code-only sign-in, profile account text
 ['В аккаунте уже есть данные. На этом устройстве есть данные, сохранённые без входа.','Your account already has data. This device has data saved without signing in.','Kontā jau ir dati. Šajā ierīcē ir dati, kas saglabāti bez pieteikšanās.'],
 ['Если не переносить, копия этих данных останется на устройстве.','If you don\'t transfer, a copy of this data stays on the device.','Ja nepārnesīsi, šo datu kopija paliks ierīcē.'],
