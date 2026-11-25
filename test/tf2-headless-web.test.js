@@ -435,6 +435,7 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
       R.starters=ids();
       R.sections=all('#cf-results section').map(e=>[e.querySelector('h2').textContent,e.querySelectorAll('[data-c]').length]);
       R.meta=all('.catalog-starter-meta').map(e=>e.textContent);
+      R.objectives=all('.catalog-starter-goal').map(e=>e.textContent);
       R.desc=all('.catalog-starter-desc').map(e=>e.textContent);
       R.kit=all('.catalog-starter-kit').map(e=>e.textContent);
       R.options=all('[data-cfilter]').map(e=>[e.dataset.cfilter,e.labels.length,e.labels[0].textContent.trim(),e.getBoundingClientRect().height]);
@@ -474,6 +475,12 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
     assert.equal(r.desc.length,12,where);
     assert.equal(new Set(r.desc).size,11,where); // approved upper/lower description is shared
     assert.equal(r.meta.length,12,where);
+    const [fit,mass,str,loss]={
+      ru:['Общая форма','Масса','Сила','Похудение / рельеф'],
+      lv:['Vispārējā forma','Masa','Spēks','Svara samazināšana / reljefs'],
+      en:['General fitness','Muscle','Strength','Fat loss / definition'],
+    }[lang];
+    assert.deepEqual(r.objectives,[fit,mass,str,loss,fit,mass,fit,mass,str,loss,fit,mass],where);
     assert.equal(r.kit.length,12,where);
     assert.deepEqual(r.fullSizes,[[width-28,48]],where);
     assert.equal(r.all.length,124,where);
@@ -493,12 +500,13 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
   }
 });
 
-test('Ready programs: the top button uses each theme accent without affecting the catalog rows', {skip}, async()=>{
-  for(const theme of ['captain','studio','cobalt','copper','mono']){
+test('Ready programs: objective palette is shared by gym and home, independent of all five theme accents', {skip}, async()=>{
+  const palette={fit:'rgb(40, 106, 202)',mass:'rgb(130, 77, 202)',str:'rgb(173, 71, 62)',loss:'rgb(159, 95, 20)'};
+  for(const theme of ['captain','studio','cobalt','copper','mono'])for(const width of [320,390]){
     const st={lang:'ru',workouts:[],custom:[],templates:[],body:[],pg:{}};
     const settings=theme==='captain'?{}:{gc_theme:theme};
     const r=await inChrome(st,'ru',settings,`
-      const qs=s=>document.querySelector(s);
+      const qs=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
       const box=e=>{const b=e.getBoundingClientRect();return [b.width,b.height]};
       const rgb=el=>{const css=getComputedStyle(el);return [css.backgroundColor,css.color]};
       const canvas=document.createElement('canvas').getContext('2d');
@@ -514,28 +522,59 @@ test('Ready programs: the top button uses each theme accent without affecting th
         return values[0]*0.2126+values[1]*0.7152+values[2]*0.0722;
       };
       const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)};
+      const before=JSON.stringify([S.program,S.prof,S.block,S.workouts]);
       await until(()=>qs('#toq'));qs('#toq').click();
-      const ready=qs('#qcat'), build=qs('#qgo'), root=document.documentElement, css=getComputedStyle(root);
+      const ready=qs('#qcat'),build=qs('#qgo'),root=document.documentElement,css=getComputedStyle(root);
       const token=s=>norm(css.getPropertyValue(s).trim());
-      R.theme=root.dataset.theme; R.top=qs('#app').firstElementChild===ready;
-      R.sizes=[innerWidth,box(ready),box(build)]; R.ready=rgb(ready); R.build=rgb(build);
-      R.accent=[token('--acc'),token('--on-acc')];
-      R.textContrast=contrast(...R.ready);R.panelContrast=contrast(R.ready[0],token('--bg'));
-      ready.click();const row=qs('[data-c]');
-      R.catalog=[view,qs('#title').textContent,!!qs('.catalog-filters'),box(row)];
-      R.rowBg=rgb(row)[0];R.panel=token('--card2');
-    `,'',true,320);
-    assert.deepEqual(r.errors,[],theme);
-    assert.equal(r.theme,theme);
-    assert.equal(r.top,true,theme);
-    assert.deepEqual(r.sizes,[320,[292,48],[292,48]],theme);
-    assert.deepEqual(r.ready,r.accent,theme);
-    assert.deepEqual(r.build,r.accent,theme);
-    assert.ok(r.textContrast>=4.5,theme+' text '+r.textContrast);
-    assert.ok(r.panelContrast>=3,theme+' background '+r.panelContrast);
-    assert.deepEqual(r.catalog,['catalog','Готовые программы',true,[292,48]],theme);
-    assert.equal(r.rowBg,r.panel,theme);
-    assert.notEqual(r.rowBg,r.ready[0],theme);
+      const panel=token('--card2'),back=rgb(document.body)[0];
+      R.theme=root.dataset.theme;R.top=qs('#app').firstElementChild===ready;
+      R.sizes=[innerWidth,box(ready),box(build)];R.ready=rgb(ready);R.build=rgb(build);
+      R.accent=[token('--acc'),token('--on-acc')];R.panel=panel;
+      R.textContrast=contrast(...R.ready);R.panelContrast=contrast(R.ready[0],back);
+      ready.click();
+      const rows=all('[data-c]');
+      R.catalog=[view,qs('#title').textContent,!!qs('.catalog-filters'),rows.length];
+      R.rows=rows.map(b=>{
+        const [bg,fg]=rgb(b),info=qs('#'+b.getAttribute('aria-describedby')),label=info.querySelector('.catalog-starter-goal');
+        return [b.dataset.starterGoal,b.closest('section').getAttribute('aria-labelledby'),
+          bg,box(b),contrast(bg,fg),contrast(bg,back),label.textContent,
+          contrast(rgb(label)[1],back)];
+      });
+      rows[0].focus();const f=getComputedStyle(rows[0]);R.focus=[document.activeElement===rows[0],f.outlineStyle,f.outlineWidth,contrast(f.outlineColor,rgb(rows[0])[0])];
+      const filter=qs('#cf-goal');filter.value='str';filter.dispatchEvent(new Event('change'));
+      const filtered=all('[data-c]');R.filtered=filtered.map(b=>[b.dataset.starterGoal,rgb(b)[0]]);
+      filtered[0].click();R.preview=[view,PV.pr.a.goal,JSON.stringify([S.program,S.prof,S.block,S.workouts])===before];
+      qs('#pback').click();qs('#cf-reset').click();qs('#cf-all').click();
+      const full=all('[data-c]');
+      R.ordinary=[full.length,full.every(b=>!b.hasAttribute('data-starter-goal')&&rgb(b)[0]===panel),
+        rgb(qs('#cf-all'))[0]===panel,rgb(qs('#toq'))[0]===panel,!qs('.catalog-starter-goal')];
+    `,'',true,width);
+    const where=theme+' '+width+'px';
+    assert.deepEqual(r.errors,[],where);
+    assert.equal(r.theme,theme,where);
+    assert.equal(r.top,true,where);
+    assert.deepEqual(r.sizes,[width,[width-28,48],[width-28,48]],where);
+    assert.deepEqual(r.ready,r.accent,where);
+    assert.deepEqual(r.build,r.accent,where);
+    assert.ok(r.textContrast>=4.5,where+' action label '+r.textContrast);
+    assert.ok(r.panelContrast>=3,where+' action/background '+r.panelContrast);
+    assert.deepEqual(r.catalog,['catalog','Готовые программы',true,12],where);
+    for(const [goal,section,bg,size,text,surface,label,labelContrast] of r.rows){
+      assert.equal(bg,palette[goal],where+' '+goal);
+      assert.notEqual(bg,r.panel,where);
+      assert.deepEqual(size,[width-28,48],where);
+      assert.ok(text>=4.5&&surface>=3&&labelContrast>=4.5,where+' '+goal+' '+[text,surface,labelContrast]);
+      assert.ok(label,where);
+      assert.match(section,/^cf-group-[gb]$/,where);
+    }
+    for(const group of ['cf-group-g','cf-group-b'])
+      assert.deepEqual([...new Set(r.rows.filter(x=>x[1]===group).map(x=>x[0]))],['fit','mass','str','loss'],where);
+    assert.deepEqual(r.focus.slice(0,3),[true,'solid','2px'],where);
+    assert.ok(r.focus[3]>=3,where);
+    assert.deepEqual(r.filtered,[['str',palette.str],['str',palette.str]],where);
+    assert.deepEqual(r.preview,['preview','str',true],where);
+    assert.deepEqual(r.ordinary,[124,true,true,true,true],where);
+    console.log(where+' min text/background',Math.min(...r.rows.map(x=>x[4])).toFixed(2),Math.min(...r.rows.map(x=>x[5])).toFixed(2));
   }
 });
 
