@@ -478,3 +478,49 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
     assert.deepEqual(r.empty,[empty,0,true],where);
   }
 });
+
+test('Ready programs: the top button uses each theme accent without affecting the catalog rows', {skip}, async()=>{
+  for(const theme of ['captain','studio','cobalt','copper','mono']){
+    const st={lang:'ru',workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const settings=theme==='captain'?{}:{gc_theme:theme};
+    const r=await inChrome(st,'ru',settings,`
+      const qs=s=>document.querySelector(s);
+      const box=e=>{const b=e.getBoundingClientRect();return [b.width,b.height]};
+      const rgb=el=>{const css=getComputedStyle(el);return [css.backgroundColor,css.color]};
+      const canvas=document.createElement('canvas').getContext('2d');
+      const norm=s=>{
+        canvas.fillStyle=s;
+        const hex=canvas.fillStyle;
+        return 'rgb('+[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)).join(', ')+')';
+      };
+      const lum=s=>{
+        const values=s.match(/\\d+/g).slice(0,3).map(n=>{
+          const v=Number(n)/255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;
+        });
+        return values[0]*0.2126+values[1]*0.7152+values[2]*0.0722;
+      };
+      const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)};
+      await until(()=>qs('#toq'));qs('#toq').click();
+      const ready=qs('#qcat'), build=qs('#qgo'), root=document.documentElement, css=getComputedStyle(root);
+      const token=s=>norm(css.getPropertyValue(s).trim());
+      R.theme=root.dataset.theme; R.top=qs('#app').firstElementChild===ready;
+      R.sizes=[innerWidth,box(ready),box(build)]; R.ready=rgb(ready); R.build=rgb(build);
+      R.accent=[token('--acc'),token('--on-acc')];
+      R.textContrast=contrast(...R.ready);R.panelContrast=contrast(R.ready[0],token('--bg'));
+      ready.click();const row=qs('[data-c]');
+      R.catalog=[view,qs('#title').textContent,!!qs('.catalog-filters'),box(row)];
+      R.rowBg=rgb(row)[0];R.panel=token('--card2');
+    `,'',true,320);
+    assert.deepEqual(r.errors,[],theme);
+    assert.equal(r.theme,theme);
+    assert.equal(r.top,true,theme);
+    assert.deepEqual(r.sizes,[320,[292,48],[292,48]],theme);
+    assert.deepEqual(r.ready,r.accent,theme);
+    assert.deepEqual(r.build,r.accent,theme);
+    assert.ok(r.textContrast>=4.5,theme+' text '+r.textContrast);
+    assert.ok(r.panelContrast>=3,theme+' background '+r.panelContrast);
+    assert.deepEqual(r.catalog,['catalog','Готовые программы',true,[292,48]],theme);
+    assert.equal(r.rowBg,r.panel,theme);
+    assert.notEqual(r.rowBg,r.ready[0],theme);
+  }
+});
