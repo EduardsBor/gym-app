@@ -1,13 +1,14 @@
 # GC-163-04: reproducible test runs on Linux and Windows (read-only: no secrets, no deploy, no writes to the repo).
-name: tests
+name: PR 145 candidate tests with trusted Tab (temporary)
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  pull_request:
+    branches: ['fix/timed-hold-rkc-progression']
+    types: [opened]
 permissions:
   contents: read
 jobs:
   test:
+    if: github.event.pull_request.head.ref == 'ci/timed-rkc-focus-42cae91' && github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -16,6 +17,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 'd251a511452467b636e89fedb985b0ddf4d7290f'
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 26
