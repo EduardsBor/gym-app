@@ -308,10 +308,11 @@ function withPersonal(a){const P=typeof S!=='undefined'&&S&&S.prof&&typeof S.pro
 // S.prof.lim is empty, so a ready program would be built without them. Before the first new pick on THIS device of a signed-in
 // user the limitations are confirmed locally (S.limSeen is local too, stripped from sync). The questionnaire asks them itself.
 function limConfirmNeeded(back){return(back==='catalog'||back==='onb')&&S.limSeen!==1&&typeof window!=='undefined'&&typeof window.mzSignedIn==='function'&&!!window.mzSignedIn()}
-function limConfirm(cb){const m=$('#modal');m.classList.remove('hidden');const sel=new Set(S.prof&&Array.isArray(S.prof.lim)?S.prof.lim:[]);
+function programChangeBlocked(){if(!S.active)return false;toast('Сначала заверши текущую тренировку.');return true}
+function limConfirm(cb){if(programChangeBlocked())return;const m=$('#modal');m.classList.remove('hidden');const sel=new Set(S.prof&&Array.isArray(S.prof.lim)?S.prof.lim:[]);
  const draw=()=>{m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">Ограничения (заменим рискованные упражнения)</h2><p class="mut">${S.consentHealth?'Ограничения сохраняются в облаке вместе с другими данными о здоровье — по твоему согласию. Отозвать его можно в «Профиле».':'Ограничения хранятся только на этом устройстве и не отправляются в облако.'}</p><div class="chips">${[['s','Спина'],['k','Колени'],['p','Плечи']].map(([k,t])=>`<button class="opt chip ${sel.has(k)?'sel':''}" data-lim="${k}">${t}</button>`).join('')}</div><button class="pri full" id="limok" style="margin-top:12px">Продолжить</button></div>`;
   m.querySelectorAll('[data-lim]').forEach(b=>b.onclick=()=>{const k=b.dataset.lim;if(sel.has(k))sel.delete(k);else sel.add(k);draw()});
-  $('#limok').onclick=()=>{m.classList.add('hidden');const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
+  $('#limok').onclick=()=>{m.classList.add('hidden');if(programChangeBlocked())return;const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
 function preview(pr,back){
  if(limConfirmNeeded(back))return limConfirm(lim=>{const p2=Object.assign({},pr,{a:Object.assign({},pr.a,{lim:[...new Set([].concat(pr.a.lim||[],lim))]})});preview(p2,back)});
  if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
@@ -324,7 +325,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;PV.open=+di;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
- $('#pstart').onclick=()=>{if(PV.back==='quiz'&&S.active){toast('Сначала заверши текущую тренировку.');return}if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
+ $('#pstart').onclick=()=>{if(programChangeBlocked())return;if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
   S.prof=a;if(PV.back==='quiz'){S.limSeen=1;S.obDone=1;S.obOffer=2;Q=null}S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
 const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);

@@ -186,25 +186,58 @@ test('Questionnaire: actual Profile menu, catalog and legacy route share one for
   assert.equal(r.appliedProfile.age,undefined);
 });
 
-test('Questionnaire: workout hint returns to the same active workout and active plan cannot be overwritten', {skip}, async()=>{
+test('Questionnaire: active workout blocks both apply routes; its history is kept when a program is applied after finishing', {skip}, async()=>{
   const st=oldState('ru',[]);
   st.weightAsked=0;
+  st.next=2;
   st.active={id:'active-q',start:Date.now()-1000,dayIdx:0,dayName:'Тест',notes:'',items:[
-    {exId:'bp',ns:1,min:6,max:8,rest:60,sets:[{w:12,r:8,done:false}]}]};
+    {exId:'bp',ns:1,min:6,max:8,rest:60,sets:[{w:12,r:8,done:true}]}]};
   const r=await inChrome(st,'ru',{},`
     const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click()};
     await until(()=>document.querySelector('#hquestionnaire'));
     R.localEditors=!!document.querySelector('#hkg,#hage');
-    const old=JSON.stringify(S.active.items), program=JSON.stringify(S.program);
+    const old=JSON.stringify(S.active.items);
+    const plan=()=>JSON.stringify([S.program,S.prof,S.goal,S.progName,S.next,S.block]);
+    const before=plan();
+    let prompts=0; window.confirm=()=>{prompts++;return true};
     click('#hquestionnaire');R.question=[view,QBack,document.activeElement.id];
-    click('#qgo');click('#pstart');R.blocked=[view,S.active.id,JSON.stringify(S.program)===program];
-    click('#pback');click('#qback'); R.return=[view,S.active.id,JSON.stringify(S.active.items)===old,!!document.querySelector('#fin')];
+    click('#qgo');click('#pstart');R.blocked=[view,S.active.id,plan()===before,prompts];
+    click('#pback');click('#qback');R.return=[view,S.active.id,JSON.stringify(S.active.items)===old,!!document.querySelector('#fin')];
+
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');
+    R.catalogPreview=[view,PV.back];click('#pstart');
+    R.catalogBlocked=[view,S.active.id,plan()===before,prompts,JSON.stringify(S.active.items)===old];
+    if(view==='preview'){click('#pback');click('nav [data-v="today"]')}
+    click('#fin');
+    if(document.querySelector('#modal:not(.hidden) #sumok'))click('#sumok');
+    R.finished=[!S.active,S.workouts.some(w=>w.id==='active-q')];
+
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');click('#pstart');
+    R.applied=[view,S.progName===CATALOG[0].name,S.next,plan()!==before,prompts,S.workouts.some(w=>w.id==='active-q')];
   `, '', true);
   assert.deepEqual(r.errors,[]);
   assert.equal(r.localEditors,false);
   assert.deepEqual(r.question,['quiz','today','bwkg']);
-  assert.deepEqual(r.blocked,['preview','active-q',true]);
+  assert.deepEqual(r.blocked,['preview','active-q',true,0]);
   assert.deepEqual(r.return,['today','active-q',true,true]);
+  assert.deepEqual(r.catalogPreview,['preview','catalog']);
+  assert.deepEqual(r.catalogBlocked,['preview','active-q',true,0,true]);
+  assert.deepEqual(r.finished,[true,true]);
+  assert.deepEqual(r.applied,['today',true,0,true,1,true]);
+});
+
+test('Questionnaire: ready program does not confirm new limitations during a workout', {skip}, async()=>{
+  const st=oldState('ru',['k']);
+  st.active={id:'active-q',start:Date.now()-1000,dayIdx:0,dayName:'Тест',notes:'',items:[
+    {exId:'bp',ns:1,min:6,max:8,rest:60,sets:[{w:12,r:8,done:false}]}]};
+  const r=await inChrome(st,'ru',{},`
+    window.mzSignedIn=()=>true; delete S.limSeen;
+    const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click()};
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');
+    R.attempt=[view,S.active.id,S.prof.lim,!!S.limSeen,!!document.querySelector('#modal:not(.hidden) #limok')];
+  `, '', true);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.attempt,['catalog','active-q',['k'],false,false]);
 });
 
 test('Questionnaire: first-run catalog uses same localized fields in LV and EN', {skip}, async()=>{
