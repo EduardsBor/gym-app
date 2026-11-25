@@ -124,3 +124,24 @@ test('D-230: home is bodyweight only — questionnaire has g and b, no d; catalo
   assert.ok(fs.existsSync(path.join(root, 'data/blocks/mass_mid_4_d_b36.json')));
   assert.equal(run('PLN.d'), 'Дом с гантелями');
 });
+
+test('questionnaire weight/age reload from independent state without changing the selected program or consent', () => {
+  const prof={goal:'mass',sex:'f',level:'mid',days:3,len:70,place:'g',lim:['k']};
+  const program=[{name:'My active plan',items:[]}];
+  const initial={lang:'ru',goal:'mass',days:3,obDone:1,progName:'My active plan',prof,program,consentHealth:null,workouts:[],custom:[],templates:[],body:[]};
+  const b=boot({ls:{gym:JSON.stringify(initial)}});
+  b.run('this.scrollTo=()=>{};openQuestionnaire("catalog");$("#bwkg").value="77.3";$("#bwkg").onchange({target:$("#bwkg")});$("#agey").value="42";$("#agey").onchange({target:$("#agey")});');
+  const persisted=b.run('localStorage.getItem("gym")'), saved=JSON.parse(persisted);
+  assert.equal(saved.weightKg,77.3);
+  assert.equal(saved.age,42);
+  assert.equal(saved.prof.weightKg,undefined);
+  assert.equal(saved.prof.age,undefined);
+  assert.deepEqual(saved.program,program);
+  assert.equal(saved.consentHealth,null);
+  const after=boot({ls:{gym:persisted}});
+  after.run('this.scrollTo=()=>{};openQuestionnaire("catalog")');
+  assert.match(after.app(),/id="bwkg"[^>]*value="77.3"/);
+  assert.match(after.app(),/id="agey"[^>]*value="42"/);
+  assert.equal(after.run('Q.sex'),'f');
+  assert.equal(after.run('Q.lim.includes("k")'),true);
+});

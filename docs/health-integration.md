@@ -9,10 +9,10 @@ Web phase of calories and heart rate for GymCaptain. A store build (Capacitor) c
   - strength 6.0 MET for multi-joint compounds, 3.5 MET for isolation and core;
   - cardio by exercise type (treadmill, bike, elliptical, rower, stepper, jumping jack, brisk walk, and the extra cardio ids).
 - Sex, when the profile has it, scales the MET result (female × 0.9). Unknown sex is not guessed.
-- If body weight is missing, the workout asks once (kg, optional). It can be changed under «Ещё».
+- If body weight is missing, the workout offers a one-time, optional link to «Профиль → Анкета». The questionnaire is the editor for the calorie-estimate weight; «Тело» separately records measurements for the history and charts.
 - The number is always labelled approximate: «≈ ккал, оценка».
 - **Heart rate** only where `navigator.bluetooth` exists (Android Chrome). Service `heart_rate` (`0x180D`), measurement `heart_rate_measurement` (`0x2A37`). The button is «Подключить пульсометр». Disconnects retry with backoff; the user can connect again. Elsewhere, including iOS Safari and the home-screen PWA, the workout shows: «Пульсометр будет доступен в версии из магазина приложений.»
-- When samples, weight, age and sex are all present, calories use Keytel et al. 2005 (kJ/min ÷ 4.184). Gaps longer than 20 seconds fall back to the MET rate for that gap. If age or sex is missing, the whole session stays on METs. Age is asked once, the first time a sample arrives.
+- When samples, weight, age and sex are all present, calories use Keytel et al. 2005 (kJ/min ÷ 4.184). Gaps longer than 20 seconds fall back to the MET rate for that gap. If age or sex is missing, the whole session stays on METs. The first heart-rate sample may show a one-time link to the optional age field in the same questionnaire.
 - Zones use Tanaka HRmax = 208 − 0.7 × age. Zone 1 is everything under 60%, then 60–70, 70–80, 80–90, 90–100+.
 
 ## Provider
@@ -52,7 +52,7 @@ Finished workouts gain optional fields only. Older records have none of these an
 }
 ```
 
-Raw samples are kept only on the in-progress workout (`S.active.hrSamples`) and are removed before the record is saved. `weightKg`, `age`, `weightAsked` and `ageAsked` live on the profile and sync with other settings.
+Raw samples are kept only on the in-progress workout (`S.active.hrSamples`) and are removed before the record is saved. `weightKg` and `age` stay in their existing top-level state fields (separate from the selected program) and are excluded from the cloud payload without effective health-data consent. `weightAsked` and `ageAsked` are prompt flags.
 
 ## Native plan (not in this web build)
 

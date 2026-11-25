@@ -40,38 +40,12 @@ function paywall(reason,o){if(!paywallAllowed(o))return false;let d=$('#pw');if(
 const lockCard=(t,r)=>`<div class="card lock"><div style="font-size:34px">🔒</div><h3>${t}</h3><p class="mut">${r}</p><button class="pri full" data-pw="${esc(r)}">Открыть Premium</button></div>`;
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pw]');if(b){e.preventDefault();if(paywall(b.dataset.pw)===false)toast('Доступно по подписке. Подробнее — после тренировки.')}});
 
-// ---- Onboarding (first launch; skippable; re-runnable from «Ещё»)
-let OB={step:0,goal:'mass',level:'nov',days:3,place:'g',len:60};
-const OBS=[['goal','Какая у тебя цель?',[['mass','💪 Масса','Набрать мышцы'],['str','🏋️ Сила','Поднимать больше'],['loss','🔥 Похудение','Снизить жир, сохранить мышцы']]],
- ['level','Какой у тебя опыт?',[['nov','Новичок','Меньше 6 месяцев регулярных тренировок'],['mid','Средний','6 месяцев – 2 года'],['adv','Опытный','Больше 2 лет']]],
- ['days','Сколько тренировок в неделю?',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']]],
- ['place','Где тренируешься?',[['g','🏢 Тренажёрный зал','Тренажёры, штанга, гантели'],['b','🏠 Дом','Без инвентаря, желательно турник']]],
- ['len','Сколько времени готов тратить на тренировку?',[[30,'⏱ ~30 мин','Коротко: только базовые упражнения'],[45,'⏱ ~45 мин','База + немного изоляции'],[60,'⏱ ~60 мин','Полноценная тренировка'],[75,'⏱ 75+ мин','Максимум объёма']]]];
-// Recommended session length for the chosen frequency: weekly volume (Schoenfeld 2017) ÷ sessions, same duration formula as generate().
-function recLen(a){const P=prmOf(a.goal||'mass',a.level),per={nov:10,mid:12,adv:15}[a.level]||12,rest=.6*P.c[3]+.4*P.a[3],sets=per*5/a.days,min=Math.round(WARM+(a.goal==='str'?3:a.goal==='loss'?1:2)+sets*(40+rest)/60);
- const opt=min>=68?75:[30,45,60].reduce((b,o)=>Math.abs(o-min)<Math.abs(b-min)?o:b);return{min,sets:Math.round(sets),opt,per,rest:Math.round(P.c[3]/60*10)/10}}
-function recHint(a){const r=recLen(a),o=r.opt>=75?'75+':'~'+r.opt,T={
- ru:`<b>Рекомендация для ${a.days}× в неделю: ${o} мин</b> (расчёт ≈${r.min} мин). Для роста нужно ~${r.per} тяжёлых подходов на мышцу в неделю (ориентир 10–20) [1]. При ${a.days} тренировках это ~${r.sets} подходов за тренировку; ≈40 с работы + отдых ~${r.rest} мин в базовых [2] + 5 мин разминки. Меньше тренировок в неделю — дольше каждая.`,
- en:`<b>Recommended for ${a.days}× per week: ${o} min</b> (calculated ≈${r.min} min). Growth needs ~${r.per} hard sets per muscle per week (target 10–20) [1]. With ${a.days} workouts that is ~${r.sets} sets per session; ≈40 s of work + ~${r.rest} min rest on compound lifts [2] + 5 min warm-up. Fewer sessions per week means longer ones.`,
- lv:`<b>Ieteikums ${a.days}× nedēļā: ${o} min</b> (aprēķins ≈${r.min} min). Augšanai vajag ~${r.per} smagi piegājieni uz muskuli nedēļā (mērķis 10–20) [1]. Ar ${a.days} treniņiem tas ir ~${r.sets} piegājieni treniņā; ≈40 s darba + ~${r.rest} min atpūta pamatvingrinājumos [2] + 5 min iesildīšanās. Mazāk treniņu nedēļā — katrs ilgāks.`}[LANG];
- return `<div class="card" data-noi18n style="font-size:14px">💡 ${T}<div class="mut" style="font-size:11px;margin-top:6px">[1] ${SRC.v}<br>[2] ${SRC.r}</div></div>`}
-function onb(){$('#title').textContent='Добро пожаловать';$('#nav').classList.add('hidden');const[k,q,opts]=OBS[OB.step];const RL=k==='len'?recLen(OB):null;if(RL&&!OB.lenTouched)OB.len=RL.opt;const LO=n=>k==='len'&&typeof lenOff==='function'&&lenOff(OB,n);if(RL&&LO(RL.opt))RL.opt=effLen({...OB,len:RL.opt});if(k==='len'&&LO(LENS[lenIdx(OB.len)]))OB.len=effLen(OB);
- app.innerHTML=`<div class="obprog">${OBS.map((_,i)=>`<i class="${i<=OB.step?'on':''}"></i>`).join('')}</div><p class="mut">Шаг ${OB.step+1} из ${OBS.length}</p><h2>${q}</h2>
- ${RL?recHint(OB):''}<div class="${k==='days'?'opts c5':k==='len'?'opts c4':'opts'}">${opts.map(([v,l,s])=>LO(v)?`<button class="opt" disabled aria-disabled="true" style="opacity:.5"><b>${l}</b><br><span class="mut">${esc(LEN_MIN_STR)}</span></button>`:`<button class="opt ${String(OB[k])===String(v)?'sel':''}" data-ob="${v}"><b>${l}${RL&&RL.opt===v?' ★':''}</b>${s?`<br><span class="mut">${s}</span>`:''}${k==='len'&&typeof lenNote==='function'&&lenNote(OB,v)?`<br><span class="mut">⚡ <span>${esc(lenNote(OB,v))}</span></span>`:''}</button>`).join('')}</div>
- <button class="pri full" id="obnext" style="margin-top:18px">${OB.step<OBS.length-1?'Далее':'Составить программу'}</button>
- <div class="row" style="margin:8px 0 20px">${OB.step?'<button class="grow" id="obback">← Назад</button>':''}<button class="grow" id="obskip">Пропустить</button></div>
- <p class="mut" style="font-size:12px">Программа строится по научным данным (раздел «Научная основа»). Ответы хранятся только на этом устройстве. Если войдёшь в аккаунт, они синхронизируются с облаком в ЕС.</p>`;
- app.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{OB[k]=(k==='days'||k==='len')?+b.dataset.ob:b.dataset.ob;if(k==='len')OB.lenTouched=1;onb()});
- $('#obnext').onclick=()=>{if(OB.step<OBS.length-1){OB.step++;onb();scrollTo(0,0);return}
-  const a={goal:OB.goal,level:OB.level,days:OB.days,len:OB.len,place:OB.place,sex:'m',prio:[],lim:[]};
-  preview({name:'Моя программа: '+goalName(a.goal,a.place),desc:`${LVN[a.level]} · ${PLN[a.place]} · ${a.days}× ${a.len>=75?'75+':'~'+a.len} мин`,a},'onb')};
- if($('#obback'))$('#obback').onclick=()=>{OB.step--;onb()};
- $('#obskip').onclick=()=>{S.obDone=1;S.obOffer=2;if(!S.program){const c=CATALOG[0],g=generate(c.a);S.prof=c.a;S.goal=c.a.goal;S.days=c.a.days;S.program=g.days;S.progName=c.name;S.why=g.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(c.a)}save();$('#nav').classList.remove('hidden');go('today')}}
-function obStart(){OB={step:0,goal:S.goal&&S.goal!=='fit'?S.goal:'mass',level:(S.prof&&S.prof.level)||'nov',days:S.days||3,place:(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||(S.prof&&S.prof.place)||'g',lenTouched:!!(S.prof&&S.prof.len),len:[30,45,60,75].includes(S.prof&&S.prof.len)?S.prof.len:(S.prof&&S.prof.len>75?75:60)};if(OB.place==='d')OB.place='b';go('onb')}
+// The old setup entry points now open the same questionnaire as the catalog and Profile.
+function obStart(from){openQuestionnaire(from)}
 
 // ---- Wrap existing views with gating / offers
-const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>✨ Новое: подбор программы за 4 шага</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
- $('#ofgo').onclick=()=>{S.obOffer=2;save();obStart()};$('#ofno').onclick=()=>{S.obOffer=2;save();today(sel)}}};
+const _today=today;today=function(sel){_today(sel);if(S.obOffer===1){app.insertAdjacentHTML('afterbegin',`<div class="card offer"><b>🧩 Анкета для подбора программы</b><p class="mut" style="margin:4px 0 8px">Цель, опыт, частота и место — и готовая программа. Твоя текущая программа и история не изменятся, пока ты сам не выберешь новую.</p><div class="row"><button class="pri grow" id="ofgo">Пройти</button><button class="grow" id="ofno">Не сейчас</button></div></div>`);
+ $('#ofgo').onclick=()=>obStart('today');$('#ofno').onclick=()=>{S.obOffer=2;save();today(sel)}}};
 // ---- Body: explicit health-data consent (GDPR art. 9) before any entry. After the demo: body weight stays free, girths by subscription.
 const _body=body;body=function(){$('#title').textContent='Тело';if(!S.consentHealth)return consentView();
  if(!can('girths'))bM='weight';_body();
@@ -96,7 +70,6 @@ const _more=more;more=function(){_more();
  <div class="card"><b>👑 Premium</b><p class="mut" style="margin:4px 0" id="pwrow">Демо — оплата ещё не подключена</p><p class="mut" style="margin:4px 0">${premStatusText()}</p>
  <button class="full" id="pwopen">Посмотреть Premium</button>
  ${ownerUI()?`<label class="li"><span class="grow">🔑 Режим владельца: всё открыто<br><span class="mut">Для разработчика. Не зависит от оплаты.</span></span><input type="checkbox" id="own" style="width:28px;min-height:28px" ${S.ownerPremium?'checked':''}></label>`:''}</div>
- <button class="full card" id="obre" style="text-align:left">🧭 Пройти подбор программы заново (4 шага)</button>
  <div class="card" id="privdata"><b>🛡️ Конфиденциальность и данные</b>
  <div class="li"><span class="grow">Согласие на данные о теле</span><span class="mut">${S.consentHealth?'дано '+new Date(S.consentHealth.at).toLocaleDateString(LOC):'не дано'}</span></div>
  ${S.consentHealth?'<button class="full sm" id="cwd">Отозвать согласие</button>':''}
@@ -110,7 +83,7 @@ const _more=more;more=function(){_more();
  ver.textContent='Версия '+(typeof appVersionLabel==='function'?appVersionLabel():APP_VERSION);
  app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang;save();location.reload()});
  $('#pwopen').onclick=()=>paywall('',{force:1});if($('#own'))$('#own').onchange=e=>{S.ownerPremium=e.target.checked;save();toast(e.target.checked?'Premium открыт (режим владельца)':'Режим владельца выключен');more()};
- $('#obre').onclick=obStart;if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
+ if($('#eqmore'))$('#eqmore').onclick=()=>eqEditor();$('#exp2').onclick=()=>$('#exp').click();$('#lpriv').onclick=()=>legal('privacy','more');$('#lterms').onclick=()=>legal('terms','more');
  if($('#cwd'))$('#cwd').onclick=()=>{if(!confirm('Отозвать согласие? Новые замеры нельзя будет вводить.'))return;S.consentHealth=null;S.healthConsentRevokedAt=new Date().toISOString();if(typeof mzLogHealthConsent==='function')mzLogHealthConsent('revoke');
   if(S.body.length&&confirm('Удалить и уже сохранённые замеры и фото тела?')){S.body.forEach(e=>(e.photos||[]).forEach(k=>idb.del(k)));
    // id удалённых замеров запоминаем: иначе синхронизация вернёт их из старой копии в облаке
@@ -125,7 +98,7 @@ let LG=null;function legal(k,back){LG={k,back};go('legal')}
 function legalView(){const L=(LEGAL[LANG]||LEGAL.ru)[LG.k];$('#title').textContent=L[0];
  app.innerHTML=`<div data-noi18n>${L[1]?`<div class="card draft">${L[1]}</div>`:''}${L[2]}</div><button class="full" id="lgb" style="margin:12px 0 20px">← Назад</button>`;$('#lgb').onclick=()=>go(LG.back||'more')}
 // ---- Router additions
-const _render=render;render=function(){if(view==='onb')return onb();if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view)){view='catalog';$('#nav').classList.add('hidden');return catalog()}_render()}  // D-230: first run opens ready programs;
+const _render=render;render=function(){if(view==='onb')return obStart(S.goal?'today':'catalog');if(view==='legal')return legalView();if(!S.goal&&!S.obDone&&!['preview','catalog','quiz','science','legal'].includes(view)){view='catalog';$('#nav').classList.add('hidden');return catalog()}_render()}  // D-230: first run opens ready programs;
 // ---- Exercise card: 1RM chart is Premium
 const _exCard=exCard;exCard=function(id){_exCard(id);if(can('oneRM'))return;document.querySelectorAll('#exc svg.spark').forEach(s=>{const p=s.nextElementSibling;s.outerHTML='<button class="full sm" data-pw="Графики и расчётный 1ПМ — по подписке">🔒 График 1ПМ — по подписке</button>';if(p&&p.tagName==='P')p.remove()})};
 // ---- P-305b programs: trainer programs (questionnaire, catalog) are a subscription feature; the questionnaire itself is open.
@@ -301,5 +274,4 @@ const _eqStartW=startW;startW=function(i){_eqStartW(i);if(!S.active||S.active.fr
  S.active.items=adapted.map(it=>{const l=S.autoW!==false?lastSets(it.exId,S.active.id):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}});
  S.active.eqProfile=eqActiveId();if(typeof save==='function')save()};
 const _eqSwap=swapModal;swapModal=function(cur,a,cb){_eqSwap(cur,a&&a.places?a:Object.assign({},a||S.prof||{},{places:eqPlaces(),place:eqPrimaryPlace()}),cb)};
-const _eqQuiz=quiz;quiz=function(){const p=typeof eqPrimaryPlace==='function'&&eqPrimaryPlace();if(p&&!Q){Q={goal:'mass',sex:'m',level:'mid',days:3,len:60,place:p,prio:[],lim:[],...(S.prof||{}),...(typeof quizDaysAsked==='function'?quizDaysAsked():{}),place:p}}_eqQuiz()};
 eqEnsure();

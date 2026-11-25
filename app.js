@@ -230,8 +230,31 @@ setInterval(wclockTick,1000);if(typeof document!=='undefined'&&document.addEvent
 function render(){wclockTick();$('#nav').classList.toggle('hidden',!S.goal);if(!S.goal&&!['preview','catalog','quiz','science'].includes(view)){view='catalog';return catalog()}
  if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,nutrition:()=>nutrition(),quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
-function onboarding(){quiz()}
-let Q=null,catF={};
+function onboarding(){openQuestionnaire('catalog')}
+let Q=null,QBack='catalog',catF={};
+function questionnaireSeed(){
+ const p=S.prof||{},pick=(key,fallback)=>p[key]==null?fallback:p[key];
+ const place=pick('place',(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||'g');
+ return {goal:pick('goal',S.goal||'mass'),sex:pick('sex','m'),level:pick('level','mid'),
+  days:pick('days',S.days||3),len:pick('len',60),place:place==='d'?'b':place,bar:pick('bar','0'),acc:pick('acc','none'),
+  prio:Array.isArray(p.prio)?p.prio.slice():[],lim:Array.isArray(p.lim)?p.lim.slice():[],
+  ...(p.variant?{variant:p.variant}:{}),...(typeof quizDaysAsked==='function'?quizDaysAsked():{})};
+}
+function openQuestionnaire(from,field){
+ QBack=['more','today','catalog'].includes(from)?from:'catalog';
+ Q=questionnaireSeed();
+ go('quiz');
+ if(field==='bwkg'||field==='agey'){const input=$('#'+field);if(input&&typeof input.focus==='function')input.focus()}
+}
+function leaveQuestionnaire(to){Q=null;go(to||QBack)}
+function saveQuestionnaireMeasure(input,key,asked,min,max,msg,precision){
+ const raw=String(input.value).trim(),n=Number(raw);
+ if((input.validity&&input.validity.badInput)||(raw&&(!Number.isFinite(n)||n<min||n>max))){toast(msg);input.value=S[key]||'';return}
+ S[key]=raw?Math.round(n*precision)/precision:0;
+ S[asked]=1;
+ input.value=S[key]||'';
+ save();
+}
 function quizLenOld(grp){return`${(typeof lenOff==='function'&&lenOff(Q,LENS[lenIdx(Q.len)])&&(Q.len=effLen(Q)),grp('Длительность тренировки','len',[30,45,60,75,90].filter(n=>!(typeof lenOff==='function'&&lenOff(Q,n))).map(n=>[n,n+' мин'])))}${typeof lenOff==='function'&&lenOff(Q,30)?`<p class="mut" id="qlenoff" style="margin-top:0">${esc(LEN_MIN_STR)}</p>`:''}${typeof lenNote==='function'&&lenNote(Q,Q.len)?`<p class="mut" id="qlennote" style="margin-top:0">⚡ <span>${esc(lenNote(Q,Q.len))}</span></p>`:''}
  ${typeof progGlance==='function'&&progGlance(Q)?(()=>{const g=progGlance(Q);return `<p class="mut" style="margin-top:0">Реальное время с разминкой и заминкой: ${esc(g.label)}${g.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>${g.advice?`<p class="mut">${esc(g.advice)}</p>`:''}`})():''}`}
 // C-114: show the selected block's duration_label (no longer a fixed 60–70 min).
@@ -243,8 +266,8 @@ function quizDurationLabel(q){const id=quizBlockId(q);if(!id)return'';
 function quizGrowthHint(q){q=q||(typeof Q!=='undefined'?Q:null);return!!(q&&q.level==='adv'&&+q.days===2)}
 function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){const label=quizDurationLabel(Q)||'60–70 мин';Q.lenLabel=label;const nums=String(label).match(/\d+/g);Q.len=nums&&nums.length?+nums[nums.length-1]:70;const shown=(typeof catalogDur==='function'?catalogDur(label):label)+' (с разминкой и заминкой)';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">${esc(shown)}</p>`}delete Q.lenLabel;return quizLenOld(grp)}
 
-const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" data-k="${k}" data-v="${v}">${label}</button>`;
-function quiz(){$('#title').textContent='Подбор программы';Q=Q||{goal:'mass',sex:'m',level:'mid',days:3,len:60,place:'g',bar:'0',prio:[],lim:[],...(S.prof||{}),...(typeof quizDaysAsked==='function'?quizDaysAsked():{})};if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
+const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" aria-pressed="${!!sel}" data-k="${k}" data-v="${v}">${label}</button>`;
+function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
  const grp=(t,k,opts,multi)=>`<h2>${t}</h2><div class="chips">${opts.map(([v,l])=>chip(k,v,l,multi?Q[k].includes(v):String(Q[k])===String(v))).join('')}</div>`;
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
  ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ '+goalName('str',Q.place)],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
@@ -253,10 +276,16 @@ function quiz(){$('#title').textContent='Подбор программы';Q=Q||{
  ${Q.place==='d'?(Q.place='b',''):''}${grp('Где тренируешься','place',[['g','🏢 Тренажёрный зал'],['b','🏠 Дом']])}<p class="mut" id="qhome" style="margin-top:0">Дом — без инвентаря, желательно турник.</p>${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
  ${typeof blocksEnabled==='function'&&blocksEnabled()?(Q.prio=[],grp('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']])):grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
  ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}
- <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${S.program?'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>':'<button class="full" id="qcat" style="margin-bottom:16px">← Готовые программы</button>'}`;
- app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
- $('#tocat').onclick=e=>{e.preventDefault();go('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+goalName(Q.goal,Q.place),desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
- if($('#qback'))$('#qback').onclick=()=>go('catalog');if($('#qcat'))$('#qcat').onclick=()=>go('catalog')}
+ <h2>Вес и возраст (необязательно)</h2><div class="card">
+ <label class="mut">Вес тела, кг<input type="number" id="bwkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="не указан" value="${esc(S.weightKg||'')}"></label>
+ <label class="mut">Возраст<input type="number" id="agey" inputmode="numeric" step="1" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
+ <p class="mut">Вес помогает оценить калории, возраст нужен для пульсовых зон. Эти данные сохраняются отдельно от программы.</p></div>
+ <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${QBack==='catalog'&&!S.program?'<button class="full" id="qcat" style="margin-bottom:16px">← Готовые программы</button>':'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>'}`;
+ app.querySelectorAll('[data-k][data-v]').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
+ $('#bwkg').onchange=e=>saveQuestionnaireMeasure(e.target,'weightKg','weightAsked',30,300,'Вес: от 30 до 300 кг',10);
+ $('#agey').onchange=e=>saveQuestionnaireMeasure(e.target,'age','ageAsked',14,100,'Возраст: от 14 до 100 лет',1);
+ $('#tocat').onclick=e=>{e.preventDefault();leaveQuestionnaire('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+goalName(Q.goal,Q.place),desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
+ if($('#qback'))$('#qback').onclick=()=>leaveQuestionnaire();if($('#qcat'))$('#qcat').onclick=()=>leaveQuestionnaire('catalog')}
 function dayWeek(d){if(d&&d.week)return d.week;const m=/^Неделя (\d+)/.exec(d&&d.name||'');return m?+m[1]:0}
 function dayTitle(d){return String(d&&d.name||'').replace(/^Неделя \d+ · /,'')}
 function dayNum(d,i){const n=d&&d.n;if(n!=null&&+n>0)return +n;if(i!=null&&i>=0)return +i+1;return 0}
@@ -279,10 +308,11 @@ function withPersonal(a){const P=typeof S!=='undefined'&&S&&S.prof&&typeof S.pro
 // S.prof.lim is empty, so a ready program would be built without them. Before the first new pick on THIS device of a signed-in
 // user the limitations are confirmed locally (S.limSeen is local too, stripped from sync). The questionnaire asks them itself.
 function limConfirmNeeded(back){return(back==='catalog'||back==='onb')&&S.limSeen!==1&&typeof window!=='undefined'&&typeof window.mzSignedIn==='function'&&!!window.mzSignedIn()}
-function limConfirm(cb){const m=$('#modal');m.classList.remove('hidden');const sel=new Set(S.prof&&Array.isArray(S.prof.lim)?S.prof.lim:[]);
+function programChangeBlocked(){if(!S.active)return false;toast('Сначала заверши текущую тренировку.');return true}
+function limConfirm(cb){if(programChangeBlocked())return;const m=$('#modal');m.classList.remove('hidden');const sel=new Set(S.prof&&Array.isArray(S.prof.lim)?S.prof.lim:[]);
  const draw=()=>{m.innerHTML=`<div class="sheet"><h2 style="margin-top:0">Ограничения (заменим рискованные упражнения)</h2><p class="mut">${S.consentHealth?'Ограничения сохраняются в облаке вместе с другими данными о здоровье — по твоему согласию. Отозвать его можно в «Профиле».':'Ограничения хранятся только на этом устройстве и не отправляются в облако.'}</p><div class="chips">${[['s','Спина'],['k','Колени'],['p','Плечи']].map(([k,t])=>`<button class="opt chip ${sel.has(k)?'sel':''}" data-lim="${k}">${t}</button>`).join('')}</div><button class="pri full" id="limok" style="margin-top:12px">Продолжить</button></div>`;
   m.querySelectorAll('[data-lim]').forEach(b=>b.onclick=()=>{const k=b.dataset.lim;if(sel.has(k))sel.delete(k);else sel.add(k);draw()});
-  $('#limok').onclick=()=>{m.classList.add('hidden');const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
+  $('#limok').onclick=()=>{m.classList.add('hidden');if(programChangeBlocked())return;const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
 function preview(pr,back){
  if(limConfirmNeeded(back))return limConfirm(lim=>{const p2=Object.assign({},pr,{a:Object.assign({},pr.a,{lim:[...new Set([].concat(pr.a.lim||[],lim))]})});preview(p2,back)});
  if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
@@ -295,8 +325,8 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;PV.open=+di;renderPreview()})});
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
- $('#pstart').onclick=()=>{if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
-  S.prof=a;if(PV.back==='quiz')S.limSeen=1;S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today');if(PV.back==='onb'){S.obDone=1;S.obOffer=2;save()}}}
+ $('#pstart').onclick=()=>{if(programChangeBlocked())return;if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
+  S.prof=a;if(PV.back==='quiz'){S.limSeen=1;S.obDone=1;S.obOffer=2;Q=null}S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
 const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
@@ -306,7 +336,7 @@ function catalog(){$('#title').textContent='Готовые программы';c
  ${catalogSummary(c)?`<div class="mut" style="font-size:13px">${esc(catalogSummary(c))}</div>`:''}<button class="pri full" style="margin-top:10px" data-c="${esc(c.id)}" aria-label="Посмотреть программу">Посмотреть программу</button></div>`).join('')}
  <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Подобрать программу под себя</button>`;
  app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
- app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(catalogFind(b.dataset.c),'catalog'));$('#toq').onclick=()=>go('quiz')}
+ app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(catalogFind(b.dataset.c),'catalog'));$('#toq').onclick=()=>openQuestionnaire('catalog')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
@@ -949,18 +979,11 @@ function more(){$('#title').textContent='Профиль';
  <div class="card"><b>Тренировка</b><label class="li"><span class="grow">🏋️ Подставлять последний вес</span><input type="checkbox" id="aw" style="width:28px;min-height:28px" ${S.autoW!==false?'checked':''}></label><p class="mut">Вес и повторы подставляются из прошлой тренировки с этим упражнением (серым). Можно изменить; ✓ сохраняет то, что видно.</p></div>
  <div class="card"><b>Таймер отдыха</b><p class="mut">По умолчанию берётся из программы. Можно задать одно значение для всех упражнений:</p>
  <div class="row"><input type="number" id="ro" inputmode="numeric" min="0" max="600" step="5" placeholder="Из программы" value="${esc(S.restOverride||'')}"><span class="mut">сек</span></div></div>
- <div class="card"><b>Калории</b>
- <label class="mut">Вес тела, кг<input type="number" id="bwkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="не указан" value="${esc(S.weightKg||'')}"></label>
- <label class="mut">Возраст<input type="number" id="agey" inputmode="numeric" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
- <p class="mut">Вес нужен для примерной оценки калорий. Оба поля необязательны и хранятся на устройстве.</p>
- </div>
  <div class="card"><b>Резервная копия</b><p class="mut">Данные копируются в облако автоматически. Файл — дополнительная копия на случай, если понадобится.</p>
  <button class="full" id="expcsv">⬇ Экспорт CSV (история тренировок)</button><p class="mut" style="font-size:12px;margin:4px 0 8px">Таблица для Excel/Google Таблиц. Работает без интернета.</p><button class="full" id="exp">⬇ Экспорт (JSON)</button><label class="li"><span class="grow">Включить фото тела в копию (файл будет больше)</span><input type="checkbox" id="expph" style="width:28px;min-height:28px" checked></label><label class="btn full" style="display:flex;align-items:center;justify-content:center;margin-top:8px">⬆ Импорт<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
  <div class="card" id="pfdanger"><button class="danger full" id="reset">Очистить данные на этом телефоне</button></div>
  <div class="card" id="helpc"><b>Справка</b><button class="full card libbig" style="margin-top:8px" id="lib"><span style="font-size:30px">📚</span><span class="grow"><b>Библиотека упражнений</b><br><span class="mut">${libCountText()}</span></span><span class="mut">›</span></button><button class="full" id="sci" style="text-align:left;margin-top:8px">🔬 Научная основа программ</button><button class="full" id="nut" style="text-align:left;margin-top:8px">🥗 Питание под цель</button></div><p class="mut" style="text-align:center;margin:16px 0 8px">Версия ${appVersionLabel()}</p>`;
  if(typeof themeBind==='function')themeBind(app);$('#aw').onchange=e=>{S.autoW=e.target.checked;save()};$('#snd').onchange=e=>{S.sound=e.target.checked;save()};$('#wk').onchange=e=>{S.wake=e.target.checked;save();wake()};if(typeof ntfCardBind==='function')ntfCardBind();
- if($('#bwkg'))$('#bwkg').onchange=e=>{const v=e.target.value;if(v===''){S.weightKg=0;S.weightAsked=1;save();return}const n=+v;if(!(n>=30&&n<=300)){toast('Вес: от 30 до 300 кг');e.target.value=S.weightKg||'';return}S.weightKg=Math.round(n*10)/10;S.weightAsked=1;save()};
- if($('#agey'))$('#agey').onchange=e=>{const v=e.target.value;if(v===''){S.age=0;S.ageAsked=1;save();return}const n=Math.round(+v);if(!(n>=14&&n<=100)){toast('Возраст: от 14 до 100 лет');e.target.value=S.age||'';return}S.age=n;S.ageAsked=1;save()};
  $('#sci').onclick=()=>go('science');$('#lib').onclick=()=>go('library');if($('#nut'))$('#nut').onclick=()=>go('nutrition');progRowBind();$('#ro').onchange=e=>{S.restOverride=clampRest(e.target.value);e.target.value=S.restOverride||'';save()};
  if($('#expcsv'))$('#expcsv').onclick=()=>{if(typeof exportCsv==='function')exportCsv()};
  $('#exp').onclick=async()=>{const D={...S,exportedAt:Date.now()};delete D.replacePending;delete D.replaceBody;delete D.syncPending;if($('#expph').checked&&S.body.some(e=>e.photos&&e.photos.length))D.photos=await idb.all();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gymcaptain-'+new Date().toISOString().slice(0,10)+'.json';a.click()};

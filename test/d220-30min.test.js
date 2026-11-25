@@ -119,16 +119,18 @@ test('quiz: Strength advanced hides 30 min, auto-uses 45 and shows the note; Mas
   assert.ok(!html.includes(MIN45) && !html.includes(NOTE));
 });
 
-test('onboarding: Strength intermediate - 30 min is disabled with the note; recommendation never lands on 30', () => {
-  const b = boot({ lang: 'ru', goal: 'str', days: 3, next: 0, workouts: [], custom: [], body: [] });
-  b.run('OB={step:OBS.findIndex(x=>x[0]==="len"),goal:"str",level:"mid",days:6,place:"g",len:30,lenTouched:1};onb()');
+test('legacy onboarding opens the same questionnaire and honors its 30-minute rules', () => {
+  const b = boot({ lang: 'ru', goal: 'str', days: 6, next: 0, workouts: [], custom: [], body: [],
+    prof: {goal:'str', level:'mid', days:6, len:30, place:'g', lim:[]} });
+  b.run('localStorage.setItem("gc_blocks","0");obStart("today")');
   const html = b.run('app.innerHTML');
-  assert.equal(b.run('OB.len'), 45);
-  assert.doesNotMatch(html, /data-ob="30"/);
-  assert.match(html, /disabled[^>]*><b>⏱ ~30 мин<\/b><br><span class="mut">Для «Силы» минимум 45 мин/);
-  b.run('OB={step:OBS.findIndex(x=>x[0]==="len"),goal:"mass",level:"adv",days:3,place:"g",len:30,lenTouched:1};onb()');
+  assert.equal(b.run('view'), 'quiz');
+  assert.equal(b.run('Q.len'), 45);
+  assert.doesNotMatch(html, /data-k="len" data-v="30"/);
+  assert.ok(html.includes(MIN45));
+  b.run('S.prof={goal:"mass",level:"adv",days:3,len:30,place:"g"};obStart("today")');
   assert.ok(b.run('app.innerHTML').includes(NOTE));
-  assert.equal(b.run('OB.len'), 30);
+  assert.equal(b.run('Q.len'), 30);
 });
 
 test('saved Strength 30-min program keeps working unchanged: opens, shows workouts, logs a workout', () => {

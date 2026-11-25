@@ -1,6 +1,15 @@
 // Stage 2 strings: account, sync, analytics. [ru, en, lv] — LV needs native review.
 const DICT3=[
 // C-112 blocks-v2c questionnaire (LV for Claude: docs/LV-NEW-BLOCKS-V2C.md)
+['Анкета','Questionnaire','Anketa'],
+['🧩 Анкета для подбора программы','🧩 Program questionnaire','🧩 Programmas izvēles anketa'],
+['Цель, опыт, график, оборудование и ограничения','Goal, experience, schedule, equipment and limitations','Mērķis, pieredze, grafiks, inventārs un ierobežojumi'],
+['Вес и возраст (необязательно)','Weight and age (optional)','Svars un vecums (nav obligāti)'],
+['Вес помогает оценить калории, возраст нужен для пульсовых зон. Эти данные сохраняются отдельно от программы.','Weight helps estimate calories, and age helps determine heart rate zones. These details are saved separately from your program.','Svars palīdz novērtēt kaloriju patēriņu, bet vecums palīdz noteikt pulsa zonas. Šie dati tiek saglabāti atsevišķi no programmas.'],
+['Открыть анкету','Open questionnaire','Atvērt anketu'],
+['Вес можно указать в анкете. Это необязательно.','You can enter your weight in the questionnaire. It is optional.','Savu svaru vari norādīt anketā. Tas nav obligāti.'],
+['Возраст для расчёта пульсовых зон можно указать в анкете. Это необязательно.','You can enter your age in the questionnaire to calculate heart rate zones. It is optional.','Savu vecumu pulsa zonu aprēķinam vari norādīt anketā. Tas nav obligāti.'],
+['Сначала заверши текущую тренировку.','Finish your current workout first.','Vispirms pabeidz pašreizējo treniņu.'],
 ['Есть турник?','Do you have a pull-up bar?','Vai tev ir pievilkšanās stienis?'],
 ['Да','Yes','Jā'],
 ['Нет','No','Nē'],

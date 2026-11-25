@@ -145,7 +145,11 @@ test('7: signed in on a device without confirmed limitations → catalog pick as
   const c = boot({ state: { lang: 'ru', goal: 'mass', days: 3, next: 0, obDone: 1, workouts: [], custom: [], body: [] } });
   c.run('preview(CATALOG[0],"catalog")');
   assert.equal(c.run('view'), 'preview', 'not signed in: as before');
-  assert.match(read('app.js'), /S\.prof=a;if\(PV\.back==='quiz'\)S\.limSeen=1;/);
+  c.run('globalThis.confirm=()=>true;openQuestionnaire("catalog");$("#qgo").onclick()');
+  assert.equal(c.run('view'),'preview');
+  assert.notEqual(c.run('S.limSeen'),1,'preview must not silently confirm limitations');
+  c.run('$("#pstart").onclick()');
+  assert.equal(c.run('S.limSeen'),1,'explicitly applying the questionnaire confirms them on this device');
   assert.match(read('sync.js'), /delete p\.limSeen;/);
   assert.match(read('sync.js'), /delete it\.limStop;delete it\.merged\}\}/);
 });
