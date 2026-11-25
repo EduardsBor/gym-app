@@ -47,11 +47,11 @@ function serve(html) {
     server.listen(0, '127.0.0.1', () => resolve({ port: server.address().port, result, close: () => new Promise(r => server.close(r)) }));
   });
 }
-async function inChrome(state, lang, ls, body, search, withProfile) {
+async function inChrome(state, lang, ls, body, search, withProfile, width) {
   const { port, result, close } = await serve(page(state, lang, ls, body, withProfile));
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'tf2-chrome-'));
   const child = spawn(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--disable-extensions', '--disable-background-networking',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', '--window-size=390,844', '--user-data-dir=' + prof, `http://127.0.0.1:${port}/__tf2.html${search || ''}`], { stdio: 'ignore' });
+    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', ...(width?['--hide-scrollbars']:[]), '--window-size='+(width||390)+',844', '--user-data-dir=' + prof, `http://127.0.0.1:${port}/__tf2.html${search || ''}`], { stdio: 'ignore' });
   try { return await result; } finally { child.kill('SIGKILL'); await close(); }
 }
 // saved plan: made without limitations, knees set later (old data)
@@ -129,11 +129,12 @@ test('Questionnaire: actual Profile menu, catalog and legacy route share one for
     const history=JSON.stringify(S.workouts), before=JSON.stringify(S.program);
     click('nav [data-v="more"]'); click('[data-pf="quiz"]');
     R.profile=view;R.heading=document.querySelector('#title').textContent;
-    R.fields=['goal','sex','level','days','place','lim'].filter(k=>document.querySelector('[data-k="'+k+'"]'));
+    R.fields=['goal','sex','level','days','place','lim'].filter(k=>document.querySelector('#qf-'+k));
+    const pick=(key,value)=>{const e=document.querySelector('#qf-'+key);e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}));};
     R.optional=!!document.querySelector('#bwkg')&&!!document.querySelector('#agey');
     R.height=!!document.querySelector('#hgt');
-    click('[data-k="place"][data-v="b"]');click('[data-k="bar"][data-v="1"]');
-    click('[data-k="goal"][data-v="fit"]');click('[data-k="sex"][data-v="f"]');
+    pick('place','b');pick('bar','1');
+    pick('goal','fit');pick('sex','f');
     const edit=(id,v)=>{const e=document.querySelector(id);e.value=v;e.dispatchEvent(new Event('change',{bubbles:true}));return e.value;};
     R.valid=[edit('#bwkg','77.3'),edit('#agey','42')];
     R.invalid=edit('#bwkg','900');
@@ -147,7 +148,7 @@ test('Questionnaire: actual Profile menu, catalog and legacy route share one for
     click('#pfback');click('[data-pf="prog"]');R.old=!!document.querySelector('#obre');
     click('#pchg');click('#toq');R.catalog=[view,QBack];click('#qback');R.catalogBack=view;
     obStart('today');R.legacy=[view,QBack];click('#qback');R.legacyBack=view;
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('[data-k="goal"][data-v="fit"]');click('#qgo');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');pick('goal','fit');click('#qgo');
     window.confirm=()=>false; click('#pstart'); R.cancelApply=JSON.stringify(S.program)===before;
     window.confirm=()=>true; click('#pstart'); R.applied=[view,S.goal,S.obDone,S.limSeen];
     R.history=JSON.stringify(S.workouts)===history; R.consent=S.consentHealth||null;
@@ -240,22 +241,110 @@ test('Questionnaire: ready program does not confirm new limitations during a wor
   assert.deepEqual(r.attempt,['catalog','active-q',['k'],false,false]);
 });
 
-test('Questionnaire: first-run catalog uses same localized fields in LV and EN', {skip}, async()=>{
-  for(const [lang,heading,optional,back] of [['lv','Anketa','Svars un vecums (nav obligāti)','← Gatavās programmas'],['en','Questionnaire','Weight and age (optional)','← Ready-made programs']]){
+test('Questionnaire: all filters fit at 320–390 px in RU/LV/EN and retain answers on preview/back', {skip}, async()=>{
+  const locales=[
+    ['ru','Анкета','Фильтры программы','Вес и возраст (необязательно)','← Готовые программы','Сила и контроль тела','Тренажёрный зал','Ягодицы и ноги','Спина · Колени','Не выбрано'],
+    ['lv','Anketa','Programmas filtri','Svars un vecums (nav obligāti)','← Gatavās programmas','Spēks un ķermeņa kontrole','Trenažieru zāle','Sēžas muskuļi un kājas','Mugura · Ceļi','Nav izvēlēts'],
+    ['en','Questionnaire','Program filters','Weight and age (optional)','← Ready-made programs','Strength & Body Control','Gym','Glutes and legs','Back · Knees','None selected'],
+  ];
+  for(const [lang,heading,title,optional,back,homeStrength,gym,glutes,limits,empty] of locales)for(const width of [320,390]){
     const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
     const r=await inChrome(st,lang,{},`
-      await until(()=>document.querySelector('#toq'));document.querySelector('#toq').click();
-      await until(()=>document.querySelector('#title').textContent===${JSON.stringify(heading)});
-      R.heading=document.querySelector('#title').textContent;
-      R.body=document.querySelector('#app').textContent;
-      R.back=document.querySelector('#qcat').textContent.trim();
-      document.querySelector('#qcat').click();R.view=view;R.program=!!S.program;
-    `, '', true);
+      const qs=s=>document.querySelector(s), fields=['goal','place','level','days','sex','acc'];
+      const click=s=>{const e=qs(s);if(!e)throw Error('Missing '+s);e.click()};
+      const values=()=>fields.map(k=>qs('#qf-'+k).value);
+      const change=(key,value)=>{const e=qs('#qf-'+key);e.focus();e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}))};
+      const selected=k=>qs('#qf-'+k).selectedOptions[0].textContent;
+      const layout=()=>{
+        const root=document.documentElement, card=qs('.qfilters'), box=card.getBoundingClientRect();
+        const controls=[...card.querySelectorAll('select,input[type=number]')], c=document.createElement('canvas').getContext('2d');
+        const clipped=controls.filter(e=>e.tagName==='SELECT').flatMap(e=>{
+          const css=getComputedStyle(e);c.font=css.font;
+          const available=e.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight);
+          return [...e.options].filter(o=>c.measureText(o.textContent).width+2>available).map(o=>[e.id,o.textContent,available]);
+        });
+        return {width:root.clientWidth,scroll:root.scrollWidth,height:Math.round(box.height),clipped,
+          labels:controls.every(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>=44&&r.left>=0&&r.right<=root.clientWidth&&e.labels.length===1&&!!e.labels[0].querySelector('span').textContent.trim()}),
+          contained:[...document.querySelectorAll('#app select,#app input,#app details,#qlen')].every(e=>card.contains(e))};
+      };
+      await until(()=>qs('#toq'));click('#toq');
+      await until(()=>qs('#title').textContent===${JSON.stringify(heading)});
+      R.heading=qs('#title').textContent;R.filters=qs('#qfilters-title').textContent;R.optional=qs('#qf-optional').textContent;
+      R.gym=selected('place');R.before=values();R.gymLayout=layout();R.gymBar=!!qs('#qf-bar');R.empty=qs('#qfs-lim').textContent;
+      R.duration=[Q.lenLabel,qs('#qlen span').textContent];
+      change('goal','str');change('place','b');change('level','adv');change('days','2');change('sex','f');change('bar','1');change('acc','glutes');
+      await until(()=>selected('goal')===${JSON.stringify(homeStrength)}&&selected('acc')===${JSON.stringify(glutes)});
+      R.homeStrength=selected('goal');R.glutes=selected('acc');R.focus=document.activeElement.id;
+      R.homeLayout=layout();R.growth=!!qs('#qgrowth');R.homeHint=!!qs('#qhome');
+      click('#qf-lim summary');
+      R.open=qs('#qf-lim').open;
+      const checks=[...qs('#qf-lim').querySelectorAll('input')];
+      R.multiAccessible=checks.every(e=>e.type==='checkbox'&&e.labels.length===1&&e.labels[0].getBoundingClientRect().height>=44);
+      click('#qf-lim label[for="qf-lim-0"]');click('#qf-lim label[for="qf-lim-1"]');click('#qf-lim label[for="qf-lim-2"]');click('#qf-lim label[for="qf-lim-2"]');
+      change('place','g');R.toggle=[!!qs('#qf-bar'),qs('#qf-lim').open];change('place','b');R.restoredBar=qs('#qf-bar').value;
+      await until(()=>qs('#qfs-lim').textContent===${JSON.stringify(limits)});
+      R.limits=qs('#qfs-lim').textContent;R.openLayout=layout();R.homeDuration=[Q.lenLabel,qs('#qlen span').textContent];
+      const edit=(id,value)=>{const e=qs(id);e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}))};
+      edit('#bwkg','71.3');edit('#agey','35');click('#qgo');
+      R.preview=[view,PV.pr.a.goal,PV.pr.a.place,PV.pr.a.level,PV.pr.a.days,PV.pr.a.bar,PV.pr.a.sex,PV.pr.a.acc,PV.pr.a.lim,PV.pr.a.weightKg,PV.pr.a.age];
+      click('#pback');R.afterBack=[view,...values(),qs('#qf-bar').value,...[...qs('#qf-lim').querySelectorAll('input')].map(el=>el.checked),qs('#bwkg').value,qs('#agey').value];
+      await until(()=>qs('#qfs-lim').textContent===${JSON.stringify(limits)});
+      R.backLimits=qs('#qfs-lim').textContent;
+      await until(()=>qs('#qcat').textContent.trim()===${JSON.stringify(back)});
+      R.back=qs('#qcat').textContent.trim();click('#qcat');R.view=view;R.program=!!S.program;
+      S.prof={...S.prof,lim:['s','k']};click('#toq');R.fromSaved=qs('#qfs-lim').textContent;
+    `,'',true,width);
+    const context=lang+' '+width+'px';
+    assert.deepEqual(r.errors,[],context);
+    assert.equal(r.heading,heading,context);assert.equal(r.filters,title,context);assert.equal(r.optional,optional,context);
+    assert.equal(r.gym,gym,context);assert.equal(r.empty,empty,context);
+    assert.deepEqual(r.before,['mass','g','mid','3','m','none'],context);assert.equal(r.gymBar,false,context);
+    for(const actual of [r.gymLayout,r.homeLayout,r.openLayout]){
+      assert.equal(actual.width,width,context);assert.equal(actual.scroll,width,context);
+      assert.deepEqual(actual.clipped,[],context);assert.equal(actual.labels,true,context);assert.equal(actual.contained,true,context);
+    }
+    assert.ok(r.gymLayout.height<740,context+' collapsed card '+r.gymLayout.height);
+    assert.equal(r.homeStrength,homeStrength,context);assert.equal(r.glutes,glutes,context);
+    assert.equal(r.focus,'qf-acc',context);assert.equal(r.growth,true,context);assert.equal(r.homeHint,true,context);
+    assert.equal(r.open,true,context);assert.equal(r.multiAccessible,true,context);
+    assert.deepEqual(r.toggle,[false,true],context);assert.equal(r.restoredBar,'1',context);
+    assert.equal(r.limits,limits,context);assert.equal(r.backLimits,limits,context);assert.equal(r.fromSaved,limits,context);
+    assert.notEqual(r.duration[0],r.homeDuration[0],context);
+    for(const [,shown] of [r.duration,r.homeDuration]){
+      assert.match(shown,/\d+.*\(/,context);
+      if(lang!=='ru')assert.doesNotMatch(shown,/[А-Яа-яЁё]/,context);
+    }
+    assert.deepEqual(r.preview,['preview','str','b','adv',2,'1','f','glutes',['s','k'],null,null],context);
+    assert.deepEqual(r.afterBack,['quiz','str','b','adv','2','f','glutes','1',true,true,false,'71.3','35'],context);
+    assert.equal(r.back,back,context);assert.equal(r.view,'catalog',context);assert.equal(r.program,false,context);
+  }
+});
+
+test('Questionnaire: legacy duration and multiple priority muscles remain in the same filter block', {skip}, async()=>{
+  for(const [lang,summary] of [['ru','Грудь · Спина'],['lv','Krūtis · Mugura'],['en','Chest · Back']]){
+    const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{},`
+      const qs=s=>document.querySelector(s);
+      await until(()=>qs('#toq'));qs('#toq').click();
+      const change=(k,v)=>{const e=qs('#qf-'+k);e.value=v;e.dispatchEvent(new Event('change',{bubbles:true}))};
+      change('goal','str');
+      R.duration=[...qs('#qf-len').options].map(e=>+e.value);
+      change('len','45');
+      qs('#qf-prio summary').click();
+      qs('#qf-prio label[for="qf-prio-0"]').click();
+      qs('#qf-prio label[for="qf-prio-1"]').click();
+      R.filters=['#qf-len','#qf-prio','#qf-lim','#qlenoff'].map(s=>qs('.qfilters').contains(qs(s)));
+      R.summary=qs('#qfs-prio').textContent;R.open=qs('#qf-prio').open;
+      qs('#qgo').click();R.preview=[view,PV.pr.a.len,PV.pr.a.prio];
+      qs('#pback').click();R.after=[view,qs('#qf-len').value,qs('#qfs-prio').textContent];
+      qs('#qcat').click();S.prof={...S.prof,prio:['Грудь','Спина']};qs('#toq').click();R.fromSaved=qs('#qfs-prio').textContent;
+    `,'?blocks=0',true,320);
     assert.deepEqual(r.errors,[]);
-    assert.equal(r.heading,heading);
-    assert.ok(r.body.includes(optional),r.body);
-    assert.equal(r.back,back);
-    assert.equal(r.view,'catalog');
-    assert.equal(r.program,false);
+    assert.deepEqual(r.duration,[45,60,75,90]);
+    assert.deepEqual(r.filters,[true,true,true,true]);
+    assert.equal(r.summary,summary,lang);assert.equal(r.open,true,lang);
+    assert.deepEqual(r.preview,['preview',45,['Грудь','Спина']]);
+    assert.deepEqual(r.after,['quiz','45',summary],lang);
+    assert.equal(r.fromSaved,summary,lang);
   }
 });

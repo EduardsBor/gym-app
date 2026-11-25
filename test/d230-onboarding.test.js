@@ -97,7 +97,7 @@ test('D-230: «Зал» → «Тренажёрный зал» with RU/EN/LV; LV 
   const { run } = boot();
   assert.equal(run('PLN.g'), 'Тренажёрный зал');
   assert.equal(run('EQN.g'), '🏢 Тренажёрный зал');
-  assert.match(read('app.js'), /\['g','🏢 Тренажёрный зал'\]/);
+  assert.match(read('app.js'), /\['g','Тренажёрный зал'\]/);
   const d3 = read('i18n/dict3.js');
   assert.ok(d3.includes("['Тренажёрный зал','Gym','Trenažieru zāle']"));
   assert.ok(d3.includes("['🏢 Тренажёрный зал','🏢 Gym','🏢 Trenažieru zāle']"));
@@ -110,9 +110,11 @@ test('D-230: home is bodyweight only — questionnaire has g and b, no d; catalo
   const { run, app } = boot();
   run('S.goal=null;S.program=null;S.prof=null;Q={goal:"mass",sex:"m",level:"mid",days:4,len:70,place:"d",bar:"0",prio:[],lim:[]};quiz()');
   const h = app();
-  assert.match(h, /data-k="place" data-v="g"/);
-  assert.match(h, /data-k="place" data-v="b">🏠 Дом</);
-  assert.doesNotMatch(h, /data-k="place" data-v="d"/);
+  const place=h.match(/<select[^>]*data-qfilter="place">([\s\S]*?)<\/select>/);
+  assert.ok(place,'native equipment-place selector');
+  assert.match(place[1], /<option value="g">Тренажёрный зал</);
+  assert.match(place[1], /<option value="b" selected>Дом</);
+  assert.doesNotMatch(place[1], /<option value="d"/);
   assert.equal(run('Q.place'), 'b');
   run('Q.place="b";quiz()');
   assert.match(app(), /Есть турник\?/);

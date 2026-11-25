@@ -2,6 +2,12 @@
 const DICT3=[
 // C-112 blocks-v2c questionnaire (LV for Claude: docs/LV-NEW-BLOCKS-V2C.md)
 ['Анкета','Questionnaire','Anketa'],
+['Фильтры программы','Program filters','Programmas filtri'],
+['Ограничения','Limitations','Ierobežojumi'],
+['Не выбрано','None selected','Nav izvēlēts'],
+['Заменим рискованные упражнения.','We’ll replace risky exercises.','Aizstāsim riskantos vingrinājumus.'],
+['Приоритетные мышцы','Priority muscles','Prioritārie muskuļi'],
+['Можно выбрать несколько вариантов.','You can choose more than one.','Var izvēlēties vairākus variantus.'],
 ['🧩 Анкета для подбора программы','🧩 Program questionnaire','🧩 Programmas izvēles anketa'],
 ['Цель, опыт, график, оборудование и ограничения','Goal, experience, schedule, equipment and limitations','Mērķis, pieredze, grafiks, inventārs un ierobežojumi'],
 ['Вес и возраст (необязательно)','Weight and age (optional)','Svars un vecums (nav obligāti)'],
