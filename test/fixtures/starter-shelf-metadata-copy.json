@@ -1,0 +1,109 @@
+{
+  "equipment": {
+    "fit_nov_3_g_b36": [
+      "gymWarmCardio",
+      "threeCardio",
+      "stick"
+    ],
+    "mass_nov_3_g_b36": [
+      "gymWarm",
+      "lateAssist"
+    ],
+    "str_nov_3_g_b36": [
+      "gymWarm"
+    ],
+    "loss_nov_3_g_b36": [
+      "gymWarmCardio",
+      "threeCardio"
+    ],
+    "fit_nov_2_g_b32": [
+      "gymWarmCardio",
+      "twoCardio",
+      "stick"
+    ],
+    "mass_mid_4_g_b36": [
+      "upperLowerGym",
+      "upperLowerAccessories",
+      "lateAssist"
+    ],
+    "fit_nov_3_b_nobar_b36": [
+      "homeShoulders"
+    ],
+    "fit_nov_2_b_nobar_b32": [
+      "homeShoulders"
+    ],
+    "mass_mid_4_b_nobar_b36": [
+      "homeShouldersSome"
+    ]
+  },
+  "activity": {
+    "fit_nov_3_b_nobar_b36": "jumpDefault",
+    "mass_nov_3_b_nobar_b36": "jumpFixed",
+    "str_nov_3_b_nobar_b36": "jumpFixed",
+    "loss_nov_3_b_nobar_b36": "jumpDefault",
+    "fit_nov_2_b_nobar_b32": "jumpDefault",
+    "mass_mid_4_b_nobar_b36": "jumpFixed"
+  },
+  "strings": {
+    "gymWarm": [
+      "В разминке — гребной тренажёр. В заминке — беговая дорожка и перекладина.",
+      "Warm-up: rowing machine. Cool-down: treadmill and pull-up bar.",
+      "Iesildīšanās: airēšanas trenažieris. Atdzišana: skrejceliņš un pievilkšanās stienis."
+    ],
+    "stick": [
+      "В разминке используется гимнастическая палка.",
+      "The warm-up uses an exercise stick.",
+      "Iesildīšanās daļā izmanto vingrošanas nūju."
+    ],
+    "lateAssist": [
+      "В последней фазе — тренажёр для подтягиваний с противовесом.",
+      "Final phase: assisted pull-up machine.",
+      "Noslēguma posmā: pievilkšanās trenažieris ar pretsvaru."
+    ],
+    "upperLowerGym": [
+      "Гребной тренажёр и велотренажёр в разные дни; беговая дорожка в заминке.",
+      "Rowing machine and exercise bike on different days; treadmill for the cool-down.",
+      "Airēšanas trenažieris un velotrenažieris dažādās dienās; skrejceliņš atdzišanas daļā."
+    ],
+    "upperLowerAccessories": [
+      "В отдельных занятиях используются перекладина, гимнастическая палка и резинка.",
+      "The schedule calls for a pull-up bar, exercise stick and resistance band on some days.",
+      "Atsevišķiem treniņiem vajadzīgs pievilkšanās stienis, vingrošanas nūja un pretestības gumija."
+    ],
+    "jumpDefault": [
+      "По умолчанию в каждой разминке есть прыжки. В предпросмотре можно выбрать «Без прыжков».",
+      "Every warm-up includes jumping jacks by default. Choose “No jumps” in the preview.",
+      "Pēc noklusējuma katrā iesildīšanās reizē ir lēcieni, izplešot rokas un kājas. Priekšskatījumā var izvēlēties “Bez lēcieniem”."
+    ],
+    "jumpFixed": [
+      "По умолчанию в каждой разминке есть прыжки. В предпросмотре нет режима «Без прыжков».",
+      "Every warm-up includes jumping jacks by default. This preview does not offer “No jumps”.",
+      "Pēc noklusējuma katrā iesildīšanās reizē ir lēcieni, izplešot rokas un kājas. Priekšskatījumā režīms “Bez lēcieniem” nav pieejams."
+    ],
+    "gymWarmCardio": [
+      "Разминка — гребной тренажёр. В заминке — вис на перекладине и лёгкое кардио: на дорожке или на том же кардиотренажёре.",
+      "Warm-up: rowing machine. Cool-down: a dead hang on a pull-up bar and easy cardio on the treadmill or the same cardio machine.",
+      "Iesildīšanās: airēšanas trenažieris. Atdzišana: karāšanās pie pievilkšanās stieņa un viegls kardio uz skrejceliņa vai uz jau izmantotā kardiotrenažiera."
+    ],
+    "threeCardio": [
+      "В кардио по дням: дорожка, эллиптический тренажёр и велотренажёр.",
+      "Cardio by day: treadmill, elliptical and exercise bike.",
+      "Kardio atkarībā no dienas: skrejceliņš, eliptiskais trenažieris un velotrenažieris."
+    ],
+    "twoCardio": [
+      "В кардио по дням: дорожка и эллиптический тренажёр.",
+      "Cardio by day: treadmill and elliptical.",
+      "Kardio atkarībā no dienas: skrejceliņš un eliptiskais trenažieris."
+    ],
+    "homeShoulders": [
+      "Для разминки плеч подойдёт полотенце или палка от швабры.",
+      "A towel or broom handle works for the shoulder warm-up.",
+      "Plecu iesildīšanai der dvielis vai slotas kāts."
+    ],
+    "homeShouldersSome": [
+      "В отдельных занятиях для разминки плеч подойдёт полотенце или палка от швабры.",
+      "On some days, the shoulder warm-up uses a towel or broom handle.",
+      "Atsevišķos treniņos plecu iesildīšanai der dvielis vai slotas kāts."
+    ]
+  }
+}

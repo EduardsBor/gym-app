@@ -217,10 +217,33 @@ function catalogStarters(){
 }
 function filterCatalog(F,L=catalogCards()){F=F||{};return L.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||Number(c.a.days)===Number(F.days))&&(!F.place||catalogCardPlace(c)===F.place))}
 function catalogFind(id){return String(id).startsWith('starter-')?catalogStarters().find(c=>c.id===id):catalogCards().find(c=>c.id===id)||CATALOG.find(c=>c.id===id)}
+// Starter-shelf disclosure, not equipment selection or workout substitution.
+const STARTER_EQUIPMENT_NOTE={
+ fit_nov_3_g_b36:["Разминка — гребной тренажёр. В заминке — вис на перекладине и лёгкое кардио: на дорожке или на том же кардиотренажёре.","В кардио по дням: дорожка, эллиптический тренажёр и велотренажёр.","В разминке используется гимнастическая палка."],
+ mass_nov_3_g_b36:["В разминке — гребной тренажёр. В заминке — беговая дорожка и перекладина.","В последней фазе — тренажёр для подтягиваний с противовесом."],
+ str_nov_3_g_b36:["В разминке — гребной тренажёр. В заминке — беговая дорожка и перекладина."],
+ loss_nov_3_g_b36:["Разминка — гребной тренажёр. В заминке — вис на перекладине и лёгкое кардио: на дорожке или на том же кардиотренажёре.","В кардио по дням: дорожка, эллиптический тренажёр и велотренажёр."],
+ fit_nov_2_g_b32:["Разминка — гребной тренажёр. В заминке — вис на перекладине и лёгкое кардио: на дорожке или на том же кардиотренажёре.","В кардио по дням: дорожка и эллиптический тренажёр.","В разминке используется гимнастическая палка."],
+ mass_mid_4_g_b36:["Гребной тренажёр и велотренажёр в разные дни; беговая дорожка в заминке.","В отдельных занятиях используются перекладина, гимнастическая палка и резинка.","В последней фазе — тренажёр для подтягиваний с противовесом."],
+ fit_nov_3_b_nobar_b36:["Для разминки плеч подойдёт полотенце или палка от швабры."],
+ fit_nov_2_b_nobar_b32:["Для разминки плеч подойдёт полотенце или палка от швабры."],
+ mass_mid_4_b_nobar_b36:["В отдельных занятиях для разминки плеч подойдёт полотенце или палка от швабры."],
+};
+const STARTER_ACTIVITY_NOTE={
+ fit_nov_3_b_nobar_b36:"По умолчанию в каждой разминке есть прыжки. В предпросмотре можно выбрать «Без прыжков».",
+ mass_nov_3_b_nobar_b36:"По умолчанию в каждой разминке есть прыжки. В предпросмотре нет режима «Без прыжков».",
+ str_nov_3_b_nobar_b36:"По умолчанию в каждой разминке есть прыжки. В предпросмотре нет режима «Без прыжков».",
+ loss_nov_3_b_nobar_b36:"По умолчанию в каждой разминке есть прыжки. В предпросмотре можно выбрать «Без прыжков».",
+ fit_nov_2_b_nobar_b32:"По умолчанию в каждой разминке есть прыжки. В предпросмотре можно выбрать «Без прыжков».",
+ mass_mid_4_b_nobar_b36:"По умолчанию в каждой разминке есть прыжки. В предпросмотре нет режима «Без прыжков».",
+};
 function catalogStarterInfo(c,withGoal){
  const meta=catalogFmt(c.deload?'{days}× в неделю · обычно {dur} за занятие':'{days}× в неделю · около {dur} за занятие',{days:c.a.days,dur:catalogDur(c.a.lenLabel)});
  const goal=withGoal?`<strong class="catalog-starter-goal">${esc(catalogT(GOALS[c.a.goal]))}</strong> · `:'';
- return `<p class="catalog-starter-meta">${goal}${esc(meta)}${c.deload?' · '+esc(catalogT('разгрузочные занятия короче')):''}</p><p class="catalog-starter-kit">${esc(catalogT('Оборудование:'))} ${esc(catalogT(STARTER_KIT[c.kit]))}</p>`;
+ const baseKit=c.a.place==='g'?STARTER_KIT.gym:STARTER_KIT[c.kit];
+ const kit=[baseKit,...(STARTER_EQUIPMENT_NOTE[c.blockId]||[])].map(catalogT).join(' ');
+ const activity=STARTER_ACTIVITY_NOTE[c.blockId];
+ return `<p class="catalog-starter-meta">${goal}${esc(meta)}${c.deload?' · '+esc(catalogT('разгрузочные занятия короче')):''}</p><p class="catalog-starter-kit">${esc(catalogT('Оборудование:'))} ${esc(kit)}</p>${activity?`<p class="catalog-starter-activity">${esc(catalogT(activity))}</p>`:''}`;
 }
 function catalogSummary(c){if(c.summary)return c.summary;const pl=catalogCardPlace(c),b=catalogIndexList().find(x=>!x.prio&&x.goal===c.a.goal&&x.level===c.a.level&&x.days===c.a.days&&(x.place==='b_nobar'?'b':x.place)===pl);return b?catalogBlockSummary(b):''}
 

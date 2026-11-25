@@ -143,8 +143,8 @@ header:has(+#app .catalog-filters) #title{font-size:28px;font-weight:800;letter-
 .catalog-starter-goal{color:var(--txt)}
 .catalog-program-info{padding:1px 4px 0}
 #cf-reset{min-height:44px;padding:0 12px;font-size:14px}
-.catalog-starter-desc,.catalog-starter-meta,.catalog-starter-kit{margin:4px 0}
-.catalog-starter-meta,.catalog-starter-kit{font-size:.875rem;color:var(--mut)}
+.catalog-starter-desc,.catalog-starter-meta,.catalog-starter-kit,.catalog-starter-activity{margin:4px 0}
+.catalog-starter-meta,.catalog-starter-kit,.catalog-starter-activity{font-size:.875rem;color:var(--mut)}
 #cf-results>section+section{margin-top:24px}
 .starter-options{grid-template-columns:1fr;padding-inline:0}
 .starter-options p{margin:0}

@@ -837,3 +837,54 @@ test('Featured Home replacement still blocks clinician-flagged choices and a pre
   assert.deepEqual(r.active,r.preview);
   assert.deepEqual(r.oldActive,[true,true,true]);
 });
+
+test('Copy-only shelf metadata is localized, readable at 320 px and identical in catalog and preview', {skip}, async()=>{
+  const copy=JSON.parse(read('test/fixtures/starter-shelf-metadata-copy.json'));
+  const exactId=[
+    'fit_nov_3_g_b36','mass_nov_3_g_b36','str_nov_3_g_b36','loss_nov_3_g_b36','fit_nov_2_g_b32','mass_mid_4_g_b36',
+    'fit_nov_3_b_nobar_b36','mass_nov_3_b_nobar_b36','str_nov_3_b_nobar_b36','loss_nov_3_b_nobar_b36','fit_nov_2_b_nobar_b32','mass_mid_4_b_nobar_b36'
+  ];
+  for(const [i,lang] of ['ru','en','lv'].entries()){
+    const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{gc_pilot:'1'},`
+      const q=s=>document.querySelector(s);
+      const click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+      const noOverflow=el=>!!el&&el.clientWidth>0&&el.scrollWidth<=el.clientWidth+1;
+      const snapshot=()=>JSON.stringify([S.program,S.prof,S.block,S.workouts,S.pg]);
+      const s0=snapshot();
+      await until(()=>q('#toq'));click('#toq');click('#qcat');
+      const buttons=[...document.querySelectorAll('[data-c]')].map(b=>b.dataset.c);
+      R.rows=[];
+      for(const id of buttons){
+        const btn=q('[data-c="'+id+'"]');
+        const info=document.getElementById(btn.getAttribute('aria-describedby'));
+        const eq=info.querySelector('.catalog-starter-kit');
+        const a=info.querySelector('.catalog-starter-activity');
+        const catalog=[eq.textContent,a?.textContent||'',noOverflow(eq)&&(!a||noOverflow(a)),btn.textContent,info.querySelector('.catalog-starter-desc').textContent];
+        btn.click();
+        await until(()=>q('#pback')&&PV.gen.blockId===id.substring(8));
+        const pEq=q('#app > .card .catalog-starter-kit');
+        const pAct=q('#app > .card .catalog-starter-activity');
+        const preview=[pEq.textContent,pAct?.textContent||'',noOverflow(pEq)&&(!pAct||noOverflow(pAct)),q('#app > .card h2').textContent,q('#app > .card .mut').textContent];
+        const toggle=!!q('#starter-no-jump');
+        const replacementInWarm=!!q('details.wud [data-sw]');
+        R.rows.push({id:PV.gen.blockId,catalog,preview,toggle,replacementInWarm,unchanged:snapshot()===s0});
+        click('#pback');
+      }
+    `,'',true,320);
+    assert.deepEqual(r.errors,[],lang);
+    assert.deepEqual(r.rows.map(x=>x.id),exactId,lang);
+    for(const {id,catalog,preview,toggle,replacementInWarm,unchanged} of r.rows){
+      const label=lang+'/'+id;
+      assert.deepEqual(catalog,preview,label+' catalog vs preview (+ approved title/desc)');
+      assert.equal(catalog[2],true,label+' text must not overflow');
+      assert.equal(unchanged,true,label+' preview must not mutate plan/profile/history');
+      assert.equal(replacementInWarm,false,label+' metadata did not invent substitution UI');
+      const expected=copy.equipment[id]||[];
+      for(const item of expected) assert.ok(catalog[0].includes(copy.strings[item][i]),label+': '+item);
+      assert.equal(catalog[1],copy.activity[id]?copy.strings[copy.activity[id]][i]:'',label+' activity');
+      assert.equal(toggle,copy.activity[id]==='jumpDefault',label+' real no-jump checkbox');
+      if(lang!=='ru') assert.doesNotMatch(catalog[0]+' '+catalog[1],/[А-Яа-яЁё]/,label+' no raw RU metadata');
+    }
+  }
+});
