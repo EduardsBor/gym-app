@@ -83,9 +83,11 @@
     // v161: «limitations confirmed on this device» is a device flag — never in the cloud, with or without the health consent.
     delete p.limSeen;
     // Данные о здоровье (замеры, рост, вес тела, возраст) уходят в облако только при явном согласии.
-    if(!p.consentHealth){delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
+    if(!hasEffectiveHealthConsent(p.consentHealth,p.healthConsentRevokedAt)){p.consentHealth=null;delete p.body;delete p.height;delete p.weightKg;delete p.age;stripLimits(p)}
     return p;
   }
+  // Health summaries added by applyHealthFields() when a workout is finished.
+  const WORKOUT_HEALTH_FIELDS=['hr','kcal','kcalSource'];
   // D-217: ограничения из анкеты (спина/колени/плечи) и отметки «боль» — тоже данные о здоровье: без согласия только на устройстве.
   const isLimWhy=w=>Array.isArray(w)&&typeof w[0]==='string'&&/^Ограничения \(/.test(w[0]);
   // v162 (GC-161-01, Grok QA v160 P1): sex is synced only with the health consent too (privacy policy 3.2 / 9(2)(a)) —
@@ -96,7 +98,11 @@
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isSexWhy(w));
     delete p.limSeen;  // v160: local «limitations confirmed on this device» flag
     if(Array.isArray(p.why)) p.why=p.why.filter(w=>!isLimWhy(w));
-    (p.workouts||[]).forEach(w=>(w&&w.items||[]).forEach(it=>{if(it) delete it.pain}));
+    (p.workouts||[]).forEach(w=>{
+      if(!w||typeof w!=='object') return;
+      WORKOUT_HEALTH_FIELDS.forEach(k=>{delete w[k]});
+      (w.items||[]).forEach(it=>{if(it) delete it.pain});
+    });
     if(p.pg&&typeof p.pg==='object') Object.keys(p.pg).forEach(k=>{const n=p.pg[k]&&p.pg[k].next;if(n&&n.note==='pain') n.note='same'});
     // tech-fix-1/2: limitation notes and acknowledgements in the plan / history name the limitation — health data too.
     const clean=it=>{if(it&&typeof it==='object'){delete it.limAck;delete it.swapped;delete it.limFrom;delete it.limStop;delete it.merged}};  // v160: + merged (sets added for a limitation)  // tech-fix-2.1: + limFrom / limStop (partly done exercise)
@@ -112,6 +118,17 @@
     if(S.prof&&typeof S.prof==='object'&&S.prof.sex===undefined&&L.sex) S.prof.sex=L.sex;
     if(Array.isArray(S.why)&&L.why&&!S.why.some(isLimWhy)) S.why=S.why.concat(L.why.filter(isLimWhy));
     if(Array.isArray(S.why)&&L.why&&!S.why.some(isSexWhy)) S.why=S.why.concat(L.why.filter(isSexWhy));
+    // A scrubbed cloud copy must not erase the same workout's local health summary.
+    (S.workouts||[]).forEach(w=>{
+      if(!w||w.id==null) return;
+      const saved=L.workoutHealth.get(w.id);
+      if(!saved) return;
+      if(w.hr===undefined&&saved.hr!==undefined) w.hr=saved.hr;
+      if(w.kcal===undefined&&w.kcalSource===undefined){
+        if(saved.kcal!==undefined) w.kcal=saved.kcal;
+        if(saved.kcalSource!==undefined) w.kcalSource=saved.kcalSource;
+      }
+    });
     // Без согласия облако без отметок «боль» не должно стирать их в истории на этом устройстве.
     (L.pain||[]).forEach(p=>{
       const w=(S.workouts||[]).find(x=>x&&x.id===p.id);if(!w||!w.items) return;
@@ -121,9 +138,13 @@
     });
   }
   function localLimits(){
-    const pain=[];
-    (S.workouts||[]).forEach(w=>(w&&w.items||[]).forEach((it,i)=>{if(it&&it.pain) pain.push({id:w.id,i,exId:it.exId})}));
-    return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,sex:S.prof&&(S.prof.sex==='m'||S.prof.sex==='f')?S.prof.sex:null,why:Array.isArray(S.why)?S.why.filter(w=>isLimWhy(w)||isSexWhy(w)):null,pain};
+    const pain=[],workoutHealth=new Map();
+    (S.workouts||[]).forEach(w=>{
+      if(!w) return;
+      if(w.id!=null&&WORKOUT_HEALTH_FIELDS.some(k=>w[k]!==undefined)) workoutHealth.set(w.id,{hr:w.hr,kcal:w.kcal,kcalSource:w.kcalSource});
+      (w.items||[]).forEach((it,i)=>{if(it&&it.pain) pain.push({id:w.id,i,exId:it.exId})});
+    });
+    return {lim:S.prof&&Array.isArray(S.prof.lim)?S.prof.lim.slice():null,sex:S.prof&&(S.prof.sex==='m'||S.prof.sex==='f')?S.prof.sex:null,why:Array.isArray(S.why)?S.why.filter(w=>isLimWhy(w)||isSexWhy(w)):null,pain,workoutHealth};
   }
   function mergePg(a,b){
     const o={};
@@ -158,6 +179,13 @@
   // P-307: health-consent withdrawal always wins. Compare grant.at vs the latest revocation timestamp.
   function tsAt(v){if(v==null||v==='')return 0;if(typeof v==='number'&&isFinite(v)&&v>0)return v;const t=Date.parse(v);return isFinite(t)?t:0}
   function consentGrantAt(c){return c&&c.at?tsAt(c.at):0}
+  // GC-168-01: validate at the upload boundary, including the latest local revocation.
+  function hasEffectiveHealthConsent(c,revokedAt){
+    if(!c||typeof c!=='object'||Array.isArray(c)||c.v!==1||typeof c.at!=='string') return false;
+    const grant=tsAt(c.at),rev=tsAt(revokedAt);
+    if(!grant||(revokedAt!=null&&revokedAt!==''&&!rev)) return false;
+    return grant>rev;
+  }
   function applyHealthConsent(cA,rA,cB,rB){
     const rev=Math.max(tsAt(rA),tsAt(rB));
     const gA=consentGrantAt(cA),gB=consentGrantAt(cB);
