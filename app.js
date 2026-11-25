@@ -217,9 +217,10 @@ function catalogStarters(){
 }
 function filterCatalog(F,L=catalogCards()){F=F||{};return L.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||Number(c.a.days)===Number(F.days))&&(!F.place||catalogCardPlace(c)===F.place))}
 function catalogFind(id){return String(id).startsWith('starter-')?catalogStarters().find(c=>c.id===id):catalogCards().find(c=>c.id===id)||CATALOG.find(c=>c.id===id)}
-function catalogStarterInfo(c){
+function catalogStarterInfo(c,withGoal){
  const meta=catalogFmt(c.deload?'{days}× в неделю · обычно {dur} за занятие':'{days}× в неделю · около {dur} за занятие',{days:c.a.days,dur:catalogDur(c.a.lenLabel)});
- return `<p class="catalog-starter-meta">${esc(meta)}${c.deload?' · '+esc(catalogT('разгрузочные занятия короче')):''}</p><p class="catalog-starter-kit">${esc(catalogT('Оборудование:'))} ${esc(catalogT(STARTER_KIT[c.kit]))}</p>`;
+ const goal=withGoal?`<strong class="catalog-starter-goal">${esc(catalogT(GOALS[c.a.goal]))}</strong> · `:'';
+ return `<p class="catalog-starter-meta">${goal}${esc(meta)}${c.deload?' · '+esc(catalogT('разгрузочные занятия короче')):''}</p><p class="catalog-starter-kit">${esc(catalogT('Оборудование:'))} ${esc(catalogT(STARTER_KIT[c.kit]))}</p>`;
 }
 function catalogSummary(c){if(c.summary)return c.summary;const pl=catalogCardPlace(c),b=catalogIndexList().find(x=>!x.prio&&x.goal===c.a.goal&&x.level===c.a.level&&x.days===c.a.days&&(x.place==='b_nobar'?'b':x.place)===pl);return b?catalogBlockSummary(b):''}
 
@@ -449,7 +450,7 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
 const tags=(a,starter)=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),...(starter?[]:[a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин')]),catalogT(starter&&a.place==='b'?'Дома без турника':PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(t,k,opts,wide)=>`<label class="qfilter${wide?' qfilter-wide':''}" for="cf-${k}"><span>${t}</span><select id="cf-${k}" data-cfilter="${k}">${[['','Все'],...opts].map(([v,l])=>`<option value="${esc(v)}"${String(F[k]||'')===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
- const rows=L=>L.length?`<ul class="catalog-programs">${L.map(c=>`<li><button type="button" class="full program-action" data-c="${esc(c.id)}" aria-describedby="cf-info-${esc(c.id)}"><span>${esc(catalogT(c.name))}</span></button><div class="catalog-program-info" id="cf-info-${esc(c.id)}">${c.starter?`<p class="catalog-starter-desc">${esc(catalogT(c.desc))}</p>${catalogStarterInfo(c)}`:tags(c.a)}</div></li>`).join('')}</ul>`:'<p class="mut">По этим фильтрам программы не найдены.</p>';
+ const rows=L=>L.length?`<ul class="catalog-programs">${L.map(c=>`<li><button type="button" class="full program-action" data-c="${esc(c.id)}" aria-describedby="cf-info-${esc(c.id)}"${c.starter?` data-starter-goal="${esc(c.a.goal)}"`:''}><span>${esc(catalogT(c.name))}</span></button><div class="catalog-program-info" id="cf-info-${esc(c.id)}">${c.starter?`<p class="catalog-starter-desc">${esc(catalogT(c.desc))}</p>${catalogStarterInfo(c,true)}`:tags(c.a)}</div></li>`).join('')}</ul>`:'<p class="mut">По этим фильтрам программы не найдены.</p>';
  const showAll=()=>catAll||!catalogIndexList().length;
  const source=()=>showAll()?catalogCards():catalogStarters();
  const results=L=>!L.length||showAll()?rows(L):[['g','В зале'],['b','Дома без турника']].map(([place,label])=>{

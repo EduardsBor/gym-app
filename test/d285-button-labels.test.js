@@ -84,7 +84,7 @@ test('Ready-program list labels buttons by the program name and opens the progra
   const b = boot();
   b.run('catalog()');
   const h = b.app();
-  assert.match(h, /data-c="starter-fit_nov_3_g_b36" aria-describedby="cf-info-starter-fit_nov_3_g_b36"><span>Старт в зале<\/span><\/button>/);
+  assert.match(h, /data-c="starter-fit_nov_3_g_b36" aria-describedby="cf-info-starter-fit_nov_3_g_b36" data-starter-goal="fit"><span>Старт в зале<\/span><\/button>/);
   assert.match(h, /id="cf-info-starter-fit_nov_3_g_b36"/);
   assert.doesNotMatch(h, />Подробнее</);
   const id = /data-c="([^"]+)"/.exec(h)[1];
