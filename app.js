@@ -167,8 +167,60 @@ function catalogCards(){
   });
   return curated.concat(extra);
 }
-function filterCatalog(F){F=F||{};return catalogCards().filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||Number(c.a.days)===Number(F.days))&&(!F.place||catalogCardPlace(c)===F.place))}
-function catalogFind(id){return catalogCards().find(c=>c.id===id)||CATALOG.find(c=>c.id===id)}
+// The featured shelf describes exact coach blocks, not questionnaire selections or pilot variants.
+const CATALOG_STARTERS=[
+ ['fit_nov_3_g_b36','Старт в зале','Освой базовые движения: на каждом занятии работаешь на всё тело и заканчиваешь кардио.','gymCardio'],
+ ['mass_nov_3_g_b36','Набор мышц для новичков','Три силовые тренировки на всё тело с тренажёрами и свободными весами.','gym'],
+ ['str_nov_3_g_b36','Основы силы','Развивай силу в приседе и жиме, осваивая базовые движения.','gym'],
+ ['loss_nov_3_g_b36','Снижение веса: старт в зале','Силовая часть на всё тело и 15–22 минуты кардио в конце занятия.','gymCardio'],
+ ['fit_nov_2_g_b32','Всё тело в зале: 2 дня','Тренируй всё тело и выносливость, если можешь ходить в зал дважды в неделю.','gymCardio'],
+ ['mass_mid_4_g_b36','Набор мышц: верх / низ','Чередуй два занятия на верх тела и два на ноги. Для тех, кто уже тренируется.','gym',true],
+ ['fit_nov_3_b_nobar_b36','Старт дома','Развивай общую форму: после упражнений на всё тело будет ходьба или прыжки.','home'],
+ ['mass_nov_3_b_nobar_b36','Набор мышц дома','Тренируй всё тело с собственным весом, рюкзаком и полотенцем.','homeSlide'],
+ ['str_nov_3_b_nobar_b36','Сила своим весом','Развивай силу и контроль в приседаниях, отжиманиях и тягах.','home'],
+ ['loss_nov_3_b_nobar_b36','Снижение веса: старт дома','Совмещай силовые упражнения на всё тело с кардио. В текущем плане есть прыжки.','home'],
+ ['fit_nov_2_b_nobar_b32','Домашний старт на 2 дня','Два занятия на всё тело в неделю с ходьбой или прыжками в конце.','homeSlide'],
+ ['mass_mid_4_b_nobar_b36','Набор мышц дома: следующий уровень','Чередуй два занятия на верх тела и два на ноги. Для тех, кто уже тренируется.','homeSlide',true]
+];
+const STARTER_HOME_KIT='Полотенце, рюкзак, прочная опора, устойчивая ступенька и устойчивый стул или скамья.';
+const STARTER_KIT={
+ gym:'Тренажёры и свободные веса.',
+ gymCardio:'Тренажёры, свободные веса и кардиотренажёр.',
+ home:STARTER_HOME_KIT,
+ homeSlide:STARTER_HOME_KIT+' Нужны также гладкий пол или слайдеры для сгибания ног.'
+};
+// Scope the selection to known Home shelf blocks, never to the user's normal equipment settings.
+function starterHomeMode(id,mode){
+ if(mode!==1&&mode!==2)return 0;
+ const row=CATALOG_STARTERS.find(x=>x[0]===id&&x[3].startsWith('home'));
+ return row&&(mode===1||(typeof starterLowImpactAvailable==='function'&&starterLowImpactAvailable(id)))?mode:0;
+}
+function starterHomeContext(id,mode,a){
+ mode=starterHomeMode(id,mode);if(!mode)return a;
+ return Object.assign({},a,{place:'b',places:'b',bar:'0',starterMode:mode,starterSlides:CATALOG_STARTERS.some(x=>x[0]===id&&x[3]==='homeSlide')});
+}
+function starterSessionContext(A,a){
+ a=a||S.prof;
+ if(A)return starterHomeContext(A.blk,A.starterMode,a);
+ const b=S.block;return b?starterHomeContext(b.id,b.starterMode,a):a;
+}
+function starterSwapModal(cur,a,cb){return swapModal(cur,a,cb,a&&a.starterMode?blockLimAvail(a):undefined)}
+function starterReplacementOk(A,id){const ctx=starterSessionContext(A);return !ctx||!ctx.starterMode||(blockLimAvail(ctx)(id)&&blockLimOk(id,ctx))}
+function catalogStarters(){
+ const index=new Map(catalogIndexList().map(b=>[b.id,b]));
+ return CATALOG_STARTERS.flatMap(([blockId,name,desc,kit,deload])=>{
+  const b=index.get(blockId);if(!b)return[];
+  const place=b.place==='b_nobar'?'b':'g';
+  return[{id:'starter-'+blockId,starter:true,blockId,name,desc,kit,deload,
+   a:{sex:'m',prio:[],lim:[],goal:b.goal,level:b.level,days:b.days,place,bar:place==='b'?'0':undefined,len:70,lenLabel:b.duration_label}}];
+ });
+}
+function filterCatalog(F,L=catalogCards()){F=F||{};return L.filter(c=>(!F.goal||c.a.goal===F.goal)&&(!F.level||c.a.level===F.level)&&(!F.days||Number(c.a.days)===Number(F.days))&&(!F.place||catalogCardPlace(c)===F.place))}
+function catalogFind(id){return String(id).startsWith('starter-')?catalogStarters().find(c=>c.id===id):catalogCards().find(c=>c.id===id)||CATALOG.find(c=>c.id===id)}
+function catalogStarterInfo(c){
+ const meta=catalogFmt(c.deload?'{days}× в неделю · обычно {dur} за занятие':'{days}× в неделю · около {dur} за занятие',{days:c.a.days,dur:catalogDur(c.a.lenLabel)});
+ return `<p class="catalog-starter-meta">${esc(meta)}${c.deload?' · '+esc(catalogT('разгрузочные занятия короче')):''}</p><p class="catalog-starter-kit">${esc(catalogT('Оборудование:'))} ${esc(catalogT(STARTER_KIT[c.kit]))}</p>`;
+}
 function catalogSummary(c){if(c.summary)return c.summary;const pl=catalogCardPlace(c),b=catalogIndexList().find(x=>!x.prio&&x.goal===c.a.goal&&x.level===c.a.level&&x.days===c.a.days&&(x.place==='b_nobar'?'b':x.place)===pl);return b?catalogBlockSummary(b):''}
 
 
@@ -214,7 +266,7 @@ let view='today';
 // D-247: no «Программа» tab — program/catalog/quiz/preview live under «Тренировки», library/science under «Профиль» → «Справка».
 // D-251: program change lives in «Профиль» (Eduards: «Смена программы тут не нужна»), so catalog/quiz/preview highlight «Профиль».
 const NAV_OF={program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'};NAV_OF.nutrition='more';let PEDIT=null;
-function go(v){if(v!=='program')PEDIT=null;view=v;const nv=NAV_OF[v]||v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===nv));render();scrollTo(0,0)}
+function go(v){if(v==='catalog'&&view!=='preview'&&view!=='quiz'&&view!=='catalog'){catF={};catAll=false}if(v!=='program')PEDIT=null;view=v;const nv=NAV_OF[v]||v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===nv));render();scrollTo(0,0)}
 function progRowHTML(){return`<div class="card row" id="progrow" style="align-items:center;padding:10px 14px"><span class="grow"><span class="mut" style="font-size:13px">Программа</span><br><b>${esc(S.progName||'Моя программа')}</b></span><button class="sm" id="pchg">Сменить</button></div>`}
 function editDay(di){PEDIT=di;go('program')}
 function progRowBind(){const c=$('#pchg');if(c)c.onclick=()=>go('catalog')}
@@ -231,7 +283,7 @@ function render(){wclockTick();$('#nav').classList.toggle('hidden',!S.goal);if(!
  if(view==='preview')return renderPreview();if(S.active&&view==='today')return workoutView();if(view==='tpl'&&typeof tplView==='function')return tplView();({today,program,progress,history,more,science,library,nutrition:()=>nutrition(),quiz,catalog,body}[view])()}
 let ob={goal:'mass'};
 function onboarding(){openQuestionnaire('catalog')}
-let Q=null,QBack='catalog',catF={};
+let Q=null,QBack='catalog',catF={},catAll=false;
 function questionnaireSeed(){
  const p=S.prof||{},pick=(key,fallback)=>p[key]==null?fallback:p[key];
  const place=pick('place',(typeof eqPrimaryPlace==='function'&&eqPrimaryPlace())||'g');
@@ -246,7 +298,7 @@ function openQuestionnaire(from,field){
  go('quiz');
  if(field==='bwkg'||field==='agey'){const input=$('#'+field);if(input&&typeof input.focus==='function')input.focus()}
 }
-function leaveQuestionnaire(to){Q=null;go(to||QBack)}
+function leaveQuestionnaire(to){Q=null;if(to==='catalog'){catF={};catAll=false}go(to||QBack)}
 function saveQuestionnaireMeasure(input,key,asked,min,max,msg,precision){
  const raw=String(input.value).trim(),n=Number(raw);
  if((input.validity&&input.validity.badInput)||(raw&&(!Number.isFinite(n)||n<min||n>max))){toast(msg);input.value=S[key]||'';return}
@@ -297,7 +349,7 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  ${filter('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}
  ${quizGrowthHint(Q)?`<p class="mut qfilter-wide" id="qgrowth">Для роста выбери 3–4 дня</p>`:''}
  ${filter('Пол','sex',[['m','Мужской'],['f','Женский']],Q.place!=='b')}
- ${Q.place==='b'?`${filter('Есть турник?','bar',[['1','Да'],['0','Нет']])}<p class="mut qfilter-wide" id="qhome">Дом — без инвентаря, желательно турник.</p>`:''}
+ ${Q.place==='b'?`${filter('Есть турник?','bar',[['1','Да'],['0','Нет']])}<p class="mut qfilter-wide" id="qhome">Для домашних тренировок могут понадобиться полотенце, рюкзак и устойчивая опора.</p>`:''}
  ${blocks?filter('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']],true):multi('prio','Приоритетные мышцы','Можно выбрать несколько вариантов.')}
  ${multi('lim','Ограничения','Заменим рискованные упражнения.')}
  <h3 class="qfilter-wide" id="qf-optional">Вес и возраст (необязательно)</h3>
@@ -356,49 +408,83 @@ function limConfirm(cb){if(programChangeBlocked())return;const m=$('#modal');m.c
   $('#limok').onclick=()=>{m.classList.add('hidden');if(programChangeBlocked())return;const lim=[...sel];if(S.prof&&typeof S.prof==='object')S.prof.lim=lim;S.limSeen=1;save();cb(lim)}};draw()}
 function preview(pr,back){
  if(limConfirmNeeded(back))return limConfirm(lim=>{const p2=Object.assign({},pr,{a:Object.assign({},pr.a,{lim:[...new Set([].concat(pr.a.lim||[],lim))]})});preview(p2,back)});
- if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
+ if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});
+ let gen;
+ if(pr.starter){
+  const b=typeof getBlock==='function'&&getBlock(pr.blockId);
+  if(!b||typeof planFromBlock!=='function')return toast(catalogT('Не удалось открыть программу. Попробуй ещё раз.'));
+  gen=planFromBlock(b,starterHomeContext(pr.blockId,1,pr.a));
+  if(gen.blockId!==pr.blockId||!gen.days.length)return toast(catalogT('Не удалось открыть программу. Попробуй ещё раз.'));
+ }else gen=generate(pr.a);
+ PV={pr,back,gen};
+ if(pr.starter&&typeof starterLowImpact==='function'&&starterLowImpactAvailable(pr.blockId))PV.starterBase=gen;
+ view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
- const refs=[...new Set(gen.why.flatMap(w=>w[1]))],summary=PV.back==='catalog'?catalogSummary(pr):'';
- app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${summary?`<p class="mut" id="catalog-preview-summary">${esc(summary)}</p>`:''}${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
+ const refs=[...new Set(gen.why.flatMap(w=>w[1]))],summary=PV.back==='catalog'&&!pr.starter?catalogSummary(pr):'';
+ const desc=PV.noJump&&pr.blockId==='loss_nov_3_b_nobar_b36'?'Совмещай силовые упражнения на всё тело с кардио.':pr.desc;
+ const jumpOption=PV.starterBase?`<div class="qfilter-options starter-options">
+  <label for="starter-no-jump"><input type="checkbox" id="starter-no-jump" aria-describedby="starter-no-jump-tip"${PV.noJump?' checked':''}> <span>Без прыжков</span></label>
+  <p class="mut" id="starter-no-jump-tip">В разминке и кардио вместо прыжков будет ходьба. Время не изменится.</p></div>`:'';
+ app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(desc)}</div><div style="margin-top:8px">${tags(a,pr.starter)}</div>${pr.starter?catalogStarterInfo(pr):''}${summary?`<p class="mut" id="catalog-preview-summary">${esc(summary)}</p>`:''}${gen.timeLabel&&!pr.starter?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}${jumpOption}</div>
  ${gen.days.length>4?'<p class="mut">Нажми на тренировку, чтобы открыть упражнения.</p>':''}${gen.days.map((d,di)=>`${weekHead(gen.days,di)}<details class="card dayc"${gen.days.length<=4||di===PV.open?' open':''} data-di="${di}"><summary><b>${esc(workoutLabel(d,di))}</b> <span class="mut">≈ ${dayMin(d,a)} мин · ${d.items.length} упражн.</span></summary>${typeof blockLimWarnHTML==='function'?blockLimWarnHTML(d):''}${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,a).min} мин</span></summary>${warmHTML(warmPlan(d,a))}</details>`}${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span>${altCands(it.exId).length?`<button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button>`:''}</div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}</details>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
  <button class="pri full" id="pstart">Начать программу</button><button class="full" id="pback" style="margin:8px 0 20px">← Назад</button>`;
- app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.sw.split(',');const it=gen.days[di].items[ii];swapModal(it.exId,a,id=>{it.exId=id;PV.open=+di;renderPreview()})});
+ const noJump=$('#starter-no-jump');
+ if(PV.starterBase&&noJump)noJump.onchange=()=>{const y=scrollY;PV.noJump=noJump.checked;
+  PV.gen=PV.noJump?starterLowImpact(PV.starterBase,a):PV.starterBase;renderPreview();
+  $('#starter-no-jump').focus({preventScroll:true});scrollTo(0,y)};
+ app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{
+  const[di,ii]=b.dataset.sw.split(','),it=gen.days[di].items[ii];
+  const context=pr.starter?starterHomeContext(pr.blockId,PV.noJump?2:1,a):a;
+  starterSwapModal(it.exId,context,id=>{
+   if(PV.starterBase){PV.starterBase.days[di].items[ii].exId=id;PV.gen=PV.noJump?starterLowImpact(PV.starterBase,a):PV.starterBase}
+   else it.exId=id;
+   PV.open=+di;renderPreview();
+  });
+ });
  $('#pback').onclick=()=>{$('#nav').classList.remove('hidden');go(PV.back)};
  $('#pstart').onclick=()=>{if(programChangeBlocked())return;if(S.program&&!confirm('Заменить текущую программу? История тренировок сохранится.'))return;
-  S.prof=a;if(PV.back==='quiz'){S.limSeen=1;S.obDone=1;S.obOffer=2;Q=null}S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
-const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
+  S.prof=a;if(PV.back==='quiz'){S.limSeen=1;S.obDone=1;S.obOffer=2;Q=null}S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function'&&!(pr.starter&&starterHomeMode(pr.blockId,1)))eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
+const tags=(a,starter)=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),...(starter?[]:[a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин')]),catalogT(starter&&a.place==='b'?'Дома без турника':PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
  const fl=(t,k,opts,wide)=>`<label class="qfilter${wide?' qfilter-wide':''}" for="cf-${k}"><span>${t}</span><select id="cf-${k}" data-cfilter="${k}">${[['','Все'],...opts].map(([v,l])=>`<option value="${esc(v)}"${String(F[k]||'')===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
- const rows=L=>L.length?`<ul class="catalog-programs">${L.map(c=>`<li><button type="button" class="full program-action" data-c="${esc(c.id)}" aria-describedby="cf-info-${esc(c.id)}"><span>${esc(catalogT(c.name))}</span></button><div class="catalog-program-info" id="cf-info-${esc(c.id)}">${tags(c.a)}</div></li>`).join('')}</ul>`:'<p class="mut">По этим фильтрам программы не найдены.</p>';
- const L=filterCatalog(F);
+ const rows=L=>L.length?`<ul class="catalog-programs">${L.map(c=>`<li><button type="button" class="full program-action" data-c="${esc(c.id)}" aria-describedby="cf-info-${esc(c.id)}"><span>${esc(catalogT(c.name))}</span></button><div class="catalog-program-info" id="cf-info-${esc(c.id)}">${c.starter?`<p class="catalog-starter-desc">${esc(catalogT(c.desc))}</p>${catalogStarterInfo(c)}`:tags(c.a)}</div></li>`).join('')}</ul>`:'<p class="mut">По этим фильтрам программы не найдены.</p>';
+ const showAll=()=>catAll||!catalogIndexList().length;
+ const source=()=>showAll()?catalogCards():catalogStarters();
+ const results=L=>!L.length||showAll()?rows(L):[['g','В зале'],['b','Дома без турника']].map(([place,label])=>{
+   const group=L.filter(c=>catalogCardPlace(c)===place);return group.length?`<section aria-labelledby="cf-group-${place}"><h2 id="cf-group-${place}">${catalogT(label)}</h2>${rows(group)}</section>`:'';
+ }).join('');
+ const switchLabel=()=>catalogT(catAll?'К подборке программ':'Все программы');
+ const L=filterCatalog(F,source());
  app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}
  <section class="card qfilters catalog-filters" aria-labelledby="catalog-filters-title"><h2 class="qfilter-wide" id="catalog-filters-title">Фильтры программы</h2>
  ${fl('Цель','goal',Object.entries(GOALS),true)}
- ${fl('Где тренируешься','place',Object.entries(PLN).filter(([k])=>k!=='d'),true)}
+ ${fl('Где тренируешься','place',[['g',PLN.g],['b','Дом']],true)}
  ${fl('Уровень','level',Object.entries(LVN))}
  ${fl('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n+'×']))}
  <div class="row qfilter-wide"><p class="mut grow" id="cf-count" role="status">Найдено: ${L.length}</p><button type="button" id="cf-reset">Сбросить фильтры</button></div></section>
- <div id="cf-results">${rows(L)}</div>
+ ${catalogIndexList().length?`<button type="button" id="cf-all" class="full" aria-controls="cf-results">${switchLabel()}</button>`:''}
+ <div id="cf-results">${results(L)}</div>
  <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Подобрать программу под себя</button>`;
  const bindRows=()=>app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=catalogFind(b.dataset.c);if(c)preview(c,'catalog')});
- const refresh=()=>{const K=filterCatalog(catF);$('#cf-count').textContent=catalogT('Найдено:')+' '+K.length;$('#cf-results').innerHTML=rows(K);bindRows()};
+ const refresh=()=>{const K=filterCatalog(catF,source());$('#cf-count').textContent=catalogT('Найдено:')+' '+K.length;$('#cf-results').innerHTML=results(K);const toggle=$('#cf-all');if(toggle)toggle.textContent=switchLabel();bindRows()};
+ const toggle=$('#cf-all');if(toggle)toggle.onclick=()=>{catAll=!catAll;refresh()};
  const controls=app.querySelectorAll('[data-cfilter]');
  controls.forEach(el=>el.onchange=()=>{catF[el.dataset.cfilter]=el.value;refresh()});
  $('#cf-reset').onclick=()=>{catF={};controls.forEach(el=>{el.value=''});refresh()};
  bindRows();$('#toq').onclick=()=>openQuestionnaire('catalog')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
-function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
+function swapModal(cur,a,cb,allow){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};
  const place=a.place||'g';
  // v158 (Eduards, decision D 23.11): the gravitron (clip of the machine) only in the gym — not even greyed out in the home list.
- const L=altCands(cur).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b'))).filter(e=>e.id!=='assisted-pullup'||eqAvail(e.id,eqPlacesOf(a)));
+ const L=altCands(cur).filter(e=>!allow||allow(e.id)).filter(e=>e.id!=='walk-brisk'||(typeof walkBriskPlaceOk==='function'?walkBriskPlaceOk(place):(place==='d'||place==='b'))).filter(e=>e.id!=='assisted-pullup'||eqAvail(e.id,eqPlacesOf(a)));
  // tech-fix-2: exercises that conflict with the limitations (META + impact cardio) are not offered — shown greyed with the reason, no tap.
  const lc=e=>typeof blockLimConf==='function'?blockLimConf(e.id,a):[];const risky=L.filter(e=>lc(e).length);
  const good=L.filter(e=>!lc(e).length&&okEx(e.id,a)),other=L.filter(e=>!lc(e).length&&!okEx(e.id,a));
  const LR={s:'спина',k:'колени',p:'плечи'};
- m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">Альтернативы на те же мышцы</p>
+ m.innerHTML=`<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Замена: ${esc(exBy(cur).name)}</h2><button id="mc">✕</button></div><p class="mut">${allow&&!L.length?'Нет подходящей замены для этой тренировки.':'Альтернативы на те же мышцы'}</p>
  ${good.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join('')}
  ${other.length?`<p class="mut">Другое оборудование:</p>`+other.map(e=>`<div class="row">${animShot(e.id)}<button class="full grow" style="margin:3px 0;text-align:left;opacity:.6" data-p="${esc(e.id)}">${esc(e.name)}</button>${techBtn(e.id)}</div>`).join(''):''}
  ${risky.length?`<p class="mut">Не подходит при твоих ограничениях:</p>`+risky.map(e=>`<div class="row lgrisky"><button class="full grow" disabled style="margin:3px 0;text-align:left;opacity:.45">⚠ ${esc(e.name)} <span class="mut">(${lc(e).map(l=>`<span>${LR[l]}</span>`).join(', ')})</span></button></div>`).join(''):''}</div>`;
@@ -410,6 +496,7 @@ function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=
 // the source gets swStop → neutral for auto-weight, like a stopped exercise). Nothing done yet → the whole item is replaced as before.
 // All sets done → nothing to move: the exercise stays, a toast says so. Returns 'replace' | 'split' | 'done' | null.
 function swapActiveItem(A,idx,nid){const it=A&&A.items&&A.items[idx];if(!it||!nid||nid===it.exId)return null;
+ if(!starterReplacementOk(A,nid))return null;
  const sets=Array.isArray(it.sets)?it.sets:[],done=sets.filter(s=>s&&s.done),left=sets.length-done.length;
  const l=S.autoW!==false?lastSets(nid,A.id):null,fill=(s,k)=>{const p=l&&(l[k]||l[l.length-1]);s.w=p?p.w:'';if(p)s.r=p.r;s.pf=!!p;return s};
  if(!done.length){it.exId=nid;sets.forEach((s,k)=>{if(!s.done)fill(s,k)});return'replace'}
@@ -444,8 +531,10 @@ function renderTodayScreen(pick){$('#title').textContent='Тренировки';
  else app.innerHTML=`${todayOpenCardHTML(sel)}${dayListHTML(sel,false)}`;
  todayBind(sel)}
 function today(sel){if(!S.program||!S.program.length){$('#title').textContent='Тренировки';return catalog()}return renderTodayScreen(sel)}
-function startW(i){const d=S.program[i];const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,n:dayNum(d,i),blk:typeof blockActive==='function'&&blockActive()?S.block.id:undefined,notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
- items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};save();go('today')}
+function startW(i){const src=S.program[i],d=typeof blockNoBarSavedDay==='function'?blockNoBarSavedDay(src):src;const tw=!!(d.wu&&typeof wuRows==='function');S.active={id:'w'+Date.now(),start:Date.now(),dayIdx:i,dayName:d.name,n:dayNum(d,i),blk:typeof blockActive==='function'&&blockActive()?S.block.id:undefined,notes:'',warm:tw?{t:1,wu:d.wu,c:wuRows(d.wu).map(()=>false)}:(()=>{const P=warmPlan(d,S.prof);return{P,c:warmItems(P).map(()=>false)}})(),cool:d.cd&&typeof cdRows==='function'?{cd:d.cd,c:cdRows(d.cd).map(()=>false)}:null,
+ items:d.items.map(it=>{const l=S.autoW!==false?lastSets(it.exId):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}})};
+ const mode=S.block&&starterHomeMode(S.active.blk,S.block.starterMode);if(mode)S.active.starterMode=mode;
+ save();go('today')}
 let durInt;
 // D-235: one place that marks a set done (workout list ✓ and the exercise screen «+»): auto-weight carry-over, PR check, rest timer.
 function setDone(it,k){const s=it.sets[k];s.done=true;s.pf=false;if(s.w==='')s.w=0;if(s.r==='')s.r=0;if(S.autoW!==false&&!isCardio(it.exId))it.sets.slice(k+1).forEach(n=>{if(!n.done&&(n.pf||n.w==='')){n.w=s.w;n.pf=true}});checkPR(it.exId,s);if(it.rest&&!isCardio(it.exId))startTimer(S.restOverride||it.rest);else if(pendingFan)playFanfareOnly();pendingFan=false}
@@ -532,7 +621,7 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.add],l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push(S.autoW!==false?{w:l.w,r:l.r,pf:l.w!=='',done:false}:{w:'',r:l.r,done:false});save();workoutView()});
  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{A.items[b.dataset.del].sets.pop();save();workoutView()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
- app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];swapModal(it.exId,S.prof,id=>{swapActiveItem(A,+b.dataset.ws,id);save();workoutView()})});
+ app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];starterSwapModal(it.exId,starterSessionContext(A),id=>{swapActiveItem(A,+b.dataset.ws,id);save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
  $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false})),limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);go('today')}};
@@ -542,7 +631,7 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
   if(!doneItems.length&&!confirm('Нет выполненных подходов. Всё равно сохранить?'))return;
   const snap=typeof healthSnap==='function'?healthSnap(A):null;A.end=snap?snap.end:Date.now();if(A.warm)A.warmDone=A.warm.c.filter(Boolean).length;delete A.warm;if(A.cool){A.coolDone=A.cool.c.filter(Boolean).length;delete A.cool}A.items=doneItems;
   if(snap&&typeof applyHealthFields==='function')applyHealthFields(A,summarizeHealth(snap,typeof healthProfile==='function'?healthProfile():{}));
-  delete A.hrSamples;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;if(typeof blockOnFinished==='function')blockOnFinished(A);S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();if(typeof mzOnWorkoutFinished==='function')mzOnWorkoutFinished(A);stopTimer();clearInterval(durInt);toast('Тренировка сохранена 💪');go('history');if(typeof showWorkoutSummary==='function')showWorkoutSummary(A);else prSummary(A)}}
+  delete A.hrSamples;delete A.starterMode;S.workouts.push(A);S.next=(A.dayIdx+1)%S.program.length;if(typeof blockOnFinished==='function')blockOnFinished(A);S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();if(typeof mzOnWorkoutFinished==='function')mzOnWorkoutFinished(A);stopTimer();clearInterval(durInt);toast('Тренировка сохранена 💪');go('history');if(typeof showWorkoutSummary==='function')showWorkoutSummary(A);else prSummary(A)}}
 function prNotes(A){const L=[];(A&&A.items||[]).forEach(it=>(it.sets||[]).forEach(s=>{if(s&&s.pr&&s.prInfo)L.push([exBy(it.exId).name,s.prInfo])}));
  const seen=new Set(),out=[];L.forEach(p=>{const k=p[0]+'\0'+(p[1].t||'');if(seen.has(k))return;seen.add(k);out.push(p)});return out}
 function prNotesHTML(L){if(!L||!L.length)return'';const t=L.length===1?'🏆 Новый рекорд':'🏆 Новые рекорды';
@@ -616,7 +705,7 @@ function program(){const one=PEDIT!=null&&S.program[PEDIT]?PEDIT:null;$('#title'
  <button class="full sm" style="margin-top:10px" data-ad="${di}">+ Упражнение</button></details>`).join('')}
  <div class="card"><b>Подходов на группу мышц в неделю</b><div style="margin-top:6px">${volBadges()}</div><div class="mut" style="margin-top:6px">Ориентир для роста мышц: 10–20 подходов (Schoenfeld 2017).</div></div>`;
  $('#pback').onclick=()=>{const d=PEDIT;go('today');if(d!=null&&!S.active&&S.program[d]&&view==='today')today(d)};
- app.querySelectorAll('[data-swp]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.swp.split(',');const it=S.program[di].items[ii];swapModal(it.exId,S.prof,id=>{it.exId=id;save();program()})});
+ app.querySelectorAll('[data-swp]').forEach(b=>b.onclick=()=>{const[di,ii]=b.dataset.swp.split(',');const it=S.program[di].items[ii];starterSwapModal(it.exId,starterSessionContext(null),id=>{it.exId=id;save();program()})});
  app.querySelectorAll('[data-pd]').forEach(x=>x.ontoggle=()=>{if(x.open)PRG_OPEN=+x.dataset.pd});app.querySelectorAll('[data-dn]').forEach(i=>i.onchange=()=>{S.program[i.dataset.dn].name=i.value;save()});
  app.querySelectorAll('[data-e]').forEach(i=>i.onchange=()=>{const[d,k,f]=i.dataset.e.split(',');S.program[d].items[k][f]=+i.value;save();program()});
  const mv=(a,d)=>{const[di,ii]=a.split(',').map(Number),L=S.program[di].items,j=ii+d;if(j<0||j>=L.length)return;[L[ii],L[j]]=[L[j],L[ii]];save();program()};

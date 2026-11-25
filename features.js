@@ -248,7 +248,7 @@ function eqSwapFor(id,places,used){places=eqNormPlaces(places||eqPlaces());used=
  const cands=typeof altCands==='function'?altCands(id).map(e=>e.id):(((typeof ALT!=='undefined'&&ALT[id])||[]));
  for(const x of cands){if(x&&eqAvail(x,places)&&!used.has(x)&&eqSameMuscle(id,x)&&eqLimSafe(x))return x}return id}
 function eqAdaptItems(items,places){places=eqNormPlaces(places||eqPlaces());const used=new Set();return(items||[]).map(it=>{if(!it||!it.exId)return it;const id=eqSwapFor(it.exId,places,used);used.add(id);return id===it.exId?it:Object.assign({},it,{exId:id})})}
-function eqAdaptDay(d,places){if(!d)return d;return Object.assign({},d,{items:eqAdaptItems(d.items,places)})}
+function eqAdaptDay(d,places){if(!d)return d;const shown=typeof blockNoBarSavedDay==='function'?blockNoBarSavedDay(d):d;return (starterSessionContext(null,{})||{}).starterMode?shown:Object.assign({},shown,{items:eqAdaptItems(shown.items,places)})}
 function eqAdaptMisses(items,places){places=eqNormPlaces(places||eqPlaces());return(items||[]).filter(it=>it&&it.exId&&!eqAvail(it.exId,places)&&eqSwapFor(it.exId,places,new Set())===it.exId).map(it=>it.exId)}
 function eqSwitchHTML(id){eqEnsure();const mid=!!(S&&S.active);
  const chips=eqAll().map(p=>`<button type="button" class="opt chip ${eqActiveId()===p.id?'sel':''}" data-eqsw="${esc(p.id)}" ${mid?'disabled':''}>${esc(p.name)}</button>`).join('');
@@ -270,8 +270,8 @@ function eqEditor(){eqEnsure();const m=$('#modal');if(!m)return;m.classList.remo
  m.querySelectorAll('[data-eqdel]').forEach(b=>b.onclick=()=>{if(!confirm('Удалить профиль?'))return;if(!eqDelete(b.dataset.eqdel)){toast('Нельзя удалить встроенный профиль');return}toast('Профиль удалён');eqEditor()});
  const add=$('#eqadd');if(add)add.onclick=()=>{const saved=eqSave({name:'Мой профиль',places:'d'});if(!saved){toast('Уже есть дополнительный профиль');return}toast('Профиль сохранён');eqEditor()}}
 const _eqStartW=startW;startW=function(i){_eqStartW(i);if(!S.active||S.active.fromTemplate||S.active.dayName==='Своя тренировка')return;
- const src=(S.program&&S.program[i]&&S.program[i].items)||[];const adapted=eqAdaptItems(src);
+ const src=(S.program&&S.program[i]&&S.program[i].items)||[];const adapted=S.active.starterMode?src:eqAdaptItems(src);
  S.active.items=adapted.map(it=>{const l=S.autoW!==false?lastSets(it.exId,S.active.id):null;return{exId:it.exId,ns:it.sets,rest:it.rest,min:it.min,max:it.max,sec:it.sec?1:0,sets:Array.from({length:it.sets},(_,k)=>{const p=l&&(l[k]||l[l.length-1]);return{w:p?p.w:'',r:p?p.r:it.max,pf:!!p,done:false}})}});
- S.active.eqProfile=eqActiveId();if(typeof save==='function')save()};
-const _eqSwap=swapModal;swapModal=function(cur,a,cb){_eqSwap(cur,a&&a.places?a:Object.assign({},a||S.prof||{},{places:eqPlaces(),place:eqPrimaryPlace()}),cb)};
+ S.active.eqProfile=S.active.starterMode?'body':eqActiveId();if(typeof save==='function')save()};
+const _eqSwap=swapModal;swapModal=function(cur,a,cb,allow){_eqSwap(cur,a&&a.places?a:Object.assign({},a||S.prof||{},{places:eqPlaces(),place:eqPrimaryPlace()}),cb,allow)};
 eqEnsure();

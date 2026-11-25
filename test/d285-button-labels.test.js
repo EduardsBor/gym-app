@@ -57,7 +57,7 @@ function boot(opts) {
     };
   };
   const ctx = vm.createContext(g);
-  const files = ['cache-ver.js', 'alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'blocks.js', 'legal.js', 'premium.js', 'features.js', 'movekit.js', 'progress.js', 'autow.js', 'exscreen.js'];
+  const files = ['cache-ver.js', 'alt.js', 'i18n/dict.js', 'i18n/dict2.js', 'i18n/dict3.js', 'i18n/i18n.js', 'data/blocks-index.js', 'app.js', 'tech.js', 'lib.js', 'i18n/lib.en.js', 'i18n/lib.lv.js', 'i18n/tech.en.js', 'i18n/tech.lv.js', 'cards.js', 'warm.js', 'cd.js', 'place.js', 'prog.js', 'plan.js', 'blocks.js', 'legal.js', 'premium.js', 'features.js', 'movekit.js', 'progress.js', 'autow.js', 'exscreen.js'];
   for (const f of files) vm.runInContext(read(f), ctx, { filename: f });
   return { run: code => vm.runInContext(code, ctx), app: () => vm.runInContext('app.innerHTML', ctx) };
 }
@@ -84,8 +84,8 @@ test('Ready-program list labels buttons by the program name and opens the progra
   const b = boot();
   b.run('catalog()');
   const h = b.app();
-  assert.match(h, /data-c="c0" aria-describedby="cf-info-c0"><span>Старт в зале<\/span><\/button>/);
-  assert.match(h, /id="cf-info-c0"/);
+  assert.match(h, /data-c="starter-fit_nov_3_g_b36" aria-describedby="cf-info-starter-fit_nov_3_g_b36"><span>Старт в зале<\/span><\/button>/);
+  assert.match(h, /id="cf-info-starter-fit_nov_3_g_b36"/);
   assert.doesNotMatch(h, />Подробнее</);
   const id = /data-c="([^"]+)"/.exec(h)[1];
   b.run(`preview(catalogFind(${JSON.stringify(id)}),'catalog')`);

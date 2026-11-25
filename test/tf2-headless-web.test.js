@@ -22,7 +22,7 @@ function scripts(withProfile) {
 }
 function page(state, lang, ls, body, withProfile) {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css">
-<script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(ls || {}).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}window.confirm=()=>true;</script></head>
+<script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));if(!sessionStorage.getItem('__tf2_seeded')){sessionStorage.setItem('__tf2_seeded','1');localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(ls || {}).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}}window.confirm=()=>true;</script></head>
 <body><header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" hidden></span></header><main id="app"></main><div id="timer" class="hidden"><b id="tval">0:00</b></div><nav id="nav">${withProfile?'<button data-v="today">Тренировки</button><button data-v="more">Профиль</button>':''}</nav><div id="modal" class="hidden"></div>
 ${scripts(withProfile).map(s => `<script src="${s}"></script>`).join('\n')}
 <script>(function(){const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -256,7 +256,7 @@ test('Questionnaire: active workout blocks both apply routes; its history is kep
     click('#qgo');click('#pstart');R.blocked=[view,S.active.id,plan()===before,prompts];
     click('#pback');click('#qback');R.return=[view,S.active.id,JSON.stringify(S.active.items)===old,!!document.querySelector('#fin')];
 
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="starter-fit_nov_3_g_b36"]');
     R.catalogPreview=[view,PV.back];click('#pstart');
     R.catalogBlocked=[view,S.active.id,plan()===before,prompts,JSON.stringify(S.active.items)===old];
     if(view==='preview'){click('#pback');click('nav [data-v="today"]')}
@@ -264,7 +264,7 @@ test('Questionnaire: active workout blocks both apply routes; its history is kep
     if(document.querySelector('#modal:not(.hidden) #sumok'))click('#sumok');
     R.finished=[!S.active,S.workouts.some(w=>w.id==='active-q')];
 
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');click('#pstart');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="starter-fit_nov_3_g_b36"]');click('#pstart');
     R.applied=[view,S.progName===CATALOG[0].name,S.next,plan()!==before,prompts,S.workouts.some(w=>w.id==='active-q')];
   `, '', true);
   assert.deepEqual(r.errors,[]);
@@ -285,7 +285,7 @@ test('Questionnaire: ready program does not confirm new limitations during a wor
   const r=await inChrome(st,'ru',{},`
     window.mzSignedIn=()=>true; delete S.limSeen;
     const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click()};
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="starter-fit_nov_3_g_b36"]');
     R.attempt=[view,S.active.id,S.prof.lim,!!S.limSeen,!!document.querySelector('#modal:not(.hidden) #limok')];
   `, '', true);
   assert.deepEqual(r.errors,[]);
@@ -432,7 +432,11 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
       click('#qcat');await until(()=>qs('#title').textContent===${JSON.stringify(ready)});
       const names=all('[data-c]');
       R.cat=[view,size(),qs('#title').textContent,qs('#catalog-filters-title').textContent,qs('#cf-reset').textContent];
-      R.all=ids();
+      R.starters=ids();
+      R.sections=all('#cf-results section').map(e=>[e.querySelector('h2').textContent,e.querySelectorAll('[data-c]').length]);
+      R.meta=all('.catalog-starter-meta').map(e=>e.textContent);
+      R.desc=all('.catalog-starter-desc').map(e=>e.textContent);
+      R.kit=all('.catalog-starter-kit').map(e=>e.textContent);
       R.options=all('[data-cfilter]').map(e=>[e.dataset.cfilter,e.labels.length,e.labels[0].textContent.trim(),e.getBoundingClientRect().height]);
       R.filterOrder=qs('.catalog-filters').compareDocumentPosition(names[0])&Node.DOCUMENT_POSITION_FOLLOWING;
       R.sizes=[...new Set(names.map(b=>JSON.stringify(box(b))))].map(x=>JSON.parse(x));
@@ -442,16 +446,18 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
       for(const [key,value] of [['goal','str'],['place','b'],['level','adv'],['days','2']]){
         const e=qs('#cf-'+key);e.focus();e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}));
       }
-      R.focus=document.activeElement.id;const narrowed=ids();R.filtered=narrowed.map(id=>{const a=catalogFind(id).a;return [a.goal,catalogCardPlace({a}),a.level,a.days]});
+      R.focus=document.activeElement.id;
+      await until(()=>qs('#cf-results').textContent.trim()===${JSON.stringify(empty)});
+      R.empty=[qs('#cf-results').textContent.trim(),ids().length,!!qs('#cf-reset')];
+      R.allLink=qs('#cf-all').textContent;click('#cf-all');
+      const narrowed=ids();R.filtered=narrowed.map(id=>{const a=catalogFind(id).a;return [a.goal,catalogCardPlace({a}),a.level,a.days]});
       R.count=+qs('#cf-count').textContent.match(/\\d+$/)[0];const pick=qs('[data-c]'), picked=pick.dataset.c, label=pick.textContent;
       pick.click();R.preview=[view,PV.pr.id,picked,qs('#app h2').textContent,label,!!qs('#pstart'),!!qs('#catalog-preview-summary'),plan()===initial];
       click('#pback');R.back=[view,...all('[data-cfilter]').map(e=>e.value),JSON.stringify(ids())===JSON.stringify(narrowed)];
-      click('#cf-reset');R.reset=[all('[data-cfilter]').every(e=>e.value===''),JSON.stringify(ids())===JSON.stringify(R.all),plan()===initial];
-      // Every combination is populated today; exercise the explicit fallback with an empty result.
-      const filter=filterCatalog;filterCatalog=()=>[];click('#cf-reset');
-      await until(()=>qs('#cf-results').textContent.trim()===${JSON.stringify(empty)});
-      R.empty=[qs('#cf-results').textContent.trim(),all('[data-c]').length,!!qs('#cf-reset')];
-      filterCatalog=filter;click('#cf-reset');
+      click('#cf-reset');R.all=ids();
+      R.fullSizes=[...new Set(all('[data-c]').map(b=>JSON.stringify(box(b))))].map(x=>JSON.parse(x));
+      click('#cf-all');
+      R.reset=[all('[data-cfilter]').every(e=>e.value===''),JSON.stringify(ids())===JSON.stringify(R.starters),plan()===initial];
     `,'',true,width);
     const where=lang+' '+width+'px';
     assert.deepEqual(r.errors,[],where);
@@ -462,12 +468,20 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
     assert.deepEqual(r.sizes,[[width-28,48]],where);
     assert.deepEqual(r.clipped,[],where);
     assert.equal(r.accessible,true,where);
+    assert.equal(r.starters.length,12,where);
+    assert.ok(r.starters.every(x=>x.startsWith('starter-')),where);
+    assert.deepEqual(r.sections.map(x=>x[1]),[6,6],where);
+    assert.equal(r.desc.length,12,where);
+    assert.equal(new Set(r.desc).size,11,where); // approved upper/lower description is shared
+    assert.equal(r.meta.length,12,where);
+    assert.equal(r.kit.length,12,where);
+    assert.deepEqual(r.fullSizes,[[width-28,48]],where);
     assert.equal(r.all.length,124,where);
     assert.equal(new Set(r.all).size,124,where);
     assert.equal(r.filterOrder,4,where);
     assert.deepEqual(r.options.map(x=>x[0]),['goal','place','level','days'],where);
     assert.ok(r.options.every(([,n,label,h])=>n===1&&label&&h>=44),where);
-    if(lang!=='ru')assert.doesNotMatch(r.locales,/[А-Яа-яЁё]/,where);
+    if(lang!=='ru')assert.doesNotMatch([r.locales,r.sections,r.desc,r.kit,r.meta,r.allLink].join(' '),/[А-Яа-яЁё]/,where);
     assert.equal(r.focus,'cf-days',where);
     assert.ok(r.filtered.length&&r.filtered.length<r.all.length,where);
     assert.equal(r.count,r.filtered.length,where);
@@ -523,4 +537,264 @@ test('Ready programs: the top button uses each theme accent without affecting th
     assert.equal(r.rowBg,r.panel,theme);
     assert.notEqual(r.rowBg,r.ready[0],theme);
   }
+});
+
+test('Featured shelf: all 12 real button previews use exact blocks even with the questionnaire pilot enabled', {skip}, async()=>{
+  const st={lang:'ru',workouts:[],custom:[],templates:[],body:[],pg:{}};
+  const r=await inChrome(st,'ru',{gc_pilot:'1'},`
+    const qs=s=>document.querySelector(s);
+    const click=s=>{const e=qs(s);if(!e)throw Error('Missing '+s);e.click()};
+    const snapshot=()=>JSON.stringify([S.program,S.prof,S.block,S.workouts]);
+    const before=snapshot();
+    R.initial=[view,document.querySelectorAll('[data-c]').length,Boolean(qs('#catfirst'))];
+    click('#toq');click('#qcat');
+    const buttons=[...document.querySelectorAll('[data-c]')].map(b=>b.dataset.c);
+    R.preview=[];
+    for(const id of buttons){
+      click('[data-c="'+id+'"]');
+      R.preview.push([id,PV.gen.blockId,PV.gen.days.length,PV.pr.a.bar||null,
+        document.querySelectorAll('.dayc').length,!!qs('#pstart'),snapshot()===before,
+        qs('#app>.card').textContent.includes('Дома без турника'),qs('#app>.card').textContent.includes('Дом (без инвентаря)')]);
+      click('#pback');
+    }
+    const id='starter-mass_nov_3_g_b36';
+    click('[data-c="'+id+'"]');
+    R.pilot=[blockIdForProfile(PV.pr.a),PV.gen.blockId];
+    click('#pstart');
+    const saved=JSON.parse(localStorage.getItem('gym'));
+    R.apply=[view,saved.block.id,saved.program.length,saved.workouts.length,saved.progName];
+  `,'',true,320);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.initial,['catalog',12,true]);
+  assert.equal(r.preview.length,12);
+  r.preview.forEach(([id,block,n,bar,days,start,unchanged,noBar,noEquipment],i)=>{
+    assert.deepEqual([block,n,bar,days,start,unchanged,noBar,noEquipment],
+      [id.slice('starter-'.length),i===4||i===10?32:36,i>=6?'0':null,i===4||i===10?32:36,true,true,i>=6,false],id);
+  });
+  assert.deepEqual(r.pilot,['mass_nov_3_g_b36_v3','mass_nov_3_g_b36']);
+  assert.deepEqual(r.apply,['today','mass_nov_3_g_b36',36,0,'Набор мышц для новичков']);
+});
+test('The 12 proposed ready picks open the same catalog preview and actual workout; no-bar plans never show a hanging exercise', {skip}, async()=>{
+  // These are existing catalog selections for the proposed shelf profiles, not a newly published shelf.
+  const picks=[
+    'fit_nov_3_g_b36','mass_nov_3_g_b36','str_nov_3_g_b36','loss_nov_3_g_b36','fit_nov_2_g_b32','mass_mid_4_g_b36',
+    'fit_nov_3_b_nobar_b36','mass_nov_3_b_nobar_b36','str_nov_3_b_nobar_b36','loss_nov_3_b_nobar_b36','fit_nov_2_b_nobar_b32','mass_mid_4_b_nobar_b36',
+  ];
+  for(const wanted of picks){
+    const st=oldState('ru',[]);
+    const r=await inChrome(st,'ru',{},`
+      const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+      const bar=new Set(['w_scpull','dead-hang','scap-pullup','chin','pull','inv','hanging-knee-raise','mk-hanging-knee-raises','mk-parralel-bar-dips']);
+      const ids=(m,w,c)=>m.map(x=>x.exId).concat(wuRows(w).map(x=>x.id),cdRows(c).map(x=>x.id));
+      const old=JSON.stringify(S.workouts);
+      go('catalog'); click('#cf-all');
+      const card=catalogCards().find(c=>blockIdForProfile(c.a)===${JSON.stringify(wanted)});
+      if(!card)throw Error('The proposed profile is absent from the existing catalog');
+      const sel='[data-c="'+card.id+'"]';
+      await until(()=>q(sel));click(sel);
+      const plans=PV.gen.days;R.preview=[view,PV.gen.blockId,plans.length,plans[0].est,plans.some(d=>d.wu&&d.cd)];
+      R.previewHanging=plans.flatMap(d=>ids(d.items,d.wu,d.cd)).filter(id=>bar.has(id));
+      const shown=q('details[data-di="0"]');shown.open=true;
+      const md=shown.querySelector('details.wud');if(md)md.open=true;
+      R.previewNames=shown.innerText;
+      click('#pstart');
+      await until(()=>q('#start'));click('#start');
+      const A=S.active;
+      R.started=[S.block.id,A.blk,A.dayIdx,A.items.length,!!A.warm,!!A.cool];
+      R.actualHanging=ids(A.items,A.warm.wu,A.cool.cd).filter(id=>bar.has(id));
+      R.history=JSON.stringify(S.workouts)===old;
+      R.workoutNames=q('#app').textContent;
+    `,'',true);
+    assert.deepEqual(r.errors,[],wanted);
+    assert.equal(r.preview[0],'preview',wanted);
+    assert.equal(r.preview[1],wanted,wanted);
+    assert.ok(r.preview[2]>=32&&r.preview[3]>0&&r.preview[4],wanted);
+    assert.deepEqual(r.started.slice(0,3),[wanted,wanted,0],wanted);
+    assert.ok(r.started[3]>0&&r.started[4]&&r.started[5],wanted);
+    assert.equal(r.history,true,wanted);
+    if(wanted.includes('_b_nobar_')){
+      assert.deepEqual(r.previewHanging,[],wanted);
+      assert.deepEqual(r.actualHanging,[],wanted);
+      for(const t of [r.previewNames,r.workoutNames])assert.doesNotMatch(t,/Вис на перекладине|Подтягивания лопатками/,wanted);
+    }else{
+      assert.ok(r.previewHanging.includes('dead-hang'),wanted+' gym retained');
+    }
+  }
+});
+
+test('Home questionnaire: new no-bar guidance and actual cooldown dose are localized; bar-enabled choice remains available', {skip}, async()=>{
+  const locales=[
+    ['ru','Для домашних тренировок могут понадобиться полотенце, рюкзак и устойчивая опора.','8–10 повторов на каждую сторону','Повороты грудного отдела на четвереньках','8–12 повторов без веса'],
+    ['lv','Mājas treniņiem var noderēt dvielis, mugursoma un stabils balsts.','8–10 atkārtojumi katrai pusei','Krūšu daļas rotācija četrrāpus','8–12 atkārtojumi bez svara'],
+    ['en','Home workouts may need a towel, a backpack and a stable support.','8–10 reps per side','Quadruped thoracic rotation','8–12 reps without weights']
+  ];
+  for(const [lang,note,dose,name,warmDose] of locales){
+    const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{},`
+      const q=s=>document.querySelector(s),click=s=>q(s).click();
+      const choose=(id,val)=>{const e=q(id);e.value=val;e.dispatchEvent(new Event('change',{bubbles:true}))};
+      await until(()=>q('#toq'));click('#toq');
+      choose('#qf-place','b');choose('#qf-goal','mass');choose('#qf-days','4');
+      await until(()=>q('#qhome').textContent===${JSON.stringify(note)});
+      R.help=q('#qhome').textContent;
+      click('#qgo');
+      await until(()=>q('#app').textContent.includes(${JSON.stringify(dose)})&&q('#app').textContent.includes(${JSON.stringify(warmDose)}));
+      R.card=[PV.gen.blockId,q('#app').textContent.includes(${JSON.stringify(dose)}),q('#app').textContent.includes(${JSON.stringify(name)}),q('#app').textContent.includes(${JSON.stringify(warmDose)})];
+      click('#pback');choose('#qf-bar','1');click('#qgo');
+      R.bar=[PV.gen.blockId,PV.gen.days.some(d=>d.cd.stretch.some(x=>x.id==='dead-hang')),PV.gen.days.some(d=>d.wu.mob.some(x=>x.id==='w_scpull'))];
+    `,'',true,390);
+    assert.deepEqual(r.errors,[],lang);
+    assert.equal(r.help,note,lang);
+    assert.deepEqual(r.card,['mass_mid_4_b_nobar_b36',true,true,true],lang);
+    assert.deepEqual(r.bar,['mass_mid_4_b_bar_b36',true,true],lang);
+  }
+});
+
+test('Featured shelf: no-jump option is reversible and applies only when explicitly chosen', {skip}, async()=>{
+  const cases=[
+    ['ru',320,'Без прыжков','fit_nov_3_b_nobar_b36',24,36],
+    ['en',390,'No jumps','loss_nov_3_b_nobar_b36',36,36],
+    ['lv',320,'Bez lēcieniem','fit_nov_2_b_nobar_b32',16,32],
+  ];
+  for(const [lang,width,label,blockId,main,warm] of cases){
+    const st={lang,legalOk:1,obDone:1,weightAsked:1,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{},`
+      const qs=s=>document.querySelector(s);
+      const click=s=>{const e=qs(s);if(!e)throw Error('Missing '+s);e.click()};
+      const card=id=>'[data-c="starter-'+id+'"]', opt='#starter-no-jump';
+      const count=(days)=>[days.flatMap(d=>d.items).filter(i=>starterLowImpactIsJump(i.exId)).length,
+        days.filter(d=>d.wu&&d.wu.cardio&&starterLowImpactIsJump(d.wu.cardio.id)).length];
+      const snapshot=()=>JSON.stringify([S.program,S.prof,S.block,S.workouts,S.consentHealth]);
+      const before=snapshot();
+      click('#toq');click('#qcat');
+      click(card('mass_nov_3_b_nobar_b36'));R.absent=!qs(opt);click('#pback');
+      click(card(${JSON.stringify(blockId)}));
+      const start=JSON.stringify(PV.gen);
+      const mins=PV.gen.days.map(d=>dayMin(d,PV.pr.a));
+      R.default=[qs(opt).checked,count(PV.gen.days),snapshot()===before];
+      await until(()=>qs(opt).labels[0].textContent.trim()===${JSON.stringify(label)});
+      R.label=qs(opt).labels[0].textContent.trim();
+      R.help=qs('#starter-no-jump-tip').textContent;
+      click(opt);R.checked=[qs(opt).checked,document.activeElement.id,count(PV.gen.days),snapshot()===before,
+        JSON.stringify(mins)===JSON.stringify(PV.gen.days.map(d=>dayMin(d,PV.pr.a)))];
+      click(opt);R.off=[!qs(opt).checked,JSON.stringify(PV.gen)===start];
+      click(opt);
+      const ii=PV.gen.days[0].items.findIndex(i=>i.exId==='walk-brisk');
+      if(ii>=0){click('.dayc>summary');click('[data-sw="0,'+ii+'"]');
+        R.swap=!qs('[data-p="jump"],[data-p="jump-rope"]');click('#mc')}
+      click('#pback');click(card(${JSON.stringify(blockId)}));
+      R.back=[!qs(opt).checked,count(PV.gen.days),snapshot()===before];
+      click(opt);const chosen=JSON.stringify(PV.gen.days);
+      click('#pstart');const saved=JSON.parse(localStorage.getItem('gym'));
+      R.applied=[view,saved.block.id,count(saved.program),JSON.stringify(saved.program)===chosen,
+        !('noJump' in saved.prof),!('consentHealth' in saved),saved.workouts.length];
+      click('#start');
+      R.workout=[!!S.active,S.active&&count([{items:S.active.items,wu:S.active.warm.wu}])];
+    `,'',true,width);
+    assert.deepEqual(r.errors,[],lang);
+    assert.equal(r.absent,true,lang);
+    assert.deepEqual(r.default,[false,[main,warm],true],lang);
+    assert.equal(r.label,label,lang);
+    if(lang!=='ru')assert.doesNotMatch(r.help,/[А-Яа-яЁё]/,lang);
+    assert.deepEqual(r.checked,[true,'starter-no-jump',[0,0],true,true],lang);
+    assert.deepEqual(r.off,[true,true],lang);
+    if(r.swap!=null)assert.equal(r.swap,true,lang);
+    assert.deepEqual(r.back,[true,[main,warm],true],lang);
+    assert.deepEqual(r.applied,['today',blockId,[0,0],true,true,true,0],lang);
+    assert.deepEqual(r.workout,[true,[0,0]],lang);
+  }
+});
+
+test('Featured Home equipment persists through reload and scopes preview and live replacement without changing gym options', {skip}, async()=>{
+  const st=oldState('ru',[]);
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s);
+    const click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const openEx=(di,ii)=>{const e=q('[data-di="'+di+'"]');e.open=true;click('[data-sw="'+di+','+ii+'"]')};
+    const opt=id=>q('#modal:not(.hidden) [data-p="'+id+'"]');
+    const shut=()=>click('#mc');
+    const pick=id=>click('#modal [data-p="'+id+'"]');
+    const ids=()=>[...document.querySelectorAll('#modal:not(.hidden) [data-p]')].map(b=>b.dataset.p);
+    const bad=()=>ids().filter(id=>['mk-parralel-bar-dips','pull','dead-hang','w_scpull','jump','jump-rope','bp','dbp','mk-treadmill-run'].includes(id));
+    const planId='loss_nov_3_b_nobar_b36',card='[data-c="starter-'+planId+'"]';
+    const prePos=(id)=>{const di=PV.gen.days.findIndex(d=>d.items.some(i=>i.exId===id));return [di,PV.gen.days[di].items.findIndex(i=>i.exId===id)]};
+    const route=()=>{click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat')};
+    const saved=sessionStorage.getItem('shelfReload');
+    if(!saved){
+      eqSetActive('gym',{silent:true});R.history=JSON.stringify(S.workouts);
+      const before=JSON.stringify([S.program,S.prof,S.block,S.eqActive]);
+      route();click(card);
+      R.kit=[];
+      for(const ex of ['pu','mk-diamond-push-ups','bd']){
+        openEx(...prePos(ex));
+        R.kit.push([ex,bad(),!!opt(ex==='bd'?'mk-diamond-push-ups':'bd')]);
+        if(ex==='pu')R.empty=q('#modal').textContent.includes('Нет подходящей замены');
+        shut();
+      }
+      click('#starter-no-jump');openEx(...prePos('walk-brisk'));
+      R.previewWalk=[bad(),ids().length];shut();
+      R.preUnchanged=JSON.stringify([S.program,S.prof,S.block,S.eqActive])===before;
+      click('#pstart');R.beforeReload=[S.block.starterMode,eqActiveId(),S.prof.place,S.prof.bar];
+      sessionStorage.setItem('shelfReload',JSON.stringify(R));location.reload();await new Promise(()=>{});
+    }else{
+      Object.assign(R,JSON.parse(saved));
+      R.onReload=[S.block.starterMode,eqActiveId(),S.prof.place,S.prof.bar];
+      const row=(ls,id)=>ls.findIndex(it=>it.exId===id);
+      const preWalk=row(S.program[0].items,'walk-brisk');
+      click('#app button[data-i="0"]');
+      click('[data-exo="m,'+preWalk+'"] h3,[data-exo="m,'+preWalk+'"] .grow');
+      click('#exsw');R.upcoming=bad();shut();click('#exback');
+      await until(()=>q('#start'));
+      click('#start');R.onStart=[S.active.starterMode,S.active.eqProfile,...S.active.items.filter(i=>!blockLimAvail(starterSessionContext(S.active))(i.exId)).map(i=>i.exId)];
+      const di=row(S.active.items,'mk-diamond-push-ups');click('[data-ws="'+di+'"]');R.liveSafe=[bad(),!!opt('bd')];pick('bd');
+      const wi=row(S.active.items,'walk-brisk');click('[data-ws="'+wi+'"]');R.liveWalk=bad();shut();
+      const pi=row(S.active.items,'pu');click('[data-exo="m,'+pi+'"] h3');click('#exsw');R.liveDetail=bad();shut();
+      click('#exback'); await until(()=>q('#fin'));click('#fin');if(q('#modal:not(.hidden) #sumok'))click('#sumok');
+      R.saved=[!S.active,!('starterMode' in S.workouts.at(-1)),JSON.stringify(S.workouts.slice(0,-1))===R.history,eqActiveId()];
+      route();click(card);openEx(...prePos('jump'));R.defaultWalk=!!opt('walk-brisk');pick('walk-brisk');
+      openEx(...prePos('walk-brisk'));R.defaultJump=!!opt('jump');shut();click('#pstart');R.defaultMode=S.block.starterMode;
+      route();click('#cf-all');click('[data-c="c0"]');openEx(...prePos('mk-diamond-push-ups'));R.gymBar=!!opt('mk-parralel-bar-dips');shut();
+      click('#pstart');R.other=[S.block.id,'starterMode' in S.block,eqActiveId()];
+    }
+  `,'',true,320);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.kit,[['pu',[],false],['mk-diamond-push-ups',[],true],['bd',[],true]]);
+  assert.equal(r.empty,true);
+  assert.deepEqual(r.previewWalk,[[],0]);
+  assert.equal(r.preUnchanged,true);
+  assert.deepEqual(r.beforeReload,[2,'gym','b','0']);
+  assert.deepEqual(r.onReload,r.beforeReload);
+  assert.deepEqual(r.upcoming,[]);
+  assert.deepEqual(r.onStart,[2,'body']);
+  assert.deepEqual(r.liveSafe,[[],true]);
+  assert.deepEqual(r.liveWalk,[]);
+  assert.deepEqual(r.liveDetail,[]);
+  assert.deepEqual(r.saved,[true,true,true,'gym']);
+  assert.equal(r.defaultWalk,true);
+  assert.equal(r.defaultJump,true);
+  assert.equal(r.defaultMode,1);
+  assert.equal(r.gymBar,true);
+  assert.deepEqual(r.other,['fit_nov_3_g_b36',false,'gym']);
+});
+
+test('Featured Home replacement still blocks clinician-flagged choices and a previous active session is not retagged', {skip},async()=>{
+  const st=oldState('ru',['p']);
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');
+    click('[data-c="starter-loss_nov_3_b_nobar_b36"]');
+    const i=PV.gen.days[0].items.findIndex(it=>it.exId==='mk-diamond-push-ups');
+    q('[data-di="0"]').open=true;click('[data-sw="0,'+i+'"]');
+    const modal=()=>q('#modal:not(.hidden)');
+    const choices=()=>[!!modal().querySelector('[data-p="bd"]'),modal().querySelector('.lgrisky')?.textContent.includes('Обратные отжимания'),!!modal().querySelector('[data-p="mk-parralel-bar-dips"]')];
+    R.preview=choices();click('#mc');click('#pstart');click('#start');
+    const ai=S.active.items.findIndex(it=>it.exId==='mk-diamond-push-ups');
+    click('[data-ws="'+ai+'"]');R.active=choices();click('#mc');
+    const A=S.active;delete A.starterMode;const json=JSON.stringify(A);render();
+    R.oldActive=[A===S.active,!S.active.starterMode,JSON.stringify(A)===json];
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preview,[false,true,false]);
+  assert.deepEqual(r.active,r.preview);
+  assert.deepEqual(r.oldActive,[true,true,true]);
 });

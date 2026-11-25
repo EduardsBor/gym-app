@@ -119,7 +119,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  $('#exback').onclick=()=>{try{if(typeof history!=='undefined'&&history.state&&history.state.gcEx){history.back();return}}catch(e){}exBack()};const g=$('#exgo');if(g)g.onclick=exStart;
  $('#exadd').onclick=exLog;const hb=$('#exhold');if(hb)hb.onclick=exHoldToggle;const ri=$('#exrwi');if(ri)ri.onclick=()=>toast('Вес — из авто-веса программы и твоих прошлых подходов');const rb=$('#exrest');if(rb)rb.onclick=()=>{if(inf.rest)startTimer(inf.rest)};
  const cm=$('#excm');if(cm)cm.onclick=()=>{const t=prompt('Комментарий к подходу',EXS.cm||'');if(t!=null){EXS.cm=String(t).trim();exView()}};
- const sw=$('#exsw');if(sw)sw.onclick=()=>swapModal(id,S.prof,nid=>{if(A){swapActiveItem(A,e.i,nid)}else{const{sel}=exDay();const pi=S.program[sel]&&S.program[sel].items[e.i];if(pi)pi.exId=nid}save();exView()});
+ const sw=$('#exsw');if(sw)sw.onclick=()=>starterSwapModal(id,starterSessionContext(A),nid=>{if(A){swapActiveItem(A,e.i,nid)}else{const{sel}=exDay();const pi=S.program[sel]&&S.program[sel].items[e.i];if(pi)pi.exId=nid}save();exView()});
  $('#exprev').onclick=()=>{if(EXS.pos>0){EXS.pos--;EXS.cm='';exView();scrollTo(0,0)}};$('#exnext').onclick=()=>{if(EXS.pos<L.length-1){EXS.pos++;EXS.cm='';exView();scrollTo(0,0)}};
  const upd=()=>{const el=document.getElementById('exrt');if(!el){clearInterval(exInt);return}const left=tEnd?Math.ceil((tEnd-Date.now())/1000):0;el.textContent=left>0?exClock(left):(inf.rest?exClock(inf.rest):'—');const b=document.getElementById('exrest');if(b)b.classList.toggle('run',left>0);exHoldTick()};upd();exInt=setInterval(upd,500);
  // D-245: on this screen the «Отдых» circle is the only rest countdown (shared tEnd); the bottom bar is hidden via body.exv

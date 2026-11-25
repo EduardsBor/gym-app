@@ -115,7 +115,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
 
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
-  if(s.to&&s.to!==it.exId&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
+  if(s.to&&s.to!==it.exId&&starterReplacementOk(S.active,s.to)&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
   else if(awDownOk(s.down,it.exId))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
  // v160 (task 2): shoulder limitation + vertical pull (arms overhead). Not forbidden (decision C: no «p» letter, the swap does not
  // remove them; progression is already careful: RIR +1, 2 sessions), but the user sees how to do it with the limitation.
@@ -144,7 +144,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
 // «Пора усложнить» button: item i goes to the next ladder step (it.sug.to). v160 (task 5): when this is the way BACK from the
 // D2 easier step to the exercise the user came from, the old failure counters of that exercise (miss / cut, the «2 misses» note
 // and the old offer) are cleared — they belong to the time before the gravitron. Weight, success history and S.workouts stay.
-function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.to;if(!to||(typeof lgConf==='function'&&lgConf(to).length))return false;
+function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.to;if(!to||!starterReplacementOk(A,to)||(typeof lgConf==='function'&&lgConf(to).length))return false;
  const d=S.program&&S.program[A.dayIdx],pi=d&&(d.items||[]).find(x=>x.exId===from),back=it.downFrom||(pi&&pi.downFrom)||null;
  it.exId=to;delete it.downFrom;if(pi){pi.exId=to;delete pi.downFrom}
  const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}
@@ -153,7 +153,7 @@ function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from
  awApply(it,A.dl);save();return true}
 // review-nov-2 task 2: switch item i of the open workout to the offered easier step (button «Заменить» only).
 // v158: the step is offered only when it is not against the user's limitations (limguard) and the equipment profile has it.
-function awDownOk(to,cur){if(!to||to===cur)return false;if(typeof lgConf==='function'&&lgConf(to).length)return false;
+function awDownOk(to,cur){if(!to||to===cur||!starterReplacementOk(S.active,to))return false;if(typeof lgConf==='function'&&lgConf(to).length)return false;
  const pl=(S.prof&&(S.prof.places||S.prof.place))||'g';return typeof eqAvail!=='function'||eqAvail(to,pl)}
 function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.down;if(!awDownOk(to,from))return false;
  // closeout fix 2 (v157): remember the exercise we came from (pull or chin) — the way back leads to it, not always to pull.
