@@ -419,7 +419,16 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
       await until(()=>qs('#toq'));click('#toq');
       await until(()=>qs('#qcat').textContent===${JSON.stringify(ready)});
       R.q=[size(),box(qs('#qgo')),box(qs('#qcat')),qs('#qgo').textContent,qs('#qcat').textContent];
-      R.unique=qs('#qgo').nextElementSibling===qs('#qcat')&&!qs('#tocat,#qback')&&all('#qcat').length===1;
+      const readyButton=qs('#qcat'), filters=qs('.qfilters'), buildButton=qs('#qgo');
+      const follows=(a,b)=>!!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
+      const [readyRect,filterRect,buildRect]=[readyButton,filters,buildButton].map(el=>el.getBoundingClientRect());
+      R.unique=!qs('#tocat,#qback')&&all('#qcat').length===1;
+      R.qOrder=[
+        document.getElementById('app').firstElementChild===readyButton,
+        follows(readyButton,filters)&&follows(filters,buildButton),
+        readyRect.bottom<=filterRect.top&&filterRect.bottom<=buildRect.top,
+        readyRect.top>=0&&readyRect.bottom<=innerHeight,
+      ];
       click('#qcat');await until(()=>qs('#title').textContent===${JSON.stringify(ready)});
       const names=all('[data-c]');
       R.cat=[view,size(),qs('#title').textContent,qs('#catalog-filters-title').textContent,qs('#cf-reset').textContent];
@@ -448,6 +457,7 @@ test('Ready programs: questionnaire action, labeled filters and all named rows a
     assert.deepEqual(r.errors,[],where);
     assert.deepEqual(r.q,[[width,width,width],[width-28,48],[width-28,48],build,ready],where);
     assert.equal(r.unique,true,where);
+    assert.deepEqual(r.qOrder,[true,true,true,true],where);
     assert.deepEqual(r.cat,['catalog',[width,width,width],ready,title,reset],where);
     assert.deepEqual(r.sizes,[[width-28,48]],where);
     assert.deepEqual(r.clipped,[],where);
