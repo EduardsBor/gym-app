@@ -7,9 +7,10 @@
   if(typeof more!=='function') return;
   const SECTIONS=[
     {k:'acc',ic:'👤',t:'Аккаунт',sel:['#mzacc','#pwopen']},
-    {k:'prog',ic:'📋',t:'Программа',sel:['#progrow','#obre']},
+    {k:'quiz',ic:'🧩',t:'Анкета',d:'Цель, опыт, график, оборудование и ограничения',sel:[],direct:true},
+    {k:'prog',ic:'📋',t:'Программа',sel:['#progrow']},
     {k:'equip',ic:'🏋️',t:'Оборудование',sel:['#awequip','#eqdb']},
-    {k:'train',ic:'⏱',t:'Настройки тренировки',d:'Таймер, звук, экран, подстановка веса',sel:['#snd','#aw','#ro','#bwkg']},
+    {k:'train',ic:'⏱',t:'Настройки тренировки',d:'Таймер, звук, экран, подстановка веса',sel:['#snd','#aw','#ro']},
     {k:'ntf',ic:'🔔',t:'Уведомления',d:'Напоминания о тренировке и таймер отдыха',sel:['#ntfc']},
     {k:'data',ic:'💾',t:'Данные',d:'Резервная копия, экспорт, удаление, согласия',sel:['#expcsv','#privdata','#pfdanger']},
     {k:'look',ic:'🎨',t:'Язык и оформление',sel:['[data-theme]','[data-lang]']},
@@ -47,14 +48,14 @@
     open=null;
     const subs={};SECTIONS.forEach(s=>{subs[s.k]=(sub[s.k]&&sub[s.k]())||s.d||''}); // read before the cards leave the page
     kids.forEach(c=>c.remove());
-    const items=SECTIONS.filter(s=>by[s.k].length).map(s=>{
+    const items=SECTIONS.filter(s=>s.direct||by[s.k].length).map(s=>{
       const d=subs[s.k];
       return `<button class="full card pfitem" data-pf="${s.k}" style="text-align:left;display:flex;align-items:center;gap:10px"><span style="font-size:22px">${s.ic}</span><span class="grow"><b>${s.t}</b>${d?`<br><span class="mut" style="font-size:13px">${esc(d)}</span>`:''}</span><span class="mut" aria-hidden="true">›</span></button>`;
     }).join('');
     app.insertAdjacentHTML('afterbegin',`<div id="pfmenu">${items}</div>`);
     // D-290: do not leave unknown cards hanging under the menu. Every card must belong to a section.
     if(ver) app.append(ver);
-    app.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{open=b.dataset.pf;more();try{scrollTo(0,0)}catch(e){}});
+    app.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{if(b.dataset.pf==='quiz')return openQuestionnaire('more');open=b.dataset.pf;more();try{scrollTo(0,0)}catch(e){}});
   }
   const _more=more;
   more=function(){const r=_more.apply(this,arguments);try{regroup()}catch(e){}return r};

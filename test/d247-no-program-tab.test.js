@@ -124,7 +124,10 @@ test('D-247: old route to the program tab still works (full program, back to «�
   assert.doesNotMatch(app(), /Почему программа построена так/);
   run('$("#pback").onclick()');
   assert.equal(run('view'), 'today');
-  assert.match(read('app.js'), /\$\('#qback'\)\.onclick=\(\)=>go\('catalog'\)/);
+  run('openQuestionnaire("catalog");$("#qback").onclick()');
+  assert.equal(run('view'),'catalog');
+  run('app.querySelector=sel=>sel==="#helpc"?document.querySelector(sel):null; app.querySelectorAll=sel=>sel==="p.mut"?[document.querySelector("#version")]:[]; openQuestionnaire("more");$("#qback").onclick()');
+  assert.equal(run('view'),'more');
   assert.match(read('app.js'), /NAV_OF=\{program:'today',catalog:'more',quiz:'more',preview:'more',library:'more',science:'more'\}/);
 });
 

@@ -12,13 +12,11 @@ const PROFILE_HOOKS = [
   ['#mzacc', 'acc'],
   ['#pwopen', 'acc'],
   ['#progrow', 'prog'],
-  ['#obre', 'prog'],
   ['#awequip', 'equip'],
   ['#eqdb', 'equip'],
   ['#snd', 'train'],
   ['#aw', 'train'],
   ['#ro', 'train'],
-  ['#bwkg', 'train'],
   ['#ntfc', 'ntf'],
   ['#expcsv', 'data'],
   ['#privdata', 'data'],
@@ -43,14 +41,17 @@ test('D-290: profile.js sections — rename, notifications item, data danger blo
   const S = sections();
   const by = Object.fromEntries(S.map(s => [s.k, s]));
   assert.equal(by.train.t, 'Настройки тренировки');
-  assert.equal(by.train.sel.join(','), '#snd,#aw,#ro,#bwkg');
+  assert.equal(by.train.sel.join(','), '#snd,#aw,#ro');
+  assert.equal(by.quiz.t, 'Анкета');
+  assert.equal(by.quiz.direct, true);
+  assert.ok(S.findIndex(s => s.k === 'quiz') < S.findIndex(s => s.k === 'prog'));
   assert.equal(by.ntf.t, 'Уведомления');
   assert.equal(by.ntf.ic, '🔔');
   assert.equal(by.ntf.sel.join(','), '#ntfc');
   assert.ok(S.findIndex(s => s.k === 'train') < S.findIndex(s => s.k === 'ntf'));
   assert.equal(by.data.sel.join(','), '#expcsv,#privdata,#pfdanger');
   // Empty sections are hidden — Notifications appears only when #ntfc is on the page.
-  assert.match(read('profile.js'), /SECTIONS\.filter\(s=>by\[s\.k\]\.length\)/);
+  assert.match(read('profile.js'), /SECTIONS\.filter\(s=>s\.direct\|\|by\[s\.k\]\.length\)/);
   // Nothing hangs under the menu.
   assert.doesNotMatch(read('profile.js'), /rest\.forEach\(c=>app\.append/);
   // Version stays at the bottom of the Profile menu (D-279).

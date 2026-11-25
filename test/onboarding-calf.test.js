@@ -43,13 +43,15 @@ function boot(stored, withFeatures) {
   return { run: code => vm.runInContext(code, ctx), store };
 }
 
-test('onboarding state keeps its step counter', () => {
+test('legacy onboarding opens the common questionnaire', () => {
   const src = read('features.js');
   assert.equal(src.includes('"mk-dumbbell-step-up-low":0'), false);
-  assert.equal((src.match(/OB=\{step:0,/g) || []).length, 2);
-  const { run } = boot(undefined, true);
-  assert.equal(run('OB.step'), 0);
-  assert.equal(run('typeof OB.step'), 'number');
+  assert.match(src, /function obStart\(from\)\{openQuestionnaire\(from\)\}/);
+  const {run}=boot(undefined,true);
+  run('this.scrollTo=()=>{};obStart()');
+  assert.equal(run('view'), 'quiz');
+  assert.equal(run('QBack'), 'catalog');
+  assert.match(run('app.innerHTML'),/id="qgo"/);
 });
 
 test('calf measurement uses the calf key again', () => {

@@ -479,52 +479,28 @@ function closeHealthPrompt() {
   if (m) m.classList.add('hidden');
   if (typeof healthTick === 'function') healthTick();
 }
-function suggestedWeight() {
-  if (typeof S === 'undefined' || !S) return '';
-  if (+S.weightKg > 0) return S.weightKg;
-  var rows = (S.body || []).filter(function (e) { return +e.weight > 0; }).slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
-  return rows.length ? rows[rows.length - 1].weight : '';
+// Optional workout hints only link to the common questionnaire; they never edit these fields.
+function healthQuestionnairePrompt(asked, field, title, text) {
+  if (_prompt || typeof openQuestionnaire !== 'function' || (typeof view !== 'undefined' && view !== 'today')) return;
+  var m = document.querySelector('#modal');
+  if (!m) return;
+  _prompt = field;
+  m.classList.remove('hidden');
+  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">' + hesc(title) + '</h2><button id="hclose" type="button">✕</button></div><p class="mut">' + hesc(text) + '</p><button class="pri full" id="hquestionnaire" type="button">Открыть анкету</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
+  var open = m.querySelector('#hquestionnaire'), skip = m.querySelector('#hskip'), close = m.querySelector('#hclose');
+  var dismiss = function () { S[asked] = 1; if (typeof save === 'function') save(); closeHealthPrompt(); };
+  if (open) open.onclick = function () { dismiss(); openQuestionnaire('today',field); };
+  if (skip) skip.onclick = dismiss;
+  if (close) close.onclick = dismiss;
 }
 function maybeAskWeight() {
-  if (typeof S === 'undefined' || !S || !S.active || typeof document === 'undefined') return;
-  if (+S.weightKg > 0 || S.weightAsked || _prompt) return;
-  var m = document.querySelector('#modal');
-  if (!m) return;
-  _prompt = 'weight';
-  m.classList.remove('hidden');
-  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Вес для оценки калорий</h2><button id="hclose" type="button">✕</button></div><p class="mut">Один раз и необязательно. Килограммы, можно пропустить. Потом вес меняется в «Профиле».</p><label class="mut">Вес тела, кг<input id="hkg" type="number" inputmode="decimal" step="0.1" min="30" max="300" value="' + hesc(suggestedWeight()) + '"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
-  var saveBtn = m.querySelector('#hsave'), skip = m.querySelector('#hskip'), close = m.querySelector('#hclose');
-  if (saveBtn) saveBtn.onclick = function () {
-    var v = m.querySelector('#hkg') ? m.querySelector('#hkg').value : '';
-    if (v === '') { S.weightAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt(); return; }
-    var n = +v;
-    if (!(n >= 30 && n <= 300)) { if (typeof toast === 'function') toast('Вес: от 30 до 300 кг'); return; }
-    S.weightKg = Math.round(n * 10) / 10; S.weightAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt();
-  };
-  var skipFn = function () { S.weightAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt(); };
-  if (skip) skip.onclick = skipFn;
-  if (close) close.onclick = skipFn;
+  if (typeof S === 'undefined' || !S || !S.active || typeof document === 'undefined' || +S.weightKg > 0 || S.weightAsked) return;
+  healthQuestionnairePrompt('weightAsked','bwkg','Вес для оценки калорий','Вес можно указать в анкете. Это необязательно.');
 }
 function maybeAskAge() {
-  if (typeof S === 'undefined' || !S || !S.active || typeof document === 'undefined') return;
-  if (+S.age > 0 || S.ageAsked || _prompt) return;
+  if (typeof S === 'undefined' || !S || !S.active || typeof document === 'undefined' || +S.age > 0 || S.ageAsked) return;
   if (!S.active.hrSamples || !S.active.hrSamples.length) return;
-  var m = document.querySelector('#modal');
-  if (!m) return;
-  _prompt = 'age';
-  m.classList.remove('hidden');
-  m.innerHTML = '<div class="sheet"><div class="row"><h2 class="grow" style="margin:0">Возраст для пульса</h2><button id="hclose" type="button">✕</button></div><p class="mut">Нужен для калорий по пульсу и пяти зон (макс. пульс = 208 − 0,7×возраст). Можно пропустить. Потом возраст меняется в «Профиле».</p><label class="mut">Возраст<input id="hage" type="number" inputmode="numeric" min="14" max="100"></label><button class="pri full" id="hsave" type="button">Сохранить</button><button class="full" id="hskip" type="button" style="margin-top:8px">Пропустить</button></div>';
-  var saveBtn = m.querySelector('#hsave'), skip = m.querySelector('#hskip'), close = m.querySelector('#hclose');
-  if (saveBtn) saveBtn.onclick = function () {
-    var v = m.querySelector('#hage') ? m.querySelector('#hage').value : '';
-    if (v === '') { S.ageAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt(); return; }
-    var n = Math.round(+v);
-    if (!(n >= 14 && n <= 100)) { if (typeof toast === 'function') toast('Возраст: от 14 до 100 лет'); return; }
-    S.age = n; S.ageAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt();
-  };
-  var skipFn = function () { S.ageAsked = 1; if (typeof save === 'function') save(); closeHealthPrompt(); };
-  if (skip) skip.onclick = skipFn;
-  if (close) close.onclick = skipFn;
+  healthQuestionnairePrompt('ageAsked','agey','Возраст для пульса','Возраст для расчёта пульсовых зон можно указать в анкете. Это необязательно.');
 }
 function rememberSample(sample) {
   if (typeof S === 'undefined' || !S || !S.active) return;

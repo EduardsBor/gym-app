@@ -14,15 +14,16 @@ const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const chrome = require('./fixtures/chrome-path.js').findChrome();  // GC-163-04: Linux / Windows / macOS
 
-function scripts() {
+function scripts(withProfile) {
   const skip = new Set(['vendor/supabase.js', 'supabase-config.js', 'sync.js', 'notify.js', 'profile.js', 'sentry.js']);
+  if (withProfile) skip.delete('profile.js');
   return [...read('index.html').matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]).filter(s => !skip.has(s));
 }
-function page(state, lang, ls, body) {
+function page(state, lang, ls, body, withProfile) {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css">
 <script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(ls || {}).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}window.confirm=()=>true;</script></head>
-<body><header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" hidden></span></header><main id="app"></main><div id="timer" class="hidden"><b id="tval">0:00</b></div><nav id="nav"></nav><div id="modal" class="hidden"></div>
-${scripts().map(s => `<script src="${s}"></script>`).join('\n')}
+<body><header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" hidden></span></header><main id="app"></main><div id="timer" class="hidden"><b id="tval">0:00</b></div><nav id="nav">${withProfile?'<button data-v="today">Тренировки</button><button data-v="more">Профиль</button>':''}</nav><div id="modal" class="hidden"></div>
+${scripts(withProfile).map(s => `<script src="${s}"></script>`).join('\n')}
 <script>(function(){const wait=ms=>new Promise(r=>setTimeout(r,ms));
 // GC-165-03: wait for a state, not for a fixed time (async block-file loads were slower than 60 ms under a full parallel run)
 const until=async(f,ms)=>{const t=Date.now();while(Date.now()-t<(ms||5000)){try{if(f())return true}catch(e){}await wait(20)}return false};const R={errors:[]};window.onerror=(m)=>{R.errors.push(String(m))};
@@ -46,8 +47,8 @@ function serve(html) {
     server.listen(0, '127.0.0.1', () => resolve({ port: server.address().port, result, close: () => new Promise(r => server.close(r)) }));
   });
 }
-async function inChrome(state, lang, ls, body, search) {
-  const { port, result, close } = await serve(page(state, lang, ls, body));
+async function inChrome(state, lang, ls, body, search, withProfile) {
+  const { port, result, close } = await serve(page(state, lang, ls, body, withProfile));
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'tf2-chrome-'));
   const child = spawn(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--disable-extensions', '--disable-background-networking',
     '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', '--window-size=390,844', '--user-data-dir=' + prof, `http://127.0.0.1:${port}/__tf2.html${search || ''}`], { stdio: 'ignore' });
@@ -120,4 +121,108 @@ test('tf2 headless web: pilot variant chooser — asked 6 days → B with 4×/н
   assert.match(r.t1, /4×\/нед/); assert.match(r.t2, /6×\/нед/); assert.match(r.t3, /4×\/нед/);
   assert.equal(r.id2, 'loss_nov_6_g_b36_va'); assert.equal(r.id3, 'loss_nov_4_g_b36_vb');
   assert.deepEqual(r.days, [4, 4, 6, 'loss_nov_4_g_b36_vb']);
+});
+
+test('Questionnaire: actual Profile menu, catalog and legacy route share one form; preview/apply and Data remain separate', {skip}, async () => {
+  const r=await inChrome(oldState('ru',['k']),'ru',{},`
+    const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click();};
+    const history=JSON.stringify(S.workouts), before=JSON.stringify(S.program);
+    click('nav [data-v="more"]'); click('[data-pf="quiz"]');
+    R.profile=view;R.heading=document.querySelector('#title').textContent;
+    R.fields=['goal','sex','level','days','place','lim'].filter(k=>document.querySelector('[data-k="'+k+'"]'));
+    R.optional=!!document.querySelector('#bwkg')&&!!document.querySelector('#agey');
+    R.height=!!document.querySelector('#hgt');
+    click('[data-k="place"][data-v="b"]');click('[data-k="bar"][data-v="1"]');
+    click('[data-k="goal"][data-v="fit"]');click('[data-k="sex"][data-v="f"]');
+    const edit=(id,v)=>{const e=document.querySelector(id);e.value=v;e.dispatchEvent(new Event('change',{bubbles:true}));return e.value;};
+    R.valid=[edit('#bwkg','77.3'),edit('#agey','42')];
+    R.invalid=edit('#bwkg','900');
+    R.saved=JSON.parse(localStorage.getItem('gym'));
+    click('#qgo');R.preview=view;R.previewProfile=PV.pr.a;
+    R.beforeApply=JSON.stringify(S.program)===before&&S.next===0&&!S.active;
+    click('#pback'); R.previewBack=[view,Q.place,Q.bar,Q.sex,document.querySelector('#bwkg').value];
+    click('#qback');R.profileBack=view;
+    click('[data-pf="data"]');R.data=[!!document.querySelector('#privdata'),!!document.querySelector('#wipe'),!!document.querySelector('#bwkg')];
+    click('#pfback');click('[data-pf="train"]');R.train=[!!document.querySelector('#snd'),!!document.querySelector('#ro'),!!document.querySelector('#agey')];
+    click('#pfback');click('[data-pf="prog"]');R.old=!!document.querySelector('#obre');
+    click('#pchg');click('#toq');R.catalog=[view,QBack];click('#qback');R.catalogBack=view;
+    obStart('today');R.legacy=[view,QBack];click('#qback');R.legacyBack=view;
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('[data-k="goal"][data-v="fit"]');click('#qgo');
+    window.confirm=()=>false; click('#pstart'); R.cancelApply=JSON.stringify(S.program)===before;
+    window.confirm=()=>true; click('#pstart'); R.applied=[view,S.goal,S.obDone,S.limSeen];
+    R.history=JSON.stringify(S.workouts)===history; R.consent=S.consentHealth||null;
+    R.appliedProfile=S.prof;
+  `, '', true);
+  assert.deepEqual(r.errors,[]);
+  assert.equal(r.profile,'quiz');
+  assert.equal(r.heading,'Анкета');
+  assert.deepEqual(r.fields,['goal','sex','level','days','place','lim']);
+  assert.equal(r.optional,true);
+  assert.equal(r.height,false);
+  assert.deepEqual(r.valid,['77.3','42']);
+  assert.equal(r.invalid,'77.3');
+  assert.equal(r.saved.weightKg,77.3);
+  assert.equal(r.saved.age,42);
+  assert.equal(r.saved.prof.weightKg,undefined);
+  assert.equal(r.saved.prof.age,undefined);
+  assert.equal(r.preview,'preview');
+  assert.equal(r.previewProfile.weightKg,undefined);
+  assert.equal(r.previewProfile.age,undefined);
+  assert.equal(r.beforeApply,true);
+  assert.deepEqual(r.previewBack,['quiz','b','1','f','77.3']);
+  assert.equal(r.profileBack,'more');
+  assert.deepEqual(r.data,[true,true,false]);
+  assert.deepEqual(r.train,[true,true,false]);
+  assert.equal(r.old,false);
+  assert.deepEqual(r.catalog,['quiz','catalog']);
+  assert.equal(r.catalogBack,'catalog');
+  assert.deepEqual(r.legacy,['quiz','today']);
+  assert.equal(r.legacyBack,'today');
+  assert.equal(r.cancelApply,true);
+  assert.deepEqual(r.applied,['today','fit',1,1]);
+  assert.equal(r.history,true);
+  assert.equal(r.consent,null);
+  assert.equal(r.appliedProfile.weightKg,undefined);
+  assert.equal(r.appliedProfile.age,undefined);
+});
+
+test('Questionnaire: workout hint returns to the same active workout and active plan cannot be overwritten', {skip}, async()=>{
+  const st=oldState('ru',[]);
+  st.weightAsked=0;
+  st.active={id:'active-q',start:Date.now()-1000,dayIdx:0,dayName:'Тест',notes:'',items:[
+    {exId:'bp',ns:1,min:6,max:8,rest:60,sets:[{w:12,r:8,done:false}]}]};
+  const r=await inChrome(st,'ru',{},`
+    const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click()};
+    await until(()=>document.querySelector('#hquestionnaire'));
+    R.localEditors=!!document.querySelector('#hkg,#hage');
+    const old=JSON.stringify(S.active.items), program=JSON.stringify(S.program);
+    click('#hquestionnaire');R.question=[view,QBack,document.activeElement.id];
+    click('#qgo');click('#pstart');R.blocked=[view,S.active.id,JSON.stringify(S.program)===program];
+    click('#pback');click('#qback'); R.return=[view,S.active.id,JSON.stringify(S.active.items)===old,!!document.querySelector('#fin')];
+  `, '', true);
+  assert.deepEqual(r.errors,[]);
+  assert.equal(r.localEditors,false);
+  assert.deepEqual(r.question,['quiz','today','bwkg']);
+  assert.deepEqual(r.blocked,['preview','active-q',true]);
+  assert.deepEqual(r.return,['today','active-q',true,true]);
+});
+
+test('Questionnaire: first-run catalog uses same localized fields in LV and EN', {skip}, async()=>{
+  for(const [lang,heading,optional,back] of [['lv','Anketa','Svars un vecums (nav obligāti)','← Gatavās programmas'],['en','Questionnaire','Weight and age (optional)','← Ready-made programs']]){
+    const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{},`
+      await until(()=>document.querySelector('#toq'));document.querySelector('#toq').click();
+      await until(()=>document.querySelector('#title').textContent===${JSON.stringify(heading)});
+      R.heading=document.querySelector('#title').textContent;
+      R.body=document.querySelector('#app').textContent;
+      R.back=document.querySelector('#qcat').textContent.trim();
+      document.querySelector('#qcat').click();R.view=view;R.program=!!S.program;
+    `, '', true);
+    assert.deepEqual(r.errors,[]);
+    assert.equal(r.heading,heading);
+    assert.ok(r.body.includes(optional),r.body);
+    assert.equal(r.back,back);
+    assert.equal(r.view,'catalog');
+    assert.equal(r.program,false);
+  }
 });
