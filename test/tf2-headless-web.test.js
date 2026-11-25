@@ -837,3 +837,204 @@ test('Featured Home replacement still blocks clinician-flagged choices and a pre
   assert.deepEqual(r.active,r.preview);
   assert.deepEqual(r.oldActive,[true,true,true]);
 });
+
+const PLANK='mk-front-plank';
+function timedWorkoutState(target, capSuccess) {
+  const st=oldState('ru',[]);
+  delete st.block;
+  st.program=[{name:'Проверка планки',items:[{exId:PLANK,sets:3,min:20,max:45,rest:0,sec:1}]}];
+  st.pg={[PLANK]:{st:{success:capSuccess,miss:0},next:{target,sets:3,note:'same',weight:null}}};
+  return st;
+}
+
+async function saveTimedWorkout(st, results, pain) {
+  return inChrome(st,'ru',{},`
+    const qs=s=>document.querySelector(s),click=s=>{const e=qs(s);if(!e)throw Error('Missing '+s);e.click()};
+    const programBefore=JSON.stringify(S.program),historyBefore=JSON.stringify(S.workouts);
+    click('nav [data-v="today"]');await until(()=>qs('#start'));click('#start');
+    const it=S.active.items[0],ex=it.exId;
+    R.start=[it.sec,it.ns,awCls(ex).eq,it.sets[0].r];
+    click('[data-exo="m,0"]');
+    R.detail=[exInfo(exList()[EXS.pos]).unit,!!qs('#exhold'),qs('#exsets b').textContent];
+    const samples=${JSON.stringify(results)};
+    const write=(selector,v)=>{const e=qs(selector);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};
+    write('#exr',samples[0]);click('#exadd');
+    click('#exback');await until(()=>qs('#fin2'));
+    for(let j=1;j<samples.length;j++){write('input[data-i="0"][data-k="'+j+'"][data-f="r"]',samples[j]);click('[data-done="0,'+j+'"]')}
+    // D-257 deliberately removed the pain button; inject the retained fixture flag only.
+    if(${pain})S.active.items[0].pain=true;
+    click('#fin2');
+    const local=JSON.parse(localStorage.getItem('gym')),logged=local.workouts.at(-1).items[0],pg=local.pg[ex];
+    R.logged=[logged.exId,logged.sec,logged.ns,logged.sets.map(s=>s.r),!!logged.pain];
+    R.finished=[!!S.active,local.program[0].items[0].exId,pg.next.target,pg.next.note,pg.next.id||null,pg.st.success];
+    R.preserved=[JSON.stringify(local.program)===programBefore,JSON.stringify(local.workouts.slice(0,-1))===historyBefore];
+    const close=qs('#modal:not(.hidden) #mc');if(close)close.click();
+    click('nav [data-v="today"]');await until(()=>qs('#start'));click('#start');
+    const next=S.active.items[0];
+    R.nextWorkout=[next.exId,next.sets.map(s=>s.r),!!qs('[data-awlad]')];
+  `,'',true,390);
+}
+
+test('Timed hold workout: logs one of three sets in Exercise Details and retains 20 s at Finish', {skip}, async()=>{
+  const r=await saveTimedWorkout(timedWorkoutState(20,0),[20],false);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preserved,[true,true]);
+  assert.deepEqual(r.start,[1,3,'time',20]);
+  assert.deepEqual(r.detail,['sec',true,'0/3']);
+  assert.deepEqual(r.logged,[PLANK,1,3,[20],false]);
+  assert.deepEqual(r.finished,[false,PLANK,20,'same',null,0]);
+  assert.deepEqual(r.nextWorkout,[PLANK,[20,20,20],false]);
+});
+
+test('Timed hold workout: synthetic pain flag preserves complete log without raising the target', {skip}, async()=>{
+  const r=await saveTimedWorkout(timedWorkoutState(20,0),[20,20,20],true);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preserved,[true,true]);
+  assert.deepEqual(r.logged,[PLANK,1,3,[20,20,20],true]);
+  assert.deepEqual(r.finished,[false,PLANK,20,'same',null,0]);
+  assert.deepEqual(r.nextWorkout,[PLANK,[20,20,20],false]);
+});
+
+test('Timed hold workout: 1 of 3 at the cap cannot offer or apply an RKC change', {skip}, async()=>{
+  const r=await saveTimedWorkout(timedWorkoutState(45,1),[45],false);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preserved,[true,true]);
+  assert.deepEqual(r.start,[1,3,'time',45]);
+  assert.deepEqual(r.logged,[PLANK,1,3,[45],false]);
+  assert.deepEqual(r.finished,[false,PLANK,45,'same',null,0]);
+  assert.deepEqual(r.nextWorkout,[PLANK,[45,45,45],false]);
+});
+
+test('Timed hold workout: all three pain-free holds still raise the next target', {skip}, async()=>{
+  const r=await saveTimedWorkout(timedWorkoutState(20,0),[20,20,20],false);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preserved,[true,true]);
+  assert.deepEqual(r.logged,[PLANK,1,3,[20,20,20],false]);
+  assert.deepEqual(r.finished,[false,PLANK,25,'time_up',null,0]);
+  assert.deepEqual(r.nextWorkout,[PLANK,[25,25,25],false]);
+});
+
+test('Timed hold workout: two complete results at 45 seconds offer RKC but do not alter the saved plan automatically', {skip}, async()=>{
+  const r=await saveTimedWorkout(timedWorkoutState(45,1),[45,45,45],false);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.preserved,[true,true]);
+  assert.deepEqual(r.logged,[PLANK,1,3,[45,45,45],false]);
+  assert.deepEqual(r.finished,[false,PLANK,45,'ladder','mk-rkc-plank',0]);
+  assert.deepEqual(r.nextWorkout,[PLANK,[45,45,45],true]);
+});
+
+test('Pending RKC offer: old saved target stays with standard plank after ignoring and reloading; only accepting switches to RKC time', {skip}, async()=>{
+  const rkc='mk-rkc-plank',st=timedWorkoutState(10,0);
+  st.pg[PLANK].next.id=rkc;st.pg[PLANK].next.note='ladder';
+  st.pg[rkc]={st:{success:0,miss:0},next:{target:10,sets:3,note:'ladder',weight:null}};
+  const now=Date.now();
+  st.workouts.push({id:'old-plank',start:now-600000,end:now-560000,dayIdx:0,dayName:'Планка',items:[
+    {exId:PLANK,sec:1,ns:3,min:20,max:45,rest:0,sug:{target:60},sets:Array.from({length:3},()=>({r:60,w:0,done:true}))}
+  ]});
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const saved=sessionStorage.getItem('pendingPlankOffer'),ex=${JSON.stringify(PLANK)},rkc=${JSON.stringify(rkc)};
+    const state=()=>[S.active.items[0].exId,S.active.items[0].sets.map(s=>s.r),!!q('[data-awlad]')];
+    const history=JSON.stringify(S.workouts),program=JSON.stringify(S.program);
+    if(!saved){
+      click('nav [data-v="today"]');click('#app button[data-i="0"]');
+      const card=q('[data-exo="m,0"]');
+      R.hint=card.textContent.includes('60 с')&&!card.textContent.includes('10 с');
+      click('#start');R.pending=state();
+      click('#cancel');
+      R.ignored=[!S.active,JSON.stringify(S.workouts)===history,JSON.stringify(S.program)===program,S.pg[ex].next.id];
+      sessionStorage.setItem('pendingPlankOffer',JSON.stringify(R));location.reload();await new Promise(()=>{});
+    }else{
+      Object.assign(R,JSON.parse(saved));click('#start');R.reloaded=state();
+      click('[data-awlad="0"]');
+      const local=JSON.parse(localStorage.getItem('gym'));
+      R.accepted=[state(),local.program[0].items[0].exId,local.pg[ex].next.id||null,JSON.stringify(local.workouts)===history];
+    }
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.equal(r.hint,true);
+  assert.deepEqual(r.pending,[PLANK,[60,60,60],true]);
+  assert.deepEqual(r.ignored,[true,true,true,rkc]);
+  assert.deepEqual(r.reloaded,r.pending);
+  assert.deepEqual(r.accepted,[[rkc,[10,10,10],false],rkc,null,true]);
+});
+
+test('Pending RKC offer boundary: a non-plank progression offer keeps its own target and accepts as before', {skip}, async()=>{
+  const st=timedWorkoutState(20,0),ex='dbug',to='hanging-knee-raise';
+  st.program[0].items=[{exId:ex,sets:3,min:8,max:12,rest:0}];
+  st.pg={[ex]:{st:{success:0,miss:0},next:{target:12,sets:3,note:'ladder',weight:null,id:to}},
+    [to]:{st:{success:0,miss:0},next:{target:8,sets:3,note:'ladder',weight:null}}};
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const snapshot=()=>[S.active.items[0].exId,S.active.items[0].sets.map(s=>s.r),!!q('[data-awlad]')];
+    click('nav [data-v="today"]');click('#start');R.before=snapshot();
+    click('[data-awlad="0"]');R.after=snapshot();
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.before,[ex,[12,12,12],true]);
+  assert.deepEqual(r.after,[to,[8,8,8],false]);
+});
+
+function plankLockState() {
+  const rkc='mk-rkc-plank',st=timedWorkoutState(45,0);
+  st.pg[PLANK].next.id=rkc;st.pg[PLANK].next.note='ladder';
+  st.pg[rkc]={st:{success:0,miss:0},next:{target:16,sets:3,note:'same',weight:null}};
+  const now=Date.now();
+  st.workouts.push({id:'prior-rkc',start:now-600000,end:now-560000,dayIdx:0,dayName:'Планка RKC',items:[
+    {exId:rkc,sec:1,ns:1,min:10,max:20,rest:0,sets:[{r:12,w:2,done:true}]}
+  ]});
+  return st;
+}
+
+test('RKC live-set lock: list tick and detail logging hide the offer, stale clicks cannot rewrite saved sets or stats', {skip},async()=>{
+  const r=await inChrome(plankLockState(),'ru',{},`
+    const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const ex=${JSON.stringify(PLANK)},rkc='mk-rkc-plank',offer='[data-awlad="0"]',set0='[data-done="0,0"]';
+    const before=JSON.stringify(S.workouts),plan=JSON.stringify(S.program);
+    click('nav [data-v="today"]');click('#start');
+    const stale=q(offer);R.available=!!stale;
+    click(set0);R.list=[!!q(offer),S.active.items[0].sets[0].done];
+    click(set0);R.undo=[!!q(offer),S.active.items[0].sets[0].done];
+    click('[data-exo="m,0"]');q('#exr').value='45';click('#exadd');click('#exback');
+    await until(()=>q('#fin2'));R.detail=[!!q(offer),S.active.items[0].sets[0].done];
+    const frozen=JSON.stringify([S.active.items[0],S.program,S.pg]);
+    stale.click();
+    R.handler=[JSON.stringify([S.active.items[0],S.program,S.pg])===frozen,S.active.items[0].exId];
+    click('#fin2');
+    const local=JSON.parse(localStorage.getItem('gym')),last=local.workouts.at(-1);
+    R.hist=[last.items[0].exId,last.items[0].sets.map(s=>s.r),
+      JSON.stringify(local.workouts.slice(0,-1))===before,JSON.stringify(local.program)===plan];
+    R.stats=[lastSets(ex)?.map(s=>s.r)||[],lastSets(rkc)?.map(s=>s.r)||[],
+      recordsForExercise(histWorkouts(),rkc).bestWeightReps,local.pg[rkc].next.target];
+    const close=q('#modal:not(.hidden) #mc');if(close)close.click();
+    click('nav [data-v="today"]');click('#start');
+    R.next=[S.active.items[0].exId,S.active.items[0].sets.map(s=>s.r),!!q(offer)];
+    R.failEvidence={list:R.list,detail:R.detail,handler:R.handler,hist:R.hist,stats:R.stats};
+  `,'',true,390);
+  console.log('RKC history/stats regression:',JSON.stringify(r.failEvidence));
+  assert.deepEqual(r.errors,[]);
+  assert.equal(r.available,true);
+  assert.deepEqual(r.list,[false,true]);
+  assert.deepEqual(r.undo,[true,false]);
+  assert.deepEqual(r.detail,[false,true]);
+  assert.deepEqual(r.handler,[true,PLANK]);
+  assert.deepEqual(r.hist,[PLANK,[45],true,true]);
+  assert.deepEqual(r.stats,[[45],[12],12,16]);
+  assert.deepEqual(r.next,[PLANK,[45,45,45],false]);
+});
+
+test('RKC live-set lock: explicit acceptance before logging still switches the live and future exercise', {skip},async()=>{
+  const r=await inChrome(plankLockState(),'ru',{},`
+    const q=s=>document.querySelector(s),click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const history=JSON.stringify(S.workouts);
+    click('nav [data-v="today"]');click('#start');click('[data-awlad="0"]');
+    R.accepted=[S.active.items[0].exId,S.program[0].items[0].exId,S.active.items[0].sets.map(s=>s.r)];
+    click('[data-done="0,0"]');click('#fin2');
+    R.retained=JSON.stringify(S.workouts.slice(0,-1))===history;
+    R.logged=S.workouts.at(-1).items.map(i=>[i.exId,i.sets.map(s=>s.r)]);
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.accepted,['mk-rkc-plank','mk-rkc-plank',[16,16,16]]);
+  assert.equal(r.retained,true);
+  assert.deepEqual(r.logged,[['mk-rkc-plank',[16]]]);
+});

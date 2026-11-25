@@ -124,6 +124,9 @@ function prModKey(eq,m){if(!m)return'';if(eq==='band')return['','tempo','pause',
 
 function prTime(inp,c,lim,out,lo,hi){const st=out.state,R=PR_TIME[c.id]||[lo,hi];lo=R[0];hi=R[1];
  const step=PR_TSTEP[c.id]||5,t=inp.target!=null?inp.target:lo,res=prWeak(inp.results);out.target=t;out.weight=null;
+ // The saved workout contains only completed sets. An incomplete or pain-marked session breaks the success streak
+ // but does not raise the target, offer a harder exercise, or count toward a reduction.
+ if(inp.pain||res.length<out.sets){st.success=0;return}
  if(res.every(x=>x>=t)){st.tmiss=0;
   if(t>=hi){const L=PR_LADDER[c.id];
    if(L&&!prForbidden(L.to,lim)){st.success=(st.success|0)+1;
