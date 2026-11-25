@@ -79,8 +79,10 @@ test('D-236: BLOCK_MAP is exactly blocks-v2d — 180 keys, g/b_bar/b_nobar only,
 
 test('D-236: Home = b only — questionnaire offers g/b, b maps by bar answer; old place-d profiles still resolve via LEGACY_D_BLOCK_MAP', () => {
   const { run } = boot();
-  const src = read('app.js');
-  assert.ok(src.includes("grp('Где тренируешься','place',[['g','🏢 Тренажёрный зал'],['b','🏠 Дом']])"));
+  const html = run('Q=null;quiz();app.innerHTML');
+  const place = html.match(/<select[^>]*data-qfilter="place">([\s\S]*?)<\/select>/);
+  assert.ok(place, 'questionnaire place selector');
+  assert.deepEqual([...place[1].matchAll(/<option value="([^"]+)"/g)].map(([,v])=>v), ['g','b']);
   assert.equal(run('blockIdForProfile({goal:"mass",level:"mid",days:3,place:"b",bar:"1"})'), 'mass_mid_3_b_bar_b36');
   assert.equal(run('blockIdForProfile({goal:"mass",level:"mid",days:3,place:"b",bar:"0"})'), 'mass_mid_3_b_nobar_b36');
   assert.equal(Object.keys(run('LEGACY_D_BLOCK_MAP')).length, 60);

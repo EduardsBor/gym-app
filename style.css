@@ -17,6 +17,25 @@ button,.btn{font:inherit;border:0;border-radius:var(--radius-btn);background:var
 .opt{padding:14px;text-align:left;border:2px solid transparent}.opt.sel{border-color:var(--acc);background:var(--sel)}
 input,select,textarea{font:inherit;background:var(--card2);color:var(--txt);border:var(--line-w) solid var(--line);border-radius:var(--radius-btn);padding:10px;width:100%;min-height:46px}
 input[type=number]{text-align:center;font-size:18px}
+.qfilters{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:6px 10px;padding:10px}
+.qfilters .qfilter-wide{grid-column:1/-1}
+.qfilters h2,.qfilters h3,.qfilters p{margin:0}
+.qfilters h2{font-size:16px;line-height:1.25}
+.qfilters h3{font-size:14px}
+.qfilters #qlen{border-top:1px solid var(--line);padding-top:6px}
+.qfilter{display:grid;align-content:end;gap:3px;min-width:0;color:var(--mut);font-size:13px;line-height:1.3}
+.qfilter select,.qfilter input{font-size:16px;min-width:0;min-height:44px;padding:6px 8px}
+.qfilter select{padding-right:26px}
+.qfilter-multi{min-width:0}
+.qfilter-multi summary{position:relative;display:grid;align-content:center;min-height:44px;gap:1px;padding:5px 30px 5px 8px;background:var(--card2);border:var(--line-w) solid var(--line);border-radius:var(--radius-btn);color:var(--mut);cursor:pointer;font-size:13px;list-style:none;overflow-wrap:anywhere}
+.qfilter-multi summary::-webkit-details-marker{display:none}
+.qfilter-multi summary::after{content:"";position:absolute;right:12px;top:calc(50% - 5px);width:7px;height:7px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.qfilter-multi[open] summary::after{transform:rotate(225deg);top:calc(50% - 1px)}
+.qfilter-selection{color:var(--txt);font-size:15px}
+.qfilter-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 6px;padding:3px 4px 0}
+.qfilter-options p{grid-column:1/-1}
+.qfilter-options label{display:flex;align-items:center;gap:6px;min-width:0;min-height:44px;cursor:pointer;overflow-wrap:anywhere}
+.qfilter-options input{flex:none;width:18px;height:18px;min-height:0;margin:0;accent-color:var(--acc)}
 .set{display:grid;grid-template-columns:32px 1fr 1fr 56px;gap:8px;align-items:center;margin:6px 0}
 .set.done input{border-color:var(--ok);background:var(--ok-bg)}.set .n{color:var(--mut);text-align:center}
 .prev{font-size:12px;color:var(--mut);grid-column:2/4;margin-top:-4px}

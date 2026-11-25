@@ -208,7 +208,7 @@ test('D-282: anim3d leftovers are gone; legacy place d suggests Дом; user_sta
   assert.equal(sw.includes('moyzal-anim3d'), false);
   assert.match(tech, /function hasAnim\(id\)\{return false\}/);
   assert.match(sw, /x!==C&&x!=='moyzal-movekit-v1'/);
-  assert.match(app, /Q\.place==='d'\?\(Q\.place='b',''\):''/);
+  assert.match(app, /if\(Q\.place==='d'\)Q\.place='b'/);
   assert.match(app, /place:place==='d'\?'b':place/);
   assert.match(feat, /function obStart\(from\)\{openQuestionnaire\(from\)\}/);
   assert.equal(app.includes("Q.place='g'"), false);

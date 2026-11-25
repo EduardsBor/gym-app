@@ -97,25 +97,27 @@ test('new Strength mid/adv program with 30 min is built as 45; novice Strength a
   assert.equal(run('lenNote({goal:"mass",level:"nov",days:3,place:"g"},30)'), '');
 });
 
+const lenOptions = h => h.match(/<select[^>]*data-qfilter="len">([\s\S]*?)<\/select>/)[1];
+
 test('quiz: Strength advanced hides 30 min, auto-uses 45 and shows the note; Mass mid 30 shows the Express label', () => {
   const b = boot({ lang: 'ru', goal: 'mass', days: 3, next: 0, obDone: 1, workouts: [], custom: [], body: [] });
   b.run('localStorage.setItem("gc_blocks","0")'); // C-112: blocks show a fixed 60–70 min; the old length picker is behind gc_blocks=0
   b.run('Q={goal:"str",sex:"m",level:"adv",days:4,len:30,place:"g",prio:[],lim:[]};quiz()');
   let html = b.run('app.innerHTML');
   assert.equal(b.run('Q.len'), 45);
-  assert.doesNotMatch(html, /data-k="len" data-v="30"/);
-  assert.match(html, /data-k="len" data-v="45"/);
+  assert.doesNotMatch(lenOptions(html), /<option value="30"/);
+  assert.match(lenOptions(html), /<option value="45" selected>/);
   assert.ok(html.includes(MIN45));
   b.run('Q={goal:"mass",sex:"m",level:"mid",days:3,len:30,place:"g",prio:[],lim:[]};quiz()');
   html = b.run('app.innerHTML');
   assert.equal(b.run('Q.len'), 30);
-  assert.match(html, /data-k="len" data-v="30"/);
+  assert.match(lenOptions(html), /<option value="30" selected>/);
   assert.ok(html.includes(NOTE));
   assert.ok(!html.includes(MIN45));
   b.run('Q={goal:"str",sex:"m",level:"nov",days:3,len:30,place:"g",prio:[],lim:[]};quiz()');
   html = b.run('app.innerHTML');
   assert.equal(b.run('Q.len'), 30);
-  assert.match(html, /data-k="len" data-v="30"/);
+  assert.match(lenOptions(html), /<option value="30" selected>/);
   assert.ok(!html.includes(MIN45) && !html.includes(NOTE));
 });
 
@@ -126,7 +128,7 @@ test('legacy onboarding opens the same questionnaire and honors its 30-minute ru
   const html = b.run('app.innerHTML');
   assert.equal(b.run('view'), 'quiz');
   assert.equal(b.run('Q.len'), 45);
-  assert.doesNotMatch(html, /data-k="len" data-v="30"/);
+  assert.doesNotMatch(lenOptions(html), /<option value="30"/);
   assert.ok(html.includes(MIN45));
   b.run('S.prof={goal:"mass",level:"adv",days:3,len:30,place:"g"};obStart("today")');
   assert.ok(b.run('app.innerHTML').includes(NOTE));

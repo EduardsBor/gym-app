@@ -255,8 +255,15 @@ function saveQuestionnaireMeasure(input,key,asked,min,max,msg,precision){
  input.value=S[key]||'';
  save();
 }
-function quizLenOld(grp){return`${(typeof lenOff==='function'&&lenOff(Q,LENS[lenIdx(Q.len)])&&(Q.len=effLen(Q)),grp('Длительность тренировки','len',[30,45,60,75,90].filter(n=>!(typeof lenOff==='function'&&lenOff(Q,n))).map(n=>[n,n+' мин'])))}${typeof lenOff==='function'&&lenOff(Q,30)?`<p class="mut" id="qlenoff" style="margin-top:0">${esc(LEN_MIN_STR)}</p>`:''}${typeof lenNote==='function'&&lenNote(Q,Q.len)?`<p class="mut" id="qlennote" style="margin-top:0">⚡ <span>${esc(lenNote(Q,Q.len))}</span></p>`:''}
- ${typeof progGlance==='function'&&progGlance(Q)?(()=>{const g=progGlance(Q);return `<p class="mut" style="margin-top:0">Реальное время с разминкой и заминкой: ${esc(g.label)}${g.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>${g.advice?`<p class="mut">${esc(g.advice)}</p>`:''}`})():''}`}
+function quizLenOld(filter){
+ if(typeof lenOff==='function'&&lenOff(Q,LENS[lenIdx(Q.len)]))Q.len=effLen(Q);
+ const note=(typeof lenNote==='function'&&lenNote(Q,Q.len))||'';
+ const glance=typeof progGlance==='function'&&progGlance(Q);
+ return `${filter('Длительность тренировки','len',[30,45,60,75,90].filter(n=>!(typeof lenOff==='function'&&lenOff(Q,n))).map(n=>[n,n+' мин']),true)}
+ ${typeof lenOff==='function'&&lenOff(Q,30)?`<p class="mut qfilter-wide" id="qlenoff">${esc(LEN_MIN_STR)}</p>`:''}
+ ${note?`<p class="mut qfilter-wide" id="qlennote">⚡ <span>${esc(note)}</span></p>`:''}
+ ${glance?`<p class="mut qfilter-wide">Реальное время с разминкой и заминкой: ${esc(glance.label)}${glance.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>${glance.advice?`<p class="mut qfilter-wide">${esc(glance.advice)}</p>`:''}`:''}`;
+}
 // C-114: show the selected block's duration_label (no longer a fixed 60–70 min).
 function quizBlockId(q){q=q||(typeof Q!=='undefined'?Q:null);return(q&&typeof blockIdForProfile==='function'&&blockIdForProfile(q))||null}
 function quizDurationLabel(q){const id=quizBlockId(q);if(!id)return'';
@@ -264,24 +271,55 @@ function quizDurationLabel(q){const id=quizBlockId(q);if(!id)return'';
  if(typeof getBlock==='function'){try{const b=getBlock(id);if(b&&b.duration_label)return b.duration_label}catch(e){}}
  return''}
 function quizGrowthHint(q){q=q||(typeof Q!=='undefined'?Q:null);return!!(q&&q.level==='adv'&&+q.days===2)}
-function quizLen(grp){if(typeof blocksEnabled==='function'&&blocksEnabled()){const label=quizDurationLabel(Q)||'60–70 мин';Q.lenLabel=label;const nums=String(label).match(/\d+/g);Q.len=nums&&nums.length?+nums[nums.length-1]:70;const shown=(typeof catalogDur==='function'?catalogDur(label):label)+' (с разминкой и заминкой)';return`<h2>Длительность тренировки</h2><p class="mut" id="qlen" style="margin-top:0">${esc(shown)}</p>`}delete Q.lenLabel;return quizLenOld(grp)}
-
-const chip=(k,v,label,sel)=>`<button class="opt chip ${sel?'sel':''}" aria-pressed="${!!sel}" data-k="${k}" data-v="${v}">${label}</button>`;
-function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';
- const grp=(t,k,opts,multi)=>`<h2>${t}</h2><div class="chips">${opts.map(([v,l])=>chip(k,v,l,multi?Q[k].includes(v):String(Q[k])===String(v))).join('')}</div>`;
+function quizLen(filter,blocks=typeof blocksEnabled==='function'&&blocksEnabled()){
+ if(blocks){const label=quizDurationLabel(Q)||'60–70 мин';Q.lenLabel=label;const nums=String(label).match(/\d+/g);Q.len=nums&&nums.length?+nums[nums.length-1]:70;const shown=(typeof catalogDur==='function'?catalogDur(label):label)+' (с разминкой и заминкой)';return`<p class="mut qfilter-wide" id="qlen"><strong>Длительность тренировки</strong><br><span>${esc(shown)}</span></p>`}
+ delete Q.lenLabel;return quizLenOld(filter)
+}
+function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();if(Q.bar==null)Q.bar='0';if(Q.acc==null)Q.acc='none';if(Q.place==='d')Q.place='b';
+ const blocks=typeof blocksEnabled==='function'&&blocksEnabled();
+ if(blocks)Q.prio=[];
+ const options={
+   lim:[['s','Спина'],['k','Колени'],['p','Плечи']],
+   prio:['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(v=>[v,v])
+ };
+ const localize=s=>typeof tr==='function'?tr(s):s;
+ const selected=k=>options[k].filter(([v])=>Q[k].includes(v)).map(([,label])=>localize(label)).join(' · ')||localize('Не выбрано');
+ const filter=(t,k,opts,wide)=>`<label class="qfilter${wide?' qfilter-wide':''}" for="qf-${k}"><span>${t}</span><select id="qf-${k}" data-qfilter="${k}">${opts.map(([v,l])=>`<option value="${esc(v)}"${String(Q[k])===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+ const multi=(k,title,hint)=>`<details id="qf-${k}" class="qfilter-multi qfilter-wide">
+   <summary><span>${title}</span><span id="qfs-${k}" class="qfilter-selection" aria-live="polite">${esc(selected(k))}</span></summary>
+   <div class="qfilter-options"><p class="mut">${hint}</p>${options[k].map(([v,l],i)=>`<label for="qf-${k}-${i}"><input id="qf-${k}-${i}" type="checkbox" data-qmulti="${k}" value="${esc(v)}"${Q[k].includes(v)?' checked':''}> <span>${l}</span></label>`).join('')}</div></details>`;
  app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
- ${grp('Цель','goal',[['mass','💪 Масса'],['str','🏋️ '+goalName('str',Q.place)],['loss','🔥 Похудение / рельеф'],['fit','❤️ Общая форма']])}
- ${grp('Пол','sex',[['m','Мужской'],['f','Женский']])}${grp('Уровень','level',[['nov','Новичок'],['mid','Средний'],['adv','Опытный']])}
- ${grp('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}${quizGrowthHint(Q)?`<p class="mut" id="qgrowth" style="margin-top:0">Для роста выбери 3–4 дня</p>`:''}${quizLen(grp)}
- ${Q.place==='d'?(Q.place='b',''):''}${grp('Где тренируешься','place',[['g','🏢 Тренажёрный зал'],['b','🏠 Дом']])}<p class="mut" id="qhome" style="margin-top:0">Дом — без инвентаря, желательно турник.</p>${Q.place==='b'?grp('Есть турник?','bar',[['1','Да'],['0','Нет']]):''}
- ${typeof blocksEnabled==='function'&&blocksEnabled()?(Q.prio=[],grp('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']])):grp('Приоритетные мышцы (можно несколько)','prio',['Грудь','Спина','Плечи','Ноги','Ягодицы','Бицепс','Трицепс','Пресс'].map(g=>[g,g]),1)}
- ${grp('Ограничения (заменим рискованные упражнения)','lim',[['s','Спина'],['k','Колени'],['p','Плечи']],1)}
- <h2>Вес и возраст (необязательно)</h2><div class="card">
- <label class="mut">Вес тела, кг<input type="number" id="bwkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="не указан" value="${esc(S.weightKg||'')}"></label>
- <label class="mut">Возраст<input type="number" id="agey" inputmode="numeric" step="1" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
- <p class="mut">Вес помогает оценить калории, возраст нужен для пульсовых зон. Эти данные сохраняются отдельно от программы.</p></div>
+ <section class="card qfilters" aria-labelledby="qfilters-title"><h2 class="qfilter-wide" id="qfilters-title">Фильтры программы</h2>
+ ${filter('Цель','goal',Object.keys(GOALS).map(id=>[id,goalName(id,Q.place)]),true)}
+ ${filter('Где тренируешься','place',[['g','Тренажёрный зал'],['b','Дом']],true)}
+ ${filter('Уровень','level',Object.entries(LVN))}
+ ${filter('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n]))}
+ ${quizGrowthHint(Q)?`<p class="mut qfilter-wide" id="qgrowth">Для роста выбери 3–4 дня</p>`:''}
+ ${filter('Пол','sex',[['m','Мужской'],['f','Женский']],Q.place!=='b')}
+ ${Q.place==='b'?`${filter('Есть турник?','bar',[['1','Да'],['0','Нет']])}<p class="mut qfilter-wide" id="qhome">Дом — без инвентаря, желательно турник.</p>`:''}
+ ${blocks?filter('Акцент','acc',[['none','Нет'],['back','Спина'],['arms','Руки'],['glutes','Ягодицы и ноги'],['abs','Пресс']],true):multi('prio','Приоритетные мышцы','Можно выбрать несколько вариантов.')}
+ ${multi('lim','Ограничения','Заменим рискованные упражнения.')}
+ <h3 class="qfilter-wide" id="qf-optional">Вес и возраст (необязательно)</h3>
+ <label class="qfilter" for="bwkg"><span>Вес тела, кг</span><input type="number" id="bwkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="не указан" value="${esc(S.weightKg||'')}"></label>
+ <label class="qfilter" for="agey"><span>Возраст</span><input type="number" id="agey" inputmode="numeric" step="1" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
+ <p class="mut qfilter-wide">Вес помогает оценить калории, возраст нужен для пульсовых зон. Эти данные сохраняются отдельно от программы.</p>
+ ${quizLen(filter,blocks)}</section>
  <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${QBack==='catalog'&&!S.program?'<button class="full" id="qcat" style="margin-bottom:16px">← Готовые программы</button>':'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>'}`;
- app.querySelectorAll('[data-k][data-v]').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;if(Array.isArray(Q[k]))Q[k]=Q[k].includes(v)?Q[k].filter(x=>x!==v):[...Q[k],v];else Q[k]=['days','len'].includes(k)?+v:v;const y=scrollY;quiz();scrollTo(0,y)});
+ const redraw=el=>{
+   const y=scrollY,focused=document.activeElement===el;
+   const open=[...app.querySelectorAll('.qfilter-multi[open]')].map(e=>e.id);
+   quiz();open.forEach(id=>{const details=$('#'+id);if(details)details.open=true});
+   const next=$('#'+el.id);if(focused&&next)next.focus({preventScroll:true});scrollTo(0,y);
+ };
+ app.querySelectorAll('[data-qfilter]').forEach(el=>el.onchange=()=>{
+   const k=el.dataset.qfilter;
+   Q[k]=['days','len'].includes(k)?+el.value:el.value;redraw(el);
+ });
+ app.querySelectorAll('[data-qmulti]').forEach(el=>el.onchange=()=>{
+   const k=el.dataset.qmulti,v=el.value;
+   Q[k]=el.checked?[...new Set([...Q[k],v])]:Q[k].filter(x=>x!==v);
+   if(blocks)$('#qfs-'+k).textContent=selected(k);else redraw(el);
+ });
  $('#bwkg').onchange=e=>saveQuestionnaireMeasure(e.target,'weightKg','weightAsked',30,300,'Вес: от 30 до 300 кг',10);
  $('#agey').onchange=e=>saveQuestionnaireMeasure(e.target,'age','ageAsked',14,100,'Возраст: от 14 до 100 лет',1);
  $('#tocat').onclick=e=>{e.preventDefault();leaveQuestionnaire('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+goalName(Q.goal,Q.place),desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
