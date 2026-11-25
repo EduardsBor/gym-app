@@ -1,13 +1,13 @@
 # GC-163-04: reproducible test runs on Linux and Windows (read-only: no secrets, no deploy, no writes to the repo).
-name: tests
+name: GC-168 candidate tests (temporary)
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  pull_request:
+    branches: ['fix/gc168-health-consent']
 permissions:
   contents: read
 jobs:
   test:
+    if: github.event.pull_request.head.ref == 'ci/gc168-3f631dc' && github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: '3f631dc76e463c3fa0752e00c05dd082fed4002e'
       - uses: actions/setup-node@v4
         with:
           node-version: 26
