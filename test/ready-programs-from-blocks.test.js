@@ -123,7 +123,9 @@ test('ready-program catalog keeps 13 curated cards, fills every chip combination
   run('S.goal=null;S.program=null;catF={};view="catalog";catalog()');
   const h = app();
   assert.match(h, /Найдено: /);
-  assert.equal((h.match(/data-c="/g) || []).length, n);
+  assert.equal((h.match(/data-c="/g) || []).length, 12);
+  run("catAll=true;catalog()");
+  assert.equal((app().match(/data-c="/g) || []).length, n);
   const src = read('app.js');
   const catFn = src.match(/function catalog\(\)\{[\s\S]*?\nfunction /)[0];
   assert.equal(/generate\(c\.a\)/.test(catFn), false);
@@ -192,5 +194,42 @@ test('EN/LV card text for all 124 ready-program cards has no Cyrillic; duration 
     }
     assert.equal(bad.length, 0, bad.slice(0, 8).join('\n'));
     assert.ok(rows.some(c => /\d+[–-]\d+ min/.test(c.text)), 'expected a translated duration on a ' + lang + ' card');
+  }
+});
+
+test('featured shelf uses exact indexed programs and source estimates; gym cardio and home equipment claims match the blocks', () => {
+  const { run } = boot();
+  const picks = JSON.parse(run('JSON.stringify(catalogStarters())'));
+  const expected = [
+    ['fit_nov_3_g_b36',65,75,'gymCardio'],['mass_nov_3_g_b36',60,75,'gym'],
+    ['str_nov_3_g_b36',75,80,'gym'],['loss_nov_3_g_b36',65,80,'gymCardio'],
+    ['fit_nov_2_g_b32',70,80,'gymCardio'],['mass_mid_4_g_b36',65,80,'gym'],
+    ['fit_nov_3_b_nobar_b36',60,70,'home'],['mass_nov_3_b_nobar_b36',60,75,'homeSlide'],
+    ['str_nov_3_b_nobar_b36',75,80,'home'],['loss_nov_3_b_nobar_b36',65,75,'home'],
+    ['fit_nov_2_b_nobar_b32',65,75,'homeSlide'],['mass_mid_4_b_nobar_b36',65,80,'homeSlide'],
+  ];
+  assert.deepEqual(picks.map(p=>p.blockId),expected.map(x=>x[0]));
+  for (const [i,[id,min,max,kit]] of expected.entries()) {
+    const card=picks[i], raw=JSON.parse(read('data/blocks/'+id+'.json'));
+    assert.deepEqual([card.a.goal,card.a.level,card.a.days,card.kit,card.a.lenLabel],
+      [raw.goal,raw.level,raw.days_per_week,kit,`${min}–${max} мин`],id);
+    run('S.prof={lim:[],sex:"f"};preview(catalogFind('+JSON.stringify(card.id)+'),"catalog")');
+    const pv=JSON.parse(run('JSON.stringify({id:PV.gen.blockId,sex:PV.pr.a.sex,minutes:PV.gen.days.map(d=>dayMin(d,PV.pr.a)),deload:PV.gen.days.map(d=>!!d.deload)})'));
+    assert.deepEqual([pv.id,pv.sex,pv.minutes.length],[id,'f',raw.workouts.length],id);
+    assert.ok(pv.minutes.every((t,i)=>Math.abs(t-Math.round(raw.workouts[i].est_min))<=1),id);
+    assert.ok(pv.minutes.filter((_,i)=>!pv.deload[i]).every(t=>t>=min&&t<=max),id);
+    assert.equal(Boolean(card.deload),pv.deload.some(Boolean),id);
+    assert.ok(pv.minutes.filter((_,i)=>pv.deload[i]).every(t=>t<min),id);
+    const ids=new Set(raw.workouts.flatMap(w=>w.items.map(x=>x.exId)));
+    if (card.a.place==='b') {
+      assert.equal(card.a.bar,'0',id);
+      for(const eq of ['backpack-row','towel-row','step-bw','bd'])assert.ok(ids.has(eq),id+' '+eq);
+      assert.equal(ids.has('towel-leg-curl'),kit==='homeSlide',id);
+    }
+    if (id==='loss_nov_3_g_b36') {
+      const cardio=raw.workouts.map(w=>w.items.at(-1));
+      assert.equal(Math.min(...cardio.map(x=>x.min)),15);
+      assert.equal(Math.max(...cardio.map(x=>x.max)),22);
+    }
   }
 });

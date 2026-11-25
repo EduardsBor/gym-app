@@ -135,6 +135,11 @@ header:has(+#app .catalog-filters) #title{font-size:28px;font-weight:800;letter-
 .catalog-programs .program-action>span{font-size:15px;line-height:1.05}
 .catalog-program-info{padding:1px 4px 0}
 #cf-reset{min-height:44px;padding:0 12px;font-size:14px}
+.catalog-starter-desc,.catalog-starter-meta,.catalog-starter-kit{margin:4px 0}
+.catalog-starter-meta,.catalog-starter-kit{font-size:.875rem;color:var(--mut)}
+#cf-results>section+section{margin-top:24px}
+.starter-options{grid-template-columns:1fr;padding-inline:0}
+.starter-options p{margin:0}
 @media(max-width:360px){.catalog-programs .program-action>span{font-size:14px;line-height:1.1}}
 #catfirst{font-size:15px;margin:2px 0 10px}
 /* D-235: exercise screen */

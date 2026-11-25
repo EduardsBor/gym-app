@@ -64,12 +64,12 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
   assert.ok(h.indexOf('id="toq"') > h.lastIndexOf('data-c="'));
   assert.equal((h.match(/id="toq/g) || []).length, 1);
   assert.match(h, /<ul class="catalog-programs">/);
-  assert.match(h, /<button type="button" class="full program-action" data-c="c0"[^>]*><span>Старт в зале<\/span><\/button>/);
+  assert.match(h, /<button type="button" class="full program-action" data-c="starter-fit_nov_3_g_b36"[^>]*><span>Старт в зале<\/span><\/button>/);
   assert.match(h, /Не нашёл подходящую\?<\/p><button class="full" id="toq"[^>]*>🧩 Подобрать программу под себя</); // D-236
   assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
   assert.equal(run('CATALOG.length'), 13); // curated cards unchanged; «Дом с гантелями» hidden (Eduards 19.11)
-  assert.equal((h.match(/data-c="c\d+"/g) || []).length, 13);
-  assert.ok((h.match(/data-c="/g) || []).length === run('catalogCards().length'));
+  assert.equal((h.match(/data-c="starter-/g) || []).length, 12);
+  assert.match(h, /id="cf-all"[^>]*>Все программы</);
   assert.ok(run('catalogCards().length') > 13);
 });
 

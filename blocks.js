@@ -207,7 +207,9 @@ function migrateBlockState(state){
   if(typeof n!=='number'||!isFinite(n)||n<0)n=0;
   const dueOn=typeof state.block.dueOn==='string'?state.block.dueOn:undefined;
   const passAt=+state.block.passAt;  // tech-fix-2.2: start of the current pass (limguard.js lgPassStart)
+  const mode=typeof starterHomeMode==='function'?starterHomeMode(state.block.id,state.block.starterMode):0;
   state.block={id:state.block.id,next:n|0};
+  if(mode)state.block.starterMode=mode;
   if(dueOn)state.block.dueOn=dueOn;
   if(isFinite(passAt)&&passAt>0)state.block.passAt=passAt;
   return state;
@@ -330,7 +332,7 @@ function blockLimCands(id){
   return L;
 }
 // Home without a pull-up bar: these need the bar (same split as the b_bar / b_nobar blocks).
-const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','inv','pull','scap-pullup','dead-hang']);
+const BLOCK_NEEDS_BAR=new Set(['chin','hanging-knee-raise','mk-hanging-knee-raises','inv','pull','scap-pullup','w_scpull','dead-hang','mk-parralel-bar-dips']);
 function blockHasClip(id){return typeof movekitFile!=='function'||!!movekitFile(id)}
 // review-nov-2 (v155): a limitation swap may pick an exercise Eduards allowed without a clip (plan.js NO_CLIP_OK: walk-brisk only at
 // home / bodyweight). Before, jump with a knee limitation found walk-brisk but dropped it for the missing clip → cardio removed.
@@ -341,7 +343,8 @@ function blockIsCardio(it){return!!(it&&it.cardio)||(typeof isCardio==='function
 function blockLimAvail(a){
   const place=(a&&a.place)||'g',places=(a&&a.places)||place;
   const noBar=place==='b'&&!(a.bar===true||a.bar==='1'||a.bar===1);
-  return x=>(typeof eqAvail!=='function'||eqAvail(x,places))&&!(noBar&&BLOCK_NEEDS_BAR.has(x));
+  return x=>(typeof eqAvail!=='function'||eqAvail(x,places))&&!(noBar&&BLOCK_NEEDS_BAR.has(x))&&
+    (!(a&&a.starterMode)||((a.starterSlides||x!=='towel-leg-curl')&&(a.starterMode!==2||!starterLowImpactIsJump(x))));
 }
 function blockLimConf(id,a){const lim=Array.isArray(a&&a.lim)?a.lim:[];if(!id||!lim.length)return[];const r=blockRisk(id);return lim.filter(l=>r.includes(l))}
 function blockLimPick(it,a,used){
@@ -403,6 +406,54 @@ function blockLimWuCd(wu,cd,a,swapMap,warn){
     if(W.ramp){W.ramp=W.ramp.map(r=>{if(!r||!r.exId||blockLimOk(r.exId,a))return r;const to=swapMap&&swapMap[r.exId];note('wu',r.exId,to);return to?Object.assign({},r,{exId:to}):null}).filter(Boolean);if(!W.ramp.length)delete W.ramp}}
   if(C){cardio('cd',C);if(C.stretch)C.stretch=list('cd',C.stretch,'id')}
   return{wu:W,cd:C};
+}
+// D-236's home-with-bar and no-bar blocks share a warm/cool template. Keep the slot and approximate time,
+// not the hanging movement: light Y/T for scapular activation, or the existing d-template thoracic mobility.
+function blockIdNoBar(id){return /_b_nobar(?:_|$)/.test(id||'')}
+function blockNoBarWarmCool(wu,cd,a){
+  const adapt=(obj,key,from,id,dose)=>{
+    const rows=obj&&obj[key];if(!Array.isArray(rows)||!rows.some(x=>x&&from.includes(x.id)))return obj;
+    const can=blockLimOk(id,a)&&blockClipOk(id,{place:'b'})&&!rows.some(x=>x&&x.id===id);
+    let added=false;
+    return Object.assign({},obj,{[key]:rows.flatMap(x=>{
+      if(!x||!from.includes(x.id))return [x];
+      if(!can||added)return [];
+      added=true;return [Object.assign({},x,{id,dose})];
+    })});
+  };
+  return {
+    wu:adapt(wu,'mob',['w_scpull','scap-pullup'],'mk-prone-y-t-raises','8–12 повторов без веса'),
+    cd:adapt(cd,'stretch',['dead-hang'],'thoracic-rotation','8–10 повторов на каждую сторону')
+  };
+}
+// Already saved plans may still contain the old shell. Only project the day when showing or starting it:
+// no migration of the plan, no retagging an active session's checked rows and no changes to logs/counters.
+function blockNoBarSavedDay(day){
+  if(!day||typeof S==='undefined'||!S||!S.block||!blockIdNoBar(S.block.id))return day;
+  const wc=blockNoBarWarmCool(day.wu,day.cd,S.prof||{});
+  return wc.wu===day.wu&&wc.cd===day.cd?day:Object.assign({},day,wc);
+}
+// The optional walking variant is confined to the exact starter shelf block IDs. It is a preview preference,
+// not a limitation flag or a new field in saved profiles. Apply it only after the usual limitation filtering.
+const STARTER_NO_JUMP=new Set(['fit_nov_3_b_nobar_b36','loss_nov_3_b_nobar_b36','fit_nov_2_b_nobar_b32']);
+const STARTER_JUMP_IDS=new Set(['jump','jump-rope','box-jump','jump-squat','broad-jump']);
+function starterLowImpactAvailable(id){return STARTER_NO_JUMP.has(id)}
+function starterLowImpactIsJump(id){return STARTER_JUMP_IDS.has(id)}
+function starterLowImpact(gen,a){
+  if(!gen||!starterLowImpactAvailable(gen.blockId))return gen;
+  const walk='walk-brisk',home={place:'b',bar:'0',lim:a&&a.lim};
+  if(!blockLimAvail(home)(walk)||!blockLimOk(walk,home)||!blockClipOk(walk,home))return gen;
+  // Use the same existing home walk as the knee filter. Keep the slot's min/max, sets, rest, and phase note.
+  const cardio=part=>part&&part.cardio&&starterLowImpactIsJump(part.cardio.id)
+    ?Object.assign({},part,{cardio:Object.assign({},part.cardio,{id:walk})}):part;
+  let changed=false;
+  const days=gen.days.map(d=>{
+    const wu=cardio(d.wu),cd=cardio(d.cd);
+    const items=d.items.map(it=>starterLowImpactIsJump(it.exId)&&blockIsCardio(it)?Object.assign({},it,{exId:walk}):it);
+    if(wu===d.wu&&cd===d.cd&&items.every((it,i)=>it===d.items[i]))return d;
+    changed=true;return Object.assign({},d,{items,wu,cd});
+  });
+  return changed?Object.assign({},gen,{days}):gen;
 }
 // Text of the limitation notes of a day (RU source; i18n translates the fixed phrases and exercise names).
 const BLOCK_LIM_RU={s:'спина',k:'колени',p:'плечи'};
@@ -472,6 +523,7 @@ function blockEstMin(d){
 }
 function planFromBlock(block,a){
   const b=unwrapBlock(block);
+  const noBar=blockIdNoBar(b.id)||(b.place==='b'&&b.pullup_bar===false);
   const shell=warmCoolShell(b,a||{});
   const dayIdx=blockDayIndex(b);
   const days=(b.workouts||[]).map((w,i)=>{
@@ -482,7 +534,8 @@ function planFromBlock(block,a){
     const rt=blockRirTarget(b,w);if(rt)day.rirTarget=rt;
     // tech-fix-2: warm-up / cool-down pass the same limitation check (ramp follows the replaced main lift)
     const sm={};warn.forEach(w=>{if(w.to)sm[w.from]=w.to});
-    const wc2=blockLimWuCd(wc.wu,wc.cd,a,sm,warn);
+    let wc2=blockLimWuCd(wc.wu,wc.cd,a,sm,warn);
+    if(noBar)wc2=blockNoBarWarmCool(wc2.wu,wc2.cd,a);
     if(warn.length)day.limWarn=warn;
     if(wc2.wu)day.wu=wc2.wu;
     if(wc2.cd)day.cd=wc2.cd;
@@ -592,7 +645,9 @@ function renderBlockToday(pick){
   if(blockIsComplete(S,b)){renderBlockEnd(b);return true}
   const plan0=S.block.next|0;
   if(!S.program||!S.program[plan0]){
-    const plan=planFromBlock(b,S.prof||{});
+    const a=starterSessionContext(null,S.prof||{});
+    let plan=planFromBlock(b,a);
+    if(a.starterMode===2)plan=starterLowImpact(plan,a);
     S.program=plan.days;
     if(b.title)S.progName=b.title;
   }
@@ -642,14 +697,17 @@ function renderBlockToday(pick){
       if(!btn)return;
       const prev=btn.onclick;
       btn.onclick=function(){
-        const was=S.program;
+        const was=S.program, priorMode=S.block&&S.block.starterMode;
         if(prev)prev.apply(this,arguments);
         if(S.program===was)return;
         const g=typeof PV!=='undefined'&&PV&&PV.gen;
         blockOnApplied(g);
+        const mode=PV&&PV.pr&&PV.pr.starter&&starterHomeMode(g&&g.blockId,PV.noJump?2:1);
+        if(mode&&S.block)S.block.starterMode=mode;
         if(g&&g.variantOf){const vd=BLOCK_VARIANT_DAYS[g.blockId]||g.variantDays||S.days;S.prof=Object.assign({},S.prof||{},{variant:g.blockId,days:vd});S.days=vd;
           if(!S.prof.daysAsked)S.prof.daysAsked=vd}
         if(typeof save==='function')save();
+        if((mode||priorMode)&&view==='today')render();
       };
     };
   }

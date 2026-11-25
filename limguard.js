@@ -32,7 +32,7 @@ function lgAuditItems(items,a,skipDone){
 }
 // One plan day as the user would do it (equipment profile applied): main items + warm-up / cool-down.
 function lgAuditDay(day,a){
-  a=a||lgA();if(!day||!(a.lim||[]).length)return null;
+  a=starterSessionContext(null,a||lgA());if(!day||!(a.lim||[]).length)return null;
   const d=typeof eqAdaptDay==='function'?eqAdaptDay(day):day;
   const items=lgAuditItems(d.items,a);
   let wucd=[],fixed=null;
@@ -184,7 +184,7 @@ if(typeof startW==='function'){const _lgSW=startW;startW=function(i){
   return _lgSW(i)}}
 
 // Open / resumed workout (also a template or own workout): flagged items that are not done yet; consent per item.
-function lgAuditActive(){const A=typeof S!=='undefined'&&S&&S.active;if(!A)return[];return lgAuditItems(A.items,lgA(),true)}
+function lgAuditActive(){const A=typeof S!=='undefined'&&S&&S.active;if(!A)return[];return lgAuditItems(A.items,starterSessionContext(A,lgA()),true)}
 // Partly done item: done sets keep their exId / weights; 'stop' drops the remaining sets, 'split' moves them into a new
 // item with the safe replacement (swap → split, remove → stop for a partly done item).
 function lgActiveFix(k,mode){
