@@ -63,7 +63,8 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
   assert.match(h, /class="full" id="toq"[^>]*>🧩 Подобрать программу под себя</);
   assert.ok(h.indexOf('id="toq"') > h.lastIndexOf('data-c="'));
   assert.equal((h.match(/id="toq/g) || []).length, 1);
-  assert.match(h, /<h3 class="catn">/);
+  assert.match(h, /<ul class="catalog-programs">/);
+  assert.match(h, /<button type="button" class="full program-action" data-c="c0"[^>]*><span>Старт в зале<\/span><\/button>/);
   assert.match(h, /Не нашёл подходящую\?<\/p><button class="full" id="toq"[^>]*>🧩 Подобрать программу под себя</); // D-236
   assert.doesNotMatch(h, /Ответьте на несколько вопросов|btncap/); // D-237
   assert.equal(run('CATALOG.length'), 13); // curated cards unchanged; «Дом с гантелями» hidden (Eduards 19.11)
@@ -75,8 +76,9 @@ test('D-230: first run (no profile, no program) opens the ready-program catalog 
 test('D-230: questionnaire from the first run can go back to the catalog; picking a program starts it', () => {
   const { run, app } = boot();
   run('S.goal=null;S.program=null;S.obDone=0;Q=null;view="quiz";quiz()');
-  assert.match(app(), /id="qcat"[^>]*>← Готовые программы</);
-  assert.match(app(), /id="tocat"/);
+  assert.match(app(), /id="qcat"[^>]*>Готовые программы</);
+  assert.equal((app().match(/id="qcat"/g)||[]).length,1);
+  assert.doesNotMatch(app(), /id="tocat"|id="qback"/);
   run('preview(CATALOG[1],"catalog");S.program=null;PV.gen.days.length>0');
   run('this.confirm=()=>true;this.scrollTo=()=>{};this.save=()=>{};this.toast=()=>{};');
   run('document.querySelector("#pstart").onclick()');
@@ -120,7 +122,8 @@ test('D-230: home is bodyweight only — questionnaire has g and b, no d; catalo
   assert.match(app(), /Есть турник\?/);
   assert.ok(!run('CATALOG.some(c=>c.a.place==="d")'));
   run('catF={};catalog()');
-  assert.doesNotMatch(app(), /data-fk="place" data-fv="d"/);
+  const catalogPlace=/id="cf-place"[^>]*>(.*?)<\/select>/.exec(app())[1];
+  assert.doesNotMatch(catalogPlace, /value="d"/);
   // old profile with place d keeps working
   assert.equal(run('blockIdForProfile({goal:"mass",level:"mid",days:4,place:"d"})'), 'mass_mid_4_d_b36');
   assert.ok(fs.existsSync(path.join(root, 'data/blocks/mass_mid_4_d_b36.json')));

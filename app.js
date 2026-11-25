@@ -288,7 +288,7 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  const multi=(k,title,hint)=>`<details id="qf-${k}" class="qfilter-multi qfilter-wide">
    <summary><span>${title}</span><span id="qfs-${k}" class="qfilter-selection" aria-live="polite">${esc(selected(k))}</span></summary>
    <div class="qfilter-options"><p class="mut">${hint}</p>${options[k].map(([v,l],i)=>`<label for="qf-${k}-${i}"><input id="qf-${k}-${i}" type="checkbox" data-qmulti="${k}" value="${esc(v)}"${Q[k].includes(v)?' checked':''}> <span>${l}</span></label>`).join('')}</div></details>`;
- app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований. Или выбери <a href="#" id="tocat" style="color:var(--acc)">готовую программу</a>.</p>
+ app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований.</p>
  <section class="card qfilters" aria-labelledby="qfilters-title"><h2 class="qfilter-wide" id="qfilters-title">Фильтры программы</h2>
  ${filter('Цель','goal',Object.keys(GOALS).map(id=>[id,goalName(id,Q.place)]),true)}
  ${filter('Где тренируешься','place',[['g','Тренажёрный зал'],['b','Дом']],true)}
@@ -304,7 +304,10 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  <label class="qfilter" for="agey"><span>Возраст</span><input type="number" id="agey" inputmode="numeric" step="1" min="14" max="100" placeholder="не указан" value="${esc(S.age||'')}"></label>
  <p class="mut qfilter-wide">Вес помогает оценить калории, возраст нужен для пульсовых зон. Эти данные сохраняются отдельно от программы.</p>
  ${quizLen(filter,blocks)}</section>
- <button class="pri full" id="qgo" style="margin:18px 0 8px">Подобрать программу</button>${QBack==='catalog'&&!S.program?'<button class="full" id="qcat" style="margin-bottom:16px">← Готовые программы</button>':'<button class="full" id="qback" style="margin-bottom:16px">← Назад</button>'}`;
+ <div class="program-actions">
+ <button type="button" class="pri full program-action" id="qgo">Подобрать программу</button>
+ <button type="button" class="full program-action" id="qcat">Готовые программы</button>
+ ${QBack!=='catalog'?'<button type="button" class="full" id="qback">← Назад</button>':''}</div>`;
  const redraw=el=>{
    const y=scrollY,focused=document.activeElement===el;
    const open=[...app.querySelectorAll('.qfilter-multi[open]')].map(e=>e.id);
@@ -322,8 +325,8 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  });
  $('#bwkg').onchange=e=>saveQuestionnaireMeasure(e.target,'weightKg','weightAsked',30,300,'Вес: от 30 до 300 кг',10);
  $('#agey').onchange=e=>saveQuestionnaireMeasure(e.target,'age','ageAsked',14,100,'Возраст: от 14 до 100 лет',1);
- $('#tocat').onclick=e=>{e.preventDefault();leaveQuestionnaire('catalog')};$('#qgo').onclick=()=>{preview({name:'Моя программа: '+goalName(Q.goal,Q.place),desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
- if($('#qback'))$('#qback').onclick=()=>leaveQuestionnaire();if($('#qcat'))$('#qcat').onclick=()=>leaveQuestionnaire('catalog')}
+ $('#qcat').onclick=()=>leaveQuestionnaire('catalog');$('#qgo').onclick=()=>{preview({name:'Моя программа: '+goalName(Q.goal,Q.place),desc:`${LVN[Q.level]} · ${PLN[Q.place]}${Q.place==='b'?(String(Q.bar)==='1'?' · с турником':' · без турника'):''} · ${Q.days}×${Q.lenLabel||Q.len+' мин'}`,a:{...Q}},'quiz')};
+ if(QBack!=='catalog')$('#qback').onclick=()=>leaveQuestionnaire()}
 function dayWeek(d){if(d&&d.week)return d.week;const m=/^Неделя (\d+)/.exec(d&&d.name||'');return m?+m[1]:0}
 function dayTitle(d){return String(d&&d.name||'').replace(/^Неделя \d+ · /,'')}
 function dayNum(d,i){const n=d&&d.n;if(n!=null&&+n>0)return +n;if(i!=null&&i>=0)return +i+1;return 0}
@@ -355,8 +358,8 @@ function preview(pr,back){
  if(limConfirmNeeded(back))return limConfirm(lim=>{const p2=Object.assign({},pr,{a:Object.assign({},pr.a,{lim:[...new Set([].concat(pr.a.lim||[],lim))]})});preview(p2,back)});
  if(back==='catalog'&&pr&&pr.a)pr=Object.assign({},pr,{a:withPersonal(pr.a)});PV={pr,back,gen:generate(pr.a)};view='preview';renderPreview()}
 function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Программа';$('#nav').classList.add('hidden');
- const refs=[...new Set(gen.why.flatMap(w=>w[1]))];
- app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
+ const refs=[...new Set(gen.why.flatMap(w=>w[1]))],summary=PV.back==='catalog'?catalogSummary(pr):'';
+ app.innerHTML=`<div class="card"><h2 style="margin-top:0">${esc(pr.name)}</h2><div class="mut">${esc(pr.desc)}</div><div style="margin-top:8px">${tags(a)}</div>${summary?`<p class="mut" id="catalog-preview-summary">${esc(summary)}</p>`:''}${gen.timeLabel?`<p class="mut" style="margin-bottom:0">Реальное время с разминкой и заминкой: ${esc(gen.timeLabel)}${gen.shorter?' — тренировка короче выбранного времени: объём новичка не раздуваем.':''}</p>`:''}${gen.advice?`<p class="mut">${esc(gen.advice)}</p>`:''}</div>
  ${gen.days.length>4?'<p class="mut">Нажми на тренировку, чтобы открыть упражнения.</p>':''}${gen.days.map((d,di)=>`${weekHead(gen.days,di)}<details class="card dayc"${gen.days.length<=4||di===PV.open?' open':''} data-di="${di}"><summary><b>${esc(workoutLabel(d,di))}</b> <span class="mut">≈ ${dayMin(d,a)} мин · ${d.items.length} упражн.</span></summary>${typeof blockLimWarnHTML==='function'?blockLimWarnHTML(d):''}${d.wu&&typeof wuHTML==='function'?wuHTML(d.wu):`<details class="wud"><summary>🔥 <b>Разминка</b> <span class="mut">≈ ${warmPlan(d,a).min} мин</span></summary>${warmHTML(warmPlan(d,a))}</details>`}${d.items.map((it,ii)=>`<div class="li"><span class="grow">${esc(exBy(it.exId).name)}</span>${techBtn(it.exId)}<span class="mut">${esc(setTxt(it))}</span>${altCands(it.exId).length?`<button class="sm" data-sw="${di},${ii}" aria-label="Заменить">⇄</button>`:''}</div>`).join('')}${d.cd&&typeof cdHTML==='function'?cdHTML(d.cd):''}</details>`).join('')}
  <h2>Почему программа построена так</h2><div class="card">${gen.why.map(([t,r])=>`<p style="margin:6px 0">• ${t} ${r.length?`<span class="mut">${r.map(k=>'['+(refs.indexOf(k)+1)+']').join('')}</span>`:''}</p>`).join('')}
  <div class="mut" style="font-size:12px;margin-top:10px">${refs.map((k,i)=>`<p>[${i+1}] ${SRC[k]}</p>`).join('')}</div></div>
@@ -367,14 +370,24 @@ function renderPreview(){const{pr,gen}=PV,a=pr.a;$('#title').textContent='Про
   S.prof=a;if(PV.back==='quiz'){S.limSeen=1;S.obDone=1;S.obOffer=2;Q=null}S.goal=a.goal;S.days=a.days;S.program=gen.days;S.progName=pr.name;S.why=gen.why;S.next=0;if(typeof eqOnProgramApplied==='function')eqOnProgramApplied(a);save();toast('Программа выбрана 💪');$('#nav').classList.remove('hidden');go('today')}}
 const tags=a=>[catalogT(goalName(a.goal,a.place)),catalogT(LVN[a.level]),a.days+catalogT('×/нед'),catalogDur(a.lenLabel||a.len+' мин'),catalogT(PLN[a.place]),...(a.prio||[]).map(p=>'★ '+catalogT(p)),...(a.acc&&typeof ACC_RU!=='undefined'&&ACC_RU[a.acc]?['★ '+catalogT(ACC_RU[a.acc])]:[]),...(a.lim||[]).map(l=>'⚠ '+catalogT(LIMN[l]))].map(t=>`<span class="badge">${esc(t)}</span>`).join('');
 function catalog(){$('#title').textContent='Готовые программы';const F=catF,first=!S.goal&&!(S.program&&S.program.length);
- const fl=(k,opts)=>`<div class="chips sm2">${[['','Все'],...opts].map(([v,l])=>`<button class="opt chip ${String(F[k]||'')===String(v)?'sel':''}" data-fk="${k}" data-fv="${v}">${l}</button>`).join('')}</div>`;
+ const fl=(t,k,opts,wide)=>`<label class="qfilter${wide?' qfilter-wide':''}" for="cf-${k}"><span>${t}</span><select id="cf-${k}" data-cfilter="${k}">${[['','Все'],...opts].map(([v,l])=>`<option value="${esc(v)}"${String(F[k]||'')===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+ const rows=L=>L.length?`<ul class="catalog-programs">${L.map(c=>`<li><button type="button" class="full program-action" data-c="${esc(c.id)}" aria-describedby="cf-info-${esc(c.id)}"><span>${esc(catalogT(c.name))}</span></button><div class="catalog-program-info" id="cf-info-${esc(c.id)}">${tags(c.a)}</div></li>`).join('')}</ul>`:'<p class="mut">По этим фильтрам программы не найдены.</p>';
  const L=filterCatalog(F);
- app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}${fl('goal',Object.entries(GOALS))}${fl('level',Object.entries(LVN))}${fl('days',[2,3,4,5,6].map(n=>[n,n+'×']))}${fl('place',Object.entries(PLN).filter(([k])=>k!=='d'))}
- <p class="mut">Найдено: ${L.length}</p>${L.map(c=>`<div class="card catc"><h3 class="catn">${esc(catalogT(c.name))}</h3><div class="mut">${esc(catalogT(c.desc))}</div><div style="margin:6px 0">${tags(c.a)}</div>
- ${catalogSummary(c)?`<div class="mut" style="font-size:13px">${esc(catalogSummary(c))}</div>`:''}<button class="pri full" style="margin-top:10px" data-c="${esc(c.id)}" aria-label="Посмотреть программу">Посмотреть программу</button></div>`).join('')}
+ app.innerHTML=`${first?'<p id="catfirst">Выбери готовую программу или подбери свою по анкете.</p>':''}
+ <section class="card qfilters catalog-filters" aria-labelledby="catalog-filters-title"><h2 class="qfilter-wide" id="catalog-filters-title">Фильтры программы</h2>
+ ${fl('Цель','goal',Object.entries(GOALS),true)}
+ ${fl('Где тренируешься','place',Object.entries(PLN).filter(([k])=>k!=='d'),true)}
+ ${fl('Уровень','level',Object.entries(LVN))}
+ ${fl('Тренировок в неделю','days',[2,3,4,5,6].map(n=>[n,n+'×']))}
+ <div class="row qfilter-wide"><p class="mut grow" id="cf-count" role="status">Найдено: ${L.length}</p><button type="button" id="cf-reset">Сбросить фильтры</button></div></section>
+ <div id="cf-results">${rows(L)}</div>
  <p class="mut" style="margin:16px 0 6px">Не нашёл подходящую?</p><button class="full" id="toq" style="margin-bottom:20px;padding:14px">🧩 Подобрать программу под себя</button>`;
- app.querySelectorAll('[data-fk]').forEach(b=>b.onclick=()=>{catF[b.dataset.fk]=b.dataset.fv;catalog()});
- app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>preview(catalogFind(b.dataset.c),'catalog'));$('#toq').onclick=()=>openQuestionnaire('catalog')}
+ const bindRows=()=>app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=catalogFind(b.dataset.c);if(c)preview(c,'catalog')});
+ const refresh=()=>{const K=filterCatalog(catF);$('#cf-count').textContent=catalogT('Найдено:')+' '+K.length;$('#cf-results').innerHTML=rows(K);bindRows()};
+ const controls=app.querySelectorAll('[data-cfilter]');
+ controls.forEach(el=>el.onchange=()=>{catF[el.dataset.cfilter]=el.value;refresh()});
+ $('#cf-reset').onclick=()=>{catF={};controls.forEach(el=>{el.value=''});refresh()};
+ bindRows();$('#toq').onclick=()=>openQuestionnaire('catalog')}
 function altCands(cur){const raw=(typeof ALT!=='undefined'&&ALT[cur])||[];const have=new Set(allEx().map(e=>e.id)),seen=new Set(),out=[];
  for(const id of raw){if(id===cur||seen.has(id)||!have.has(id))continue;seen.add(id);out.push(exBy(id))}return out}
 function swapModal(cur,a,cb){const m=$('#modal');m.classList.remove('hidden');a=a||S.prof||{place:'g',lim:[]};

@@ -8,6 +8,7 @@ const path = require('path');
 const http = require('http');
 const os = require('os');
 const { spawn } = require('child_process');
+const { setTimeout: delay } = require('node:timers/promises');
 const { boot } = require('./fixtures/tf1-boot.js');
 
 const root = path.join(__dirname, '..');
@@ -47,12 +48,62 @@ function serve(html) {
     server.listen(0, '127.0.0.1', () => resolve({ port: server.address().port, result, close: () => new Promise(r => server.close(r)) }));
   });
 }
+// New headless Chrome may clamp the outer window to 500 px; set a real layout viewport.
+async function emulatedViewport(profile, width, url) {
+  const timeout = Date.now() + 5000;
+  let target;
+  while (!target && Date.now() < timeout) {
+    try {
+      const port = Number(fs.readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]);
+      const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1000) });
+      target = (await response.json()).find(t => t.type === 'page' && t.webSocketDebuggerUrl);
+    } catch {}
+    if (!target) await delay(25);
+  }
+  if (!target) throw new Error('Chrome did not expose its DevTools page');
+  const socket = new WebSocket(target.webSocketDebuggerUrl);
+  const request = (id, method, params) => new Promise((resolve, reject) => {
+    const signal = AbortSignal.timeout(5000);
+    socket.addEventListener('message', function onMessage({ data }) {
+      const reply = JSON.parse(data);
+      if (reply.id !== id) return;
+      socket.removeEventListener('message', onMessage);
+      reply.error ? reject(new Error(reply.error.message)) : resolve(reply.result);
+    }, { signal });
+    signal.addEventListener('abort', () => reject(new Error(`Chrome timed out on ${method}`)), { once: true });
+    socket.send(JSON.stringify({ id, method, params }));
+  });
+  try {
+    await new Promise((resolve, reject) => {
+      const signal = AbortSignal.timeout(5000);
+      socket.addEventListener('open', resolve, { once: true, signal });
+      socket.addEventListener('error', () => reject(new Error('Could not open the DevTools socket')), { once: true, signal });
+      signal.addEventListener('abort', () => reject(new Error('DevTools socket did not open')), { once: true });
+    });
+    await request(1, 'Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
+    const navigation = await request(2, 'Page.navigate', { url });
+    if (navigation.errorText) throw new Error(navigation.errorText);
+    return socket;
+  } catch (e) {
+    socket.close();
+    throw e;
+  }
+}
 async function inChrome(state, lang, ls, body, search, withProfile, width) {
   const { port, result, close } = await serve(page(state, lang, ls, body, withProfile));
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'tf2-chrome-'));
+  const url = `http://127.0.0.1:${port}/__tf2.html${search || ''}`;
   const child = spawn(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--disable-extensions', '--disable-background-networking',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', ...(width?['--hide-scrollbars']:[]), '--window-size='+(width||390)+',844', '--user-data-dir=' + prof, `http://127.0.0.1:${port}/__tf2.html${search || ''}`], { stdio: 'ignore' });
-  try { return await result; } finally { child.kill('SIGKILL'); await close(); }
+    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', ...(width?['--hide-scrollbars','--remote-debugging-port=0']:[]), '--window-size='+(width?500:390)+',844', '--user-data-dir=' + prof, width?'about:blank':url], { stdio: 'ignore' });
+  let socket;
+  try {
+    if (width) socket = await emulatedViewport(prof, width, url);
+    return await result;
+  } finally {
+    if (socket) socket.close();
+    child.kill('SIGKILL');
+    await close();
+  }
 }
 // saved plan: made without limitations, knees set later (old data)
 function oldState(lang, lim) {
@@ -146,7 +197,7 @@ test('Questionnaire: actual Profile menu, catalog and legacy route share one for
     click('[data-pf="data"]');R.data=[!!document.querySelector('#privdata'),!!document.querySelector('#wipe'),!!document.querySelector('#bwkg')];
     click('#pfback');click('[data-pf="train"]');R.train=[!!document.querySelector('#snd'),!!document.querySelector('#ro'),!!document.querySelector('#agey')];
     click('#pfback');click('[data-pf="prog"]');R.old=!!document.querySelector('#obre');
-    click('#pchg');click('#toq');R.catalog=[view,QBack];click('#qback');R.catalogBack=view;
+    click('#pchg');click('#toq');R.catalog=[view,QBack];click('#qcat');R.catalogBack=view;
     obStart('today');R.legacy=[view,QBack];click('#qback');R.legacyBack=view;
     click('nav [data-v="more"]');click('[data-pf="quiz"]');pick('goal','fit');click('#qgo');
     window.confirm=()=>false; click('#pstart'); R.cancelApply=JSON.stringify(S.program)===before;
@@ -205,7 +256,7 @@ test('Questionnaire: active workout blocks both apply routes; its history is kep
     click('#qgo');click('#pstart');R.blocked=[view,S.active.id,plan()===before,prompts];
     click('#pback');click('#qback');R.return=[view,S.active.id,JSON.stringify(S.active.items)===old,!!document.querySelector('#fin')];
 
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');
     R.catalogPreview=[view,PV.back];click('#pstart');
     R.catalogBlocked=[view,S.active.id,plan()===before,prompts,JSON.stringify(S.active.items)===old];
     if(view==='preview'){click('#pback');click('nav [data-v="today"]')}
@@ -213,7 +264,7 @@ test('Questionnaire: active workout blocks both apply routes; its history is kep
     if(document.querySelector('#modal:not(.hidden) #sumok'))click('#sumok');
     R.finished=[!S.active,S.workouts.some(w=>w.id==='active-q')];
 
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');click('#pstart');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');click('#pstart');
     R.applied=[view,S.progName===CATALOG[0].name,S.next,plan()!==before,prompts,S.workouts.some(w=>w.id==='active-q')];
   `, '', true);
   assert.deepEqual(r.errors,[]);
@@ -234,7 +285,7 @@ test('Questionnaire: ready program does not confirm new limitations during a wor
   const r=await inChrome(st,'ru',{},`
     window.mzSignedIn=()=>true; delete S.limSeen;
     const click=s=>{const e=document.querySelector(s);if(!e)throw Error('Missing '+s);e.click()};
-    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#tocat');click('[data-c="c0"]');
+    click('nav [data-v="more"]');click('[data-pf="quiz"]');click('#qcat');click('[data-c="c0"]');
     R.attempt=[view,S.active.id,S.prof.lim,!!S.limSeen,!!document.querySelector('#modal:not(.hidden) #limok')];
   `, '', true);
   assert.deepEqual(r.errors,[]);
@@ -243,9 +294,9 @@ test('Questionnaire: ready program does not confirm new limitations during a wor
 
 test('Questionnaire: all filters fit at 320–390 px in RU/LV/EN and retain answers on preview/back', {skip}, async()=>{
   const locales=[
-    ['ru','Анкета','Фильтры программы','Вес и возраст (необязательно)','← Готовые программы','Сила и контроль тела','Тренажёрный зал','Ягодицы и ноги','Спина · Колени','Не выбрано'],
-    ['lv','Anketa','Programmas filtri','Svars un vecums (nav obligāti)','← Gatavās programmas','Spēks un ķermeņa kontrole','Trenažieru zāle','Sēžas muskuļi un kājas','Mugura · Ceļi','Nav izvēlēts'],
-    ['en','Questionnaire','Program filters','Weight and age (optional)','← Ready-made programs','Strength & Body Control','Gym','Glutes and legs','Back · Knees','None selected'],
+    ['ru','Анкета','Фильтры программы','Вес и возраст (необязательно)','Готовые программы','Сила и контроль тела','Тренажёрный зал','Ягодицы и ноги','Спина · Колени','Не выбрано'],
+    ['lv','Anketa','Programmas filtri','Svars un vecums (nav obligāti)','Gatavās programmas','Spēks un ķermeņa kontrole','Trenažieru zāle','Sēžas muskuļi un kājas','Mugura · Ceļi','Nav izvēlēts'],
+    ['en','Questionnaire','Program filters','Weight and age (optional)','Ready-made programs','Strength & Body Control','Gym','Glutes and legs','Back · Knees','None selected'],
   ];
   for(const [lang,heading,title,optional,back,homeStrength,gym,glutes,limits,empty] of locales)for(const width of [320,390]){
     const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
@@ -346,5 +397,74 @@ test('Questionnaire: legacy duration and multiple priority muscles remain in the
     assert.deepEqual(r.preview,['preview',45,['Грудь','Спина']]);
     assert.deepEqual(r.after,['quiz','45',summary],lang);
     assert.equal(r.fromSaved,summary,lang);
+  }
+});
+
+test('Ready programs: questionnaire action, labeled filters and all named rows at equal mobile size in RU/LV/EN', {skip}, async()=>{
+  const locales=[
+    ['ru','Готовые программы','Подобрать программу','Фильтры программы','Сбросить фильтры','По этим фильтрам программы не найдены.'],
+    ['lv','Gatavās programmas','Izvēlēties programmu','Programmas filtri','Atiestatīt filtrus','Atlasītajiem filtriem neatbilst neviena programma.'],
+    ['en','Ready-made programs','Build program','Program filters','Reset filters','No programs match these filters.'],
+  ];
+  for(const [lang,ready,build,title,reset,empty] of locales)for(const width of [320,390]){
+    const st={lang,workouts:[],custom:[],templates:[],body:[],pg:{}};
+    const r=await inChrome(st,lang,{},`
+      const qs=s=>document.querySelector(s), all=s=>[...document.querySelectorAll(s)];
+      const click=s=>{const e=qs(s);if(!e)throw Error('Missing '+s);e.click()};
+      const box=e=>{const b=e.getBoundingClientRect();return [b.width,b.height]};
+      const size=()=>[innerWidth,document.documentElement.clientWidth,document.documentElement.scrollWidth];
+      const ids=()=>all('[data-c]').map(e=>e.dataset.c);
+      const plan=()=>JSON.stringify([S.program,S.prof,S.goal,S.workouts,S.active]);
+      const initial=plan();
+      await until(()=>qs('#toq'));click('#toq');
+      await until(()=>qs('#qcat').textContent===${JSON.stringify(ready)});
+      R.q=[size(),box(qs('#qgo')),box(qs('#qcat')),qs('#qgo').textContent,qs('#qcat').textContent];
+      R.unique=qs('#qgo').nextElementSibling===qs('#qcat')&&!qs('#tocat,#qback')&&all('#qcat').length===1;
+      click('#qcat');await until(()=>qs('#title').textContent===${JSON.stringify(ready)});
+      const names=all('[data-c]');
+      R.cat=[view,size(),qs('#title').textContent,qs('#catalog-filters-title').textContent,qs('#cf-reset').textContent];
+      R.all=ids();
+      R.options=all('[data-cfilter]').map(e=>[e.dataset.cfilter,e.labels.length,e.labels[0].textContent.trim(),e.getBoundingClientRect().height]);
+      R.filterOrder=qs('.catalog-filters').compareDocumentPosition(names[0])&Node.DOCUMENT_POSITION_FOLLOWING;
+      R.sizes=[...new Set(names.map(b=>JSON.stringify(box(b))))].map(x=>JSON.parse(x));
+      R.clipped=names.map(b=>[b,b.getBoundingClientRect(),b.firstChild.getBoundingClientRect()]).filter(([b,z,t])=>t.top<z.top||t.bottom>z.bottom||t.left<z.left||t.right>z.right).map(([b])=>b.dataset.c);
+      R.accessible=names.every(e=>e.tagName==='BUTTON'&&e.textContent.trim()&&document.getElementById(e.getAttribute('aria-describedby')).textContent.trim());
+      R.locales=[qs('#cf-count').textContent,...all('[data-cfilter] option,[data-cfilter] + label,[data-c]').map(e=>e.textContent)].join(' ');
+      for(const [key,value] of [['goal','str'],['place','b'],['level','adv'],['days','2']]){
+        const e=qs('#cf-'+key);e.focus();e.value=value;e.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      R.focus=document.activeElement.id;const narrowed=ids();R.filtered=narrowed.map(id=>{const a=catalogFind(id).a;return [a.goal,catalogCardPlace({a}),a.level,a.days]});
+      R.count=+qs('#cf-count').textContent.match(/\\d+$/)[0];const pick=qs('[data-c]'), picked=pick.dataset.c, label=pick.textContent;
+      pick.click();R.preview=[view,PV.pr.id,picked,qs('#app h2').textContent,label,!!qs('#pstart'),!!qs('#catalog-preview-summary'),plan()===initial];
+      click('#pback');R.back=[view,...all('[data-cfilter]').map(e=>e.value),JSON.stringify(ids())===JSON.stringify(narrowed)];
+      click('#cf-reset');R.reset=[all('[data-cfilter]').every(e=>e.value===''),JSON.stringify(ids())===JSON.stringify(R.all),plan()===initial];
+      // Every combination is populated today; exercise the explicit fallback with an empty result.
+      const filter=filterCatalog;filterCatalog=()=>[];click('#cf-reset');
+      await until(()=>qs('#cf-results').textContent.trim()===${JSON.stringify(empty)});
+      R.empty=[qs('#cf-results').textContent.trim(),all('[data-c]').length,!!qs('#cf-reset')];
+      filterCatalog=filter;click('#cf-reset');
+    `,'',true,width);
+    const where=lang+' '+width+'px';
+    assert.deepEqual(r.errors,[],where);
+    assert.deepEqual(r.q,[[width,width,width],[width-28,48],[width-28,48],build,ready],where);
+    assert.equal(r.unique,true,where);
+    assert.deepEqual(r.cat,['catalog',[width,width,width],ready,title,reset],where);
+    assert.deepEqual(r.sizes,[[width-28,48]],where);
+    assert.deepEqual(r.clipped,[],where);
+    assert.equal(r.accessible,true,where);
+    assert.equal(r.all.length,124,where);
+    assert.equal(new Set(r.all).size,124,where);
+    assert.equal(r.filterOrder,4,where);
+    assert.deepEqual(r.options.map(x=>x[0]),['goal','place','level','days'],where);
+    assert.ok(r.options.every(([,n,label,h])=>n===1&&label&&h>=44),where);
+    if(lang!=='ru')assert.doesNotMatch(r.locales,/[А-Яа-яЁё]/,where);
+    assert.equal(r.focus,'cf-days',where);
+    assert.ok(r.filtered.length&&r.filtered.length<r.all.length,where);
+    assert.equal(r.count,r.filtered.length,where);
+    assert.ok(r.filtered.every(x=>JSON.stringify(x)===JSON.stringify(['str','b','adv',2])),where);
+    assert.deepEqual(r.preview,['preview',r.preview[2],r.preview[2],r.preview[4],r.preview[4],true,true,true],where);
+    assert.deepEqual(r.back,['catalog','str','b','adv','2',true],where);
+    assert.deepEqual(r.reset,[true,true,true],where);
+    assert.deepEqual(r.empty,[empty,0,true],where);
   }
 });
