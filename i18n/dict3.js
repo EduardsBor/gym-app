@@ -2,7 +2,10 @@
 const DICT3=[
 // C-112 blocks-v2c questionnaire (LV for Claude: docs/LV-NEW-BLOCKS-V2C.md)
 ['Анкета','Questionnaire','Anketa'],
+['Ответь на вопросы — программа составится по данным научных исследований.','Answer the questions to build a program based on scientific research.','Atbildi uz jautājumiem, lai izveidotu zinātniskos pētījumos balstītu programmu.'],
 ['Фильтры программы','Program filters','Programmas filtri'],
+['Сбросить фильтры','Reset filters','Atiestatīt filtrus'],
+['По этим фильтрам программы не найдены.','No programs match these filters.','Atlasītajiem filtriem neatbilst neviena programma.'],
 ['Ограничения','Limitations','Ierobežojumi'],
 ['Не выбрано','None selected','Nav izvēlēts'],
 ['Заменим рискованные упражнения.','We’ll replace risky exercises.','Aizstāsim riskantos vingrinājumus.'],

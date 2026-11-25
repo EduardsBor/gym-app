@@ -80,11 +80,12 @@ test('D-285: RU/EN/LV triples for the five button labels', () => {
   assert.equal(d.includes('Pierakstīt piegājienu'), false);
 });
 
-test('D-285: catalog card says «Посмотреть программу» and opens the program preview', () => {
+test('Ready-program list labels buttons by the program name and opens the program preview', () => {
   const b = boot();
   b.run('catalog()');
   const h = b.app();
-  assert.match(h, /data-c="[^"]+" aria-label="Посмотреть программу">Посмотреть программу</);
+  assert.match(h, /data-c="c0" aria-describedby="cf-info-c0"><span>Старт в зале<\/span><\/button>/);
+  assert.match(h, /id="cf-info-c0"/);
   assert.doesNotMatch(h, />Подробнее</);
   const id = /data-c="([^"]+)"/.exec(h)[1];
   b.run(`preview(catalogFind(${JSON.stringify(id)}),'catalog')`);
