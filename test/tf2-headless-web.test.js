@@ -62,7 +62,9 @@ async function emulatedViewport(profile, width, url) {
   }
   if (!target) throw new Error('Chrome did not expose its DevTools page');
   const socket = new WebSocket(target.webSocketDebuggerUrl);
-  const request = (id, method, params) => new Promise((resolve, reject) => {
+  let nextId = 0;
+  const request = (method, params) => new Promise((resolve, reject) => {
+    const id = ++nextId;
     const signal = AbortSignal.timeout(5000);
     socket.addEventListener('message', function onMessage({ data }) {
       const reply = JSON.parse(data);
@@ -80,27 +82,64 @@ async function emulatedViewport(profile, width, url) {
       socket.addEventListener('error', () => reject(new Error('Could not open the DevTools socket')), { once: true, signal });
       signal.addEventListener('abort', () => reject(new Error('DevTools socket did not open')), { once: true });
     });
-    await request(1, 'Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
-    const navigation = await request(2, 'Page.navigate', { url });
+    await request('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
+    const navigation = await request('Page.navigate', { url });
     if (navigation.errorText) throw new Error(navigation.errorText);
-    return socket;
+    return { socket, request };
   } catch (e) {
     socket.close();
     throw e;
   }
 }
-async function inChrome(state, lang, ls, body, search, withProfile, width) {
+// A script's .focus() does not switch the browser from pointer to keyboard modality.
+async function tabToFirstStarter(request) {
+  const evaluate = async expression => {
+    const { result, exceptionDetails } = await request('Runtime.evaluate', { expression, returnByValue: true });
+    if (exceptionDetails) throw new Error(result.description || 'Could not inspect keyboard focus');
+    return result.value;
+  };
+  const deadline = Date.now() + 5000;
+  let anchor;
+  do {
+    anchor = await evaluate(`(() => {
+      if (typeof window.__tf2ResumeAfterTab !== 'function') return null;
+      const reset = document.querySelector('#cf-reset');
+      reset.scrollIntoView({ block: 'center' });
+      const r = reset.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    })()`);
+    if (!anchor) await delay(25);
+  } while (!anchor && Date.now() < deadline);
+  if (!anchor) throw new Error('Ready programs: did not reach the keyboard checkpoint');
+  // Click the reset control while filters are already clear; then Tab to the first program.
+  for (const type of ['mousePressed', 'mouseReleased'])
+    await request('Input.dispatchMouseEvent', { type, ...anchor, button: 'left', clickCount: 1 });
+  if (!await evaluate("document.activeElement === document.querySelector('#cf-reset')"))
+    throw new Error('Ready programs: pointer click did not focus the reset control');
+  for (let i = 0; i < 24; i++) {
+    for (const type of ['rawKeyDown', 'keyUp'])
+      await request('Input.dispatchKeyEvent', { type, key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
+    if (await evaluate("document.activeElement === document.querySelector('[data-starter-goal]')")) {
+      await evaluate('window.__tf2ResumeAfterTab()');
+      return;
+    }
+  }
+  throw new Error('Ready programs: trusted Tab did not reach the first program');
+}
+async function inChrome(state, lang, ls, body, search, withProfile, width, browserAction) {
   const { port, result, close } = await serve(page(state, lang, ls, body, withProfile));
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'tf2-chrome-'));
   const url = `http://127.0.0.1:${port}/__tf2.html${search || ''}`;
   const child = spawn(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--disable-extensions', '--disable-background-networking',
     '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', ...(width?['--hide-scrollbars','--remote-debugging-port=0']:[]), '--window-size='+(width?500:390)+',844', '--user-data-dir=' + prof, width?'about:blank':url], { stdio: 'ignore' });
-  let socket;
+  let devTools;
   try {
-    if (width) socket = await emulatedViewport(prof, width, url);
+    if (width) devTools = await emulatedViewport(prof, width, url);
+    // Preserve any error the page reports before reaching the keyboard checkpoint.
+    if (browserAction) await Promise.race([browserAction(devTools.request), result]);
     return await result;
   } finally {
-    if (socket) socket.close();
+    if (devTools) devTools.socket.close();
     child.kill('SIGKILL');
     await close();
   }
@@ -540,7 +579,10 @@ test('Ready programs: objective palette is shared by gym and home, independent o
           bg,box(b),contrast(bg,fg),contrast(bg,back),label.textContent,
           contrast(rgb(label)[1],back)];
       });
-      rows[0].focus();const f=getComputedStyle(rows[0]);R.focus=[document.activeElement===rows[0],f.outlineStyle,f.outlineWidth,contrast(f.outlineColor,rgb(rows[0])[0])];
+      await new Promise(resume=>{window.__tf2ResumeAfterTab=resume;});
+      delete window.__tf2ResumeAfterTab;
+      const first=qs('[data-starter-goal]'),f=getComputedStyle(first);
+      R.focus=[document.activeElement===first,first.matches(':focus-visible'),f.outlineStyle,f.outlineWidth,contrast(f.outlineColor,rgb(first)[0])];
       const filter=qs('#cf-goal');filter.value='str';filter.dispatchEvent(new Event('change'));
       const filtered=all('[data-c]');R.filtered=filtered.map(b=>[b.dataset.starterGoal,rgb(b)[0]]);
       filtered[0].click();R.preview=[view,PV.pr.a.goal,JSON.stringify([S.program,S.prof,S.block,S.workouts])===before];
@@ -548,7 +590,7 @@ test('Ready programs: objective palette is shared by gym and home, independent o
       const full=all('[data-c]');
       R.ordinary=[full.length,full.every(b=>!b.hasAttribute('data-starter-goal')&&rgb(b)[0]===panel),
         rgb(qs('#cf-all'))[0]===panel,rgb(qs('#toq'))[0]===panel,!qs('.catalog-starter-goal')];
-    `,'',true,width);
+    `,'',true,width,tabToFirstStarter);
     const where=theme+' '+width+'px';
     assert.deepEqual(r.errors,[],where);
     assert.equal(r.theme,theme,where);
@@ -569,8 +611,9 @@ test('Ready programs: objective palette is shared by gym and home, independent o
     }
     for(const group of ['cf-group-g','cf-group-b'])
       assert.deepEqual([...new Set(r.rows.filter(x=>x[1]===group).map(x=>x[0]))],['fit','mass','str','loss'],where);
-    assert.deepEqual(r.focus.slice(0,3),[true,'solid','2px'],where);
-    assert.ok(r.focus[3]>=3,where);
+    const focusContext=where+' keyboard focus '+JSON.stringify(r.focus);
+    assert.deepEqual(r.focus.slice(0,4),[true,true,'solid','2px'],focusContext);
+    assert.ok(r.focus[4]>=3,focusContext);
     assert.deepEqual(r.filtered,[['str',palette.str],['str',palette.str]],where);
     assert.deepEqual(r.preview,['preview','str',true],where);
     assert.deepEqual(r.ordinary,[124,true,true,true,true],where);
