@@ -288,7 +288,8 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  const multi=(k,title,hint)=>`<details id="qf-${k}" class="qfilter-multi qfilter-wide">
    <summary><span>${title}</span><span id="qfs-${k}" class="qfilter-selection" aria-live="polite">${esc(selected(k))}</span></summary>
    <div class="qfilter-options"><p class="mut">${hint}</p>${options[k].map(([v,l],i)=>`<label for="qf-${k}-${i}"><input id="qf-${k}-${i}" type="checkbox" data-qmulti="${k}" value="${esc(v)}"${Q[k].includes(v)?' checked':''}> <span>${l}</span></label>`).join('')}</div></details>`;
- app.innerHTML=`<p class="mut">Ответь на вопросы — программа составится по данным научных исследований.</p>
+ app.innerHTML=`<button type="button" class="full program-action" id="qcat">Готовые программы</button>
+ <p class="mut">Ответь на вопросы — программа составится по данным научных исследований.</p>
  <section class="card qfilters" aria-labelledby="qfilters-title"><h2 class="qfilter-wide" id="qfilters-title">Фильтры программы</h2>
  ${filter('Цель','goal',Object.keys(GOALS).map(id=>[id,goalName(id,Q.place)]),true)}
  ${filter('Где тренируешься','place',[['g','Тренажёрный зал'],['b','Дом']],true)}
@@ -306,7 +307,6 @@ function quiz(){$('#title').textContent='Анкета';Q=Q||questionnaireSeed();
  ${quizLen(filter,blocks)}</section>
  <div class="program-actions">
  <button type="button" class="pri full program-action" id="qgo">Подобрать программу</button>
- <button type="button" class="full program-action" id="qcat">Готовые программы</button>
  ${QBack!=='catalog'?'<button type="button" class="full" id="qback">← Назад</button>':''}</div>`;
  const redraw=el=>{
    const y=scrollY,focused=document.activeElement===el;
