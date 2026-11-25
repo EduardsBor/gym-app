@@ -184,3 +184,50 @@ test('app ids renamed by LEGACY_TO resolve to trainer classes', () => {
     assert.equal(P.prCls('no-such-id'), null);
   } finally { delete global.LEGACY_TO; }
 });
+
+const timedPlank={ id:'pl', level:'mid', range:[20,45], sets_plan:3, target:20 };
+const planHold=(patch)=>P.prNext({...timedPlank,...patch});
+
+test('timed hold: 1 of 3 at target cannot increase the next hold', () => {
+  const o=planHold({results:[20]});
+  assert.deepEqual([o.id,o.target,o.note,o.sets,o.state.success],['pl',20,'same',3,0]);
+});
+
+test('timed hold: even a complete on-target session marked with pain cannot increase the hold or count a miss', () => {
+  const o=planHold({results:[20,20,20],pain:true,state:{tmiss:2}});
+  assert.deepEqual([o.id,o.target,o.note,o.state.success,o.state.tmiss],['pl',20,'same',0,2]);
+});
+
+test('timed hold: partial or pain-marked session breaks the two-full-session streak for an RKC offer', () => {
+  const capped={target:45,results:[45,45,45]};
+  const first=planHold(capped);
+  assert.deepEqual([first.id,first.target,first.state.success],['pl',45,1]);
+  for(const ineligible of [{results:[45]},{pain:true}]){
+    const interrupted=planHold({...capped,state:first.state,...ineligible});
+    assert.deepEqual([interrupted.id,interrupted.target,interrupted.state.success],['pl',45,0]);
+    const next=planHold({...capped,state:interrupted.state});
+    assert.deepEqual([next.id,next.target,next.state.success],['pl',45,1]);
+    const second=planHold({...capped,state:next.state});
+    assert.deepEqual([second.id,second.target,second.note],['mk-rkc-plank',10,'ladder']);
+  }
+});
+
+test('timed hold: complete pain-free session still progresses; block deload leaves progression state alone', () => {
+  const full=planHold({results:[20,20,20]});
+  assert.deepEqual([full.id,full.target,full.note],['pl',25,'time_up']);
+  const deload=planHold({target:45,results:[45,45,45],state:{success:1,tmiss:1},ctx:{deload:'block'}});
+  assert.deepEqual([deload.id,deload.target,deload.note,deload.sets],['pl',45,'deload_block',3]);
+  assert.deepEqual(deload.state,{success:1,miss:0,tmiss:1});
+});
+
+test('timed hold: incomplete low session does not add a miss; three eligible under-target sessions still reduce time', () => {
+  const low={target:30,results:[20,30,30]};
+  const first=planHold(low),second=planHold({...low,state:first.state});
+  assert.deepEqual([first.target,first.state.tmiss,second.target,second.state.tmiss],[30,1,30,2]);
+  const partial=planHold({...low,results:[20],state:second.state});
+  assert.deepEqual([partial.target,partial.note,partial.state.tmiss],[30,'same',2]);
+  const pain=planHold({...low,pain:true,state:partial.state});
+  assert.deepEqual([pain.target,pain.note,pain.state.tmiss],[30,'same',2]);
+  const third=planHold({...low,state:pain.state});
+  assert.deepEqual([third.target,third.note,third.state.tmiss],[25,'time_down',undefined]);
+});

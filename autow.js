@@ -56,23 +56,33 @@ function awUserGap(skip){let t=0;for(const w of S.workouts){if(w.id===skip||!w.i
 function awDayCtx(dayIdx){const i=dayIdx!=null?dayIdx:S.active&&S.active.dayIdx;return i!=null&&typeof blockDayCtx==='function'?blockDayCtx(i):null}
 function awRole(it,dayIdx){const i=dayIdx!=null?dayIdx:S.active&&S.active.dayIdx,d=i!=null&&S.program&&S.program[i],pi=d&&(d.items||[]).find(x=>x.exId===it.exId);
  if(pi&&(pi.role==='c'||pi.role==='a'))return pi.role;return typeof blockRole==='function'?blockRole({exId:it.exId}):'c'}
+// A pending 45/60 s plank → RKC offer belongs to the target exercise, not the user's current hold.
+const awToRkc=(c,to)=>c&&c.id==='pl'&&to==='mk-rkc-plank';
+const awRkcOffer=(c,n)=>awToRkc(c,n.id)&&n.note==='ladder';
+const awRkcLogged=(c,it,to)=>awToRkc(c,to)&&(it.sets||[]).some(s=>s&&s.done);
+function awPlankTarget(c,n,id,last){
+ if(!awRkcOffer(c,n)||n.target!==PR_TIME['mk-rkc-plank'][0])return n.target;
+ // Earlier saves wrote RKC's starting seconds on both exercises. Recover the source target without rewriting history.
+ const prev=(last||awLast(id))?.it?.sug?.target,cap=PR_TIME.pl[1];
+ return Number.isFinite(prev)&&prev>=cap&&prev<=PR_PLANK_CAP?prev:cap;
+}
 function awSuggest(it,dl){const c=awCls(it.exId);if(!c)return null;const p=awPg()[it.exId],last=awLast(it.exId,S.active&&S.active.id);
  const plan=it.ns||it.sets.length,R=c.eq==='time'?(PR_TIME[c.id]||[it.min,it.max]):[it.min,it.max];
  const dc=awDayCtx(),role=awRole(it),rt=dc&&dc.rirTarget||undefined;
  if(!p&&!last){const r0=prRir(awLevel(),role,prFlags(c,(S.prof&&S.prof.lim)||[]),0,rt);const rr=dl?[r0[0]+2,r0[1]+2]:r0;
   if(c.eq==='bodyweight'||c.eq==='time')return{ex:it.exId,target:R[0],sets:plan,note:'start',rir:rr};return{ex:it.exId,cal:1,sets:plan,note:'cal',rir:rr}}
- const nx=(p&&p.next)||{};let w=nx.weight!==undefined?nx.weight:(last?awWork(last.it.sets.filter(s=>s.done)):null);
+ const nx=(p&&p.next)||{},target=awPlankTarget(c,nx,it.exId,last);let w=nx.weight!==undefined?nx.weight:(last?awWork(last.it.sets.filter(s=>s.done)):null);
  const days=last?Math.floor((Date.now()-last.w.start)/AW_DAY):0,ctx={};
  if(dl)ctx.deload=dl;
  else if(days>=14){const daysSinceAny=awUserGap(S.active&&S.active.id);if(daysSinceAny!=null&&daysSinceAny<14)ctx.planned_return=1;else ctx.days_since_last=daysSinceAny!=null?Math.max(14,daysSinceAny):days}
- const base={id:it.exId,level:awLevel(),role:role,range:R,sets_plan:plan,weight:w,state:Object.assign({},(p&&p.st)||{}),flags:(S.prof&&S.prof.lim)||[],ctx,target:nx.target!=null?nx.target:undefined};
+ const base={id:it.exId,level:awLevel(),role:role,range:R,sets_plan:plan,weight:w,state:Object.assign({},(p&&p.st)||{}),flags:(S.prof&&S.prof.lim)||[],ctx,target:target!=null?target:undefined};
  if(rt)base.rir_target=rt;
  const o=prNext(base,awEq()),cx=ctx.deload||ctx.days_since_last||ctx.planned_return;
  // N1b (v156, QA v154): the number of sets comes from the plan of THIS day (it.ns). The stored next.sets was written by the last
  // workout (a replacement's remaining sets, another day's plan, v153/v154 data) and cut the next plan (3 → 1). Only the
  // «2 misses → one set less» rule (st.cut) still shortens it, counted from this day's plan as prReps does.
  const cut=!!(p&&p.st&&p.st.cut),sets=cut?Math.min(plan,Math.max(2,plan-1)):plan;
- const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:sets,target:cx?o.target:(nx.target!=null?nx.target:null),
+ const s={ex:it.exId,weight:o.weight,sets:cx?o.sets:sets,target:cx?o.target:(target!=null?target:null),
   rir:o.rir,note:cx?o.note:(nx.note||'same'),modKey:nx.modKey||o.modKey||'',to:nx.id||null,down:nx.down||null,st:o.state};
  if(ctx.planned_return)s.st=Object.assign({},(p&&p.st)||{});
  if(dl)s.dl=dl;if(!dl&&(awAfterDeload()||(p&&p.afterDl)))s.after=1;
@@ -115,7 +125,7 @@ function awSugHTML(it,i){const s=it.sug||{},c=awCls(it.exId);if(!c)return'';cons
 
   if(AW_NOTE[s.note]&&s.note!=='ladder'&&s.note!=='same'&&s.note!=='pain'&&s.note!=='pain2')L.push(`<span>${AW_NOTE[s.note]}</span>`);
   if(s.modKey&&AW_MOD[s.modKey])L.push(`<span>${AW_MOD[s.modKey]}</span>`);
-  if(s.to&&s.to!==it.exId&&starterReplacementOk(S.active,s.to)&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
+  if(s.to&&s.to!==it.exId&&!awRkcLogged(c,it,s.to)&&starterReplacementOk(S.active,s.to)&&!(typeof lgConf==='function'&&lgConf(s.to).length))L.push(`<span>Пора усложнить</span> → <b>${esc(exBy(s.to).name)}</b> <button class="sm" data-awlad="${i}">Заменить</button>`);
   else if(awDownOk(s.down,it.exId))L.push(`<span>Нижняя граница пока не выходит — можно взять более лёгкий вариант</span> → <b>${esc(exBy(s.down).name)}</b> <button class="sm" data-awdown="${i}">Заменить</button>`)}
  // v160 (task 2): shoulder limitation + vertical pull (arms overhead). Not forbidden (decision C: no «p» letter, the swap does not
  // remove them; progression is already careful: RIR +1, 2 sessions), but the user sees how to do it with the limitation.
@@ -144,7 +154,7 @@ function awDecorate(){const A=S.active;if(!A)return;let ch=false;
 // «Пора усложнить» button: item i goes to the next ladder step (it.sug.to). v160 (task 5): when this is the way BACK from the
 // D2 easier step to the exercise the user came from, the old failure counters of that exercise (miss / cut, the «2 misses» note
 // and the old offer) are cleared — they belong to the time before the gravitron. Weight, success history and S.workouts stay.
-function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.to;if(!to||!starterReplacementOk(A,to)||(typeof lgConf==='function'&&lgConf(to).length))return false;
+function awLadderSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=it.exId,to=it.sug&&it.sug.to;if(!to||awRkcLogged(awCls(from),it,to)||!starterReplacementOk(A,to)||(typeof lgConf==='function'&&lgConf(to).length))return false;
  const d=S.program&&S.program[A.dayIdx],pi=d&&(d.items||[]).find(x=>x.exId===from),back=it.downFrom||(pi&&pi.downFrom)||null;
  it.exId=to;delete it.downFrom;if(pi){pi.exId=to;delete pi.downFrom}
  const p=awPg()[from];if(p&&p.next){delete p.next.id;p.upd=Date.now()}
@@ -161,6 +171,21 @@ function awDownSwap(A,i){const it=A&&A.items[i];if(!it)return false;const from=i
  it.exId=to;it.downFrom=back;delete it.sug;delete it.awx;const d=S.program&&S.program[A.dayIdx];if(d){const pi=(d.items||[]).find(x=>x.exId===from);if(pi){pi.exId=to;pi.downFrom=back}}
  const p=awPg()[from];if(p&&p.next){delete p.next.down;p.upd=Date.now()}awApply(it,A.dl);save();return true}
 const _awWV=workoutView;workoutView=function(){_awWV();awDecorate()};
+// A list tick (or undo) patches the sets without rerendering the whole workout. Update just this RKC hint.
+if(typeof patchSets==='function'){
+ const _awPS=patchSets;patchSets=function(i){
+  const r=_awPS(i),A=S.active,it=A&&A.items[i];
+  if(!it||!awToRkc(awCls(it.exId),it.sug&&it.sug.to))return r;
+  const card=app.querySelector(`[data-rm="${i}"]`)?.closest('.card'),goal=card?.querySelector('.mut');
+  if(!goal)return r;
+  card.querySelector('.awsug')?.remove();
+  goal.insertAdjacentHTML('afterend',awSugHTML(it,i));
+  const up=card.querySelector(`[data-awlad="${i}"]`),down=card.querySelector(`[data-awdown="${i}"]`);
+  if(up)up.onclick=()=>{if(awLadderSwap(A,+i))workoutView()};
+  if(down)down.onclick=()=>{if(awDownSwap(A,+i))workoutView()};
+  return r;
+ };
+}
 
 // After a workout is saved: update per-exercise state; the saved workout itself is not changed
 function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
@@ -197,14 +222,15 @@ function awFinish(W){const P=awPg(),lim=(S.prof&&S.prof.lim)||[],hang=awHang();
   if(note==='top1'){const o2=prNext(Object.assign({},inp,{state:Object.assign({},o.state)}),awEq());
    if(o2.id===o.id&&o2.weight===o.weight&&(o2.mod|0)===(o.state.mod|0)&&!/^(inc|ladder|mod|cal_up)$/.test(o2.note))note='top_hold'}
   delete p.afterDl;
-  p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:o.target,note,modKey:o.modKey};if(to)p.next.id=to;
+  const holdTarget=awRkcOffer(c,{id:to,note})?inp.target:o.target;
+  p.st=o.state;p.next={weight:o.weight,sets:o.sets,target:holdTarget,note,modKey:o.modKey};if(to)p.next.id=to;
   if(o.down)p.next.down=awAppId(o.down);  // review-nov-2 task 2: easier step offered (button), never switched silently
   p.last=W.start;p.upd=upd;if(/^(inc|cal_up|ladder)$/.test(o.note))p.incAt=W.start;
   if(to&&!P[to])P[to]={st:{success:0,miss:0},next:{target:o.target,sets:o.sets,weight:o.weight,note:'ladder'},first:W.start,last:W.start,upd}})}
 
 // Today: show the next suggestion instead of the old "+2,5 кг" hint
-const _awHint=hint;hint=function(item){const c=awCls(item.exId),p=awPg()[item.exId];if(!c||!p||!p.next)return _awHint(item);const n=p.next,u=c.eq==='band'?'ур.':'кг';
- const parts=[];if(n.weight!=null&&c.eq!=='time')parts.push(awFmt(n.weight)+' '+u);if(n.target!=null)parts.push(n.target+(c.eq==='time'?' с':''));
+const _awHint=hint;hint=function(item){const c=awCls(item.exId),p=awPg()[item.exId];if(!c||!p||!p.next)return _awHint(item);const n=p.next,target=awPlankTarget(c,n,item.exId),u=c.eq==='band'?'ур.':'кг';
+ const parts=[];if(n.weight!=null&&c.eq!=='time')parts.push(awFmt(n.weight)+' '+u);if(target!=null)parts.push(target+(c.eq==='time'?' с':''));
  const up=/^(inc|inc_big|cal_up|time_up|ladder)$/.test(n.note);if(!parts.length&&!n.id)return'';
  return`<div class="${up?'pr':'mut'}" style="font-size:13px">${up?'⬆ ':''}<span>Авто-вес</span>: ${parts.join(' × ')}${n.id?` → ${esc(exBy(n.id).name)}`:''}</div>`};
 
