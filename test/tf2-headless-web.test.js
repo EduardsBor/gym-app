@@ -81,7 +81,9 @@ async function emulatedViewport(profile, width, url) {
       socket.addEventListener('error', () => reject(new Error('Could not open the DevTools socket')), { once: true, signal });
       signal.addEventListener('abort', () => reject(new Error('DevTools socket did not open')), { once: true });
     });
-    await request(1, 'Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
+    const dims=typeof width==='number'?{width,height:844}:width;
+    await request(1, 'Emulation.setDeviceMetricsOverride', { width:dims.width,height:dims.height,deviceScaleFactor:1,mobile:false });
+    if(dims.insets)await request(3,'Emulation.setSafeAreaInsetsOverride',{insets:dims.insets});
     const navigation = await request(2, 'Page.navigate', { url });
     if (navigation.errorText) throw new Error(navigation.errorText);
     return { socket, request };
@@ -1372,7 +1374,9 @@ test('exercise detail: floating next-exercise toast counts 3–2–1, and manual
         const oldY=scrollY;
         scrollTo(0,oldY>30?0:oldY+120);
         const yMoved=Math.abs(scrollY-oldY)>25;
-        R.fixed=[style.position,style.pointerEvents,yMoved,Math.abs(notice().getBoundingClientRect().top-b.top)<1];
+        await wait(45);
+        const toast=notice().getBoundingClientRect(),timerRect=q('#exrest').getBoundingClientRect();
+        R.fixed=[style.position,style.pointerEvents,yMoved,toast.bottom<=timerRect.top||toast.top>=timerRect.bottom];
         scrollTo(0,oldY);
         if(mode==='auto'){
           const ticks=[];for(const digit of ['3','2','1']){
@@ -1489,4 +1493,64 @@ test('exercise detail: a restored last hold records without starting an unexpect
   `,'',true,390);
   assert.deepEqual(r.errors,[]);
   assert.deepEqual(r.stayed,['m',0,true,true,45,false]);
+});
+
+test('floating exercise notice keeps the visible rest clock clear when scrolling through the lower slot', {skip}, async()=>{
+  const cases=[
+    {width:320,height:568,media:180},
+    {width:375,height:667,media:340},
+    {width:390,height:844,media:438,insets:{top:47,bottom:34}},
+    {width:320,height:568,media:285,insets:{top:44,bottom:34}},
+  ];
+  for(const dims of cases){
+    const st=oldState('ru',[]);delete st.block;
+    st.autoW=false;st.goal=st.prof.goal='mass';
+    st.program=[{name:'Demo',items:[
+      {exId:'mch-incline',sets:1,min:8,max:12,rest:90},
+      {exId:'mk-dumbbell-seated-overhead-tricep-extension',sets:1,min:8,max:12,rest:60},
+    ]}];
+    const r=await inChrome(st,'ru',{},`
+      const q=s=>document.querySelector(s),click=s=>q(s).click(),visible=e=>e&&e.getBoundingClientRect().height>0;
+      const overlap=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+      const box=e=>e.getBoundingClientRect(),toast=()=>q('#exadvance');
+      const rest=()=>q('#exrest'), digits=()=>q('#exrt'), viewport=()=>[box(q('#top')).bottom,box(q('#nav')).top];
+      const inset=${dims.insets?.bottom||0},media=${dims.media};
+      const style=document.createElement('style');style.textContent='#exv{height:'+media+'px}';document.head.append(style);
+      click('[data-v="today"]');await until(()=>q('#start'));click('#start');click('[data-exo="m,0"] h3');
+      click('#exadd');await until(()=>q('#exadvance-label').textContent.includes(':'));
+      const started=tEnd,h=box(toast()).height,lower=innerHeight-76-inset;
+      const clip=()=>{const [t,b]=viewport(),d=box(digits());return d.top>=t&&d.bottom<=b};
+      R.metrics=[innerWidth,innerHeight,parseFloat(getComputedStyle(q('#nav')).paddingBottom),box(q('#exv')).height];
+      const scrollHit=Math.round(scrollY+(box(digits()).top+box(digits()).bottom)/2-(lower-h/2));
+      const maxScroll=document.documentElement.scrollHeight-innerHeight;
+      R.samples=[];
+      for(const y of [...new Set([0,89,scrollHit-44,scrollHit,scrollHit+34,scrollHit+100,maxScroll])]){
+        scrollTo(0,y);await wait(50);
+        if(!visible(toast()))throw Error('Toast disappeared during scrolling');
+        const d=box(digits()),b=box(toast()),r=box(rest()),[upper,nav]=viewport(),visibleClock=clip();
+        const lowerSlot={left:b.left,right:b.right,top:lower-b.height,bottom:lower};
+        const collision=visibleClock&&overlap(lowerSlot,d);
+        R.samples.push({y:scrollY,visibleClock,collision,overlap:visibleClock&&overlap(b,d),clearsButton:!visibleClock||!overlap(b,r),
+          toastVisible:b.top>=upper&&b.bottom<=nav&&b.left>=0&&b.right<=innerWidth,
+          lower:Math.abs(b.bottom-lower)<1,
+          neutral:getComputedStyle(toast()).position==='fixed'&&getComputedStyle(toast()).pointerEvents==='none'&&tEnd===started&&q('#exrest').classList.contains('run')});
+      }
+      const oldHeight=box(q('#exv')).height;
+      // A late local media load/resize can push the clock into the lower slot without a user scroll.
+      scrollTo(0,Math.max(0,scrollHit));await wait(55);
+      style.textContent='#exv{height:'+(media<=200?media+55:media-55)+'px}';await wait(55);
+      R.mediaShift=[Math.abs(box(q('#exv')).height-oldHeight)>40,visible(toast()),!clip()||!overlap(box(toast()),box(digits()))];
+      R.final=[tEnd===started,!!S.active,EXS.i,q('#exadvance-count').textContent];
+    `,'',true,dims);
+    const where=[dims.width,dims.height,dims.insets?.bottom||0].join('/');
+    assert.deepEqual(r.errors,[],where);
+    assert.deepEqual(r.metrics,[dims.width,dims.height,dims.insets?.bottom||0,dims.media],where);
+    assert.ok(r.samples.some(s=>s.collision&&s.y>=0),JSON.stringify({where,samples:r.samples}));
+    if(where==='320/568/0')assert.ok(r.samples.some(s=>s.y===89&&s.visibleClock&&s.collision&&!s.overlap),where);
+    assert.ok(r.samples.some(s=>!s.collision&&s.lower),where);
+    assert.ok(r.samples.every(s=>s.toastVisible&&s.neutral&&!s.overlap&&s.clearsButton),JSON.stringify({where,samples:r.samples}));
+    assert.deepEqual(r.mediaShift,[true,true,true],where);
+    assert.deepEqual(r.final.slice(0,3),[true,true,0],where);
+    assert.match(r.final[3],/^[123]$/,where);
+  }
 });
