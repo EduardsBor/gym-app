@@ -837,3 +837,177 @@ test('Featured Home replacement still blocks clinician-flagged choices and a pre
   assert.deepEqual(r.active,r.preview);
   assert.deepEqual(r.oldActive,[true,true,true]);
 });
+
+test('active workout: warm-up, preparatory set and cooldown completion toggles stay on the right', { skip }, async () => {
+  for(const [lang,width,modern] of [['ru',320,true],['lv',375,true],['en',390,true],['ru',320,false]]){
+    const st=oldState(lang,[]);
+    delete st.block;
+    st.goal=st.prof.goal='mass';
+    st.program=[{name:'Demo',items:[{exId:'rdl-db',sets:3,min:8,max:12,rest:90}],...(modern?{wu:{
+      cardio:{id:'mk-rowing-machine-steady-state',min:3,note:''},
+      mob:[{id:'mk-arm-circles-front-back',dose:'20 с'}],
+      ramp:[{exId:'rdl-db',pct:50,reps:8},{exId:'rdl-db',pct:70,reps:4}],min:7,
+    }}:{}),cd:{pl:'b',note:'Длинная подсказка без картинки',stretch:[{id:'mk-childs-pose',dose:'30 с'}]}}];
+    const r=await inChrome(st,lang,{},`
+      const q=s=>document.querySelector(s), all=s=>[...document.querySelectorAll(s)];
+      const json=x=>JSON.stringify(x), saved=()=>JSON.parse(localStorage.getItem('gym')).active;
+      const unchanged=()=>json([S.program,S.workouts,S.pg]);
+      const before=unchanged();
+      q('[data-v="today"]').click();
+      await until(()=>q('#app button[data-i="0"]'));q('#app button[data-i="0"]').click();
+      R.preview=all('[data-wu],[data-cd],.wu-checkrow').length===0;
+      await until(()=>q('#start'));q('#start').click();
+      await until(()=>q('[data-wu]')&&q('[data-cd]')&&q('[data-done]'));
+      const buttons=all('[data-wu],[data-cd]'), main=q('[data-done="0,0"]').getBoundingClientRect();
+      R.width=innerWidth;R.legacy=!S.active.warm.t;R.count=buttons.length;
+      R.togglesRight=buttons.every(b=>{
+        const row=b.closest('.li'), text=row.querySelector('.grow').getBoundingClientRect();
+        const rect=b.getBoundingClientRect(), tech=row.querySelector('[data-ti]');
+        const photo=row.querySelector('.athumb'), dose=row.querySelector('.wu-dose');
+        return row.lastElementChild===b&&Math.abs(rect.right-row.getBoundingClientRect().right)<1
+          &&text.right<=rect.left&&(tech===null||tech.getBoundingClientRect().right<=rect.left)
+          &&(dose===null||dose.getBoundingClientRect().right<=rect.left)
+          &&(photo===null||photo.getBoundingClientRect().right<=text.left)
+          &&rect.width===main.width&&rect.height===main.height&&rect.width>=44&&rect.height>=44
+          &&b.getAttribute('aria-pressed')==='false'&&Boolean(b.getAttribute('aria-label'));
+      });
+      R.noHScroll=document.documentElement.scrollWidth===innerWidth;
+      const warm=all('[data-wu]'), ramp=warm.at(-1), k=+ramp.dataset.wu;
+      const cooldown=q('[data-cd="0"]'), cdLast=all('[data-cd]').at(-1);
+      const rampRow=ramp.closest('.li'), poster=rampRow.querySelector('.athumb');
+      R.ramp=!!poster&&rampRow.textContent.includes('70%');
+      if(LANG==='ru'&&!R.legacy)R.sameAsScreenshot=rampRow.textContent.includes('Румынская тяга с гантелями');
+      const setsBefore=json(S.active.items);
+      ramp.click();cooldown.click();
+      R.checked=[saved().warm.c[k],saved().cool.c[0],ramp.getAttribute('aria-pressed'),cooldown.getAttribute('aria-pressed'),ramp.classList.contains('ok'),rampRow.classList.contains('done'),ramp.isConnected,poster.isConnected,view];
+      R.counter=[ramp.closest('details').querySelector('summary .mut').textContent,cooldown.closest('details').querySelector('summary .mut').textContent];
+      ramp.click();cooldown.click();
+      R.unchecked=[saved().warm.c[k],saved().cool.c[0],ramp.getAttribute('aria-pressed'),cooldown.getAttribute('aria-pressed'),ramp.classList.contains('ok'),rampRow.classList.contains('done')];
+      warm.forEach(b=>b.click());all('[data-cd]').forEach(b=>b.click());
+      R.completed=[!ramp.closest('details').open,!cdLast.closest('details').open,saved().warm.c.every(Boolean),saved().cool.c.every(Boolean)];
+      R.unchanged=before===unchanged()&&setsBefore===json(S.active.items)&&view==='today';
+      q('[data-done="0,0"]').click();R.mainStillMarks=saved().items[0].sets[0].done;
+    `,'',true,width);
+    const where=lang+' '+width+'px '+(modern?'template':'legacy');
+    assert.deepEqual(r.errors,[],where);
+    assert.equal(r.width,width,where);assert.equal(r.legacy,!modern,where);assert.ok(r.count>=6,where);
+    assert.ok(r.preview&&r.togglesRight&&r.noHScroll&&r.ramp,where);
+    if(lang==='ru'&&modern)assert.equal(r.sameAsScreenshot,true,where);
+    assert.deepEqual(r.checked,[true,true,'true','true',true,true,true,true,'today'],where);
+    assert.match(r.counter[0],/^1\//,where);assert.equal(r.counter[1],'1/2',where);
+    assert.deepEqual(r.unchecked,[false,false,'false','false',false,false],where);
+    assert.deepEqual(r.completed,[true,true,true,true],where);
+    assert.ok(r.unchanged&&r.mainStillMarks,where);
+  }
+});
+
+test('active workout: the existing completed warm-up mark uses the theme success green, including after reload', { skip }, async () => {
+  for(const [lang,width,modern,label] of [['ru',320,true,'Готово'],['lv',390,true,'Gatavs'],['en',375,false,'Done']]){
+    const st=oldState(lang,[]);
+    delete st.block;
+    st.goal=st.prof.goal='mass';
+    st.program=[{name:'Demo',items:[{exId:'rdl-db',sets:3,min:8,max:12,rest:90}],...(modern?{wu:{
+      cardio:{id:'mk-rowing-machine-steady-state',min:3,note:''},
+      mob:['mk-arm-circles-front-back','mk-cat-camel','mk-hip-hinge-drill','mk-broomstick-pass-throughs','mk-band-row','bwsq'].map(id=>({id,dose:'20 с'})),
+      ramp:[{exId:'rdl-db',pct:50,reps:8},{exId:'rdl-db',pct:70,reps:4}],min:7,
+    }}:{}),cd:{pl:'b',note:'Ходьба',stretch:[]}}];
+    const r=await inChrome(st,lang,{},`
+      const q=s=>document.querySelector(s), all=s=>[...document.querySelectorAll(s)];
+      const warm=()=>q('[data-wu]').closest('details'), counter=()=>warm().querySelector('summary .mut');
+      const mark=()=>warm().querySelector('summary .wu-complete-mark');
+      const nums=s=>s.match(/\\d+/g).slice(0,3).map(Number);
+      const lum=rgb=>nums(rgb).map(x=>x/255).map(x=>x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4)
+        .reduce((s,x,i)=>s+x*[0.2126,0.7152,0.0722][i],0);
+      const previous=sessionStorage.getItem('warmGreenReload');
+      if(!previous){
+        q('[data-v="today"]').click();
+        await until(()=>q('#start'));q('#start').click();
+        await until(()=>q('[data-wu]')&&q('[data-cd]'));
+        const toggles=all('[data-wu]'), last=toggles.at(-1), n=toggles.length;
+        R.initial=[warm().open,counter().textContent.trim(),mark()===null];
+        toggles.slice(0,-1).forEach(b=>b.click());
+        R.partial=[warm().open,counter().textContent.trim(),mark()===null];
+        last.click();
+        await wait(80);
+        const nodes=warm().querySelectorAll('summary .wu-complete-mark');
+        R.finished=[warm().open,counter().textContent.trim(),nodes.length,mark().getAttribute('aria-label'),mark().getAttribute('role'),n];
+        R.themes=[];
+        for(const theme of ['captain','studio','cobalt','copper','mono']){
+          document.documentElement.dataset.theme=theme;
+          const p=document.createElement('span');p.style.color='var(--ok)';counter().append(p);
+          const fg=getComputedStyle(mark()).color, bg=getComputedStyle(warm().closest('.card')).backgroundColor;
+          const [a,b]=[lum(fg),lum(bg)].sort((a,b)=>b-a);
+          R.themes.push(fg===getComputedStyle(p).color&&fg!==getComputedStyle(counter()).color&&(a+.05)/(b+.05)>=3);
+          p.remove();
+        }
+        const cd=q('[data-cd]');cd.click();
+        R.cooldown=[cd.closest('details').querySelector('summary .mut').textContent.trim(),!cd.closest('details').querySelector('.wu-complete-mark')];
+        const empty=document.createElement('div');empty.innerHTML=wuHTML({mob:[],ramp:[]},[]);
+        R.empty=empty.querySelector('summary .mut').textContent.trim()==='0/0'&&!empty.querySelector('.wu-complete-mark');
+        sessionStorage.setItem('warmGreenReload',JSON.stringify(R)); location.reload();await new Promise(()=>{});
+      }else{
+        Object.assign(R,JSON.parse(previous));
+        await until(()=>q('[data-wu]')&&mark());
+        await wait(80);
+        R.reload=[warm().open,mark().getAttribute('aria-label'),counter().textContent.trim(),JSON.parse(localStorage.getItem('gym')).active.warm.c.every(Boolean)];
+        warm().querySelector('summary').click();
+        R.manualOpen=warm().open&&!!mark();
+        all('[data-wu]').at(-1).click();
+        R.undo=[warm().open,counter().textContent.trim(),mark()===null,JSON.parse(localStorage.getItem('gym')).active.warm.c.at(-1)];
+      }
+    `,'',true,width);
+    const where=lang+' '+width+'px';
+    assert.deepEqual(r.errors,[],where);
+    const n=r.finished[5];
+    assert.ok(modern?n===9:n>0,where);
+    assert.deepEqual(r.initial,[true,'0/'+n,true],where);
+    assert.deepEqual(r.partial,[true,(n-1)+'/'+n,true],where);
+    assert.deepEqual(r.finished,[false,n+'/'+n+' ✓',1,label,'img',n],where);
+    assert.deepEqual(r.themes,[true,true,true,true,true],where);
+    assert.deepEqual(r.cooldown,['1/1 ✓',true],where);
+    assert.equal(r.empty,true,where);
+    assert.deepEqual(r.reload,[false,label,n+'/'+n+' ✓',true],where);
+    assert.equal(r.manualOpen,true,where);
+    assert.deepEqual(r.undo,[true,(n-1)+'/'+n,true,false],where);
+  }
+});
+
+test('Program workout: the training screen has no add-exercise action and can still save a set', {skip}, async()=>{
+  const st=oldState('ru',[]);
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s), click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    click('nav [data-v="today"]');await until(()=>q('#start'));click('#start');
+    const id=S.active.id, ex=S.active.items[0].exId;
+    R.active=[!!S.active,!!q('#addex'),!!q('#notes'),!!q('#fin2'),!!q('#cancel')];
+    click('[data-done="0,0"]');click('#fin2');
+    const w=S.workouts.at(-1);
+    R.saved=[!S.active,w.id===id,w.items[0].exId===ex,w.items[0].sets[0].done];
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.active,[true,false,true,true,true]);
+  assert.deepEqual(r.saved,[true,true,true,true]);
+});
+
+test('Own workout: start empty and add two exercises from the top, not above Finish', {skip}, async()=>{
+  const st=oldState('ru',[]);
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s), click=s=>{const e=q(s);if(!e)throw Error('Missing '+s);e.click()};
+    const precedes=(s,t)=>Boolean(q(s).compareDocumentPosition(q(t))&Node.DOCUMENT_POSITION_FOLLOWING);
+    click('nav [data-v="today"]');await until(()=>q('#fstart'));click('#fstart');
+    const id=S.active.id;
+    await until(()=>q('#addex'));
+    R.empty=[isDiaryWorkout(S.active),S.active.items.length,precedes('#addex','.wucard'),!!q('#fin2')];
+    click('#addex');click('#el [data-p="bp"]');
+    R.first=[S.active.id===id,S.active.items.map(it=>it.exId),precedes('#addex','[data-exo="m,0"]')];
+    click('#addex');click('#el [data-p="sq"]');
+    R.second=[S.active.id===id,S.active.items.map(it=>it.exId),precedes('#addex','.wucard'),document.querySelectorAll('#addex').length];
+    click('[data-done="0,0"]');click('[data-done="1,0"]');click('#fin2');
+    const w=S.workouts.at(-1);
+    R.saved=[!S.active,w.id===id,w.items.map(it=>it.exId),w.items.every(it=>it.sets[0].done)];
+  `,'?demo=free',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.empty,[true,0,true,true]);
+  assert.deepEqual(r.first,[true,['bp'],true]);
+  assert.deepEqual(r.second,[true,['bp','sq'],true,1]);
+  assert.deepEqual(r.saved,[true,true,['bp','sq'],true]);
+});

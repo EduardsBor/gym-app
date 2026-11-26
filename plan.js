@@ -270,11 +270,12 @@ function cdRows(cd) {
   return rows;
 }
 function rowsHTML(rows, chk, attr) {
-  return rows.map((it, i) => `<div class="li wu exo${chk && chk[i] ? ' done' : ''}" data-exo="${attr === 'cd' ? 'c' : 'w'},${i}">${chk ? `<button class="sm ${chk[i] ? 'ok' : ''}" data-${attr}="${i}" aria-label="Готово">✓</button>` : ''}${it.id && typeof animShot === 'function' ? animShot(it.id) : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort === 'function' && exShort(it.d) !== it.d && it.d ? `<div class="mut" style="font-size:12px">${esc(it.d)}</div>` : ''}${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}${it.c ? `<div class="mut" style="font-size:12px">${esc(it.c)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut" style="white-space:nowrap">${esc(typeof exShort === 'function' ? exShort(it.d) : it.d)}</span></div>`).join('');
+  return rows.map((it, i) => `<div class="li wu exo${chk ? ' wu-checkrow' : ''}${chk && chk[i] ? ' done' : ''}" data-exo="${attr === 'cd' ? 'c' : 'w'},${i}">${it.id && typeof animShot === 'function' ? animShot(it.id) : ''}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort === 'function' && exShort(it.d) !== it.d && it.d ? `<div class="mut" style="font-size:12px">${esc(it.d)}</div>` : ''}${it.x ? `<div class="mut" style="font-size:12px">${esc(it.x)}</div>` : ''}${it.c ? `<div class="mut" style="font-size:12px">${esc(it.c)}</div>` : ''}</div>${it.id ? techBtn(it.id) : ''}<span class="mut${chk ? ' wu-dose' : ''}"${chk ? '' : ' style="white-space:nowrap"'}>${esc(typeof exShort === 'function' ? exShort(it.d) : it.d)}</span>${chk ? warmCoolCheck(attr, i, chk[i]) : ''}</div>`).join('');
 }
 function wuHTML(wu, chk) {
-  const rows = wuRows(wu), n = chk ? chk.filter(Boolean).length : 0, all = chk && n === rows.length;
-  return `<details class="wud" ${chk ? (all ? '' : 'open') : ''}><summary>🔥 <b>Разминка</b> <span class="mut">${chk ? n + '/' + rows.length + (all ? ' ✓' : '') : '≈ ' + Math.round(wu.min || 0) + ' мин'}</span></summary>${rowsHTML(rows, chk, 'wu')}</details>`;
+  const rows = wuRows(wu), n = chk ? warmDoneCount(chk,rows.length) : 0, all = chk && n === rows.length;
+  const progress = chk ? warmProgressHTML(n,rows.length) : `<span class="mut">≈ ${Math.round(wu.min || 0)} мин</span>`;
+  return `<details class="wud" ${chk ? (all ? '' : 'open') : ''}><summary>🔥 <b>Разминка</b> ${progress}</summary>${rowsHTML(rows, chk, 'wu')}</details>`;
 }
 function cdHTML(cd, chk) {
   const rows = cdRows(cd), n = chk ? chk.filter(Boolean).length : 0, all = chk && n === rows.length;

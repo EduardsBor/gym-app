@@ -84,8 +84,12 @@ function warmPlan(d,a){a=a||{};const g=warmGroups(d),lim=a.lim||[],home=a.place!
  return{gen,mob:m,main:main&&main.exId,ramp,min:WARM+ramp.length}}
 function warmItems(P){return[{k:'gen',n:P.gen,d:'3 мин'},...P.mob.map(id=>({k:id,n:WMOV[id][0],d:WMOV[id][1],x:WMOV[id][2]})),...P.ramp.map((r,i)=>({k:'r'+i,n:'Подводящий подход',d:(r.w==null&&r.t!=='Лёгкий подход'?r.t+' × '+r.r:r.t==='Лёгкий подход'?'× '+r.r:r.t+' · '+r.w+' кг × '+r.r),ramp:1,pct:r.t}))]}
 function wuId(it){if(it.ramp)return null;if(it.k==='gen'){const n=it.n;return /Гребн/.test(n)?'mk-rowing-machine-steady-state':/Велотр/.test(n)?'mk-indoor-cycling-spin':/Эллипс/.test(n)?'mk-elliptical':/Джампинг/.test(n)?'jump':'mk-walking-knee-hugs'}return ({march:'mk-walking-knee-hugs',hip:'w_hip',legsw:'w_legsw',glb:'w_glb',gm:'mk-hip-hinge-drill',armc:'mk-arm-circles-front-back',dislo:'mk-broomstick-pass-throughs',pa:'mk-band-high-face-pull',catcow:'mk-cat-camel',scpull:'w_scpull',bandrow:'mk-band-row',bwsq:'bwsq'})[it.k]||null}
+function warmCoolCheck(kind,i,on){return `<button type="button" class="wu-check${on?' ok':''}" data-${kind}="${i}" aria-label="Готово" aria-pressed="${!!on}">✓</button>`}
+function warmDoneCount(chk,total){return chk.slice(0,total).filter(Boolean).length}
+function warmProgressText(n,total){return n+'/'+total+(total>0&&n===total?' <span class="wu-complete-mark" role="img" aria-label="Готово">✓</span>':'')}
+function warmProgressHTML(n,total){return `<span class="mut" data-wu-progress="${total}">${warmProgressText(n,total)}</span>`}
 function warmHTML(P,chk){const L=warmItems(P);const noW=P.ramp.some(r=>r.w==null&&r.t!=='Лёгкий подход');
- const row=(it,i)=>`<div class="li wu exo${chk&&chk[i]?' done':''}" data-exo="w,${i}">${chk?`<button class="sm ${chk[i]?'ok':''}" data-wu="${i}" aria-label="Готово">✓</button>`:''}${(()=>{const v=it.ramp?P.main:wuId(it);return v?animShot(v):''})()}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort==='function'&&exShort(it.d)!==it.d&&it.d?`<div class="mut" style="font-size:12px">${esc(it.d)}</div>`:''}${it.x?`<div class="mut" style="font-size:12px">${esc(it.x)}</div>`:''}</div>${(()=>{const v=wuId(it);return v?techBtn(v).replace('data-ti=','data-wf="1" data-ti='):''})()}<span class="mut wu-dose">${esc(typeof exShort==='function'?exShort(it.d):it.d)}</span></div>`;
+ const row=(it,i)=>`<div class="li wu exo${chk?' wu-checkrow':''}${chk&&chk[i]?' done':''}" data-exo="w,${i}">${(()=>{const v=it.ramp?P.main:wuId(it);return v?animShot(v):''})()}<div class="grow"><div><span>${esc(it.n)}</span></div>${typeof exShort==='function'&&exShort(it.d)!==it.d&&it.d?`<div class="mut" style="font-size:12px">${esc(it.d)}</div>`:''}${it.x?`<div class="mut" style="font-size:12px">${esc(it.x)}</div>`:''}</div>${(()=>{const v=wuId(it);return v?techBtn(v).replace('data-ti=','data-wf="1" data-ti='):''})()}<span class="mut wu-dose">${esc(typeof exShort==='function'?exShort(it.d):it.d)}</span>${chk?warmCoolCheck('wu',i,chk[i]):''}</div>`;
  return `<div class="mut" style="font-size:13px;margin:4px 0"><span>1) Общая разминка — 3 мин</span> · <span>2) Подвижность суставов — ~2 мин</span>${P.ramp.length?` · <span>3) Подводящие подходы</span>`:''}</div>${L.map((it,i)=>(it.k==='r0'?`<div class="row" style="margin-top:10px"><b class="grow"><span>3) Подводящие подходы</span>: <span>${esc(exBy(P.main).name)}</span></b>${techBtn(P.main)}</div>`:'')+row(it,i)).join('')}${noW?'<div class="mut" style="font-size:12px;margin-top:4px">% — от твоего рабочего веса. Разминочные подходы не записываются в историю и рекорды.</div>':'<div class="mut" style="font-size:12px;margin-top:4px">Разминочные подходы не записываются в историю и рекорды.</div>'}`}
 
 function pickFor(slot,a,used,off,acc){const[c,safe]=SLOT[slot];const allow=id=>okEx(id,a)&&(typeof autoOk!=='function'||autoOk(id,a,!!acc))&&!used.has(id);let L=c.filter(allow);let swapped=false;
@@ -577,11 +581,20 @@ function reuseMkPosters(root,build){
 function patchWuCd(kind,k){
   const A=S.active,chk=kind==='cd'?(A.cool&&A.cool.c):(A.warm&&A.warm.c);if(!chk)return;
   const b=app.querySelector('[data-'+kind+'="'+k+'"]');if(!b)return;
-  const on=!!chk[k];b.classList.toggle('ok',on);
+  const on=!!chk[k];b.classList.toggle('ok',on);b.setAttribute('aria-pressed',String(on));
   const row=b.closest&&(b.closest('.li.wu')||b.closest('.li'));if(row)row.classList.toggle('done',on);
   const n=chk.filter(Boolean).length,all=n===chk.length;
   const d=b.closest&&b.closest('details');
-  if(d){const m=d.querySelector('summary .mut');if(m)m.textContent=n+'/'+chk.length+(all?' ✓':'');d.open=!all}
+  if(d){
+    const progress=kind==='wu'&&d.querySelector('summary [data-wu-progress]');
+    if(progress){
+      const total=+progress.dataset.wuProgress,done=warmDoneCount(chk,total);
+      progress.innerHTML=warmProgressText(done,total);
+      d.open=done!==total;
+    }else{
+      const m=d.querySelector('summary .mut');if(m)m.textContent=n+'/'+chk.length+(all?' ✓':'');d.open=!all;
+    }
+  }
 }
 function patchSets(i){
   const it=S.active&&S.active.items[i];if(!it)return;
@@ -595,10 +608,12 @@ function patchSets(i){
   });
 }
 function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
+ const own=typeof isDiaryWorkout==='function'&&isDiaryWorkout(A);
  reuseMkPosters(app,()=>{
  app.innerHTML=`<div class="card row"><div class="grow"><div class="mut">Длительность</div><b id="dur" style="font-size:22px"></b></div><button class="ok hidden" id="fin" aria-hidden="true" tabindex="-1">Завершить</button></div>
  ${typeof healthPanel==='function'?healthPanel():''}
- ${A.warm?(()=>{if(A.warm.t)return`<div class="card wucard">${wuHTML(A.warm.wu,A.warm.c)}</div>`;const n=A.warm.c.filter(Boolean).length,all=n===A.warm.c.length;return`<div class="card wucard"><details ${all?'':'open'}><summary>🔥 <b>Разминка</b> <span class="mut">${n}/${A.warm.c.length}${all?' ✓':''}</span></summary>${warmHTML(A.warm.P,A.warm.c)}</details></div>`})():''}
+ ${own?'<button class="full" id="addex">+ Добавить упражнение</button>':''}
+ ${A.warm?(()=>{if(A.warm.t)return`<div class="card wucard">${wuHTML(A.warm.wu,A.warm.c)}</div>`;const total=warmItems(A.warm.P).length,n=warmDoneCount(A.warm.c,total),all=n===total;return`<div class="card wucard"><details ${all?'':'open'}><summary>🔥 <b>Разминка</b> ${warmProgressHTML(n,total)}</summary>${warmHTML(A.warm.P,A.warm.c)}</details></div>`})():''}
  ${A.items.map((it,i)=>{const c=isCardio(it.exId),l=lastSets(it.exId,A.id);
   // v160 (task 6): holds (plank, towel-iso-curl) — the second column is seconds, the first one optional extra weight; data unchanged.
   const sec=!c&&(!!it.sec||(typeof isSecEx==='function'&&isSecEx(it.exId)));
@@ -609,7 +624,6 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  ${it.sets.map((s,k)=>`<div class="set ${s.done?'done':''} ${s.pf&&!s.done?'pf':''}"><span class="n">${k+1}</span><input type="number" inputmode="decimal" step="0.5" value="${esc(s.w)}" data-i="${i}" data-k="${k}" data-f="w"><input type="number" inputmode="numeric" value="${esc(s.r)}" data-i="${i}" data-k="${k}" data-f="r"${sec?' aria-label="Секунды"':''}><button class="${s.done?'ok':''}" data-done="${i},${k}">✓</button>${l&&l[k]?`<div class="prev">${prev(l[k])}</div>`:''}</div>`).join('')}
  <div class="row"><button class="sm grow" data-add="${i}">+ подход</button><button class="sm grow" data-del="${i}">− подход</button></div></div>`}).join('')}
  ${A.cool?`<div class="card wucard">${cdHTML(A.cool.cd,A.cool.c)}</div>`:''}
- <button class="full" id="addex">+ Добавить упражнение</button>
  <h2>Заметки</h2><textarea id="notes" rows="3" placeholder="Самочувствие, что получилось…">${esc(A.notes)}</textarea>
  <button class="pri full" id="fin2" style="margin:16px 0 0;min-height:52px;font-size:17px">Завершить тренировку</button>
  <button class="danger full" id="cancel" style="margin:16px 0">Отменить тренировку</button>`;
@@ -624,7 +638,7 @@ function workoutView(){const A=S.active;$('#title').textContent=historyLabel(A);
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{if(confirm('Убрать упражнение?')){A.items.splice(b.dataset.rm,1);save();workoutView()}});
  app.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{const it=A.items[b.dataset.ws];starterSwapModal(it.exId,starterSessionContext(A),id=>{swapActiveItem(A,+b.dataset.ws,id);save();workoutView()})});
  $('#notes').oninput=e=>{A.notes=e.target.value;save()};
- $('#addex').onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false})),limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();workoutView()});
+ const add=$('#addex');if(add)add.onclick=()=>pickEx(id=>{const p=prmMe().a;A.items.push({exId:id,ns:3,rest:p[3],min:p[1],max:p[2],sets:[0,0,0].map(()=>({w:'',r:p[2],done:false})),limAck:typeof lgAckOf==='function'?lgAckOf(id):undefined});save();workoutView()});
  $('#cancel').onclick=()=>{if(confirm('Отменить тренировку без сохранения?')){S.active=null;if(typeof hr!=='undefined')try{hr.disconnect()}catch(e){}save();stopTimer();clearInterval(durInt);go('today')}};
  // D-259 (Eduards: «Завершить тренировку в конце должна быть.»): bottom button runs the same (wrapped) handler as the top «Завершить».
  $('#fin2').onclick=()=>{const f=$('#fin');if(f&&f.onclick)f.onclick()};
