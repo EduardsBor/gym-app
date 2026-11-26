@@ -3,7 +3,8 @@
 // MoveKit video, target reps/time, rest timer, sets done, set logging into the SAME S.active.items[].sets (history format unchanged).
 // Warm-up/cool-down have no sets/rest in the trainer data: sets are read from the dose («2 × 20–30 с»), otherwise 1; rest 20 s (warm-up) / 30 s (cool-down).
 const EX_WU_REST=20,EX_CD_REST=30;
-let EXS=null,exInt=null;
+let EXS=null,exInt=null,EX_ADVANCE=null;
+const EX_ADVANCE_MS=3000;
 function exDay(){const A=S.active;if(A)return{A,sel:A.dayIdx,d:(S.program&&S.program[A.dayIdx])||{items:[]}};
  const n=S.program.length,sel=TSEL!=null&&TSEL<n?TSEL:S.next%n,d0=S.program[sel];return{A:null,sel,d:typeof eqAdaptDay==='function'?eqAdaptDay(d0):d0}}
 function exLegacyWu(P){return warmItems(P).map(it=>({id:it.ramp?P.main:wuId(it),n:it.ramp?'Подводящий подход: '+exBy(P.main).name:it.n,d:it.d,x:it.x||''}))}
@@ -50,20 +51,21 @@ function exHoldDisownAudio(){exHoldLive=null}
 document.addEventListener('visibilitychange',exHoldDisownAudio);
 if(typeof addEventListener==='function')addEventListener('pageshow',exHoldDisownAudio);
 function exHoldTick(){const h=S.exHold;if(h&&!h.paused&&h.endAt&&!h.done&&exHoldLeft(h)<=0){
- const quiet=typeof iosWebAudio!=='undefined'&&iosWebAudio&&(document.hidden||exHoldLive!==h);
+ const foreground=!document.hidden&&exHoldLive===h;
+ const quiet=typeof iosWebAudio!=='undefined'&&iosWebAudio&&!foreground;
  exHoldLive=null;h.done=true;h.endAt=0;h.left=0;if(typeof save==='function')save();
- if(quiet&&typeof withoutWorkoutAudio==='function')withoutWorkoutAudio(()=>exHoldFinish(h));else exHoldFinish(h);return}exHoldPaint()}
+ if(quiet&&typeof withoutWorkoutAudio==='function')withoutWorkoutAudio(()=>exHoldFinish(h,foreground));else exHoldFinish(h,foreground);return}exHoldPaint()}
 function exHoldToggle(){if(!S.active)exStart();const e=EXS&&exList()[EXS.pos];if(!e)return;const sec=exHoldSec(e);if(!sec)return;
  let h=S.exHold;if(!h||h.key!==exHkey(e)||h.done){S.exHold={key:exHkey(e),src:e.src,i:e.i,dur:sec,endAt:Date.now()+sec*1000,paused:false,left:sec,done:false};exHoldLive=S.exHold;if(typeof save==='function')save();if(typeof armAudio==='function')armAudio(sec);exHoldPaint();return}
  if(!h.paused){h.left=exHoldLeft(h);h.paused=true;h.endAt=0;if(typeof save==='function')save();if(typeof TA!=='undefined'&&TA)TA.pause();if(typeof taEndAt!=='undefined')taEndAt=0;exHoldPaint();return}
  h.paused=false;h.endAt=Date.now()+Math.max(1,h.left||0)*1000;exHoldLive=h;if(typeof save==='function')save();if(typeof armAudio==='function')armAudio(h.left);exHoldPaint()}
-function exHoldFinish(h){if(!h)return;
+function exHoldFinish(h,allowAdvance){if(!h)return;
  if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate([400,150,400,150,400]);
  const covered=typeof TA!=='undefined'&&TA&&typeof taEndAt!=='undefined'&&taEndAt&&!TA.paused&&Math.abs(taEndAt-Date.now())<2000;
  if(!covered&&typeof armAudio==='function')try{armAudio(0,false,false)}catch(x){}
  if(typeof toast==='function')toast('⏰ Время вышло');
  const e=EXS&&exList()[EXS.pos];S.exHold=null;if(typeof save==='function')save();
- if(e&&exHkey(e)===h.key)exLog();else exHoldPaint()}
+ if(e&&exHkey(e)===h.key)exLog(allowAdvance);else exHoldPaint()}
 // compact dose for the row, same look as main «2×8–12»: «1×10», «2×20–30 с», «5 мин»
 function exShort(t){const ds=exDose(t);if(!ds.val||/%/.test(String(t||'')))return String(t||'');const u=ds.unit==='sec'?' с':ds.unit==='min'?' мин':'';return ds.unit==='min'&&ds.sets===1?ds.val+u:ds.sets+'×'+ds.val+u}
 function exNoW(id,it){if(isCardio(id)||(it&&it.sec))return true;if(typeof BWX!=='undefined'&&BWX.has(id))return true;const c=typeof awCls==='function'?awCls(id):null;return!!(c&&(c.eq==='bodyweight'||c.eq==='time'))}
@@ -100,12 +102,12 @@ function keepScroll(y){if(!(y>0)||typeof scrollTo!=='function')return;let n=0,st
  const t0=Date.now();if(typeof app!=='undefined'&&app&&app.querySelectorAll)app.querySelectorAll('img').forEach(im=>{if(!im.complete&&im.addEventListener)im.addEventListener('load',()=>{if(!stop&&Date.now()-t0<1500)scrollTo(0,y)},{once:true})})}
 function uiRestore(r){if(!r)return;if(r.v==='today'&&!S.active&&r.sel!=null&&r.sel!==TSEL&&typeof today==='function')today(r.sel);
  const ds=app&&app.querySelectorAll?[...app.querySelectorAll('details')]:[];if(r.open&&ds.length===r.open.length)ds.forEach((d,k)=>{d.open=r.open[k]});keepScroll(r.y)}
-function exBack(){const r=EXS&&EXS.ret,finish=EXS&&EXS.finish;exStop();EXS=null;
+function exBack(){const r=EXS&&EXS.ret,finish=EXS&&EXS.finish;exCancelAdvance();exStop();EXS=null;
  if(finish&&S.active){go('today');const b=$('#fin2');if(b){b.focus({preventScroll:true});b.scrollIntoView({block:'center'})}return}
  go(r&&r.v||'today');uiRestore(r)}
 function exLeave(toFinish){
  if(!EXS||(toFinish&&exHoldPaging()))return;
- EXS.finish=!!toFinish;
+ exCancelAdvance();EXS.finish=!!toFinish;
  try{if(typeof history!=='undefined'&&history.state&&history.state.gcEx){history.back();return}}catch(e){}
  exBack()
 }
@@ -113,9 +115,35 @@ if(typeof addEventListener==='function')addEventListener('popstate',()=>{if(view
 function exStop(){clearInterval(exInt);exInt=null;const v=app&&app.querySelector&&app.querySelector('#exv video.a3d');if(v&&typeof stopAnim==='function')stopAnim(v)}
 function exStart(){const{sel}=exDay();if(S.active)return;startW(sel);const L=exList();let p=L.findIndex(e=>e.src===EXS.src&&e.id===EXS.id);if(p<0)p=Math.min(EXS.pos,L.length-1);EXS.pos=p;EXS.src=L[p].src;EXS.i=L[p].i;view='ex';exView()}
 function exDraft(e){const drafts=EXS.drafts||(EXS.drafts=Object.create(null)),key=exHkey(e);return drafts[key]||(drafts[key]={})}
+function exCancelAdvance(){
+ if(!EX_ADVANCE)return;
+ clearTimeout(EX_ADVANCE.timer);EX_ADVANCE=null;
+ const notice=$('#exadvance');if(notice)notice.hidden=true;
+}
+function exAdvanceTick(pending){
+ if(EX_ADVANCE!==pending)return;
+ if(view!=='ex'||EXS!==pending.screen||EXS.pos!==pending.pos||S.active!==pending.workout||
+   document.hidden||document.querySelector('#modal:not(.hidden)')||
+   exHkey(exList()[EXS.pos+1])!==pending.next){exCancelAdvance();return}
+ const remaining=Math.max(0,pending.until-Date.now());
+ if(!remaining){const onTime=Date.now()-pending.until<650;exCancelAdvance();if(onTime)exStep(1);return}
+ const n=$('#exadvance-count');if(n)n.textContent=String(Math.ceil(remaining/1000));
+ pending.timer=setTimeout(()=>exAdvanceTick(pending),Math.min(remaining,1000));
+}
+function exQueueAdvance(){
+ if(!EXS||document.hidden)return;
+ const next=exList()[EXS.pos+1],notice=$('#exadvance');if(!next||!notice)return;
+ const pending=EX_ADVANCE={screen:EXS,pos:EXS.pos,workout:S.active,next:exHkey(next),until:Date.now()+EX_ADVANCE_MS,timer:null};
+ notice.hidden=false;
+ // Populate the status once; the visual 3–2–1 is deliberately outside the live region.
+ const label=$('#exadvance-label');if(label)setTimeout(()=>{
+   if(EX_ADVANCE===pending)label.textContent=tr('Сейчас откроется')+': '+tr(next.src==='m'?exBy(next.id).name:next.r.n);
+ },0);
+ exAdvanceTick(pending);
+}
 function exStep(delta){if(view!=='ex'||!EXS||exHoldPaging())return false;const pos=EXS.pos+delta,L=exList();if(pos<0||pos>=L.length)return false;
- EXS.pos=pos;exView();scrollTo(0,0);return true}
-function exLog(){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')?num($('#exw').value):'',rv=$('#exr')?num($('#exr').value):'';
+ exCancelAdvance();EXS.pos=pos;exView();scrollTo(0,0);return true}
+function exLog(allowAdvance=true){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')?num($('#exw').value):'',rv=$('#exr')?num($('#exr').value):'';
  if(!S.active)exStart();const A=S.active,L=exList(),e=EXS&&L[EXS.pos];if(!A||!e)return;
  if(S.exHold){S.exHold=null}
  let advance=false;
@@ -131,11 +159,9 @@ function exLog(){const num=v=>v===''?'':+String(v).replace(',','.'),wv=$('#exw')
   }
  }else{const box=e.src==='w'?A.warm:A.cool;if(!box)return;const inf=exInfo(e);box.n=box.n||[];box.n[e.i]=(box.n[e.i]||0)+1;if(box.n[e.i]>=inf.plan)box.c[e.i]=true;startTimer(inf.rest)}
  const saved=save();
- // A genuine saved completion navigates to the existing next page, without restarting its rest timer.
- // No next page means stay here; finishing the workout is always manual.
- if(saved&&advance&&exStep(1))return;
- exView()}
-function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';return render()}
+ // A saved prescription shows the next page before moving; rest and manual Finish stay independent.
+ exView();if(saved&&advance&&allowAdvance)exQueueAdvance()}
+function exView(){exCancelAdvance();exStop();const L=exList();if(!EXS||!L.length){view='today';return render()}
  if(EXS.pos>=L.length)EXS.pos=L.length-1;const e=L[EXS.pos];EXS.src=e.src;EXS.i=e.i;EXS.id=e.id;const A=S.active,inf=exInfo(e),id=e.id,ex=id?exBy(id):{name:e.r.n,group:''};
  const grp=e.src==='w'?'Разминка':e.src==='c'?'Заминка':ex.group,name=e.src==='m'?ex.name:e.r.n,it=e.src==='m'?(A?A.items[e.i]:e.it):null,holdSec=exHoldSec(e,inf),holdOn=holdSec>0&&!(inf.plan&&inf.done>=inf.plan);
  EXS.last=L.length-1;
@@ -149,6 +175,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  <div class="exacts">${e.src==='m'&&altCands(id).length?'<button class="exlab" id="exsw" aria-label="Заменить упражнение"><span aria-hidden="true">⇄ </span>Заменить упражнение</button>':''}${id&&TECH[id]?`<button class="exlab" data-ti="${id}" aria-label="Техника упражнения"><span aria-hidden="true">ⓘ </span>Техника упражнения</button>`:''}</div>
  <h2 class="exname">${esc(name)}</h2>${e.src==='m'?(()=>{const r=exRecW(e);return r?`<div class="mut exrec"><span>${r}</span><button class="linkb" id="exrwi" aria-label="Как считается вес">ⓘ</button></div>`:''})():(()=>{const dose=String(inf.dose||'').trim(),x=e.r&&e.r.x?String(e.r.x).trim():'',cap=e.r&&e.r.c?String(e.r.c).trim():'',doseOk=!!(dose&&!/^[·•.,;:\-–—\s]+$/.test(dose));const rec=doseOk||x?`<div class="mut exrec">${doseOk?`<span>${esc(dose)}</span>`:''}${doseOk&&x?' · ':''}${x?`<span>${esc(x)}</span>`:''}</div>`:'';return rec+(cap?`<p class="mut excap">${esc(cap)}</p>`:'')})()}
  <div class="excircs"><div class="excirc" id="exhc"><b id="${holdSec?'exht':'exrng'}">${holdSec?exHoldClock(holdSec):esc(inf.rng)}</b><span>${esc(holdSec?(inf.unit==='sec'?'Секунд':'Минут'):inf.cap)}</span></div><div class="exrestw"><button class="excirc" id="exrest" ${inf.rest?'':'disabled'}><b id="exrt">${inf.rest?exClock(inf.rest):'—'}</b><span>Отдых</span></button></div><div class="excirc ${inf.plan&&inf.done>=inf.plan?'exdone':''}" id="exsets"><b>${inf.done}/${inf.plan}</b><span>Подходов выполнено</span></div></div>
+ <div class="exadvance" id="exadvance" hidden><span id="exadvance-label" role="status" aria-atomic="true"></span><b id="exadvance-count" aria-hidden="true">3</b></div>
  ${holdOn?`<button class="pri exadd" id="exhold" aria-label="Пуск">Пуск</button>`:''}${e.src==='m'?`<button class="${holdOn?'full':'pri'} exadd" id="exadd" aria-label="Записать подход">Записать подход</button>${finishHTML}<div class="exlog row">${inf.noW?'':`<label class="grow">Килограммы<input id="exw" type="number" inputmode="decimal" step="0.5" value="${esc(draft.w??nx.w??'')}"></label>`}<label class="grow">${inf.unit==='min'?'Минуты':inf.unit==='sec'?'Секунды':'Повторы'}<input id="exr" type="number" inputmode="numeric" value="${esc(draft.r??nx.r??'')}"></label></div>
  <button class="linkb" id="excm">${draft.cm?'✎ '+esc(draft.cm):'Добавить комментарий к подходу'}</button>`:`<button class="${holdOn?'full':'pri'} full" id="exadd" style="margin-top:12px"><span>Подход выполнен</span></button>${finishHTML}`}
  ${e.src==='m'&&A&&it.sets.some(s=>s.done)?`<h3 style="margin-top:14px">Сегодня</h3>${it.sets.filter(s=>s.done).map((s,k)=>`<div class="li"><span class="mut">${k+1}</span><span class="grow">${esc((+s.w?s.w+' кг × ':'')+s.r)}</span>${s.cm?`<span class="mut">${esc(s.cm)}</span>`:''}</div>`).join('')}`:''}
@@ -157,7 +184,7 @@ function exView(){exStop();const L=exList();if(!EXS||!L.length){view='today';ret
  const v=app.querySelector('#exv video.a3d');if(v&&typeof startAnim==='function')startAnim(v);
  $('#exback').onclick=()=>exLeave(false);const g=$('#exgo');if(g)g.onclick=exStart;
  const finish=$('#exfinish');if(finish)finish.onclick=()=>exLeave(true);
- $('#exadd').onclick=exLog;const hb=$('#exhold');if(hb)hb.onclick=exHoldToggle;const ri=$('#exrwi');if(ri)ri.onclick=()=>toast('Вес — из авто-веса программы и твоих прошлых подходов');const rb=$('#exrest');if(rb)rb.onclick=()=>{if(inf.rest)startTimer(inf.rest)};
+ $('#exadd').onclick=()=>exLog();const hb=$('#exhold');if(hb)hb.onclick=exHoldToggle;const ri=$('#exrwi');if(ri)ri.onclick=()=>toast('Вес — из авто-веса программы и твоих прошлых подходов');const rb=$('#exrest');if(rb)rb.onclick=()=>{if(inf.rest)startTimer(inf.rest)};
  const cm=$('#excm');if(cm)cm.onclick=()=>{const t=prompt('Комментарий к подходу',draft.cm||'');if(t!=null){draft.cm=String(t).trim();exView()}};
  const w=$('#exw'),r=$('#exr');if(w)w.oninput=()=>{draft.w=w.value};if(r)r.oninput=()=>{draft.r=r.value};
  const sw=$('#exsw');if(sw)sw.onclick=()=>starterSwapModal(id,starterSessionContext(A),nid=>{if(A){swapActiveItem(A,e.i,nid)}else{const{sel}=exDay();const pi=S.program[sel]&&S.program[sel].items[e.i];if(pi)pi.exId=nid}save();exView()});
@@ -197,7 +224,9 @@ function exBindSwipe(){
   if(Math.abs(dx)>=52&&Math.abs(dx)>1.5*Math.abs(dy))exStep(dx<0?1:-1);
  },{passive:true});
 }
-(function exHook(){const _r=render;render=function(){if(view!=='ex'){exStop();exBody(false)}if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
+(function exHook(){const _r=render;render=function(){if(view!=='ex'){exCancelAdvance();exStop();exBody(false)}if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
  if(typeof document!=='undefined'&&document.addEventListener){exBindSwipe();document.addEventListener('click',ev=>{const t=ev.target;if(!t||!t.closest)return;if(t.closest('button,input,a,summary,label,select,textarea'))return;const r=t.closest('[data-exo]');if(!r||view==='ex')return;const[src,i]=String(r.dataset.exo).split(',');ev.preventDefault();exOpen(src,+i)});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)exCancelAdvance()});
+  if(typeof addEventListener==='function')addEventListener('pagehide',exCancelAdvance);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)exHoldTick()});
   if(typeof addEventListener==='function')addEventListener('pageshow',()=>exHoldTick())}})();

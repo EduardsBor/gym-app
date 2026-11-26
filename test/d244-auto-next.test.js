@@ -32,7 +32,7 @@ function boot(opts) {
     location: { href: 'http://127.0.0.1/' + search, origin: 'http://127.0.0.1', pathname: '/', search },
     document: {
       documentElement: { lang: 'ru' }, title: '', body: { append() {}, style: {} },
-      querySelector(sel) { const m = /^#([\w-]+)/.exec(sel || ''); return el(m ? m[1] : ''); },
+      querySelector(sel) { if (sel === '#modal:not(.hidden)') return null; const m = /^#([\w-]+)/.exec(sel || ''); return el(m ? m[1] : ''); },
       querySelectorAll() { return []; }, getElementById(id) { return el(id); }, addEventListener() {}, createElement() { return el(); }
     }
   };
@@ -67,7 +67,7 @@ test('D-244: sets-done circle shows «1/N» and does not use the .ok button clas
   assert.match(read('style.css'), /\.excirc\{color:var\(--txt\)\}\.excirc\.exdone\{border-color:var\(--ok\)\}/);
 });
 
-test('D-244: right after the last planned set the next exercise opens; the rest timer keeps running', () => {
+test('D-244: the next exercise opens after the three-second notice; rest keeps running', () => {
   const { run } = withProgram();
   run('exOpen("m",0)');
   const plan = run('exDay().d.items[0].sets');
@@ -77,6 +77,9 @@ test('D-244: right after the last planned set the next exercise opens; the rest 
   run('$("#exw").value="20";$("#exr").value="10";exLog()');
   assert.equal(run('S.active.items[0].sets.filter(s=>s.done).length'), plan);
   assert.equal(run('view'), 'ex');
+  assert.equal(run('EXS.pos'), pos);
+  assert.ok(run('EX_ADVANCE.until-Date.now()>2900'));
+  run('EX_ADVANCE.until=Date.now();exAdvanceTick(EX_ADVANCE)');
   assert.equal(run('EXS.pos'), pos + 1);
   assert.equal(run('JSON.stringify([exList()[EXS.pos].src,exList()[EXS.pos].i])'), '["m",1]');
   assert.ok(run('tEnd') > Date.now(), 'rest timer still running on the next exercise');
@@ -103,6 +106,8 @@ test('bonus sets do not count towards the prescribed threshold; an extra recorde
   for(let k=0;k<plan-1;k++) run('exLog()');
   assert.equal(run('EXS.pos'),pos,'an already recorded bonus set cannot complete the prescription');
   run('exLog()');
+  assert.equal(run('EXS.pos'),pos);
+  run('EX_ADVANCE.until=Date.now();exAdvanceTick(EX_ADVANCE)');
   assert.equal(run('EXS.pos'),pos+1);
   run('$("#exprev").onclick();exLog()');
   assert.equal(run('EXS.pos'),pos,'logging an extra set after completion does not advance');
@@ -150,6 +155,7 @@ test('D-245: exercise screen — rest lives only in the circle (bottom bar hidde
   // auto-next keeps the running rest; the next exercise circle reads the same tEnd
   const plan = run('S.active.items[0].ns');
   for (let k = 1; k < plan; k++) run('$("#exw").value="20";$("#exr").value="10";exLog()');
+  run('EX_ADVANCE.until=Date.now();exAdvanceTick(EX_ADVANCE)');
   assert.equal(run('exList()[EXS.pos].i'), 1);
   assert.ok(run('tEnd') > Date.now());
   // D-288: logging the next set restarts rest (no stuck leftover timer, no skip button)

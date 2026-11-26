@@ -174,6 +174,11 @@ header:has(+#app .catalog-filters) #title{font-size:28px;font-weight:800;letter-
 .excirc b{font-size:22px;line-height:1.1}.excirc span{font-size:11px;color:var(--mut);line-height:1.2;margin-top:3px}
 .excirc{color:var(--txt)}.excirc.exdone{border-color:var(--ok)}.excirc.run{border-color:var(--gold)}
 .exlog{align-items:flex-end;gap:8px;flex-wrap:wrap}.exlog label{font-size:13px;color:var(--mut);flex:1 1 120px}
+/* Exercise countdown toast: fixed above the navigation and never intercepts input. */
+.exadvance{position:fixed;z-index:12;bottom:calc(76px + env(safe-area-inset-bottom));left:0;right:0;width:min(480px,calc(100% - 24px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:var(--card);border:var(--line-w) solid var(--acc);border-radius:var(--radius-btn);color:var(--txt);box-shadow:0 6px 24px var(--shadow);pointer-events:none}
+.exadvance[hidden]{display:none}
+.exadvance span{min-width:0;overflow-wrap:anywhere;font-weight:700}
+.exadvance b{flex:none;display:grid;place-items:center;min-width:36px;min-height:36px;border-radius:50%;background:var(--acc);color:var(--on-acc);font-size:18px;font-variant-numeric:tabular-nums}
 .exadd{display:block;width:100%;height:auto;min-height:48px;font-size:16px;font-weight:700;padding:12px 14px;margin:14px 0 8px;line-height:1.25;white-space:normal}
 .exacts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
 .exlab{flex:1 1 calc(50% - 4px);min-width:0;min-height:44px;padding:10px 8px;font-size:14px;font-weight:700;text-align:center;border-radius:var(--radius-btn);line-height:1.25;white-space:normal;background:var(--card2);border:var(--line-w) solid var(--line)}
