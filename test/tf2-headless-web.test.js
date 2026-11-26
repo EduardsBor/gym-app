@@ -21,8 +21,9 @@ function scripts(withProfile) {
   return [...read('index.html').matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]).filter(s => !skip.has(s));
 }
 function page(state, lang, ls, body, withProfile) {
+  const { beforeScripts='', ...prefs }=ls||{};
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css">
-<script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));if(!sessionStorage.getItem('__tf2_seeded')){sessionStorage.setItem('__tf2_seeded','1');localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(ls || {}).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}}window.confirm=()=>true;</script></head>
+<script>navigator.serviceWorker&&(navigator.serviceWorker.register=()=>Promise.reject(new Error('no-sw')));if(!sessionStorage.getItem('__tf2_seeded')){sessionStorage.setItem('__tf2_seeded','1');localStorage.setItem('gym',${JSON.stringify(JSON.stringify(state))});${Object.entries(prefs).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)});`).join('')}}window.confirm=()=>true;</script>${beforeScripts?'<script>'+beforeScripts+'</script>':''}</head>
 <body><header id="top"><h1 id="title">GymCaptain</h1><span id="wclock" hidden></span></header><main id="app"></main><div id="timer" class="hidden"><b id="tval">0:00</b></div><nav id="nav">${withProfile?'<button data-v="today">Тренировки</button><button data-v="more">Профиль</button>':''}</nav><div id="modal" class="hidden"></div>
 ${scripts(withProfile).map(s => `<script src="${s}"></script>`).join('\n')}
 <script>(function(){const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -83,24 +84,25 @@ async function emulatedViewport(profile, width, url) {
     await request(1, 'Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
     const navigation = await request(2, 'Page.navigate', { url });
     if (navigation.errorText) throw new Error(navigation.errorText);
-    return socket;
+    return { socket, request };
   } catch (e) {
     socket.close();
     throw e;
   }
 }
-async function inChrome(state, lang, ls, body, search, withProfile, width) {
+async function inChrome(state, lang, ls, body, search, withProfile, width, drive) {
   const { port, result, close } = await serve(page(state, lang, ls, body, withProfile));
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'tf2-chrome-'));
   const url = `http://127.0.0.1:${port}/__tf2.html${search || ''}`;
   const child = spawn(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--disable-extensions', '--disable-background-networking',
     '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', ...(width?['--hide-scrollbars','--remote-debugging-port=0']:[]), '--window-size='+(width?500:390)+',844', '--user-data-dir=' + prof, width?'about:blank':url], { stdio: 'ignore' });
-  let socket;
+  let viewport;
   try {
-    if (width) socket = await emulatedViewport(prof, width, url);
+    if (width) viewport = await emulatedViewport(prof, width, url);
+    if (drive) await drive(viewport.request);
     return await result;
   } finally {
-    if (socket) socket.close();
+    if (viewport) viewport.socket.close();
     child.kill('SIGKILL');
     await close();
   }
@@ -114,6 +116,126 @@ function oldState(lang, lim) {
     custom: [], templates: [], body: [], pg: { 'smith-bench': { st: { success: 1, miss: 0 }, next: { weight: 82.5, sets: 3, target: 3 }, first: Date.now() - 50 * 864e5, last: Date.now() - 3 * 864e5 } } };
 }
 const skip = !chrome && 'no Chrome on this machine';
+function audioProbe(kind) {
+  return `
+    window.audioTrace=[];
+    Object.defineProperty(navigator,'standalone',{configurable:true,value:${kind!=='desktop'}});
+    let type='auto';
+    Object.defineProperty(navigator,'audioSession',{configurable:true,value:${kind!=='unsupported'?'{get type(){return type},set type(v){if('+JSON.stringify(kind)+'==="reject"&&v==="ambient")throw Error("not supported");type=v;audioTrace.push(["type",v])}}':'undefined'}});
+    window.Audio=class{
+      constructor(){audioTrace.push(['create']);this.paused=true}
+      setAttribute(){}
+      set src(value){audioTrace.push(['src',value.startsWith('blob:')]);}
+      play(){this.paused=false;audioTrace.push(['play',type]);return Promise.resolve()}
+      pause(){this.paused=true;audioTrace.push(['pause'])}
+    };
+    window.AudioContext=window.webkitAudioContext=class{constructor(){audioTrace.push(['context'])}};
+  `;
+}
+
+test('iOS home-screen launch and existing rest-timer restore never start or prime audio', {skip}, async()=>{
+  for(const resumed of [false,true]){
+    const st=oldState('ru',[]);
+    if(resumed){
+      const now=Date.now();
+      st.active={id:'resume-audio',dayIdx:0,dayName:'A',start:now-1000,items:[
+        {exId:'bp',ns:1,min:8,max:12,rest:30,sets:[{w:20,r:8,done:true}]}]};
+      st.tEnd=now+120000;
+    }
+    const r=await inChrome(st,'ru',{beforeScripts:audioProbe('ambient')},`
+      const q=s=>document.querySelector(s);
+      R.launch=audioTrace.slice();
+      q('nav [data-v="today"]').click();
+      if(!S.active){await until(()=>q('#start'));q('#start').click()}
+      R.afterOpening=audioTrace.slice();
+      R.active=!!S.active;
+      R.timer=[!!S.tEnd,!q('#timer').classList.contains('hidden')];
+    `,'',true,390);
+    assert.deepEqual(r.errors,[]);
+    assert.deepEqual(r.launch,[['type','ambient']]);
+    assert.deepEqual(r.afterOpening,r.launch);
+    assert.equal(r.active,true);
+    assert.deepEqual(r.timer,[resumed,resumed]);
+  }
+});
+
+test('iOS rest cue mixes, but never takes exclusive playback when hidden, muted or not supported', {skip}, async()=>{
+  for(const kind of ['ambient','unsupported','reject','desktop','hidden','sound-off']){
+    const st=oldState('ru',[]);
+    if(kind==='sound-off')st.sound=false;
+    const hidden=kind==='hidden';
+    const r=await inChrome(st,'ru',{beforeScripts:audioProbe(kind)},`
+      const q=s=>document.querySelector(s);
+      q('nav [data-v="today"]').click();
+      await until(()=>q('#start'));q('#start').click();
+      if(${hidden})Object.defineProperty(document,'hidden',{configurable:true,value:true});
+      q('[data-done="0,0"]').click();
+      R.trace=audioTrace.slice();
+      R.timer=[S.active.items[0].sets[0].done,!!S.tEnd,!q('#timer').classList.contains('hidden')];
+      if(${JSON.stringify(kind)}==='ambient'){
+        stopTimer();Object.defineProperty(document,'hidden',{configurable:true,value:true});
+        audioTrace.length=0;armAudio(0,true,true);R.hidden=audioTrace.slice();
+      }
+    `,'',true,390);
+    assert.deepEqual(r.errors,[],kind);
+    assert.deepEqual(r.timer,[true,true,true],kind);
+    assert.ok(!r.trace.some(e=>e.includes('playback')||e[0]==='context'),kind);
+    const audio=r.trace.filter(e=>e[0]!=='type');
+    if(kind==='ambient'||kind==='desktop'){
+      assert.deepEqual(audio,[['create'],['src',true],['play',kind==='ambient'?'ambient':'auto']],kind);
+    }else assert.deepEqual(audio,[],kind);
+    if(kind==='ambient')assert.ok(r.hidden.every(e=>e[0]==='pause'),kind);
+  }
+});
+
+test('iOS home-screen launch quietly settles a persisted expired hold', {skip}, async()=>{
+  const st=oldState('ru',[]),now=Date.now(),ex='mk-front-plank';
+  st.active={id:'restore-expired-hold',dayIdx:0,dayName:'A',start:now-40000,items:[
+    {exId:ex,ns:2,min:20,max:20,sec:1,rest:30,sets:[{w:0,r:20,done:false},{w:0,r:20,done:false}]}]};
+  st.exHold={key:'m:0:'+ex,src:'m',i:0,dur:20,endAt:now-1000,paused:false,left:20,done:false};
+  const r=await inChrome(st,'ru',{beforeScripts:audioProbe('ambient')},`
+    await until(()=>!S.exHold);
+    R.state=[S.active.id,S.active.items[0].sets[0].done,S.exHold===null,document.body.textContent.includes('Время вышло')];
+    R.trace=audioTrace.slice();
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.state,['restore-expired-hold',false,true,true]);
+  assert.deepEqual(r.trace,[['type','ambient']]);
+});
+
+test('iOS exercise timer: overdue resume is quiet even when logging starts rest, but foreground completion still cues', {skip}, async()=>{
+  for(const mode of ['visibility','pageshow','foreground']){
+    const st=oldState('ru',[]),now=Date.now(),ex='mk-front-plank';
+    st.active={id:'open-hold',dayIdx:0,dayName:'A',start:now-1000,items:[
+      {exId:ex,ns:2,min:20,max:20,sec:1,rest:30,sets:[{w:0,r:20,done:false},{w:0,r:20,done:false}]}]};
+    const r=await inChrome(st,'ru',{beforeScripts:audioProbe('ambient')},`
+      const q=s=>document.querySelector(s);
+      q('[data-exo="m,0"] h3').click();q('#exhold').click();
+      R.begin=[S.exHold.dur,audioTrace.some(e=>e[0]==='play'&&e[1]==='ambient')];
+      audioTrace.length=0;
+      const mode=${JSON.stringify(mode)};
+      if(mode==='visibility'){
+        Object.defineProperty(document,'hidden',{value:true,configurable:true});
+        document.dispatchEvent(new Event('visibilitychange'));
+        Object.defineProperty(document,'hidden',{value:false,configurable:true});
+      }
+      S.exHold.endAt=Date.now()-1000;taEndAt=0;
+      if(mode==='visibility')document.dispatchEvent(new Event('visibilitychange'));
+      else if(mode==='pageshow')window.dispatchEvent(new Event('pageshow'));
+      else exHoldTick();
+      const w=S.active,local=JSON.parse(localStorage.getItem('gym'));
+      R.after=[w.id,w.items[0].sets[0].done,w.items[0].sets[0].r,w.items[0].sets[1].done,
+        local.exHold===null,!!local.tEnd,document.body.textContent.includes('Время вышло')];
+      R.trace=audioTrace.slice();
+    `,'',true,390);
+    assert.deepEqual(r.errors,[],mode);
+    assert.deepEqual(r.begin,[20,true],mode);
+    assert.deepEqual(r.after,['open-hold',true,20,false,true,true,true],mode);
+    if(mode==='foreground')assert.ok(r.trace.some(e=>e[0]==='play'&&e[1]==='ambient'),mode);
+    else assert.ok(!r.trace.some(e=>['create','src','play','context'].includes(e[0])),mode);
+  }
+});
+
 
 test('tf2 headless web: Today shows the plan check; Start opens the modal; «Заменить и начать» starts a safe workout; history kept', { skip }, async () => {
   const st = oldState('ru', ['k']);
@@ -1010,4 +1132,191 @@ test('Own workout: start empty and add two exercises from the top, not above Fin
   assert.deepEqual(r.first,[true,['bp'],true]);
   assert.deepEqual(r.second,[true,['bp','sq'],true,1]);
   assert.deepEqual(r.saved,[true,true,['bp','sq'],true]);
+});
+
+test('exercise detail: native touch paging, draft inputs, auto next after a saved prescription, and manual final finish', { skip }, async () => {
+  const st=oldState('ru',[]);
+  delete st.block;
+  st.goal=st.prof.goal='mass';st.autoW=false;
+  st.program=[{name:'Все тело',items:[
+    {exId:'mch-incline',sets:2,min:8,max:12,rest:90},
+    {exId:'mk-front-plank',sets:1,min:30,max:45,rest:60,sec:1},
+    {exId:'bss',sets:1,min:8,max:12,rest:90},
+  ],wu:{cardio:{id:'mk-rowing-machine-steady-state',min:3,note:''},mob:[],ramp:[],min:3},
+  cd:{pl:'b',note:'Лёгкая ходьба',stretch:[]}}];
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s), before=JSON.stringify(S.workouts);
+    const click=s=>q(s).click(), saved=()=>JSON.parse(localStorage.getItem('gym'));
+    const position=()=>view==='ex'&&EXS?[EXS.src,EXS.i]:[view];
+    const resumed=sessionStorage.getItem('gcExTouchReload');
+    if(resumed){
+      Object.assign(R,JSON.parse(resumed));
+      await until(()=>q('[data-exo="m,1"] h3'));click('[data-exo="m,1"] h3');
+      await wait(120);
+      R.reload=[position(),q('#exsets b').textContent,saved().active.items[1].sets[0].r,
+        saved().active.items[0].sets[1].done,JSON.stringify(saved().workouts)===before];
+    }else{
+    const vals=(sid,value)=>{const el=q(sid);el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))};
+    click('[data-v="today"]');await until(()=>q('#start'));click('#start');
+    click('[data-exo="w,0"] .grow');click('#exadd');R.warm=[position(),saved().active.warm.c[0]];
+    click('#exnext');R.manualNext=position();
+    const initial=position();
+    click('#exrest');R.restAlone=position();const t0=tEnd;
+    vals('#exw','32');vals('#exr','9');click('#exadd');
+    R.partial=[position(),saved().active.items[0].sets.filter(s=>s.done).length];
+    vals('#exw','35');vals('#exr','10');window.prompt=()=> 'test comments';click('#excm');
+    window.gcExTouch={position:()=>position().join(','),ready:true};
+    if(!await until(()=>window.gcExTouch.done,12000))throw Error('touch driver did not finish');
+    R.draft=[q('#exw').value,q('#exr').value,q('#excm').textContent.includes('test comments')];
+    R.swipesNoLog=saved().active.items[0].sets.filter(s=>s.done).length===1&&tEnd>=t0;
+    click('#exadd');
+    R.first=[position(),saved().active.items[0].sets.map(s=>[s.w,s.r,s.done,s.cm||'']),tEnd>Date.now(),q('#exrest').classList.contains('run')];
+    R.timedUnits=q('#exr')!==null&&!q('#exw')&&q('#exhc').textContent.includes('Секунд');
+    click('#exhold');R.holdStart=[position(),saved().active.items[1].sets[0].done];
+    S.exHold.endAt=Date.now()-10;exHoldTick();
+    R.holdEnd=[position(),saved().active.items[1].sets[0].r,saved().active.items[1].sets[0].done,tEnd>Date.now()];
+    R.side=q('#exhc').textContent.includes('на каждую ногу');
+    vals('#exw','18');vals('#exr','8');click('#exadd');R.cool=[position(),saved().active.items[2].sets[0].r];
+    click('#exadd');R.final=[position(),!!saved().active,saved().active.cool.c[0],q('#exnext').disabled];
+    window.gcExTouch.final=true;
+    if(!await until(()=>window.gcExTouch.finalDone,6000))throw Error('final touch check did not finish');
+    click('#exback');await until(()=>view==='today'&&q('#fin2'));
+    R.back=[view,!!S.active,!!q('#fin2')];
+    R.historyUntouched=before===JSON.stringify(S.workouts);
+    const mark=q('[data-done="0,1"]');mark.click();
+    R.undo=[view,JSON.parse(localStorage.getItem('gym')).active.items[0].sets[1].done];
+    R.tokens=initial;
+    sessionStorage.setItem('gcExTouchReload',JSON.stringify(R));location.reload();await new Promise(()=>{});
+    }
+  `,'',true,390,async request=>{
+    let seq=10;
+    const evaluate=async expression=>{
+      const result=await request(seq++,'Runtime.evaluate',{expression,returnByValue:true});
+      if(result.exceptionDetails)throw Error(JSON.stringify(result.exceptionDetails));
+      return result.result.value;
+    };
+    const pos=()=>evaluate('window.gcExTouch?.position()');
+    let ready=false;
+    for(let i=0;i<160&&!ready;i++){ready=await evaluate('!!window.gcExTouch?.ready');if(!ready)await delay(30)}
+    assert.equal(ready,true);
+    await request(seq++,'Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:2});
+    const gesture=async (selector,deltaX,deltaY,overrideX)=>{
+      const b=await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});
+        e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:(r.left+r.right)/2,y:(r.top+r.bottom)/2,scroll:scrollY}})()`);
+      const x=overrideX??b.x,y=b.y;
+      const send=(type,points)=>request(seq++,'Input.dispatchTouchEvent',{type,touchPoints:points});
+      await send('touchStart',[{x,y,id:1}]);
+      for(const f of [.16,.45,.7,1]) await send('touchMove',[{x:x+deltaX*f,y:y+deltaY*f,id:1}]);
+      await send('touchEnd',[]);
+      await delay(65);
+      return (await evaluate('scrollY'))-b.scroll;
+    };
+    await gesture('#exv',-116,0);assert.equal(await pos(),'m,1','left swipes to next');
+    await gesture('#exv',119,0);assert.equal(await pos(),'m,0','right swipes to previous');
+    await gesture('#exw',112,0);assert.equal(await pos(),'m,0','input ignores a swipe');
+    await gesture('#exrest',-112,0);assert.equal(await pos(),'m,0','rest control ignores a swipe');
+    await gesture('#exv',122,0,20);assert.equal(await pos(),'m,0','edge gesture is ignored');
+    assert.ok(await gesture('#exv',24,-138)>10,'vertical drag scrolls the page');
+    assert.equal(await pos(),'m,0','vertical scroll is not paging');
+    await gesture('#exv',-24,0);assert.equal(await pos(),'m,0','short drag is not paging');
+    await evaluate('document.querySelector("#exsw").click()');
+    await gesture('#exv',-110,0);assert.equal(await pos(),'m,0','open modal blocks paging');
+    await evaluate('document.querySelector("#mc").click()');
+    await gesture('#exv',113,0);assert.equal(await pos(),'w,0');
+    await gesture('#exv',112,0);assert.equal(await pos(),'w,0','first page never wraps');
+    await gesture('#exv',-117,0);assert.equal(await pos(),'m,0');
+    await evaluate('window.gcExTouch.done=true');
+    let atFinal=false;
+    for(let i=0;i<160&&!atFinal;i++){atFinal=await evaluate('window.gcExTouch.final===true');if(!atFinal)await delay(30)}
+    assert.equal(atFinal,true);
+    await gesture('#exv',-110,0);assert.equal(await pos(),'c,0','final page never wraps');
+    await evaluate('window.gcExTouch.finalDone=true');
+  });
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.warm,[['w',0],true]);
+  assert.deepEqual(r.manualNext,['m',0]);assert.deepEqual(r.restAlone,['m',0]);assert.deepEqual(r.tokens,['m',0]);
+  assert.deepEqual(r.partial,[['m',0],1]);
+  assert.deepEqual(r.draft,['35','10',true]);assert.equal(r.swipesNoLog,true);
+  assert.deepEqual(r.first,[['m',1],[[32,9,true,''],[35,10,true,'test comments']],true,true]);
+  assert.ok(r.timedUnits&&r.side);
+  assert.deepEqual(r.holdStart,[['m',1],false]);assert.deepEqual(r.holdEnd,[['m',2],45,true,true]);
+  assert.deepEqual(r.cool,[['c',0],8]);
+  assert.deepEqual(r.final,[['c',0],true,true,true]);
+  assert.deepEqual(r.back,['today',true,true]);
+  assert.equal(r.historyUntouched,true);assert.deepEqual(r.undo,['today',false]);
+  assert.deepEqual(r.reload,[['m',1],'1/1',45,false,true]);
+});
+
+test('exercise detail: counting holds prevent paging, pause unlocks it, and the final shortcut only reveals manual Finish', { skip }, async () => {
+  for(const [lang,width,cool,caption] of [['ru',390,true,'К завершению тренировки'],['lv',320,false,'Uz treniņa pabeigšanu'],['en',390,false,'Go to workout finish']]){
+    const st=oldState(lang,[]);
+    delete st.block;
+    st.goal=st.prof.goal='mass';st.autoW=false;
+    st.program=[{name:'Demo',items:[
+      {exId:'mch-incline',sets:1,min:8,max:12,rest:90},
+      {exId:'mk-front-plank',sets:1,min:30,max:45,rest:60,sec:1},
+    ],wu:{cardio:{id:'mk-rowing-machine-steady-state',min:3,note:''},mob:[],ramp:[],min:3},
+    ...(cool?{cd:{pl:'b',note:'Лёгкая ходьба',stretch:[]}}:{})}];
+    const r=await inChrome(st,lang,{},`
+      const q=s=>document.querySelector(s), click=s=>q(s).click();
+      const place=()=>view==='ex'?EXS.src+','+EXS.i:view, saved=()=>JSON.parse(localStorage.getItem('gym'));
+      const oldCount=S.workouts.length;
+      click('[data-v="today"]');await until(()=>q('#start'));click('#start');
+      click('[data-exo="m,0"] h3');R.noEarlyCTA=!q('#exfinish');
+      click('#exadd');R.restPages=place()==='m,1'&&q('#exprev').disabled===false&&q('#exrest').classList.contains('run');
+      R.canFinishWithoutCool=Boolean(q('#exfinish'));
+      click('#exhold');window.exHoldGate={place,ready:true};
+      if(!await until(()=>window.exHoldGate.done,12000))throw Error('hold gesture handshake');
+      R.beforeExpiry=[place(),!saved().active.items[1].sets[0].done,q('#exprev').disabled,Boolean(q('#exfinish')&&q('#exfinish').disabled),!q('#exback').disabled];
+      S.exHold.endAt=Date.now()-1;exHoldTick();
+      await until(()=>q('#exfinish'));await wait(60);
+      R.recorded=[place(),saved().active.items[1].sets[0].r,saved().active.items[1].sets[0].done,tEnd>Date.now(),q('#exprev').disabled];
+      const cta=q('#exfinish');
+      R.cta=[cta.textContent.trim(),cta.disabled,cta.previousElementSibling.id,view==='ex',S.workouts.length===oldCount];
+      click('#exfinish');
+      await until(()=>view==='today'&&document.activeElement.id==='fin2');await wait(60);
+      const fin=q('#fin2').getBoundingClientRect(), nav=q('#nav').getBoundingClientRect();
+      R.reveal=[view,!!S.active,S.workouts.length===oldCount,document.activeElement.id,fin.top>0&&fin.bottom<=nav.top,scrollY>0];
+      click('#fin2');R.manual=[!S.active,S.workouts.length===oldCount+1];
+    `,'',true,width,async request=>{
+      let id=10;
+      const get=async expression=>{
+        const res=await request(id++,'Runtime.evaluate',{expression,returnByValue:true});
+        if(res.exceptionDetails)throw Error(JSON.stringify(res.exceptionDetails));
+        return res.result.value;
+      };
+      let ready=false;
+      for(let i=0;i<150&&!ready;i++){ready=await get('!!window.exHoldGate?.ready');if(!ready)await delay(25)}
+      assert.ok(ready);
+      await request(id++,'Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+      const gesture= async dx=>{
+        const p=await get('(()=>{const v=document.querySelector("#exv");v.scrollIntoView({block:"center"});const b=v.getBoundingClientRect();return {x:(b.left+b.right)/2,y:(b.top+b.bottom)/2}})()');
+        const send=(type,touchPoints)=>request(id++,'Input.dispatchTouchEvent',{type,touchPoints});
+        await send('touchStart',[{...p,id:1}]);
+        for(const f of [.25,.5,1])await send('touchMove',[{x:p.x+dx*f,y:p.y,id:1}]);
+        await send('touchEnd',[]);await delay(45);
+      };
+      assert.equal(await get('document.querySelector("#exprev").disabled&&document.querySelector("#exnext").disabled'),true);
+      await get('document.querySelector("#exprev").click()');
+      await gesture(110);await gesture(-110);
+      assert.equal(await get('window.exHoldGate.place()'),'m,1','active hold locks either swipe direction and arrow');
+      await get('document.querySelector("#exhold").click()');
+      assert.equal(await get('S.exHold.paused&&!document.querySelector("#exprev").disabled'),true);
+      await gesture(110);assert.equal(await get('window.exHoldGate.place()'),'m,0','paused hold allows paging');
+      await gesture(-110);assert.equal(await get('window.exHoldGate.place()'),'m,1');
+      await get('document.querySelector("#exhold").click()');
+      assert.equal(await get('!S.exHold.paused&&document.querySelector("#exprev").disabled'),true);
+      await gesture(110);assert.equal(await get('window.exHoldGate.place()'),'m,1');
+      await get('window.exHoldGate.done=true');
+    });
+    const where=lang+' '+width+'px';
+    assert.deepEqual(r.errors,[],where);
+    assert.ok(r.noEarlyCTA&&r.restPages,where);
+    assert.equal(r.canFinishWithoutCool,!cool,where);
+    assert.deepEqual(r.beforeExpiry,['m,1',true,true,!cool,true],where);
+    assert.deepEqual(r.recorded,[cool?'c,0':'m,1',45,true,true,false],where);
+    assert.deepEqual(r.cta,[caption,false,'exadd',true,true],where);
+    assert.deepEqual(r.reveal,['today',true,true,'fin2',true,true],where);
+    assert.deepEqual(r.manual,[true,true],where);
+  }
 });

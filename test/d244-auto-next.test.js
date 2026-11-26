@@ -1,5 +1,5 @@
 'use strict';
-// D-244: right after the planned sets the next exercise opens (rest timer keeps running); last one -> workout with «Завершить»; sets-done circle shows the number.
+// D-244: after a saved prescribed working set finishes the prescription, open the next exercise with rest still running.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -82,19 +82,57 @@ test('D-244: right after the last planned set the next exercise opens; the rest 
   assert.ok(run('tEnd') > Date.now(), 'rest timer still running on the next exercise');
 });
 
-test('D-244: warm-up row moves on too; the last exercise returns to the workout with «Завершить»', () => {
+test('warm-up and cooldown do not advance automatically, including the final exercise', () => {
   const { run } = withProgram();
-  run('exOpen("w",0)');
-  run('exLog()'); // warm-up row: 1 planned set
-  assert.equal(run('JSON.stringify([exList()[EXS.pos].src,exList()[EXS.pos].i])'), '["w",1]');
+  run('exOpen("w",0);exLog()');
+  assert.equal(run('JSON.stringify([exList()[EXS.pos].src,exList()[EXS.pos].i])'), '["w",0]');
   const last = run('exList().length-1');
   run(`EXS.pos=${last};exView()`);
   assert.equal(run('exList()[EXS.pos].src'), 'c');
   const n = run('exInfo(exList()[EXS.pos]).plan');
   for (let k = 0; k < n; k++) run('exLog()');
-  assert.equal(run('view'), 'today');
-  assert.equal(run('EXS'), null);
-  assert.ok(run('!!S.active'), 'workout stays open for «Завершить»');
+  assert.equal(run('view'), 'ex');
+  assert.equal(run('EXS.pos'), last);
+  assert.ok(run('!!S.active'), 'workout stays active for manual finish');
+});
+
+test('bonus sets do not count towards the prescribed threshold; an extra recorded set does not advance again', () => {
+  const { run } = withProgram();
+  run('startW(0);exOpen("m",0);const first=S.active.items[0];first.sets.push({w:20,r:10,done:true})');
+  const pos = run('EXS.pos'), plan = run('first.ns');
+  for(let k=0;k<plan-1;k++) run('exLog()');
+  assert.equal(run('EXS.pos'),pos,'an already recorded bonus set cannot complete the prescription');
+  run('exLog()');
+  assert.equal(run('EXS.pos'),pos+1);
+  run('$("#exprev").onclick();exLog()');
+  assert.equal(run('EXS.pos'),pos,'logging an extra set after completion does not advance');
+  assert.equal(run('first.sets.filter(s=>s.done).length'),plan+2);
+});
+
+test('no auto advance when the prescription is absent, the set is rejected or local persistence fails', () => {
+  for(const mode of ['no prescription','rejected set','storage failure']){
+    const { run }=withProgram();
+    run('startW(0);exOpen("m",0);const first=S.active.items[0];first.sets=[{w:30,r:10,done:false}];first.ns=1;save()');
+    if(mode==='no prescription')run('delete first.ns');
+    if(mode==='rejected set')run('setDone=()=>{}');
+    if(mode==='storage failure')run('localStorage.setItem=()=>{throw Error("synthetic write failure")}');
+    const pos=run('EXS.pos');
+    run('exLog()');
+    assert.equal(run('EXS.pos'),pos,mode);
+    const persisted=run('JSON.parse(localStorage.getItem("gym")).active.items[0].sets[0].done');
+    assert.equal(persisted,mode==='no prescription',mode);
+  }
+});
+
+test('completing the final working exercise with no cooldown stays on detail and keeps rest and workout active', () => {
+  const { run }=withProgram();
+  run('startW(0);S.active.cool=null;S.active.items=[S.active.items.find(it=>!isCardio(it.exId))];const i=0;const it=S.active.items[i];it.ns=1;it.rest=90;it.sets=[{w:20,r:10,done:false}];exOpen("m",i)');
+  const pos=run('EXS.pos');
+  run('exLog()');
+  assert.equal(run('EXS.pos'),pos);
+  assert.equal(run('view'),'ex');
+  assert.ok(run('S.active&&tEnd>Date.now()'));
+  assert.ok(run('JSON.parse(localStorage.getItem("gym")).active.items.at(-1).sets[0].done'));
 });
 
 test('D-245: exercise screen — rest lives only in the circle (bottom bar hidden); other screens keep the bar', () => {
