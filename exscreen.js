@@ -117,8 +117,20 @@ function exStart(){const{sel}=exDay();if(S.active)return;startW(sel);const L=exL
 function exDraft(e){const drafts=EXS.drafts||(EXS.drafts=Object.create(null)),key=exHkey(e);return drafts[key]||(drafts[key]={})}
 function exCancelAdvance(){
  if(!EX_ADVANCE)return;
- clearTimeout(EX_ADVANCE.timer);EX_ADVANCE=null;
+ clearTimeout(EX_ADVANCE.timer);EX_ADVANCE.observer?.disconnect();EX_ADVANCE=null;
  const notice=$('#exadvance');if(notice)notice.hidden=true;
+}
+function exPlaceAdvance(pending){
+ if(!pending||EX_ADVANCE!==pending)return;
+ const notice=$('#exadvance'),rest=$('#exrest'),header=$('#top');
+ if(!notice||notice.hidden||!notice.getBoundingClientRect||!rest?.getBoundingClientRect)return;
+ const rect=notice.getBoundingClientRect(),timer=rest.getBoundingClientRect(),gap=8;
+ // Derive the original lower slot from the current rectangle even when the toast was already moved up.
+ const lift=pending.lift||0,top=rect.top+lift,bottom=rect.bottom+lift;
+ const overlap=rect.left<timer.right&&rect.right>timer.left&&top<timer.bottom+gap&&bottom>timer.top-gap;
+ const back=$('#exback'),upper=Math.max(header?.getBoundingClientRect().bottom||0,back?.getBoundingClientRect().bottom||0)+gap;
+ const next=overlap?Math.max(0,Math.ceil(top-upper)):0;
+ if(lift!==next){pending.lift=next;notice.style.transform=next?'translateY(-'+next+'px)':''}
 }
 function exAdvanceTick(pending){
  if(EX_ADVANCE!==pending)return;
@@ -135,9 +147,17 @@ function exQueueAdvance(){
  const next=exList()[EXS.pos+1],notice=$('#exadvance');if(!next||!notice)return;
  const pending=EX_ADVANCE={screen:EXS,pos:EXS.pos,workout:S.active,next:exHkey(next),until:Date.now()+EX_ADVANCE_MS,timer:null};
  notice.hidden=false;
+ exPlaceAdvance(pending);
+ if(typeof ResizeObserver==='function'){
+   const observer=pending.observer=new ResizeObserver(()=>exPlaceAdvance(pending));
+   observer.observe(app);observer.observe(notice);
+ }
  // Populate the status once; the visual 3–2–1 is deliberately outside the live region.
  const label=$('#exadvance-label');if(label)setTimeout(()=>{
-   if(EX_ADVANCE===pending)label.textContent=tr('Сейчас откроется')+': '+tr(next.src==='m'?exBy(next.id).name:next.r.n);
+   if(EX_ADVANCE===pending){
+     label.textContent=tr('Сейчас откроется')+': '+tr(next.src==='m'?exBy(next.id).name:next.r.n);
+     exPlaceAdvance(pending);
+   }
  },0);
  exAdvanceTick(pending);
 }
@@ -227,6 +247,10 @@ function exBindSwipe(){
 (function exHook(){const _r=render;render=function(){if(view!=='ex'){exCancelAdvance();exStop();exBody(false)}if(view==='ex'&&S.goal&&S.program&&S.program.length)return exView();return _r()};
  if(typeof document!=='undefined'&&document.addEventListener){exBindSwipe();document.addEventListener('click',ev=>{const t=ev.target;if(!t||!t.closest)return;if(t.closest('button,input,a,summary,label,select,textarea'))return;const r=t.closest('[data-exo]');if(!r||view==='ex')return;const[src,i]=String(r.dataset.exo).split(',');ev.preventDefault();exOpen(src,+i)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)exCancelAdvance()});
-  if(typeof addEventListener==='function')addEventListener('pagehide',exCancelAdvance);
+  if(typeof addEventListener==='function'){
+    addEventListener('pagehide',exCancelAdvance);
+    addEventListener('scroll',()=>exPlaceAdvance(EX_ADVANCE),{passive:true});
+    addEventListener('resize',()=>exPlaceAdvance(EX_ADVANCE),{passive:true});
+  }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)exHoldTick()});
   if(typeof addEventListener==='function')addEventListener('pageshow',()=>exHoldTick())}})();
