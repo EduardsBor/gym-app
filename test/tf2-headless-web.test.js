@@ -1170,13 +1170,17 @@ test('exercise detail: native touch paging, draft inputs, auto next after a save
     R.draft=[q('#exw').value,q('#exr').value,q('#excm').textContent.includes('test comments')];
     R.swipesNoLog=saved().active.items[0].sets.filter(s=>s.done).length===1&&tEnd>=t0;
     click('#exadd');
+    if(!await until(()=>position().join(',')==='m,1'))throw Error('next exercise did not open after notice');
     R.first=[position(),saved().active.items[0].sets.map(s=>[s.w,s.r,s.done,s.cm||'']),tEnd>Date.now(),q('#exrest').classList.contains('run')];
     R.timedUnits=q('#exr')!==null&&!q('#exw')&&q('#exhc').textContent.includes('Секунд');
     click('#exhold');R.holdStart=[position(),saved().active.items[1].sets[0].done];
     S.exHold.endAt=Date.now()-10;exHoldTick();
+    if(!await until(()=>position().join(',')==='m,2'))throw Error('next exercise did not open after timed hold notice');
     R.holdEnd=[position(),saved().active.items[1].sets[0].r,saved().active.items[1].sets[0].done,tEnd>Date.now()];
     R.side=q('#exhc').textContent.includes('на каждую ногу');
-    vals('#exw','18');vals('#exr','8');click('#exadd');R.cool=[position(),saved().active.items[2].sets[0].r];
+    vals('#exw','18');vals('#exr','8');click('#exadd');
+    if(!await until(()=>position().join(',')==='c,0'))throw Error('cooldown did not open after notice');
+    R.cool=[position(),saved().active.items[2].sets[0].r];
     click('#exadd');R.final=[position(),!!saved().active,saved().active.cool.c[0],q('#exnext').disabled];
     window.gcExTouch.final=true;
     if(!await until(()=>window.gcExTouch.finalDone,6000))throw Error('final touch check did not finish');
@@ -1227,7 +1231,7 @@ test('exercise detail: native touch paging, draft inputs, auto next after a save
     await gesture('#exv',-117,0);assert.equal(await pos(),'m,0');
     await evaluate('window.gcExTouch.done=true');
     let atFinal=false;
-    for(let i=0;i<160&&!atFinal;i++){atFinal=await evaluate('window.gcExTouch.final===true');if(!atFinal)await delay(30)}
+    for(let i=0;i<430&&!atFinal;i++){atFinal=await evaluate('window.gcExTouch.final===true');if(!atFinal)await delay(30)}
     assert.equal(atFinal,true);
     await gesture('#exv',-110,0);assert.equal(await pos(),'c,0','final page never wraps');
     await evaluate('window.gcExTouch.finalDone=true');
@@ -1263,13 +1267,16 @@ test('exercise detail: counting holds prevent paging, pause unlocks it, and the 
       const oldCount=S.workouts.length;
       click('[data-v="today"]');await until(()=>q('#start'));click('#start');
       click('[data-exo="m,0"] h3');R.noEarlyCTA=!q('#exfinish');
-      click('#exadd');R.restPages=place()==='m,1'&&q('#exprev').disabled===false&&q('#exrest').classList.contains('run');
+      click('#exadd');
+      if(!await until(()=>place()==='m,1'))throw Error('plank did not open after notice');
+      R.restPages=place()==='m,1'&&q('#exprev').disabled===false&&q('#exrest').classList.contains('run');
       R.canFinishWithoutCool=Boolean(q('#exfinish'));
       click('#exhold');window.exHoldGate={place,ready:true};
       if(!await until(()=>window.exHoldGate.done,12000))throw Error('hold gesture handshake');
       R.beforeExpiry=[place(),!saved().active.items[1].sets[0].done,q('#exprev').disabled,Boolean(q('#exfinish')&&q('#exfinish').disabled),!q('#exback').disabled];
       S.exHold.endAt=Date.now()-1;exHoldTick();
-      await until(()=>q('#exfinish'));await wait(60);
+      if(!await until(()=>q('#exfinish')&&place()===${JSON.stringify(cool?'c,0':'m,1')}))throw Error('final detail unavailable');
+      await wait(60);
       R.recorded=[place(),saved().active.items[1].sets[0].r,saved().active.items[1].sets[0].done,tEnd>Date.now(),q('#exprev').disabled];
       const cta=q('#exfinish');
       R.cta=[cta.textContent.trim(),cta.disabled,cta.previousElementSibling.id,view==='ex',S.workouts.length===oldCount];
@@ -1319,4 +1326,167 @@ test('exercise detail: counting holds prevent paging, pause unlocks it, and the 
     assert.deepEqual(r.reveal,['today',true,true,'fin2',true,true],where);
     assert.deepEqual(r.manual,[true,true],where);
   }
+});
+
+test('exercise detail: floating next-exercise toast counts 3–2–1, and manual or lifecycle actions cancel the jump', {skip}, async()=>{
+  const cases=[
+    ['auto','ru',320],['arrow','en',390],['swipe','lv',375],
+    ['back','ru',390],['hidden','en',320],['reload','lv',390],['modal','ru',375],
+  ];
+  for(const [mode,lang,width] of cases){
+    const st=oldState(lang,[]);
+    delete st.block;
+    st.autoW=false;st.goal=st.prof.goal='mass';
+    st.program=[{name:'Demo',items:[
+      {exId:'mch-incline',sets:2,min:8,max:12,rest:90},
+      {exId:'mk-dumbbell-seated-overhead-tricep-extension',sets:1,min:8,max:12,rest:60},
+      {exId:'dbp',sets:1,min:8,max:12,rest:60},
+    ],wu:{cardio:{id:'mk-rowing-machine-steady-state',min:3,note:''},mob:[],ramp:[],min:3}}];
+    const r=await inChrome(st,lang,{},`
+      const q=s=>document.querySelector(s),click=s=>q(s).click(),saved=()=>JSON.parse(localStorage.getItem('gym'));
+      const mode=${JSON.stringify(mode)},place=()=>view==='ex'?EXS.src+','+EXS.i:view;
+      const notice=()=>q('#exadvance'),shown=()=>notice()&&!notice().hidden;
+      const reopened=sessionStorage.getItem('nextExerciseReload');
+      if(reopened){
+        Object.assign(R,JSON.parse(reopened));
+        await until(()=>q('[data-exo="m,0"] h3'));click('[data-exo="m,0"] h3');
+        await wait(3250);
+        R.outcome=[place(),!!shown(),saved().active.items[0].sets.filter(x=>x.done).length,!!saved().tEnd];
+      }else{
+        click('[data-v="today"]');await until(()=>q('#start'));click('#start');click('[data-exo="m,0"] h3');
+        click('#exadd');R.partial=[place(),!!shown(),q('#exsets b').textContent];
+        q('#exadd').scrollIntoView({block:'center'});
+        const now=performance.now();
+        click('#exadd');
+        const rest=tEnd, status=q('#exadvance-label'), count=q('#exadvance-count');
+        R.initial=[place(),shown(),count.textContent,q('#exsets b').textContent,saved().active.items[0].sets.every(x=>x.done)];
+        if(!await until(()=>status.textContent.includes(':')))throw Error('Missing next-exercise notice');
+        const b=notice().getBoundingClientRect(),label=tr('Сейчас откроется')+': '+tr(exBy('mk-dumbbell-seated-overhead-tricep-extension').name);
+        R.notice=[status.textContent===label,status.getAttribute('role'),count.getAttribute('aria-hidden'),getComputedStyle(notice()).animationName,b.left>=0&&b.right<=innerWidth&&b.top>=q('#top').getBoundingClientRect().bottom&&b.bottom<=q('#nav').getBoundingClientRect().top];
+        const style=getComputedStyle(notice());
+        const measure=()=>[q('#exadd').getBoundingClientRect().top,document.documentElement.scrollHeight,scrollY].join(',');
+        const layout=measure();
+        notice().hidden=true;
+        R.noReflow=measure()===layout;
+        notice().hidden=false;
+        const oldY=scrollY;
+        scrollTo(0,oldY>30?0:oldY+120);
+        const yMoved=Math.abs(scrollY-oldY)>25;
+        R.fixed=[style.position,style.pointerEvents,yMoved,Math.abs(notice().getBoundingClientRect().top-b.top)<1];
+        scrollTo(0,oldY);
+        if(mode==='auto'){
+          const ticks=[];for(const digit of ['3','2','1']){
+            if(!await until(()=>shown()&&count.textContent===digit,3500))throw Error('Missing tick '+digit);
+            ticks.push([digit,place()]);
+          }
+          if(!await until(()=>place()==='m,1'))throw Error('No automatic transition');
+          R.auto=[ticks,performance.now()-now,tEnd===rest,q('#exrest').classList.contains('run')];
+          await wait(340);R.once=place();
+        }else if(mode==='arrow'||mode==='swipe'){
+          window.nextExerciseGesture={place,ready:true};
+          if(!await until(()=>window.nextExerciseGesture.done))throw Error('No gesture');
+          R.immediate=[place(),performance.now()-now<1400,tEnd===rest];
+          await wait(3200);
+        }else if(mode==='back'){
+          click('#exback');
+          if(!await until(()=>view==='today'&&q('[data-exo="m,0"] h3')))throw Error('Back did not restore workout');
+          // Let the browser settle the history traversal before a separate user tap to reopen.
+          await wait(100);
+          click('[data-exo="m,0"] h3');
+          if(!await until(()=>place()==='m,0',1000))throw Error('Could not reopen exercise');
+          await wait(3200);
+        }else if(mode==='hidden'){
+          Object.defineProperty(document,'hidden',{value:true,configurable:true});
+          document.dispatchEvent(new Event('visibilitychange'));
+          R.hidden=!shown();
+          Object.defineProperty(document,'hidden',{value:false,configurable:true});
+          document.dispatchEvent(new Event('visibilitychange'));
+          await wait(3200);
+        }else if(mode==='reload'){
+          sessionStorage.setItem('nextExerciseReload',JSON.stringify(R));location.reload();await new Promise(()=>{});
+        }else if(mode==='modal'){
+          click('#exsw');await wait(3200);
+          R.modal=!!q('#modal:not(.hidden) #mc');click('#mc');
+        }
+        R.outcome=[place(),!!shown(),saved().active.items[0].sets.filter(x=>x.done).length,!!saved().tEnd];
+      }
+    `,'',true,width,['arrow','swipe'].includes(mode)?async request=>{
+      let id=10;
+      const get=async expression=>{
+        const r=await request(id++,'Runtime.evaluate',{expression,returnByValue:true});
+        if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));
+        return r.result.value;
+      };
+      let ready=false;
+      for(let i=0;i<160&&!ready;i++){ready=await get('!!window.nextExerciseGesture?.ready');if(!ready)await delay(25)}
+      assert.ok(ready);
+      if(mode==='arrow'){
+        await request(id++,'Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+        assert.ok(await get('matchMedia("(prefers-reduced-motion: reduce)").matches'));
+        assert.equal(await get('getComputedStyle(document.querySelector("#exadvance")).animationName'),'none');
+        const p=await get(`(()=>{
+          const target=document.querySelector('#exnext'), toast=document.querySelector('#exadvance');
+          const first=target.getBoundingClientRect(), b=toast.getBoundingClientRect();
+          scrollBy(0,(first.top+first.bottom-b.top-b.bottom)/2);
+          const a=target.getBoundingClientRect(),x=(a.left+a.right)/2,y=(a.top+a.bottom)/2;
+          return {x,y,overlap:x>b.left&&x<b.right&&y>b.top&&y<b.bottom,
+            through:document.elementFromPoint(x,y)?.closest('button')===target};
+        })()`);
+        assert.ok(p.overlap&&p.through,'tap directly over toast reaches the underlying Next button');
+        for(const type of ['mousePressed','mouseReleased'])
+          await request(id++,'Input.dispatchMouseEvent',{type,x:p.x,y:p.y,button:'left',clickCount:1});
+        assert.equal(await get('window.nextExerciseGesture.place()'),'m,1');
+        await get('window.nextExerciseGesture.done=true');return;
+      }
+      await request(id++,'Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+      const p=await get('(()=>{const v=document.querySelector("#exv");v.scrollIntoView({block:"center"});const r=v.getBoundingClientRect();return {x:(r.left+r.right)/2,y:(r.top+r.bottom)/2}})()');
+      const send=(type,touchPoints)=>request(id++,'Input.dispatchTouchEvent',{type,touchPoints});
+      await send('touchStart',[{...p,id:1}]);
+      for(const dx of [-25,-63,-115])await send('touchMove',[{x:p.x+dx,y:p.y,id:1}]);
+      await send('touchEnd',[]);await delay(40);
+      assert.equal(await get('window.nextExerciseGesture.place()'),'m,1');
+      await get('window.nextExerciseGesture.done=true');
+    }:undefined);
+    const where=mode+' '+lang+' '+width+'px';
+    assert.deepEqual(r.errors,[],where);
+    assert.deepEqual(r.partial,['m,0',false,'1/2'],where);
+    assert.deepEqual(r.initial,['m,0',true,'3','2/2',true],where);
+    assert.deepEqual(r.notice,[true,'status','true','none',true],where);
+    assert.deepEqual(r.fixed,['fixed','none',true,true],where);
+    assert.equal(r.noReflow,true,where);
+    const moved=['auto','arrow','swipe'].includes(mode);
+    assert.deepEqual(r.outcome,[moved?'m,1':'m,0',false,2,true],where);
+    if(mode==='auto'){
+      assert.deepEqual(r.auto[0],[['3','m,0'],['2','m,0'],['1','m,0']],where);
+      assert.ok(r.auto[1]>=2980&&r.auto[1]<3700,where);
+      assert.deepEqual(r.auto.slice(2),[true,true],where);
+      assert.equal(r.once,'m,1',where);
+    }
+    if(mode==='arrow'||mode==='swipe')assert.deepEqual(r.immediate,['m,1',true,true],where);
+    if(mode==='hidden')assert.equal(r.hidden,true,where);
+    if(mode==='modal')assert.equal(r.modal,true,where);
+  }
+});
+
+test('exercise detail: a restored last hold records without starting an unexpected countdown after backgrounding', {skip}, async()=>{
+  const st=oldState('ru',[]);
+  delete st.block;
+  st.goal=st.prof.goal='mass';st.autoW=false;
+  st.program=[{name:'Demo',items:[
+    {exId:'mk-front-plank',sets:1,min:45,max:45,rest:90,sec:1},
+    {exId:'bss',sets:1,min:8,max:12,rest:60},
+  ]}];
+  const r=await inChrome(st,'ru',{},`
+    const q=s=>document.querySelector(s);
+    q('[data-v="today"]').click();await until(()=>q('#start'));q('#start').click();
+    q('[data-exo="m,0"] h3').click();q('#exhold').click();
+    Object.defineProperty(document,'hidden',{value:true,configurable:true});document.dispatchEvent(new Event('visibilitychange'));
+    S.exHold.endAt=Date.now()-1;
+    Object.defineProperty(document,'hidden',{value:false,configurable:true});document.dispatchEvent(new Event('visibilitychange'));
+    await wait(3200);
+    const active=JSON.parse(localStorage.getItem('gym')).active;
+    R.stayed=[EXS.src,EXS.i,q('#exadvance').hidden,active.items[0].sets[0].done,active.items[0].sets[0].r,!!S.exHold];
+  `,'',true,390);
+  assert.deepEqual(r.errors,[]);
+  assert.deepEqual(r.stayed,['m',0,true,true,45,false]);
 });
