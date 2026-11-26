@@ -242,7 +242,8 @@ function save(){if(S_RO)return;
  catch(e){if(Date.now()-saveWarnAt>30000){saveWarnAt=Date.now();toast('⚠ Не удалось сохранить: память браузера заполнена. Сделай экспорт в «Профиле».')}return}
  if(typeof saveHistory==='function')try{saveHistory()}catch(e){}
  if(typeof requestPersist==='function')try{requestPersist()}catch(e){}
- if(window.mzOnSave)try{window.mzOnSave()}catch(e){}}
+ if(window.mzOnSave)try{window.mzOnSave()}catch(e){}
+ return true}
 
 const LEGACY={ abw:['Ролик для пресса','Пресс'], bike:['Велотренажёр','Кардио'], calf:['Подъём на носки','Ноги'], cc:['Сведение в кроссовере','Грудь'], cru:['Скручивания','Пресс'], dbrdl:['Румынская тяга с гантелями','Ноги'], dip:['Отжимания на брусьях','Грудь'], dl:['Становая тяга','Спина'], dpu:['Узкие отжимания','Трицепс'], ell:['Эллипс','Кардио'], fp:['Тяга каната к лицу','Плечи'], hlr:['Подъём ног в висе','Пресс'], ote:['Разгибание из-за головы','Трицепс'], pc:['Сгибания на скамье Скотта','Бицепс'], pl:['Планка','Пресс'], rfly:['Махи в наклоне','Плечи'], rowm:['Гребной тренажёр','Кардио'], shr:['Шраги','Спина'], skull:['Французский жим','Трицепс'], step:['Зашагивания на скамью','Ноги'], tm:['Беговая дорожка','Кардио'], tpd:['Разгибание на блоке','Трицепс'], ur:['Тяга штанги широким хватом к груди','Плечи'], w_armc:['Круги руками','Разминка'], w_bandrow:['Лёгкая тяга к поясу','Разминка'], w_catcow:['Кошка-корова','Разминка'], w_dislo:['Проводка палки или резинки за голову','Разминка'], w_gm:['Наклоны «гуд-морнинг» без веса','Разминка'], w_march:['Ходьба на месте с высоким подниманием колен','Разминка'], w_pa:['Разведение рук со сведением лопаток','Разминка'], wlk:['Быстрая ходьба','Кардио'], yr:['Y-подъёмы рук лёжа','Плечи'], w_scpu:['Отжимания лопатками','Разминка']};
 const LEGACY_TO={ abw:'mk-rkc-plank', bike:'mk-indoor-cycling-spin', calf:'mk-standing-calf-raise-machine', cc:'mk-cable-pec-fly', cru:'mk-crunches', dbrdl:'mk-dumbbell-stiff-leg-deadlift', dip:'mk-parralel-bar-dips', dl:'mk-barbell-deadlift', dpu:'mk-diamond-push-ups', ell:'mk-elliptical', fp:'mk-cable-seated-rope-face-pull', hlr:'mk-hanging-knee-raises', ote:'mk-dumbbell-seated-overhead-tricep-extension', pc:'mk-ez-bar-preacher-curl', pl:'mk-front-plank', rfly:'mk-dumbbell-rear-delt-fly', rowm:'mk-rowing-machine-steady-state', shr:'mk-dumbbell-shrug', skull:'mk-ez-bar-skullcrusher', step:'mk-dumbbell-step-up-low', tm:'mk-treadmill-run', tpd:'mk-cable-bar-pushdown', ur:'mk-barbell-upright-row', w_armc:'mk-arm-circles-front-back', w_bandrow:'mk-band-row', w_catcow:'mk-cat-camel', w_dislo:'mk-broomstick-pass-throughs', w_gm:'mk-hip-hinge-drill', w_march:'mk-walking-knee-hugs', w_pa:'mk-band-high-face-pull', wlk:'mk-incline-treadmill-walk', yr:'mk-prone-y-t-raises'};
@@ -691,15 +692,27 @@ function tt(){const l=Math.ceil((tEnd-Date.now())/1000);$('#tval').textContent=f
 function stopTimer(keep){if(!keep){TA&&TA.pause();taEndAt=0}if(typeof NTF!=='undefined'&&(!keep||!document.hidden))NTF.restCancel();clearInterval(tInt);tEnd=0;S.tEnd=0;save();$('#timer').classList.add('hidden');tmrPad(0)}
 // D-288: no skip/stop button. Rest ends on its own (tt → stopTimer) or is restarted by startTimer when the next set is logged.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(tEnd)tt();wake()});
-// iOS: звук должен стартовать синхронно в обработчике нажатия — один <audio> с тишиной + сигналами
-const setSession=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}};
+// iOS web apps must not request exclusive audio focus (also on return to a running workout).
+// Declaring ambient does not start playback. Keep media creation lazy; older iOS without mixing keeps the visual timer.
+const iosWebAudio=!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==='function'&&window.Capacitor.isNativePlatform())&&
+ (navigator.standalone===true||/iPhone|iPad|iPod/i.test(navigator.userAgent||'')||
+  (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
+function mixIOSAudio(){try{const s=navigator.audioSession;if(!s)return false;
+ if(s.type!=='ambient')s.type='ambient';return s.type==='ambient'}catch(e){return false}}
+if(iosWebAudio)mixIOSAudio();
+// Keep the real timer cue gesture-bound: a single <audio> with silence followed by the existing cues.
 let TA=null;const getTA=()=>{if(!TA){TA=new Audio();TA.setAttribute('playsinline','');TA.volume=1}return TA};let taURL=null,taEndAt=0;
 function wavFor(sec,fan,noEnd){sec=+sec;if(!Number.isFinite(sec)||sec<0)sec=0;if(sec>600)sec=600;const R=11025,tail=1.2,dur=Math.max(sec,fan?1:0)+tail;if(!Number.isFinite(dur)||dur>602)return null;const n=Math.ceil(dur*R);if(!Number.isFinite(n)||n<=0||n>R*602)return null;const buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
  const ws=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
  const beep=(t,d,f,amp)=>{const s=Math.floor(t*R),e=Math.min(n,s+Math.floor(d*R));for(let i=Math.max(0,s);i<e;i++){const k=i-s,env=Math.min(1,k/60,(e-i)/60);v.setInt16(44+i*2,Math.round(amp*env*(Math.sin(2*Math.PI*f*k/R)>=0?1:-1)),true)}};
  if(fan)[[523,0],[659,.13],[784,.26],[1047,.39],[784,.6],[1047,.72]].forEach(([f,t])=>beep(t,t>.5?.22:.12,f,24000));if(!noEnd){[3,2,1].forEach(k=>{if(sec-k>(fan?1.1:0.2))beep(sec-k,.12,700,20000)});[0,.35,.7].forEach(d=>beep(sec+d,.25,1000,30000))}
  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
-function armAudio(sec,fan,noEnd){fan=fan===undefined?pendingFan:fan;sec=+sec;if(!Number.isFinite(sec)||sec<0)sec=0;if(sec>600)sec=600;setSession();if(!soundOn()){TA&&TA.pause();return}getTA();const url=wavFor(sec,fan,noEnd);if(!url){try{TA.pause()}catch(e){}return}if(taURL)URL.revokeObjectURL(taURL);taURL=url;TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
+// Completing a restored hold can also start a new rest timer via its normal logging path.
+let workoutAudioSuppressed=false;
+function withoutWorkoutAudio(fn){const prev=workoutAudioSuppressed;workoutAudioSuppressed=true;
+ try{return fn()}finally{workoutAudioSuppressed=prev}}
+function armAudio(sec,fan,noEnd){if(workoutAudioSuppressed)return;fan=fan===undefined?pendingFan:fan;sec=+sec;if(!Number.isFinite(sec)||sec<0)sec=0;if(sec>600)sec=600;
+ if(!soundOn()||(iosWebAudio&&(document.hidden||!mixIOSAudio()))){if(TA&&!TA.paused)TA.pause();taEndAt=0;return}getTA();const url=wavFor(sec,fan,noEnd);if(!url){try{TA.pause()}catch(e){}return}if(taURL)URL.revokeObjectURL(taURL);taURL=url;TA.src=taURL;TA.currentTime=0;taEndAt=noEnd?0:Date.now()+sec*1000;
  const p=TA.play();window.__taLast='pending';p&&p.then(()=>window.__taLast='ok').catch(err=>{window.__taLast=err.name;taEndAt=0})}
 const taCovers=()=>TA&&taEndAt&&!TA.paused&&Math.abs(taEndAt-tEnd)<1500;
 // восстановление таймера после перезагрузки
