@@ -1,0 +1,181 @@
+name: GymCaptain iOS simulator smoke
+"on":
+  push:
+    branches:
+      - test/ios-simulator-3f750fc
+permissions:
+  contents: read
+jobs:
+  ios-smoke:
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Compile and launch isolated iOS build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach 3f750fc46af86bdf79986f4ef490755ed44817a5
+          harness=$(mktemp -d)
+          cat > "$harness/prepare.sh" <<'GC_IOS_SCRIPT'
+          #!/usr/bin/env bash
+          # Local preflight only. Does not contact GitHub on its own except via
+          # public SPM dependency resolution during the optional simulator build.
+          set -euo pipefail
+          BASE=3f750fc46af86bdf79986f4ef490755ed44817a5
+          APP_ID=app.gymcaptain
+          HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+          SOURCE=${1:?Usage: prepare-ios-smoke.sh EXACT_BASELINE_CHECKOUT [--prepare-only|--simulator]}
+          MODE=${2:---prepare-only}
+          case "$MODE" in
+            --prepare-only) ;;
+            --simulator)
+              [[ $(uname -s) == Darwin ]] || { echo 'Simulator requires macOS and Xcode 26+.' >&2; exit 2; }
+              xcode_version=$(xcodebuild -version)
+              printf '%s\n' "$xcode_version"
+              major=$(awk '/^Xcode /{split($2,a,".");print a[1];exit}' <<< "$xcode_version")
+              [[ $major =~ ^[0-9]+$ && $major -ge 26 ]] || { echo 'Xcode 26+ is required.' >&2; exit 2; }
+              xcrun --sdk iphonesimulator --show-sdk-version
+              ;;
+            *) echo "Invalid mode: $MODE" >&2; exit 2 ;;
+          esac
+          [[ $(git -C "$SOURCE" rev-parse HEAD) == "$BASE" ]] || { echo "Expected exact baseline $BASE." >&2; exit 2; }
+          git -C "$SOURCE" cat-file -e "$BASE:ios" 2>/dev/null && { echo 'Unexpected tracked iOS wrapper.' >&2; exit 2; }
+          if git -C "$SOURCE" ls-tree -r --name-only "$BASE" | grep -Ei '(^|/)(\.env(\.[^/]+)?|\.npmrc$|[^/]+\.(p8|p12|mobileprovision|provisionprofile|jks|keystore))$'; then
+            echo 'Unexpected private-config/key file name; refusing to package.' >&2
+            exit 2
+          fi
+          node -e 'if(+process.versions.node.split(".")[0]<22)process.exit(2)'
+          printf 'baseline=%s platform=%s node=%s npm=%s\n' "$BASE" "$(uname -s)" "$(node --version)" "$(npm --version)"
+          OUT=$(mktemp -d "${TMPDIR:-/tmp}/gymcaptain-ios-smoke.XXXXXX")
+          printf 'Disposable output (not uploaded): %s\n' "$OUT"
+          mkdir "$OUT/source" "$OUT/public-npm-cache"
+          git -C "$SOURCE" archive "$BASE" | tar -x -C "$OUT/source"
+          cd "$OUT/source"
+          git apply --check "$HERE/capacitor-ios-8.6.2-lock.patch"
+          git apply "$HERE/capacitor-ios-8.6.2-lock.patch"
+          unset GC_SENTRY_DSN GC_SENTRY_ENV NODE_AUTH_TOKEN NPM_TOKEN
+          export npm_config_cache="$OUT/public-npm-cache" npm_config_registry=https://registry.npmjs.org/
+          touch "$OUT/empty-npm-user" "$OUT/empty-npm-global"
+          export npm_config_userconfig="$OUT/empty-npm-user" npm_config_globalconfig="$OUT/empty-npm-global"
+          # Do not request an existing Git credential or interactive login for public build dependencies.
+          export GIT_TERMINAL_PROMPT=0 GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:web
+          # Smoke-only output: prevent use of the project's real account/backend settings.
+          # The committed source and app's production config remain untouched.
+          printf 'window.MZ_SB = null;\n' > www/supabase-config.js
+          ./node_modules/.bin/cap add ios --packagemanager SPM
+          ./node_modules/.bin/cap sync ios
+          node <<'NODE'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const config = JSON.parse(fs.readFileSync('ios/App/App/capacitor.config.json'));
+          assert.equal(config.appId, 'app.gymcaptain');
+          assert.deepEqual(config.packageClassList.slice().sort(), [
+            'AppPlugin', 'CAPBrowserPlugin', 'LocalNotificationsPlugin', 'SentryCapacitorPlugin',
+          ]);
+          assert.match(fs.readFileSync('ios/App/CapApp-SPM/Package.swift', 'utf8'), /exact: "8\.6\.2"/);
+          for (const file of ['index.html','app.js','style.css','progress.js','cache-ver.js','supabase-config.js','sentry-config.js']) {
+            assert.deepEqual(fs.readFileSync('www/'+file), fs.readFileSync('ios/App/App/public/'+file));
+          }
+          assert.equal(fs.readFileSync('ios/App/App/public/supabase-config.js','utf8'), 'window.MZ_SB = null;\n');
+          console.log('Prepared and verified assets, app identifier and four registered iOS plugins.');
+          NODE
+          
+          if [[ "$MODE" == --prepare-only ]]; then
+            echo 'Scaffold and static validation only: no Xcode compile or simulator launch.'
+            exit 0
+          fi
+          
+          project=ios/App/App.xcodeproj
+          xcodebuild -list -project "$project"
+          xcodebuild -showdestinations -project "$project" -scheme App
+          xcodebuild -project "$project" -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -sdk iphonesimulator -derivedDataPath "$OUT/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= build
+          
+          app="$OUT/DerivedData/Build/Products/Debug-iphonesimulator/App.app"
+          test -f "$app/Info.plist"
+          [[ $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist") == "$APP_ID" ]]
+          echo 'PASS: Xcode compiled the unsigned iOS Simulator application.'
+          
+          # Use a factory-empty disposable simulator, never an existing device or its data.
+          # Do not install or download simulator runtimes as a fallback.
+          xcrun simctl list devices available
+          xcrun simctl list --json > "$OUT/devices.json"
+          read -r device_type runtime_id <<< "$(node - "$OUT/devices.json" <<'NODE'
+          const {devicetypes, runtimes} = require(process.argv[2]);
+          const device = devicetypes.find(d=>d.name==='iPhone 17');
+          const runtime = runtimes.filter(r=>r.isAvailable && r.identifier.includes('.iOS-') && r.version.startsWith('26.'))
+            .sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}))[0];
+          if (!device || !runtime) {
+            console.error('iPhone 17 device type or installed iOS 26 runtime unavailable. No download attempted.');
+            process.exit(2);
+          }
+          console.log(device.identifier+' '+runtime.identifier);
+          NODE
+          )"
+          udid=$(xcrun simctl create "GymCaptain smoke $(basename "$OUT")" "$device_type" "$runtime_id")
+          [[ $udid =~ ^[A-Fa-f0-9-]{36}$ ]] || { echo 'Unexpected simulator UDID.' >&2; exit 2; }
+          cleanup_simulator(){
+            xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true
+            xcrun simctl delete "$udid" >/dev/null 2>&1 || true
+          }
+          trap cleanup_simulator EXIT
+          
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" "$APP_ID"
+          sleep 3
+          xcrun simctl spawn "$udid" launchctl list | grep -F "$APP_ID"
+          echo 'PASS: Simulator installed and launched the app process. This does not assert the visible UI, auth or feature behavior.'
+          GC_IOS_SCRIPT
+          cat > "$harness/capacitor-ios-8.6.2-lock.patch" <<'GC_IOS_PATCH'
+          diff --git a/package-lock.json b/package-lock.json
+          index 3bb524653c181bc9ffdc32ae2712c1d9f763022d..c4e24454ac1cd6eb70f3813e0e0d62ed29604b85 100644
+          --- a/package-lock.json
+          +++ b/package-lock.json
+          @@ -16,6 +16,7 @@
+                   "@capacitor/browser": "^8.0.5",
+                   "@capacitor/cli": "8.6.2",
+                   "@capacitor/core": "8.6.2",
+          +        "@capacitor/ios": "8.6.2",
+                   "@capacitor/local-notifications": "^8.3.1",
+                   "esbuild": "^0.28.2"
+                 }
+          @@ -93,6 +94,16 @@
+                   "tslib": "^2.1.0"
+                 }
+               },
+          +    "node_modules/@capacitor/ios": {
+          +      "version": "8.6.2",
+          +      "resolved": "https://registry.npmjs.org/@capacitor/ios/-/ios-8.6.2.tgz",
+          +      "integrity": "sha512-YnVm0lRA1mQWK0SKd2bdJIOG+PXRRDDdndZ1+nGqeiob+QmHZmb4wWo5gVpWhoHO37pGi2qzH5w5WGvfKrs+Gg==",
+          +      "dev": true,
+          +      "license": "MIT",
+          +      "peerDependencies": {
+          +        "@capacitor/core": "^8.6.0"
+          +      }
+          +    },
+               "node_modules/@capacitor/local-notifications": {
+                 "version": "8.3.1",
+                 "resolved": "https://registry.npmjs.org/@capacitor/local-notifications/-/local-notifications-8.3.1.tgz",
+          diff --git a/package.json b/package.json
+          index 96e76e645dea4f46f4f8c5c3d2d6dfd73852727e..3fa0c2275b2fa1067e72b7970c98693845274bab 100644
+          --- a/package.json
+          +++ b/package.json
+          @@ -13,6 +13,7 @@
+               "@capacitor/browser": "^8.0.5",
+               "@capacitor/cli": "8.6.2",
+               "@capacitor/core": "8.6.2",
+          +    "@capacitor/ios": "8.6.2",
+               "@capacitor/local-notifications": "^8.3.1",
+               "esbuild": "^0.28.2"
+             },
+          GC_IOS_PATCH
+          bash "$harness/prepare.sh" "$GITHUB_WORKSPACE" --simulator
